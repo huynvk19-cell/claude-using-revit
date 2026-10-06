@@ -40,6 +40,8 @@ metadata:
 | `template_link_visibility` | Link nào đang hiện trong từng template. |
 | `rollup_dims_check` | Cửa cuốn và các dim đang trỏ vào nó (1V). |
 | `elements_beyond` | Nét chạy ra ngoài trục cuối. |
+| `annotation_overlaps` | Annotation chồng lắp trong 1 view: chữ dim, tag, text note, cao độ điểm, đường dim cắt qua chữ; trả về id để `highlight_elements` tô đỏ (room tag mặc định bỏ qua). |
+| `highlight_elements` | Tô màu (Override Graphics in View) cho id trong view, có log để `undo`. |
 
 ## Dim
 

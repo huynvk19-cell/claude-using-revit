@@ -21,6 +21,7 @@ metadata:
 | Đọc `d.Id` sau `RollBack` bị lỗi | Phần tử không còn tồn tại. | Lấy id trước khi rollback. |
 | `grid_bubble_elbow` báo "leader not valid" | Hình học bubble hoặc leader không hợp lệ ở tỉ lệ đó. | So le đầu trục 2D thay cho elbow. |
 | Đổi hiển thị link trong template | Revit 2023 không có `SetLinkOverrides`. | Điều khiển UI: View Templates › V/G › Revit Links › Display Settings (bấm lần 1 để chọn, lần 2 để mở). Sau mỗi lần OK, Revit regenerate rất chậm. |
+| Room tag báo chồng lắp khắp nơi | Bounding box của room tag phủ cả khung label của family, rộng hơn chữ nhiều (~29 mm giấy ở 1:200). | Không dò room tag bằng bounding box (`annotation_overlaps` mặc định bỏ qua); soát room tag bằng ảnh. |
 | Chữ dim tiếng Việt trong script PowerShell bị lỗi | PowerShell 5.1 đọc file không có BOM. | Lưu `.ps1` dạng UTF-8 with BOM. |
 
 ## Mẹo (Tips)

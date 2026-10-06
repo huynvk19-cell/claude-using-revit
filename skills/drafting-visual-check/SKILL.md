@@ -13,7 +13,8 @@ description: "Verify Revit drawing changes visually: export sheets to PNG, crop 
    ```
    - Cx/Cy is the centre and W/H the size, all as fractions of the image.
    - The crop is scaled to 1600 px.
-4. **Look for:**
+4. **Run `annotation_overlaps` per view** for a measured list. Colour the result red with `highlight_elements` when the user asks (logPath, `undo` removes it).
+5. **Look for:**
    - text on text, or dims crossing tags;
    - chains outside the building or above the roof;
    - long bridging segments;
@@ -21,5 +22,5 @@ description: "Verify Revit drawing changes visually: export sheets to PNG, crop 
    - duplicates of existing dims;
    - titles that are off-centre or overlapping;
    - grid bubbles that overlap.
-5. **Fix, re-export only the affected sheet, and look again.**
-6. **Report what you could not fix** under "Cần xem".
+6. **Fix, re-export only the affected sheet, and look again.**
+7. **Report what you could not fix** under "Cần xem".
