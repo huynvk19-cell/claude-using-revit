@@ -46,10 +46,10 @@ public static class StairCoreAudit
     class LandI { public StairsLanding L; public Stairs S; public double Z; public double A0, A1, C0, C1; public string WallSide; public double? Depth, Clear; public double ClrA, ClrB; public string ClearFrom, ClearTo; }
     class WallI { public Wall W; public bool ParAlong; public double N0, N1, T0, T1; }
     class SideI { public string Key, Label, Kind; public double? Finish, Outer; public List<WallI> Stack = new List<WallI>(); }
-    class Seg { public int DimId; public bool Cross; public double Val, Pos, Line; public string Prefix, Suffix; }
+    class Seg { public int DimId; public bool Cross; public double Val, Pos, Line; public string Prefix, Suffix, Below; }
     class Exp
     {
-        public string Rule, Item; public bool Cross; public double From, To; public bool NeedClear; public string Prefix;
+        public string Rule, Item; public bool Cross; public double From, To; public bool NeedClear; public string Prefix, Below;
         public string Status; public int? DimId; public string Found;
         public double Mm { get { return Math.Abs(To - From); } }
     }
@@ -320,7 +320,7 @@ public static class StairCoreAudit
             bool same = v1 == null || v3 == null || (v1.Treads == v3.Treads && Math.Abs(v1.Depth - v3.Depth) < 0.5 && Math.Abs(v1.A0 - v3.A0) <= 5 && Math.Abs(v1.A1 - v3.A1) <= 5);
             if (!same) issues.Add("SA2: lane " + (i + 1) + ": V1 (" + v1.Treads + "T x " + Num(v1.Depth) + ") and V3 (" + v3.Treads + "T x " + Num(v3.Depth) + ") differ: dim follows V3, V1 goes to 'Cần xem'");
             string dimSide = (r.C0 + r.C1) / 2 < coreMidC ? lowC : highC;
-            exp.Add(new Exp { Rule = "SA2", Item = "run length " + string.Join("/", lanes[i].Select(x => x.Label)) + " (outside the " + dimSide + " wall)", Cross = false, From = r.A0, To = r.A1, Prefix = r.Formula });
+            exp.Add(new Exp { Rule = "SA2", Item = "run length " + string.Join("/", lanes[i].Select(x => x.Label)) + " (outside the " + dimSide + " wall)", Cross = false, From = r.A0, To = r.A1, Prefix = r.Formula, Below = "(EQUAL TREADS)" });
             if (sLowA.Finish != null) exp.Add(new Exp { Rule = "SA2", Item = "wall finish (" + lowA + ") -> run " + r.Label, Cross = false, From = sLowA.Finish.Value, To = r.A0 });
             if (sHighA.Finish != null) exp.Add(new Exp { Rule = "SA2", Item = "run " + r.Label + " -> wall finish (" + highA + ")", Cross = false, From = r.A1, To = sHighA.Finish.Value });
             laneOut.Add(new { Lane = i + 1, Runs = string.Join("/", lanes[i].Select(x => x.Label)), DimRun = r.Label, DimSide = dimSide, Formula = r.Formula + R0(r.Len), V1V3Same = same });
@@ -333,6 +333,16 @@ public static class StairCoreAudit
         {
             double f = (l.WallSide == lowA ? sLowA : sHighA).Finish.Value, edge = l.WallSide == lowA ? l.A1 : l.A0;
             exp.Add(new Exp { Rule = "SA2", Item = "landing " + l.L.Id.IntegerValue + " depth to the wall finish", Cross = false, From = edge, To = f });
+        }
+        // SA3: the floor landing (end without a stair landing): railing end -> end wall finish
+        var landSides = new HashSet<string>(lands.Select(l => l.WallSide));
+        foreach (var sw in new[] { sLowA, sHighA }.Where(x => x.Finish != null && !landSides.Contains(x.Label)))
+        {
+            bool low = sw == sLowA; double f = sw.Finish.Value;
+            var pts = railPts.Values.SelectMany(p => p).Where(p => p[1] > kC0 + 300 && p[1] < kC1 - 300 && (low ? p[0] > f + 150 : p[0] < f - 150)).ToList();
+            if (pts.Count == 0) continue;
+            double b = low ? pts.Min(p => p[0]) : pts.Max(p => p[0]);
+            exp.Add(new Exp { Rule = "SA3", Item = "floor landing clear (railing end -> wall finish " + sw.Label + ")", Cross = false, From = f, To = b, NeedClear = true });
         }
         // SA4: wall thickness (finish -> outer face) on each side with walls
         foreach (var s in sides.Where(s => s.Finish != null && s.Outer != null && Math.Abs(s.Outer.Value - s.Finish.Value) > 1))
@@ -350,20 +360,28 @@ public static class StairCoreAudit
             bool cross = dc >= 0.999;
             if (d.NumberOfSegments > 1)
                 foreach (DimensionSegment g in d.Segments)
-                    segs.Add(new Seg { DimId = d.Id.IntegerValue, Cross = cross, Val = (g.Value ?? 0) * MM, Pos = cross ? Cr(g.Origin) : Al(g.Origin), Line = cross ? Al(g.Origin) : Cr(g.Origin), Prefix = g.Prefix, Suffix = g.Suffix });
-            else segs.Add(new Seg { DimId = d.Id.IntegerValue, Cross = cross, Val = (d.Value ?? 0) * MM, Pos = cross ? Cr(d.Origin) : Al(d.Origin), Line = cross ? Al(d.Origin) : Cr(d.Origin), Prefix = d.Prefix, Suffix = d.Suffix });
+                    segs.Add(new Seg { DimId = d.Id.IntegerValue, Cross = cross, Val = (g.Value ?? 0) * MM, Pos = cross ? Cr(g.Origin) : Al(g.Origin), Line = cross ? Al(g.Origin) : Cr(g.Origin), Prefix = g.Prefix, Suffix = g.Suffix, Below = g.Below });
+            else segs.Add(new Seg { DimId = d.Id.IntegerValue, Cross = cross, Val = (d.Value ?? 0) * MM, Pos = cross ? Cr(d.Origin) : Al(d.Origin), Line = cross ? Al(d.Origin) : Cr(d.Origin), Prefix = d.Prefix, Suffix = d.Suffix, Below = d.Below });
         }
         Func<string, string> norm = s => (s ?? "").Replace(" ", "").Replace("×", "x").ToLowerInvariant();
         foreach (var e in exp)
         {
             double mid = (e.From + e.To) / 2;
             var hit = segs.Where(s => s.Cross == e.Cross && Math.Abs(s.Val - e.Mm) <= tol && Math.Abs(s.Pos - mid) <= 50).ToList();
+            if (hit.Count == 0 && !e.NeedClear && e.Prefix == null)
+            {   // the same span split on one dim line, e.g. a grid inside the chain or handrail | well | handrail
+                double lo = Math.Min(e.From, e.To), hi = Math.Max(e.From, e.To);
+                var split = segs.Where(s => s.Cross == e.Cross && s.Pos - s.Val / 2 >= lo - tol && s.Pos + s.Val / 2 <= hi + tol).GroupBy(s => s.DimId)
+                    .FirstOrDefault(g => g.Count() > 1 && Math.Abs(g.Sum(s => s.Val) - e.Mm) <= tol * g.Count() && Math.Abs(g.Min(s => s.Pos - s.Val / 2) - lo) <= tol + 1 && Math.Abs(g.Max(s => s.Pos + s.Val / 2) - hi) <= tol + 1);
+                if (split != null) { e.DimId = split.Key; e.Found = string.Join(" | ", split.OrderBy(s => s.Pos).Select(s => R0(s.Val))); e.Status = "OK (split)"; continue; }
+            }
             if (hit.Count == 0) { e.Status = "missing"; issues.Add(e.Rule + ": missing dim '" + e.Item + "' " + R0(e.Mm)); continue; }
             var best = hit.OrderByDescending(s => (e.NeedClear && (s.Suffix ?? "").ToUpper().Contains("CLEAR") ? 1 : 0) + (e.Prefix != null && norm(s.Prefix) == norm(e.Prefix) ? 1 : 0)).First();
             e.DimId = best.DimId; e.Found = (best.Prefix ?? "") + R0(best.Val) + (best.Suffix ?? "");
             var bad = new List<string>();
             if (e.NeedClear && !(best.Suffix ?? "").ToUpper().Contains("CLEAR")) bad.Add("no CLEAR suffix");
             if (e.Prefix != null && norm(best.Prefix) != norm(e.Prefix)) bad.Add("prefix should be '" + e.Prefix + "'");
+            if (e.Below != null && !(best.Below ?? "").ToUpper().Contains("EQUAL TREADS")) bad.Add("below text should be '" + e.Below + "'");
             e.Status = bad.Count == 0 ? "OK" : string.Join("; ", bad);
             if (bad.Count > 0) issues.Add(e.Rule + ": dim " + best.DimId + " '" + e.Item + "': " + e.Status);
         }
@@ -492,7 +510,7 @@ public static class StairCoreAudit
             Walls = sides.Select(s => new { Side = s.Label, s.Kind, FinishFaceMm = s.Finish.HasValue ? R0(s.Finish.Value) : (double?)null, OuterFaceMm = s.Outer.HasValue ? R0(s.Outer.Value) : (double?)null, Walls = s.Stack.Select(w => w.W.Id.IntegerValue + " " + w.W.Name).ToList() }).ToList(),
             ClearAcross = sLowC.Finish != null && sHighC.Finish != null ? R0(sHighC.Finish.Value - sLowC.Finish.Value) : (double?)null,
             ClearAlong = sLowA.Finish != null && sHighA.Finish != null ? R0(sHighA.Finish.Value - sLowA.Finish.Value) : (double?)null,
-            Expected = exp.Select(e => new { e.Rule, e.Item, Measures = e.Cross ? "across" : "along", Mm = R0(e.Mm), FromMm = R0(Math.Min(e.From, e.To)), ToMm = R0(Math.Max(e.From, e.To)), Text = (e.Prefix ?? "") + R0(e.Mm) + (e.NeedClear ? " CLEAR" : ""), e.Status, e.DimId, e.Found }).ToList(),
+            Expected = exp.Select(e => new { e.Rule, e.Item, Measures = e.Cross ? "across" : "along", Mm = R0(e.Mm), FromMm = R0(Math.Min(e.From, e.To)), ToMm = R0(Math.Max(e.From, e.To)), Text = (e.Prefix ?? "") + R0(e.Mm) + (e.NeedClear ? " CLEAR" : "") + (e.Below != null ? " / below: " + e.Below : ""), e.Status, e.DimId, e.Found }).ToList(),
             Openings = openTags, Grids = grids,
             Tags = new { Runs = runTags, Railings = railTags, Landings = landTags, Walls = wallTags },
             Spots = spots, Paths = paths, TreadNumbers = numbers,

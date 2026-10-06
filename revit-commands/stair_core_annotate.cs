@@ -1,6 +1,6 @@
 /* mcp-tool
 {
-  "description": "Stair core PLAN, ONE view (drafting-stair-core.md): places the deterministic parts. parts (default all three): 'path' (SD) - one stair path per stairs that has a seen run, of a type in family Fixed Up Direction (pathTypeName, else the project's most-used Fixed Up type, else any existing one; never creates a type), Show Up/Down Text off; an existing path stays where it is: its type is changed to Fixed Up and its text turned off. 'numbers' (C) - tread numbers on every seen run that has none (numberSide relative to walking up: left | right | center | leftQuarter | rightQuarter, default left; numberTypeName, else the project's most-used type). 'runTags' (SB1) - a Stair Run tag inside the SEEN part of every untagged seen run (V1 beyond the cut line, V2 middle, V3 before the cut line), on the quarter of the run width away from the numbers, no leader (runTagTypeName, else the project's most-used stair run tag type; none used in the project -> error, ask the user). Runs are classified like stair_core_audit. mode preview (rolled back) | apply (logPath) | undo (logPath: deletes what was created, restores path types / text).",
+  "description": "Stair core PLAN, ONE view (drafting-stair-core.md): places the deterministic parts. parts (default all three): 'path' (SD) - one stair path per stairs that has a seen run, of a type in family Fixed Up Direction (pathTypeName, else the project's most-used Fixed Up type, else any existing one; never creates a type), Show Up/Down Text off; an existing path stays where it is: its type is changed to Fixed Up and its text turned off. 'numbers' (C) - tread numbers on every seen run that has none; V1 sharing a lane with V3 gets the mirrored side so the two never overlap (numberSide relative to walking up: left | right | center | leftQuarter | rightQuarter, default left; numberTypeName, else the project's most-used type). 'runTags' (SB1) - a Stair Run tag for every untagged seen run, aimed at its SEEN part (V1 beyond the cut line, V2 middle, V3 before the cut line): default runTagPlace outside = head just outside the side wall of the run's lane (text along the run), free-end leader into the run; inside = head in the seen part, no leader (runTagTypeName, else the project's most-used stair run tag type; none used in the project -> error, ask the user). Runs are classified like stair_core_audit. mode preview (rolled back) | apply (logPath) | undo (logPath: deletes what was created, restores path types / text).",
   "inputSchema": {
     "type": "object",
     "properties": {
@@ -11,6 +11,8 @@
       "numberSide": { "type": "string", "enum": ["left", "right", "center", "leftQuarter", "rightQuarter"] },
       "numberTypeName": { "type": "string" },
       "runTagTypeName": { "type": "string" },
+      "runTagPlace": { "type": "string", "enum": ["outside", "inside"], "description": "outside (default, as the project sheets): head just outside the side wall of the run's lane, text along the run, leader into the seen part; inside: head inside the seen part, no leader" },
+      "runTagOffsetMm": { "type": "number", "description": "outside: paper mm from the outer wall face to the tag head point, default 5" },
       "logPath": { "type": "string" }
     },
     "required": ["mode"]
@@ -41,6 +43,11 @@ public static class StairCoreAnnotate
     class Log { public int ViewId; public List<int> Created = new List<int>(); public List<PathChange> Paths = new List<PathChange>(); }
 
     static double Ov(double a0, double a1, double b0, double b1) { return Math.Min(a1, b1) - Math.Max(a0, b0); }
+    static StairsNumberSystemReferenceOption Mirror(StairsNumberSystemReferenceOption o)
+    {
+        return o == StairsNumberSystemReferenceOption.Left ? StairsNumberSystemReferenceOption.Right : o == StairsNumberSystemReferenceOption.Right ? StairsNumberSystemReferenceOption.Left
+            : o == StairsNumberSystemReferenceOption.LeftQuarter ? StairsNumberSystemReferenceOption.RightQuarter : o == StairsNumberSystemReferenceOption.RightQuarter ? StairsNumberSystemReferenceOption.LeftQuarter : o;
+    }
     static ElementId MostUsed(IEnumerable<Element> els) { var g = els.GroupBy(e => e.GetTypeId().IntegerValue).OrderByDescending(x => x.Count()).FirstOrDefault(); return g == null ? null : new ElementId(g.Key); }
 
     public static object Run(UIApplication app, JObject args)
@@ -70,7 +77,7 @@ public static class StairCoreAnnotate
         if (v == null) return new { Error = "viewId must be a plan view" };
         O = v.Origin; Rg = v.RightDirection; Up = v.UpDirection;
         var parts = (args["parts"] as JArray)?.Select(x => (string)x).ToList() ?? new List<string> { "path", "numbers", "runTags" };
-        var errors = new List<string>(); var done1 = new List<object>(); var log = new Log { ViewId = v.Id.IntegerValue };
+        var errors = new List<string>(); var notes = new List<string>(); var done1 = new List<object>(); var log = new Log { ViewId = v.Id.IntegerValue };
 
         // ---- cut plane, runs seen (same classification as stair_core_audit)
         double lvZ = v.GenLevel != null ? v.GenLevel.ProjectElevation : 0, cut = double.NaN, bottom = double.NegativeInfinity;
@@ -141,6 +148,8 @@ public static class StairCoreAnnotate
             if (tagType == null) errors.Add("runTags: " + (want != null ? "no stair run tag type named '" + want + "'" : "no stair run tag is used in the project") + ": ask the user which type");
         }
         string side = ((string)args["numberSide"] ?? "left").ToLower();
+        string place = ((string)args["runTagPlace"] ?? "outside").ToLower();
+        double headMm = args.Value<double?>("runTagOffsetMm") ?? 5;
         var opt = side == "right" ? StairsNumberSystemReferenceOption.Right : side == "center" ? StairsNumberSystemReferenceOption.Center
             : side == "leftquarter" ? StairsNumberSystemReferenceOption.LeftQuarter : side == "rightquarter" ? StairsNumberSystemReferenceOption.RightQuarter : StairsNumberSystemReferenceOption.Left;
 
@@ -192,9 +201,11 @@ public static class StairCoreAnnotate
                 {
                     try
                     {
-                        var ns = NumberSystem.Create(doc, v.Id, new LinkElementId(r.R.Id), opt, new LinkElementId(numType));
+                        var o = opt;
+                        if (r.State == "beyond cut" && cutRuns.Any(x => Ov(r.X0, r.X1, x.X0, x.X1) > 0 && Ov(r.Y0, r.Y1, x.Y0, x.Y1) > 0)) o = Mirror(opt); // V1 and V3 share the lane
+                        var ns = NumberSystem.Create(doc, v.Id, new LinkElementId(r.R.Id), o, new LinkElementId(numType));
                         log.Created.Add(ns.Id.IntegerValue);
-                        done1.Add(new { Part = "numbers", Run = r.Label, RunId = r.R.Id.IntegerValue, Created = ns.Id.IntegerValue, Treads = r.R.ActualTreadsNumber, Side = opt.ToString() });
+                        done1.Add(new { Part = "numbers", Run = r.Label, RunId = r.R.Id.IntegerValue, Created = ns.Id.IntegerValue, Risers = r.R.ActualRisersNumber, Treads = r.R.ActualTreadsNumber, Side = o.ToString() });
                     }
                     catch (Exception e) { errors.Add("numbers on run " + r.Label + " " + r.R.Id.IntegerValue + ": " + e.Message); }
                 }
@@ -205,6 +216,9 @@ public static class StairCoreAnnotate
                 var tagged = new HashSet<int>();
                 foreach (var tg in new FilteredElementCollector(doc, v.Id).OfClass(typeof(IndependentTag)).Cast<IndependentTag>())
                     try { foreach (var id in tg.GetTaggedLocalElementIds()) tagged.Add(id.IntegerValue); } catch { }
+                var hostWalls = new FilteredElementCollector(doc, v.Id).OfClass(typeof(Wall)).Cast<Wall>().ToList();
+                var coreMid = vis.Select(r => (r.P0 + r.P1) / 2).Aggregate(XYZ.Zero, (acc, p) => acc + p) / vis.Count;
+                double paper = v.Scale / MM; // 1 paper mm in model feet
                 foreach (var r in vis.Where(r => !tagged.Contains(r.R.Id.IntegerValue)))
                 {
                     var d = r.P1 - r.P0; d = new XYZ(d.X, d.Y, 0); double len = d.GetLength(); if (len < 1e-6) continue; var u = d / len;
@@ -220,14 +234,53 @@ public static class StairCoreAnnotate
                             f0 = Math.Max(0, Math.Min(0.8, (new XYZ(pc.X, pc.Y, r.P0.Z) - r.P0).DotProduct(u) / len));
                         }
                     }
-                    double w = r.R.ActualRunWidth, sgn = opt == StairsNumberSystemReferenceOption.Left || opt == StairsNumberSystemReferenceOption.LeftQuarter ? -1 : 1;
+                    double w = r.R.ActualRunWidth;
                     var left = XYZ.BasisZ.CrossProduct(u); // left of walking up
-                    var pt = r.P0 + u * (len * (f0 + f1) / 2) + left * (sgn * w / 4);
+                    var mid = r.P0 + u * (len * (f0 + f1) / 2);
+                    // outward = away from the core centre (single lane: left)
+                    double so = (new XYZ(mid.X - coreMid.X, mid.Y - coreMid.Y, 0)).DotProduct(left);
+                    var n = Math.Abs(so) < 0.1 ? left : left * Math.Sign(so);
+                    XYZ head, end = null; bool outside = place != "inside";
+                    if (outside)
+                    {   // outer face of the wall stack beside the lane (plan bounding boxes of host walls parallel to the run)
+                        double half = w / 2, outer = double.NaN;
+                        var spans = new List<double[]>();
+                        foreach (var wl in hostWalls)
+                        {
+                            var ln = (wl.Location as LocationCurve)?.Curve as Line; if (ln == null || Math.Abs(ln.Direction.DotProduct(u)) < 0.999) continue;
+                            var bb = wl.get_BoundingBox(null); if (bb == null) continue;
+                            var cs = new[] { bb.Min, bb.Max, new XYZ(bb.Min.X, bb.Max.Y, 0), new XYZ(bb.Max.X, bb.Min.Y, 0) };
+                            double a0 = cs.Min(p => (new XYZ(p.X, p.Y, 0) - new XYZ(r.P0.X, r.P0.Y, 0)).DotProduct(u)), a1 = cs.Max(p => (new XYZ(p.X, p.Y, 0) - new XYZ(r.P0.X, r.P0.Y, 0)).DotProduct(u));
+                            if (Ov(a0, a1, 0, len) <= 0) continue;
+                            double n0 = cs.Min(p => (new XYZ(p.X - mid.X, p.Y - mid.Y, 0)).DotProduct(n)), n1 = cs.Max(p => (new XYZ(p.X - mid.X, p.Y - mid.Y, 0)).DotProduct(n));
+                            if (n0 >= half - 50 / MM && n0 <= half + 1000 / MM) spans.Add(new[] { n0, n1 });
+                        }
+                        if (spans.Count > 0)
+                        {
+                            double near = spans.Min(x => x[0]); outer = spans.Where(x => Math.Abs(x[0] - near) < 5 / MM).Max(x => x[1]);
+                            for (bool grew = true; grew;) { grew = false; foreach (var x in spans) if (Math.Abs(x[0] - outer) < 5 / MM && x[1] > outer) { outer = x[1]; grew = true; } }
+                        }
+                        else { outer = half + 300 / MM; notes.Add("run " + r.Label + ": no host wall beside it, tag placed 300 mm outside the run"); }
+                        head = mid + n * (outer + headMm * paper);
+                        end = mid + n * (w / 4);
+                    }
+                    else
+                    {
+                        double sgn = opt == StairsNumberSystemReferenceOption.Left || opt == StairsNumberSystemReferenceOption.LeftQuarter ? -1 : 1;
+                        head = mid + left * (sgn * w / 4);
+                    }
+                    bool vertical = Math.Abs(u.DotProduct(Up)) > Math.Abs(u.DotProduct(Rg));
                     try
                     {
-                        var tg = IndependentTag.Create(doc, tagType, v.Id, new Reference(r.R), false, TagOrientation.Horizontal, pt);
+                        var tg = IndependentTag.Create(doc, tagType, v.Id, new Reference(r.R), outside, vertical ? TagOrientation.Vertical : TagOrientation.Horizontal, head);
+                        if (outside)
+                        {
+                            tg.LeaderEndCondition = LeaderEndCondition.Free;
+                            tg.SetLeaderEnd(new Reference(r.R), end);
+                            tg.TagHeadPosition = head;
+                        }
                         log.Created.Add(tg.Id.IntegerValue);
-                        done1.Add(new { Part = "runTag", Run = r.Label, RunId = r.R.Id.IntegerValue, Created = tg.Id.IntegerValue, Text = tg.TagText, AtMm = Math.Round(VX(pt)) + "," + Math.Round(VY(pt)) });
+                        done1.Add(new { Part = "runTag", Run = r.Label, RunId = r.R.Id.IntegerValue, Created = tg.Id.IntegerValue, Text = tg.TagText, Place = outside ? "outside the wall, leader into the run" : "inside the run", HeadMm = Math.Round(VX(head)) + "," + Math.Round(VY(head)) });
                     }
                     catch (Exception e) { errors.Add("tag on run " + r.Label + " " + r.R.Id.IntegerValue + ": " + e.Message); }
                 }
@@ -239,7 +292,7 @@ public static class StairCoreAnnotate
         {
             View = v.Name, Mode = mode,
             Runs = vis.Select(r => r.Label + " " + r.R.Id.IntegerValue + " (" + r.State + ", " + r.R.ActualTreadsNumber + "T)").ToList(),
-            Done = done1, Errors = errors
+            Done = done1, Notes = notes, Errors = errors
         };
     }
 }

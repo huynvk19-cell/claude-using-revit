@@ -71,7 +71,7 @@ metadata:
 
 | Lệnh | Việc |
 |---|---|
-| `stair_core_annotate` | Lõi thang bộ (1V): stair path Fixed Up Direction, tắt chữ UP/DOWN (SD); số bậc từng vế (C, `numberSide`); tag vế thang trong phần nhìn thấy, không leader (SB1). preview / apply / undo. |
+| `stair_core_annotate` | Lõi thang bộ (1V): stair path Fixed Up Direction, tắt chữ UP/DOWN (SD); số bậc từng vế, V1 phía đối diện V3 (C, `numberSide`); tag vế thang ngoài tường bên, leader vào phần nhìn thấy (SB1, `runTagPlace`). preview / apply / undo. |
 | `elevation_opening_tags` | Tag cửa trên mặt đứng/cắt (1V), `addLeader`, `fixExisting`; cửa cuốn lớn: tag nằm trong cửa (`rollupInside`, `rollupFamilies`). |
 | `tag_align` | Căn đầu tag theo tag mẫu. |
 | `room_tags_outside` / `room_tags_broken` | Room tag nằm ngoài phòng / room tag "?". |

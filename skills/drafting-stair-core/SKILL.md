@@ -1,11 +1,11 @@
 ---
 name: drafting-stair-core
-description: "Detail a stair core PLAN via Revit MCP, rules SA1–SD: clear-width dims with suffix CLEAR (runs between inner handrail edges, wall to wall, landings), run-length dims with the formula '280mm x 14T = 3920' plus the landing to the wall, wall/door/window chains to the grids in an outer layer; tags on the 3 seen runs (V1 half beyond the cut, V2 full, V3 half before the cut), railings, spot elevations (landing, floor outside the stair door), doors/windows, landing and wall finishes; tread counts per run from the model; stair path with an arrow only (no UP/DOWN). Use for lõi thang, thang bộ, mặt bằng thang, chi tiết thang, dim thang, thông thuỷ, CLEAR, chiếu nghỉ, vế thang, số bậc, đếm bậc, tag thang, tay vịn, lan can, stair path, mũi tên thang, stair core plan."
+description: "Detail a stair core PLAN via Revit MCP, rules SA1–SD: clear-width dims with suffix CLEAR (runs between inner handrail edges, wall to wall, landings), run-length dims with the formula '280mm x 14T = 3920 (EQUAL TREADS)' plus the landing to the wall, wall/door/window chains to the grids in an outer layer; run tags outside the side walls with leaders on the 3 seen runs (V1 half beyond the cut, V2 full, V3 half before the cut), railings (P01/P02), spot elevations (landings, floor outside the stair door), doors/windows, landing and wall finishes (F..); tread counts per run from the model, riser numbers continuous over the whole stair; stair path with an arrow only (no UP/DOWN). Use for lõi thang, thang bộ, mặt bằng thang, chi tiết thang, dim thang, thông thuỷ, CLEAR, chiếu nghỉ, vế thang, số bậc, đếm bậc, tag thang, tay vịn, lan can, stair path, mũi tên thang, stair core plan."
 ---
 
 # Stair core plan (SA1–SD)
 
-Standard: `~/.claude/drafting-domain/drafting-stair-core.md` (Vietnamese). Its rules decide every case. Read it first.
+Standard: `~/.claude/drafting-domain/drafting-stair-core.md` (Vietnamese). Its rules decide every case. Read it first. Its section "Mẫu tham chiếu" describes the user's sample sheet: match that layout.
 
 Load `drafting-session` first. From the project `drafting-profile.md` take:
 - the **check** dim type → new dims;
@@ -41,12 +41,13 @@ Stop and ask when:
 Existing dims that match but lack the text:
 
 ```
-dims_text {viewId, mode:"preview", items:[{dimId, valueMm:1200, suffix:" CLEAR"}, {dimId, valueMm:3920, prefix:"280mm x 14T = "}]}
+dims_text {viewId, mode:"preview", items:[{dimId, valueMm:1550, suffix:" CLEAR"}, {dimId, valueMm:3920, prefix:"280mm x 14T = ", below:"(EQUAL TREADS)"}]}
 dims_text {viewId, mode:"apply", items:[...], logPath}
 ```
 
 - Prefix/suffix only. The value stays live. Never "Replace with text".
 - Take the prefix from the audit's `Text`, the value from `Expected`.
+- One spelling for the whole project: `280mm x 14T = `. Rewrite variants such as `280x13T= `.
 
 ## 3. Path, tread numbers, run tags (deterministic)
 
@@ -56,13 +57,13 @@ stair_core_annotate {viewId, mode:"apply", logPath:"<review>/stair-annot-<viewId
 ```
 
 - `path` (SD): one Fixed Up Direction path per stairs, UP/DOWN text off. An existing path keeps its place; its type and text are fixed.
-- `numbers` (C): tread numbers on each seen run without them (`numberSide`, default `left`).
-- `runTags` (SB1): one tag inside the seen part of each untagged run, on the side away from the numbers, no leader.
+- `numbers` (C): tread numbers on each seen run without them (`numberSide`, default `left`). V1 gets the mirrored side, so the V1 and V3 columns never overlap in their shared lane.
+- `runTags` (SB1): one tag per untagged run. By default (`runTagPlace:"outside"`) the head sits just outside the side wall of the run's lane (`runTagOffsetMm`, default 5 paper mm), with its text along the run and a leader into the seen part. The SA2 chain then goes outside these tags.
 - Use `parts:[...]` to run only some of them.
 
 After apply, export the view image and check:
 - the arrows point **up** (from the lower run to the higher);
-- each run's numbers run 1…n and the last number equals the `nT` of its formula; a half run continues its own numbering (e.g. V1 shows 8…14). Wrong start → set the tread number's start value by hand or ask;
+- the numbers continue over the whole stair from the lowest riser of the building (sample: 1…15, 16…30, 31…45), with every second number shown. Each run starts at the previous run's last number + 1. A wrong start → fix the start number by hand, or ask;
 - no number, tag or arrow sits on another.
 
 Undo: `stair_core_annotate {mode:"undo", logPath}`.
@@ -79,14 +80,16 @@ Write a one-off dynamic command per view: preview → apply with `logPath` (crea
 | Door / window edges | `fi.GetReferences(FamilyInstanceReferenceType.Left / Right)` |
 | Grid | `new Reference(grid)` (host grids only) |
 
-Placement (paper mm × view scale, from the **outer** wall face, outward):
+Placement (as the sample sheet; spacing between dim lines 7 paper mm):
 
-| Line | Distance | Content |
-|---|---|---|
-| Layer 1, line 1 | 7 | SA1 chain (outside an end wall, default: the landing end) or SA2 chain (outside each side wall, one lane per side) |
-| Layer 1, line 2 | 14 | Overall wall-to-wall, suffix ` CLEAR` |
-| Layer 2 | 21 | SA4: grid → wall faces → door/window edges → grid |
-| Inside | on the landing | SA3 landing clear, suffix ` CLEAR` |
+| Where | Content |
+|---|---|
+| Inside the core, across, next to both ends of the runs | SA1: `70 \| 1550 CLEAR \| 80 \| 300 \| 80 \| 1550 CLEAR \| 70`, plus the wall-to-wall overall with ` CLEAR` |
+| Inside the core, along the well axis | SA3: `1965 CLEAR` on the mid landing and on the floor landing |
+| Outside each side wall | the SB1 run tags, then the SA2 chain `landing \| formula \| floor landing \| (grid) \| …`, then the wall-to-wall overall with ` CLEAR` |
+| Outside the end walls | SA4: grid → wall faces → door/window edges → grid; overall |
+
+A grid crossing the core goes into the SA2 chain. The audit accepts the split (`OK (split)`).
 
 Then set the text with `dims_text` (CLEAR suffixes, formula prefixes). Re-run the audit: every `Expected` row must read `OK`.
 
@@ -94,15 +97,16 @@ Then set the text with `dims_text` (CLEAR suffixes, formula prefixes). Re-run th
 
 - Type: `ProjectTypes` from the audit (most used in the project). Never create a type.
 - SB2 railing: `IndependentTag.Create(..., addLeader:true, ...)`, head off the run lines (stair well, landing or beside the railing), short leader.
-- SB3 spot elevation: `doc.Create.NewSpotElevation(view, topFaceRef, …)` on the landing's top face and on the floor just outside the stair door (link floor → link reference). Not on the door swing or the arrow.
+- SB2: `P01` on each wall handrail, `P02` on the centre railing (the project's codes). Keep the heads off the tread lines, even where the sample has them on the lines.
+- SB3 spot elevation: `doc.Create.NewSpotElevation(view, topFaceRef, …)` on the mid landing, on the floor landing inside the core, and on the floor just outside the stair door (link floor → link reference). Not on the door swing or the arrow.
 - SB4 doors/windows: exactly one tag each, close, off the dims.
-- SB5 landing finish, SB6 wall finish: the tag kind the project already uses (material tag, keynote, finish tag); SB6 leader to the nearest wall face, heads may gather in a free inside corner of the core.
+- SB5 floor finish (`F13` in the sample) on the mid landing and the floor landing, next to their spot elevation. SB6 wall finish: the tag kind the project already uses. The SB6 leader goes to the nearest wall face; the heads may gather in a free inside corner of the core.
 
 ## 6. Verify and report
 
 1. `stair_core_audit` again → no `Issues` left except those the user accepted.
 2. `annotation_overlaps {viewId}` → fix overlaps.
-3. Export the sheet image and look (`drafting-visual-check`): 3 runs, 3 run tags, numbers per run, arrow up, no UP/DOWN, dim layers aligned and in order.
+3. Export the sheet image and look (`drafting-visual-check`): 3 runs, 3 run tags outside the walls with leaders, continuous numbers, a V-shaped arrow at the top end of each run, no UP/DOWN, dim lines aligned and in order. Compare with the sample sheet in the standard.
 4. Report per `drafting-session`: exact view names; table per view of what was added / fixed; **Cần xem** (V1 ≠ V3, measured-to-run-edge widths, tags moved by hand); **Việc tồn** (model mismatches, link stairs/walls, dims still in the check type).
 
 ## Never
@@ -112,5 +116,6 @@ Then set the text with `dims_text` (CLEAR suffixes, formula prefixes). Re-run th
 - Use a tag, spot or path type the project does not already have without asking.
 - Show UP/DOWN text on a stair path.
 - Put a run tag under a dim, or a railing tag head on the run lines.
+- Mix formula spellings (`280mm x 14T = ` only).
 - Dim the same length on both sides of the core.
 - Edit stairs, railings, walls or floors (R1).
