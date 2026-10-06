@@ -1,6 +1,6 @@
 /* mcp-tool
 {
-  "description": "Stair core PLAN, ONE view (drafting-stair-core.md): places the deterministic parts. parts (default all three): 'path' (SD) - one stair path per stairs that has a seen run, of a type in family Fixed Up Direction (pathTypeName, else the project's most-used Fixed Up type, else any existing one; never creates a type), Show Up/Down Text off; an existing path stays where it is: its type is changed to Fixed Up and its text turned off. 'numbers' (C) - tread numbers on every seen run that has none; V1 sharing a lane with V3 gets the mirrored side so the two never overlap (numberSide relative to walking up: left | right | center | leftQuarter | rightQuarter, default left; numberTypeName, else the project's most-used type). 'runTags' (SB1) - a Stair Run tag for every untagged seen run, aimed at its SEEN part (V1 beyond the cut line, V2 middle, V3 before the cut line): default runTagPlace outside = head just outside the side wall of the run's lane (text along the run), free-end leader into the run; inside = head in the seen part, no leader (runTagTypeName, else the project's most-used stair run tag type; none used in the project -> error, ask the user). Runs are classified like stair_core_audit. mode preview (rolled back) | apply (logPath) | undo (logPath: deletes what was created, restores path types / text).",
+  "description": "Stair core PLAN, ONE view (drafting-stair-plan.md): places the deterministic parts. parts (default all three): 'path' (SD) - one stair path per stairs that has a seen run, of a type in family Fixed Up Direction (pathTypeName, else the project's most-used Fixed Up type, else any existing one; never creates a type), Show Up/Down Text off; an existing path stays where it is: its type is changed to Fixed Up and its text turned off. 'numbers' (C) - tread numbers on every seen run that has none; V1 sharing a lane with V3 gets the mirrored side so the two never overlap (numberSide relative to walking up: left | right | center | leftQuarter | rightQuarter, default left; numberTypeName, else the project's most-used type). 'runTags' (SB1) - a Stair Run tag for every untagged seen run, aimed at its SEEN part (V1 beyond the cut line, V2 middle, V3 before the cut line): default runTagPlace outside = head just outside the side wall of the run's lane (text along the run), free-end leader into the run; inside = head in the seen part, no leader (runTagTypeName, else the project's most-used stair run tag type; none used in the project -> error, ask the user). Runs are classified like stair_plan_audit. mode preview (rolled back) | apply (logPath) | undo (logPath: deletes what was created, restores path types / text).",
   "inputSchema": {
     "type": "object",
     "properties": {
@@ -31,7 +31,7 @@ using Autodesk.Revit.UI;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-public static class StairCoreAnnotate
+public static class StairPlanAnnotate
 {
     const double MM = 304.8;
     static XYZ O, Rg, Up;
@@ -58,7 +58,7 @@ public static class StairCoreAnnotate
         if (mode == "undo")
         {
             var lg = JsonConvert.DeserializeObject<Log>(File.ReadAllText(logPath)); var done = new List<string>();
-            using (var t = new Transaction(doc, "Stair core annotate undo"))
+            using (var t = new Transaction(doc, "Stair plan annotate undo"))
             {
                 t.Start();
                 foreach (var id in lg.Created) { var e = doc.GetElement(new ElementId(id)); if (e != null) { doc.Delete(e.Id); done.Add("deleted " + id); } }
@@ -79,7 +79,7 @@ public static class StairCoreAnnotate
         var parts = (args["parts"] as JArray)?.Select(x => (string)x).ToList() ?? new List<string> { "path", "numbers", "runTags" };
         var errors = new List<string>(); var notes = new List<string>(); var done1 = new List<object>(); var log = new Log { ViewId = v.Id.IntegerValue };
 
-        // ---- cut plane, runs seen (same classification as stair_core_audit)
+        // ---- cut plane, runs seen (same classification as stair_plan_audit)
         double lvZ = v.GenLevel != null ? v.GenLevel.ProjectElevation : 0, cut = double.NaN, bottom = double.NegativeInfinity;
         try
         {
@@ -153,7 +153,7 @@ public static class StairCoreAnnotate
         var opt = side == "right" ? StairsNumberSystemReferenceOption.Right : side == "center" ? StairsNumberSystemReferenceOption.Center
             : side == "leftquarter" ? StairsNumberSystemReferenceOption.LeftQuarter : side == "rightquarter" ? StairsNumberSystemReferenceOption.RightQuarter : StairsNumberSystemReferenceOption.Left;
 
-        using (var t = new Transaction(doc, "Stair core annotate"))
+        using (var t = new Transaction(doc, "Stair plan annotate"))
         {
             t.Start();
             // SD: stair paths

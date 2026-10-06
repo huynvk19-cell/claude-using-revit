@@ -1,6 +1,6 @@
 /* mcp-tool
 {
-  "description": "Read-only: stair core PLAN view, rules SA1-SD (drafting-stair-core.md). Finds the host stairs (by component) seen in the view and classifies every run against the view cut plane, going up: V1 = below the cut and under a cut run (half, beyond the cut line), V2 = fully seen, V3 = cut (half, before the cut line). Per run, from the MODEL: risers, treads, tread depth, length = treads x depth checked against the footprint, the formula prefix ('280mm x 14T = '), the run's clear width between the inner handrail edges (railing geometry) or the finish wall face. Finds the walls around the core (finish face = face nearest the stair, outer face of the wall stack) on the 4 sides, wall-to-wall clear both ways, landing clear widths and depths, doors/windows in the core walls, the visible grids. Lists the expected dims per rule with the existing dim segment that matches (value + position) and whether it carries the CLEAR suffix / formula prefix; tags on runs, railings, doors/windows, landings, core walls; spot elevations on landings and outside the core doors; stair paths (type family, UP/DOWN text); tread numbers per run; and the project's most-used tag / spot / path types. Returns an Issues list per rule.",
+  "description": "Read-only: stair core PLAN view, rules SA1-SD (drafting-stair-plan.md). Finds the host stairs (by component) seen in the view and classifies every run against the view cut plane, going up: V1 = below the cut and under a cut run (half, beyond the cut line), V2 = fully seen, V3 = cut (half, before the cut line). Per run, from the MODEL: risers, treads, tread depth, length = treads x depth checked against the footprint, the formula prefix ('280mm x 14T = '), the run's clear width between the inner handrail edges (railing geometry) or the finish wall face. Finds the walls around the core (finish face = face nearest the stair, outer face of the wall stack) on the 4 sides, wall-to-wall clear both ways, landing clear widths and depths, doors/windows in the core walls, the visible grids. Lists the expected dims per rule with the existing dim segment that matches (value + position) and whether it carries the CLEAR suffix / formula prefix; tags on runs, railings, doors/windows, landings, core walls; spot elevations on landings and outside the core doors; stair paths (type family, UP/DOWN text); tread numbers per run; and the project's most-used tag / spot / path types. Returns an Issues list per rule.",
   "inputSchema": {
     "type": "object",
     "properties": {
@@ -25,7 +25,7 @@ using Autodesk.Revit.UI;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-public static class StairCoreAudit
+public static class StairPlanAudit
 {
     const double MM = 304.8;
     static XYZ O, Rg, Up;

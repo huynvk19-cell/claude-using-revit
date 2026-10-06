@@ -1,11 +1,13 @@
 ---
-name: drafting-stair-core
-description: "Detail a stair core PLAN via Revit MCP, rules SA1–SD: clear-width dims with suffix CLEAR (runs between inner handrail edges, wall to wall, landings), run-length dims with the formula '280mm x 14T = 3920 (EQUAL TREADS)' plus the landing to the wall, wall/door/window chains to the grids in an outer layer; run tags outside the side walls with leaders on the 3 seen runs (V1 half beyond the cut, V2 full, V3 half before the cut), railings (P01/P02), spot elevations (landings, floor outside the stair door), doors/windows, landing and wall finishes (F..); tread counts per run from the model, riser numbers continuous over the whole stair; stair path with an arrow only (no UP/DOWN). Use for lõi thang, thang bộ, mặt bằng thang, chi tiết thang, dim thang, thông thuỷ, CLEAR, chiếu nghỉ, vế thang, số bậc, đếm bậc, tag thang, tay vịn, lan can, stair path, mũi tên thang, stair core plan."
+name: drafting-stair-plan
+description: "Detail a stair core PLAN view (floor plan only, NOT a stair section) via Revit MCP, rules SA1–SD: clear-width dims with suffix CLEAR (runs between inner handrail edges, wall to wall, landings), run-length dims with the formula '280mm x 14T = 3920 (EQUAL TREADS)' plus the landing to the wall, wall/door/window chains to the grids in an outer layer; run tags outside the side walls with leaders on the 3 seen runs (V1 half beyond the cut, V2 full, V3 half before the cut), railings (P01/P02), spot elevations (landings, floor outside the stair door), doors/windows, landing and wall finishes (F..); tread counts per run from the model, riser numbers continuous over the whole stair; stair path with an arrow only (no UP/DOWN). Use for mặt bằng thang, mặt bằng lõi thang, mặt bằng thang bộ, dim thang trên mặt bằng, thông thuỷ vế thang, CLEAR, chiếu nghỉ trên mặt bằng, vế thang, đếm bậc, đánh số bậc, tag vế thang, tay vịn, stair path, mũi tên thang, stair core plan, staircase plan. Not for mặt cắt thang / stair sections."
 ---
 
 # Stair core plan (SA1–SD)
 
-Standard: `~/.claude/drafting-domain/drafting-stair-core.md` (Vietnamese). Its rules decide every case. Read it first. Its section "Mẫu tham chiếu" describes the user's sample sheet: match that layout.
+**Plan views only.** Stair sections are a different job with their own skill and standard (`drafting-stair-section`, not written yet). If the view is a section or elevation, stop and say so.
+
+Standard: `~/.claude/drafting-domain/drafting-stair-plan.md` (Vietnamese). Its rules decide every case. Read it first. Its section "Mẫu tham chiếu" describes the user's sample sheet: match that layout.
 
 Load `drafting-session` first. From the project `drafting-profile.md` take:
 - the **check** dim type → new dims;
@@ -17,7 +19,7 @@ Plan views only. **One view per call.** Tools have no project defaults.
 ## 1. Audit (read-only)
 
 ```
-stair_core_audit {viewId, outPath:"<review>/stair-<viewId>.json"}
+stair_plan_audit {viewId, outPath:"<review>/stair-<viewId>.json"}
 ```
 
 Read, in this order:
@@ -52,8 +54,8 @@ dims_text {viewId, mode:"apply", items:[...], logPath}
 ## 3. Path, tread numbers, run tags (deterministic)
 
 ```
-stair_core_annotate {viewId, mode:"preview"}
-stair_core_annotate {viewId, mode:"apply", logPath:"<review>/stair-annot-<viewId>.json"}
+stair_plan_annotate {viewId, mode:"preview"}
+stair_plan_annotate {viewId, mode:"apply", logPath:"<review>/stair-annot-<viewId>.json"}
 ```
 
 - `path` (SD): one Fixed Up Direction path per stairs, UP/DOWN text off. An existing path keeps its place; its type and text are fixed.
@@ -66,7 +68,7 @@ After apply, export the view image and check:
 - the numbers continue over the whole stair from the lowest riser of the building (sample: 1…15, 16…30, 31…45), with every second number shown. Each run starts at the previous run's last number + 1. A wrong start → fix the start number by hand, or ask;
 - no number, tag or arrow sits on another.
 
-Undo: `stair_core_annotate {mode:"undo", logPath}`.
+Undo: `stair_plan_annotate {mode:"undo", logPath}`.
 
 ## 4. Dims SA1–SA4 (no batch tool yet)
 
@@ -104,7 +106,7 @@ Then set the text with `dims_text` (CLEAR suffixes, formula prefixes). Re-run th
 
 ## 6. Verify and report
 
-1. `stair_core_audit` again → no `Issues` left except those the user accepted.
+1. `stair_plan_audit` again → no `Issues` left except those the user accepted.
 2. `annotation_overlaps {viewId}` → fix overlaps.
 3. Export the sheet image and look (`drafting-visual-check`): 3 runs, 3 run tags outside the walls with leaders, continuous numbers, a V-shaped arrow at the top end of each run, no UP/DOWN, dim lines aligned and in order. Compare with the sample sheet in the standard.
 4. Report per `drafting-session`: exact view names; table per view of what was added / fixed; **Cần xem** (V1 ≠ V3, measured-to-run-edge widths, tags moved by hand); **Việc tồn** (model mismatches, link stairs/walls, dims still in the check type).

@@ -1,6 +1,6 @@
 ---
-name: drafting-stair-core
-description: "Chuẩn triển khai chi tiết mặt bằng lõi thang bộ: dim thông thuỷ vế thang (CLEAR), dim chiều dài vế thang kèm công thức (280mm x 14T = 3920), dim chiếu nghỉ, dim tường/cửa tới trục; tag vế thang, tay vịn, cao độ, cửa, hoàn thiện sàn và tường; đếm/đánh số bậc từng vế; stair path chỉ có mũi tên. Stair core plan detailing standard."
+name: drafting-stair-plan
+description: "Chuẩn triển khai chi tiết MẶT BẰNG lõi thang bộ (không dùng cho mặt cắt thang): dim thông thuỷ vế thang (CLEAR), dim chiều dài vế thang kèm công thức (280mm x 14T = 3920), dim chiếu nghỉ, dim tường/cửa tới trục; tag vế thang, tay vịn, cao độ, cửa, hoàn thiện sàn và tường; đếm/đánh số bậc từng vế; stair path chỉ có mũi tên. Stair core plan detailing standard."
 metadata:
   updated: "2026-10-06"
   related: ["drafting-grid-dims", "drafting-opening-tags", "drafting-annotation", "drafting-tools", "drafting-api-pitfalls", "drafting-work-rules"]
@@ -9,9 +9,11 @@ metadata:
 # Mặt bằng lõi thang bộ (Stair core plan)
 
 Áp dụng cho **mặt bằng chi tiết lõi thang bộ** (view tên thường có STAIRCASE / STAIR CORE, tỉ lệ 1:50 hoặc 1:25).
-Không áp dụng cho key plan thang thoát hiểm (sơ đồ chỉ dẫn), mặt cắt thang.
+Không áp dụng cho:
+- key plan thang thoát hiểm (sơ đồ chỉ dẫn);
+- **mặt cắt thang**: chuẩn riêng `drafting-stair-section` (skill + domain riêng, chưa viết, chờ chuẩn từ user). Mã quy tắc của mặt cắt sẽ khác, không dùng lại SA–SD.
 
-Tool: `stair_core_audit` (read-only), `stair_core_annotate` (path, số bậc, tag vế), `dims_text` (CLEAR, công thức). Skill: `drafting-stair-core`.
+Tool: `stair_plan_audit` (read-only), `stair_plan_annotate` (path, số bậc, tag vế), `dims_text` (CLEAR, công thức). Skill: `drafting-stair-plan`.
 
 Quy tắc từ user (2026-10-06): **A** dim, **B** tag, **C** đếm bậc, **D** stair path. Mã quy tắc ghi kèm chữ **S** (SA1, SB3…) để không trùng với Q, T, G của các chuẩn khác.
 
@@ -45,7 +47,7 @@ Mặt bằng tầng điển hình thường thấy **3 vế thang**. Đi theo ch
 
 - **V1 và V3 nằm chung một dải (lane)**, ngăn bởi nét cắt. Hai vế này thuộc **hai thang khác nhau** và có thể khác số bậc.
 - Tầng thấp nhất thường chỉ có V3. Tầng trên cùng thường chỉ có V1 + V2 (V1 thấy đầy đủ vì không có vế nào phía trên).
-- **Không đếm vế bằng mắt.** Xác định V1/V2/V3 bằng `stair_core_audit`: so cao độ vế với mặt cắt của view và độ chồng lên nhau của footprint.
+- **Không đếm vế bằng mắt.** Xác định V1/V2/V3 bằng `stair_plan_audit`: so cao độ vế với mặt cắt của view và độ chồng lên nhau của footprint.
 
 ### Hai phương
 
@@ -147,7 +149,7 @@ Mặt bằng tầng điển hình thường thấy **3 vế thang**. Đi theo ch
 
 ## B. TAG
 
-**Type tag lấy chung của dự án**: loại tag của category đó được dùng **nhiều nhất trong dự án** (`stair_core_audit` liệt kê). Không tạo type mới. Category không có tag nào trong dự án → hỏi user.
+**Type tag lấy chung của dự án**: loại tag của category đó được dùng **nhiều nhất trong dự án** (`stair_plan_audit` liệt kê). Không tạo type mới. Category không có tag nào trong dự án → hỏi user.
 
 | # | Đối tượng | Số lượng | Vị trí (theo mẫu) |
 |---|---|---|---|
@@ -204,11 +206,11 @@ Chỗ mẫu khác với quy tắc viết → **làm theo quy tắc**:
 
 ## Kiểm tra sau khi làm
 
-- `stair_core_audit` lại: mọi mục SA1–SD đều `OK` (hoặc `OK (split)` khi đoạn được chia nhỏ trên cùng một đường dim, vd. có trục chen giữa).
+- `stair_plan_audit` lại: mọi mục SA1–SD đều `OK` (hoặc `OK (split)` khi đoạn được chia nhỏ trên cùng một đường dim, vd. có trục chen giữa).
 - `annotation_overlaps` cho view.
 - Xuất ảnh sheet, nhìn: 3 vế, 3 tag vế ngoài tường có leader, số bậc liên tục đúng, mũi tên đúng chiều, không chữ UP/DOWN, các lớp dim thẳng hàng và đúng thứ tự.
 
 ## Bài học (ghi thêm một dòng, kèm ngày)
 
-- 2026-10-06: `stair_core_audit`, `stair_core_annotate`, `dims_text` đã biên dịch với RevitAPI 2023 nhưng **chưa chạy thử trên model thật**. Lần đầu: chạy trên một view, đối chiếu kết quả với bản vẽ, ghi bài học.
+- 2026-10-06: `stair_plan_audit`, `stair_plan_annotate`, `dims_text` đã biên dịch với RevitAPI 2023 nhưng **chưa chạy thử trên model thật**. Lần đầu: chạy trên một view, đối chiếu kết quả với bản vẽ, ghi bài học.
 - 2026-10-06: chuẩn A–D lấy từ user. Bố trí dim/tag, cách viết công thức, đánh số bậc liên tục và mũi tên chữ V lấy theo ảnh mẫu của user (sheet lõi thang, 1:50).
