@@ -26,7 +26,7 @@ Các quy tắc dưới đây rút ra từ những lần user tự chỉnh lại 
 - Tag nằm **ngay phía trên** cửa của nó.
 - Căn giữa theo cửa, sát mép cửa (cách khoảng 1 mm giấy).
 - Leader đứng ngắn, đi vào trong cửa, đầu leader cách mép cửa khoảng **1.5 mm giấy**.
-- Đầu tag **không bao giờ** nằm đè lên chính cửa của nó.
+- Đầu tag **không** nằm đè lên chính cửa của nó. Ngoại lệ duy nhất là cửa cuốn lớn, xem T5.
 
 ### T3 — Cửa sổ
 
@@ -45,6 +45,23 @@ Vật vướng có thể là dầm, poche sàn hoặc dim. Xử lý theo thứ t
 
 ### T5 — Cửa cuốn (DOR - ROLL UP)
 
+**Tag được đặt nằm trong cửa** (user, 2026-10-06), khi tag quá nhỏ so với cửa:
+
+| Điều kiện | Ngưỡng |
+|---|---|
+| Chiều rộng đầu tag | ≤ **1/3** chiều rộng nhìn thấy của cửa |
+| Chiều cao đầu tag | ≤ **1/4** chiều cao nhìn thấy của cửa |
+
+Ví dụ: cửa 4000–7000 mm ở tỉ lệ 1:200 là 20–35 mm giấy, tag cỡ 6–8 mm.
+
+Cách đặt khi tag nằm trong cửa:
+- Đặt **trong lòng cửa**, căn giữa theo chiều ngang, nằm khoảng giữa chiều cao cửa.
+- **Không** dùng leader.
+- Vẫn phải tránh: dim đứng/ngang của chính cửa, chữ dim, tag khác, room tag, nét chéo ký hiệu đóng/mở nếu che số.
+- Các cửa cuốn cùng hàng thì tag cùng cao độ (T7).
+- Tag đã nằm trong cửa và thoả điều kiện trên → **giữ nguyên**, không coi là "tag đè lên cửa".
+
+Cửa cuốn nhỏ (không thoả điều kiện) → đặt như cửa đi (T2, T4):
 - Đầu leader nằm khoảng **2.5 mm giấy** bên trong **đỉnh nhìn thấy** của cửa.
 - Hộp cuốn nằm sau tường **không** tính là đỉnh cửa.
 

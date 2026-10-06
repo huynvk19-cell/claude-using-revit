@@ -1,6 +1,6 @@
 ---
 name: drafting-opening-tags
-description: "Tag every visible window and door (incl. roll-up doors) on elevation and section views: exactly one tag per visible opening, above + centred + touching with a short leader, lifted or beside when blocked, never over dims/tags/hard elements, same height per row; fix duplicates/wrong tags. Use for tag cửa, tag cửa sổ, tag cửa đi, tag cửa cuốn, thiếu tag, tag trùng, tag đè dim, căn tag, door tags, window tags."
+description: "Tag every visible window and door (incl. roll-up doors) on elevation and section views: exactly one tag per visible opening, above + centred + touching with a short leader (large roll-up doors: tag inside the door), lifted or beside when blocked, never over dims/tags/hard elements, same height per row; fix duplicates/wrong tags. Use for tag cửa, tag cửa sổ, tag cửa đi, tag cửa cuốn, thiếu tag, tag trùng, tag đè dim, căn tag, door tags, window tags."
 ---
 
 # Opening tags (elevations / sections)
@@ -32,7 +32,11 @@ Standard: `~/.claude/drafting-domain/drafting-opening-tags.md`. Rules T1–T8 de
    - Delete the extra tag of a duplicated opening. Keep the one that is placed better.
    - Report orphaned and "?" tags; do not touch the model.
 5. **Rows:** `tag_align {viewId, mode:"apply", refTagText, tagTexts:[...], logPath}` brings the tags of one row to the same height above their openings, with leaders (T7).
-6. **Roll-up doors:** check the leader end sits about 2.5 mm inside the visible top, not on the coil box (T5).
+6. **Roll-up doors (T5):**
+   - **Large door:** tag width ≤ 1/3 and tag height ≤ 1/4 of the door's visible size. The tag may sit **inside** the door: centred, about mid-height, no leader, clear of the door's own dims, other tags and room tags.
+     - Keep tags already placed like that.
+     - `elevation_opening_tags` treats a tag on its own opening as wrong. So pass these doors in `excludeIds` when running `fixExisting`, and place or move their tags with `move_in_view` / `tag_align`.
+   - **Small door:** tag above, like a door. The leader end goes about 2.5 mm inside the visible top, not on the coil box.
 7. **Verify:**
    - Run `annotation_overlaps` (tags vs dims/tags).
    - Export the sheet image and look (`drafting-visual-check`).
@@ -46,7 +50,7 @@ Standard: `~/.claude/drafting-domain/drafting-opening-tags.md`. Rules T1–T8 de
 ## Never
 
 - Tag a hidden opening.
-- Put a tag head on its own opening.
+- Put a tag head on its own opening. The only exception is a large roll-up door (T5).
 - Put a window tag beside its window.
 - Batch several views in one call.
 - Run `repositionAll` over hand-adjusted views.
