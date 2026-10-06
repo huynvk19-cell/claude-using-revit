@@ -12,6 +12,8 @@ metadata:
 - [Revit MCP](https://github.com/shuotao/REVIT_MCP_study) có hỗ trợ dynamic commands (`dynamic-commands/<tên>.cs`).
 - Lệnh nào chưa có thì viết thêm. Lệnh viết bằng C# và được biên dịch ngay trong Revit, không cần khởi động lại.
 
+**Mã nguồn**: thư mục `revit-commands/` của repo (cài bằng `install.ps1 -CommandsDir`). Tool không có giá trị mặc định của dự án nào: tên dim type, family cửa cuốn… truyền vào lúc gọi, lấy từ `drafting-profile.md`.
+
 **Cách gọi**
 - Gọi trực tiếp tool `<tên>`, hoặc qua `run_dynamic_command {name, args}`.
 - Khi không chắc tham số: đọc header của file.
@@ -65,7 +67,7 @@ metadata:
 
 | Lệnh | Việc |
 |---|---|
-| `elevation_opening_tags` | Tag cửa trên mặt đứng/cắt (1V), `addLeader`. |
+| `elevation_opening_tags` | Tag cửa trên mặt đứng/cắt (1V), `addLeader`, `fixExisting`; cửa cuốn lớn: tag nằm trong cửa (`rollupInside`, `rollupFamilies`). |
 | `tag_align` | Căn đầu tag theo tag mẫu. |
 | `room_tags_outside` / `room_tags_broken` | Room tag nằm ngoài phòng / room tag "?". |
 | `viewport_titles_place` | Bật và căn title (`ignoreCrop`). |

@@ -7,13 +7,15 @@ description: "Dimension every visible window and door (incl. roll-up doors) on e
 
 Standard: `~/.claude/drafting-domain/drafting-opening-dims.md`. Rules Q1–Q5 decide every case. Read it first.
 
+Project values (check dim type, roll-up family name) come from the project `drafting-profile.md`. The tools have no project defaults: a missing type name returns an error.
+
 The user requires the work to go **opening by opening**. A row/batch tool that counts a dim as "existing" by position leaves openings without dims. So never trust a batch result: audit by reference.
 
 ## Steps — ONE view per call
 
 1. **Audit** (read-only, once per view, can take 1–2 min):
    ```
-   opening_dims_each {viewId, mode:"audit", cachePath:<review>/each-<view>-cache.json}
+   opening_dims_each {viewId, mode:"audit", dimTypeName:<profile check type>, cachePath:<review>/each-<view>-cache.json}
    ```
    The audit:
    - finds the openings that are really visible;
@@ -21,7 +23,7 @@ The user requires the work to go **opening by opening**. A row/batch tool that c
    - lists only the openings with gaps.
 2. **For each listed opening, one call:**
    ```
-   opening_dims_each {viewId, mode:"apply", openingId, cachePath, logPath}
+   opening_dims_each {viewId, mode:"apply", openingId, dimTypeName:<profile check type>, nominalFamilies:<profile roll-up family>, cachePath, logPath}
    ```
    It adds only what that opening is missing, on the nearest clear line beside it:
    - V: host level → bottom → top.
@@ -35,7 +37,7 @@ The user requires the work to go **opening by opening**. A row/batch tool that c
    - Bad placement (`Notes` with many clashes, "outside crop", no grid on one side) → delete that dim with `dims_edit` and report it for manual placement.
 4. **Tidy:**
    ```
-   dims_declutter {viewId, mode:"apply", cachePath, logPath}
+   dims_declutter {viewId, mode:"apply", typeName:<profile check type>, cachePath, logPath}
    ```
    - It moves check-type dims sideways in 1.2 mm steps, away from texts, tags, openings and cut slabs/beams.
    - Black dims move only by explicit `ids`, and only when they really overlap text.

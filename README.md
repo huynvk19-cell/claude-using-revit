@@ -11,7 +11,9 @@ Skills and domain standards that let Claude Code, via Revit MCP, do drawing prod
 | `skills/` | Quy trình từng bước, ngắn, mỗi skill một chủ đề | English |
 | `domain/` | Quy chuẩn bản vẽ: con số, vị trí, ngoại lệ, bẫy API | Tiếng Việt + thuật ngữ Revit |
 | `templates/drafting-profile.md` | Giá trị riêng của từng dự án (dim type, model cấm chạm, view loại trừ…) | Tiếng Việt |
+| `revit-commands/` | 45 lệnh động (dynamic commands) C# cho Revit MCP: dim, tag, title, viewport, crop, kiểm tra chồng lắp… Không chứa giá trị riêng dự án | C# |
 | `tools/crop.ps1` | Cắt vùng ảnh sheet để kiểm tra | PowerShell |
+| `tools/work-status/` | Cửa sổ "Đang xử lý" luôn nổi trên màn hình (tuỳ chọn) | PowerShell |
 
 ### Skills
 
@@ -42,19 +44,24 @@ Skills and domain standards that let Claude Code, via Revit MCP, do drawing prod
 ## Yêu cầu (Requirements)
 
 - Claude Code.
-- Revit có cài [Revit MCP](https://github.com/shuotao/REVIT_MCP_study), với dynamic commands. Tên lệnh trong `domain/drafting-tools.md` là các dynamic command. Lệnh nào chưa có thì phải viết thêm.
+- Revit có cài [Revit MCP](https://github.com/shuotao/REVIT_MCP_study) bản có dynamic commands (thư mục `dynamic-commands`: file `.cs` được biên dịch ngay trong Revit, không cần khởi động lại).
+- Các lệnh trong `revit-commands/` viết và chạy thử trên Revit 2023 (chưa thử trên bản khác).
 
 ## Cài đặt (Install)
 
 ```powershell
 git clone <repo-url>
 cd claude-using-revit
-powershell -ExecutionPolicy Bypass -File install.ps1
+powershell -ExecutionPolicy Bypass -File install.ps1 -CommandsDir "<đường dẫn>\REVIT_MCP_study\dynamic-commands" -WorkStatus
 ```
 
 Lệnh trên copy:
 - `skills/*` vào `~/.claude/skills/`
 - `domain/`, `templates/`, `tools/` vào `~/.claude/drafting-domain/`
+- `revit-commands/*.cs` vào thư mục dynamic-commands của Revit MCP (nếu có `-CommandsDir` hoặc biến môi trường `REVIT_MCP_COMMANDS`)
+- `-WorkStatus`: script cửa sổ trạng thái vào `%USERPROFILE%\Tools\WorkStatus`
+
+**Lệnh dùng chung, giá trị theo dự án**: tool không ghi cứng tên type hay tên family của dự án nào. Tên dim type (`dimTypeName` / `typeName`), family cửa cuốn (`nominalFamilies` / `rollupFamilies`)… được truyền vào khi gọi, lấy từ `drafting-profile.md` của dự án. Thiếu tham số bắt buộc thì tool báo lỗi, không tự đoán.
 
 Mỗi dự án cần một file `drafting-profile.md`: copy từ `templates/` vào thư mục gốc dự án rồi điền.
 

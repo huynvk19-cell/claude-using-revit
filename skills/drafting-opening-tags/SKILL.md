@@ -34,8 +34,9 @@ Standard: `~/.claude/drafting-domain/drafting-opening-tags.md`. Rules T1–T8 de
 5. **Rows:** `tag_align {viewId, mode:"apply", refTagText, tagTexts:[...], logPath}` brings the tags of one row to the same height above their openings, with leaders (T7).
 6. **Roll-up doors (T5):**
    - **Large door:** tag width ≤ 1/3 and tag height ≤ 1/4 of the door's visible size. The tag may sit **inside** the door: centred, about mid-height, no leader, clear of the door's own dims, other tags and room tags.
-     - Keep tags already placed like that.
-     - `elevation_opening_tags` treats a tag on its own opening as wrong. So pass these doors in `excludeIds` when running `fixExisting`, and place or move their tags with `move_in_view` / `tag_align`.
+     - `elevation_opening_tags` does this itself (`rollupInside`, on by default; `rollupFamilies` = the project's roll-up family name, default `["ROLL UP"]`).
+     - It accepts existing inside tags, places new ones inside, and adds no leader to them.
+     - Other door types are never tagged inside.
    - **Small door:** tag above, like a door. The leader end goes about 2.5 mm inside the visible top, not on the coil box.
 7. **Verify:**
    - Run `annotation_overlaps` (tags vs dims/tags).

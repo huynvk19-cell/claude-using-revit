@@ -22,7 +22,7 @@ Standards and tools:
 
 ## Sections / elevations (ONE view per call)
 
-1. Grid dims on the bubble side, plus `level_dims_add` (chain + overall).
+1. Grid dims on the bubble side, plus `level_dims_add {viewId, typeName:<profile check type>}` (chain + overall).
 2. Windows and doors (vertical + horizontal): use the `drafting-opening-dims` skill.
 
 ## Type
