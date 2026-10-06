@@ -18,6 +18,7 @@ Các quy tắc dưới đây rút ra từ những lần user tự chỉnh lại 
 |---|---|
 | Cửa **thật sự nhìn thấy** trong view | Có **đúng một** tag |
 | Cửa bị che (sau tường, sau kính, sau cửa khác) | **Không** tag |
+| View OVERALL (tỉ lệ nhỏ) | **Không** tag cửa (và không dim cửa) |
 | Hai tag trên cùng một cửa | Xoá bớt một (ví dụ hai tag "252" trên cùng cửa) |
 | Tag mồ côi, tag hiện "?" hoặc rỗng | Báo user |
 

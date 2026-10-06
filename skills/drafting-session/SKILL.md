@@ -23,7 +23,7 @@ Read first:
 ## Start
 
 1. Re-anchor: `hello_revit` or `get_active_view`. Never reuse ids from an earlier turn or a summary without checking.
-2. Show the status window if the project has one (`work_status show`).
+2. Show the status window if the project has one (`work_status show`). If the user wants to watch: hide Properties and Project Browser (`ui_view_focus {action:"toggle", which:"properties"}`, then `"browser"`) and open + zoom each view before working on it (`ui_view_focus {action:"open", viewId}`); toggle them back at the end.
 3. Find the task source (comment PDF, TASKS.md or the user's message) and the latest log in `review/<date>_<code>/`.
 
 ## During

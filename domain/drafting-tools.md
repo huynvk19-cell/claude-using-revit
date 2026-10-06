@@ -71,6 +71,7 @@ metadata:
 | `tag_align` | Căn đầu tag theo tag mẫu. |
 | `room_tags_outside` / `room_tags_broken` | Room tag nằm ngoài phòng / room tag "?". |
 | `viewport_titles_place` | Bật và căn title (`ignoreCrop`). |
+| `ui_view_focus` | Mở view + zoom to fit để user theo dõi; bật/tắt Properties, Project Browser (View › User Interface). |
 
 ## View và trục
 
