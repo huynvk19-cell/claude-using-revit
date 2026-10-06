@@ -1,19 +1,15 @@
 ---
 name: drafting-tags-titles
-description: "Place/fix door and window tags on elevations and sections, room tags (outside room, showing ?), and viewport titles on sheets via Revit MCP. Use for tag cửa, tag cửa sổ, room tag, tên phòng hiện dấu hỏi, title view, căn giữa title, viewport title."
+description: "Room tags (outside room, showing ?), and viewport titles on sheets via Revit MCP. Use for room tag, tên phòng hiện dấu hỏi, title view, căn giữa title, viewport title."
 ---
 
 # Tags and titles
 
 Standards: `~/.claude/drafting-domain/drafting-annotation.md`.
 
-## Door/window tags (ONE view per call)
+## Door/window tags
 
-1. Run `elevation_opening_tags` in preview first.
-   - Tags go above the opening, centred, with a short leader.
-   - `addLeader` allows lifting the tag or placing it beside the opening.
-2. Tags in the same row → `tag_align` to a reference tag.
-3. Never re-place tags in views the user adjusted by hand.
+Use the `drafting-opening-tags` skill (rules T1-T8).
 
 ## Room tags
 

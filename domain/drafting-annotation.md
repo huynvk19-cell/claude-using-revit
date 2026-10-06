@@ -10,30 +10,7 @@ metadata:
 
 ## 1. Tag cửa đi / cửa sổ — mặt đứng, mặt cắt
 
-**Vị trí mặc định**
-- Đặt **ngay phía trên** cửa của nó, căn giữa, sát cửa.
-- Leader đứng ngắn đi vào cửa, đầu leader cách mép ~1.5 mm giấy.
-- Nét đứt của level/grid được phép đi qua tag.
-
-**Cửa sổ xếp chồng**
-- Tag của cửa trên đặt phía trên cửa trên.
-- Không đặt 2 tag vào cùng một khe.
-
-**Cửa đi bị vướng phía trên** (dầm, poche sàn, dim)
-- Nâng tag lên mảng tường sạch, tối đa ~10 mm giấy, leader dài hơn.
-- Vẫn vướng → đặt tag **bên cạnh** cửa, ngang đỉnh cửa, leader ngang.
-
-**Cửa cuốn**
-- Đầu leader nằm ~2.5 mm bên trong **đỉnh nhìn thấy** của cửa.
-- Hộp cuốn phía sau tường không tính là đỉnh cửa.
-
-**Chồng lấn: được và không được**
-- Chấp nhận: dầm link đè lên hàng cửa sổ; room tag chồng nhau trong mặt cắt.
-- Không chấp nhận: dầm đè lên tag cửa đi.
-
-**Căn hàng và chỉnh tay**
-- Các tag cùng hàng → cao độ đầu tag bằng nhau (`tag_align`).
-- **Không** chạy lại "đặt lại toàn bộ" trên view mà user đã chỉnh tay.
+Đã tách ra file riêng **`drafting-opening-tags.md`** (quy tắc T1–T8) và skill `drafting-opening-tags`.
 
 ## 2. Room tag
 
