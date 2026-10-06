@@ -51,6 +51,8 @@ metadata:
 | `grid_dims_layout` | Bố trí lại dim trục ở view cha: create / deleteSide / hideInViews / compact / undo. |
 | `level_dims_add` | Chain + overall cho level (1V). |
 | `elevation_opening_dims` | Dim cửa (1V): `strictVisibility:true`, `verticalMode:"all"`, `hostLevel:true`, `verticalOnly` / `horizontalOnly`, `nominalFamilies:["ROLL UP"]`, `moveExisting:false`, `gridNearDist:12000`, `logPath`. |
+| `opening_dims_each` | **Dim từng cửa** (1V): `audit` liệt kê cửa thiếu dim đứng/ngang theo tham chiếu; `apply` + `openingId` bổ sung đúng phần thiếu cho một cửa. |
+| `dims_declutter` | Dời dim (theo type) sang ngang từng bước 1.2 mm để hết chồng chữ/tag/cửa/sàn cắt. |
 | `opening_vdims` | Dim đứng cho từng cửa chỉ định. |
 | `rollup_dims_add` | Cửa cuốn theo TOP/LEFT/RIGHT; `fixChains` dựng lại chuỗi. |
 | `dedupe_new_vdims` | Xoá dim đứng mới trùng giá trị với dim có sẵn. |

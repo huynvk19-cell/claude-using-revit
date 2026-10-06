@@ -10,6 +10,8 @@ metadata:
 
 | Hiện tượng | Nguyên nhân | Cách làm |
 |---|---|---|
+| Cửa vẫn thiếu dim sau khi chạy tool theo hàng | Tool tính "đã có dim" theo vị trí (dim nào gần cửa cũng tính), và bỏ qua cả hàng khi hết chỗ. | Kiểm tra theo **tham chiếu** từng cửa (`opening_dims_each audit`), bổ sung từng cửa một. |
+| Cao độ level lệch so với cửa khi so sánh | `Level.Elevation` là tuyệt đối, còn toạ độ cửa tính theo gốc view. | Đổi level sang toạ độ view: `VY(new XYZ(O.X, O.Y, level.ProjectElevation))`. |
 | Revit "Not Responding" khi chạy trên mặt đứng/mặt cắt | Gọi nhiều view một lần. Lệnh động không ngắt được từ bên ngoài. | Mỗi lần gọi một view, đặt `timeoutSeconds`, kiểm tra `Responding` trước khi gọi. |
 | Dựng lại dim thì **mất reference grid** (vd. 31 → 25 đoạn) | Reference grid lấy từ dim cũ hoặc từ `ParseFromStableRepresentation` bị Revit bỏ. | Với grid luôn dùng `new Reference(grid)`. |
 | Reference Level bị bỏ khi gộp với reference của instance khác | Revit loại reference không cùng mặt phẳng hoặc không hợp lệ. | Dùng 2 dim thẳng hàng (Level→Bottom và chiều cao khung) thay vì một chuỗi. |

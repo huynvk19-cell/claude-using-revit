@@ -1,58 +1,57 @@
 ---
 name: drafting-opening-dims
-description: "Dimension every visible window and door (incl. roll-up doors) on elevation and section views: vertical chain host level → sill → head, horizontal chain grid → edge → edge → grid, placed right next to the opening, referencing the opening itself. Use for dim cửa sổ, dim cửa đi, dim cửa cuốn, dim chiều cao cửa, dim khoảng cách cửa, dim mặt đứng, dim mặt cắt, opening dimensions."
+description: "Dimension every visible window and door (incl. roll-up doors) on elevation and section views, ONE OPENING AT A TIME: vertical chain host level → sill → head, horizontal chain grid → edge → edge → grid, placed right next to the opening, referencing the opening itself; then tidy overlaps. Use for dim cửa sổ, dim cửa đi, dim cửa cuốn, dim chiều cao cửa, dim khoảng cách cửa, dim mặt đứng, dim mặt cắt, cửa thiếu dim, opening dimensions."
 ---
 
 # Opening dims (elevations / sections)
 
 Standard: `~/.claude/drafting-domain/drafting-opening-dims.md`. Rules Q1–Q5 decide every case. Read it first.
 
-## The five rules
+The user requires the work to go **opening by opening**. A row/batch tool that counts a dim as "existing" by position leaves openings without dims. So never trust a batch result: audit by reference.
 
-- **Q1** — every visible opening gets one vertical dim and one horizontal dim.
-- **Q2** — vertical chain: host level → sill → head.
-- **Q3** — horizontal chain: grid → edge → edge → grid.
-- **Q4** — place each dim as close to the opening as possible.
-- **Q5** — reference the opening itself.
+## Steps — ONE view per call
 
-## Steps — ONE view per call, `timeoutSeconds` set
-
-1. **Re-anchor** the view id. Note the view's levels and grids.
-2. **Preview, then apply.** `hostLevel:true` enforces Q2 and `verticalMode:"all"` enforces Q1:
+1. **Audit** (read-only, once per view, can take 1–2 min):
    ```
-   elevation_opening_dims {viewId, mode:"preview", strictVisibility:true,
-                           verticalMode:"all", hostLevel:true, gridNearDist:12000,
-                           nominalFamilies:["ROLL UP"], moveExisting:false, logPath}
+   opening_dims_each {viewId, mode:"audit", cachePath:<review>/each-<view>-cache.json}
    ```
-   What `hostLevel` does:
-   - Every vertical chain starts at the instance's own Level.
-   - A door standing above that level gets host level → bottom → top.
-   - An existing vertical dim counts only when it includes the host level.
-   - Own check-type dims of the opening that start at another level are deleted (`replaceStale`).
-   - If the host level is not shown in the view, the chain is bottom → top and it is reported.
+   The audit:
+   - finds the openings that are really visible;
+   - checks, by reference to the opening, whether each has a V chain (host level / sill / head) and an H chain (both edges);
+   - lists only the openings with gaps.
+2. **For each listed opening, one call:**
+   ```
+   opening_dims_each {viewId, mode:"apply", openingId, cachePath, logPath}
+   ```
+   It adds only what that opening is missing, on the nearest clear line beside it:
+   - V: host level → bottom → top.
+   - H: nearest grid → L → R → nearest grid, just above the head or below the sill, inside the storey.
 
-   Other behaviour:
-   - Horizontal chains take the nearest grid on each side plus the grids between the openings (Q3).
-   - Dims owned by the parent of a dependent view count as existing.
-3. **Read the `HostLevel` notes and the "complete existing" values.** Doors far above their host level (platforms, mezzanine doors) read e.g. 2200. List them for the user.
-4. **Delete a new H chain that repeats an existing one** with `dims_edit`. This happens when the old chain sits outside the row band.
-5. **Run `dedupe_new_vdims {fromLog}`** if the view had older vertical dims of another type.
-6. **Fix up roll-up doors.** Check with `rollup_dims_check`. Fix with `rollup_dims_add` (TOP for vertical, LEFT/RIGHT for horizontal).
-7. **Long chains.** If a segment is over ~50 m → `dims_split {maxMm:50000}`.
-8. **Verify** (`drafting-visual-check`) for each opening:
-   - V and H dims present (Q1);
-   - values read right: no 50 / 2135 / odd frame sizes (Q2, Q3);
-   - dims sit next to it, not above the roof or outside the building (Q4);
-   - no dim lands on a wall or slab (Q5).
-9. **Report** per view:
-   - openings dimensioned;
-   - openings skipped as hidden;
-   - rows with "no free line" (to place by hand);
-   - black dims that reference walls instead of the opening.
+   It also handles these cases:
+   - **Own partial V pieces:** check-type pieces on the opening are replaced by one full chain.
+   - **Stacked openings:** openings with identical edges, e.g. a louvre over a window, share one H chain ("ok (shared)").
+   - **Leaf vs frame:** a black dim within 60 mm of the frame top counts, e.g. 2600 leaf vs 2650 frame.
+3. **Re-audit until `MissingV` = `MissingH` = 0.**
+   - Bad placement (`Notes` with many clashes, "outside crop", no grid on one side) → delete that dim with `dims_edit` and report it for manual placement.
+4. **Tidy:**
+   ```
+   dims_declutter {viewId, mode:"apply", cachePath, logPath}
+   ```
+   - It moves check-type dims sideways in 1.2 mm steps, away from texts, tags, openings and cut slabs/beams.
+   - Black dims move only by explicit `ids`, and only when they really overlap text.
+5. **Verify:**
+   - Run `annotation_overlaps` per view.
+   - Export the sheet images and look (`drafting-visual-check`).
+   - Long old chains that cannot be cleared (crossing many grids and slabs) → delete them and let step 2 rebuild per opening.
+6. **Report per view:**
+   - openings fixed;
+   - what is left for manual work;
+   - remaining overlaps (coloured red with `highlight_elements` when asked).
 
 ## Never
 
 - Dimension a hidden opening.
 - Draw a vertical dim across its own opening.
-- Push a dim into another storey to find space.
+- Push a dim into another storey.
 - Reference a link.
+- Batch several views in one call.
