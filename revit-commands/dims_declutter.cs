@@ -138,6 +138,18 @@ public static class DimsDeclutter
                           + ((!m.Line || (m.X1 - m.X0 > m.Y1 - m.Y0)) ? cuts.Count(c => m.Ox(c) > minOv && m.Oy(c) > minOv) * 2 : 0));
 
         var cand = dimInfo.Where(kv => kv.Value.Item2.DimensionType.Name == typeName && (only == null || only.Contains(kv.Key))).Select(kv => kv.Key).ToList();
+        // a dim that continues another dim on the same line (stacked openings: louvre chain on top of the window chain) stays on that line
+        var lines = items.Where(r => r.Line).ToList();
+        Func<int, bool> continues = id =>
+        {
+            var a = lines.FirstOrDefault(r => r.Id == id); if (a == null) return false;
+            bool vert = a.Y1 - a.Y0 > a.X1 - a.X0; double tol = 20 / MM, touch = 60 / MM;
+            return lines.Any(b => b.Id != id && (vert
+                ? Math.Abs((a.X0 + a.X1) / 2 - (b.X0 + b.X1) / 2) < tol && (Math.Abs(a.Y0 - b.Y1) < touch || Math.Abs(a.Y1 - b.Y0) < touch)
+                : Math.Abs((a.Y0 + a.Y1) / 2 - (b.Y0 + b.Y1) / 2) < tol && (Math.Abs(a.X0 - b.X1) < touch || Math.Abs(a.X1 - b.X0) < touch)));
+        };
+        var kept = cand.Where(continues).ToList();
+        cand = cand.Except(kept).ToList();
         var moves = new List<object>(); var stuck = new List<object>(); var plan = new List<Tuple<int, double, double>>();
         foreach (var id in cand)
         {
@@ -173,6 +185,6 @@ public static class DimsDeclutter
             var lp = args.Value<string>("logPath");
             if (lp != null) File.WriteAllText(lp, JsonConvert.SerializeObject(plan.Select(p => new { id = p.Item1, dxMm = Math.Round(p.Item2 * MM), dzMm = Math.Round(p.Item3 * MM) }), Formatting.Indented));
         }
-        return new { View = v.Name, Checked = cand.Count, Moved = moves, Stuck = stuck };
+        return new { View = v.Name, Checked = cand.Count, KeptOnLine = kept, Moved = moves, Stuck = stuck };
     }
 }

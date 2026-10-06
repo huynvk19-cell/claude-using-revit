@@ -1,6 +1,6 @@
 /* mcp-tool
 {
-  "description": "UI helper so the user can watch progress. action 'open': make viewId the active view and zoom it to fit (call again if the view was not open yet: the zoom needs the view's window). action 'panes': hide or show the Properties palette and the Project Browser (panes: 'hide' | 'show'). No model change.",
+  "description": "UI helper so the user can watch progress. action open: make viewId the active view and zoom to its crop region (call twice when the view was not active: the zoom needs the view window). action 'panes': hide or show the Properties palette and the Project Browser (panes: 'hide' | 'show'). No model change.",
   "inputSchema": {
     "type": "object",
     "properties": {
@@ -55,7 +55,22 @@ public static class UiViewFocus
         bool switched = false;
         if (uidoc.ActiveView.Id != v.Id) { uidoc.ActiveView = v; switched = true; }
         var uiv = uidoc.GetOpenUIViews().FirstOrDefault(x => x.ViewId == v.Id);
-        if (uiv != null) uiv.ZoomToFit();
-        return new { View = v.Name, Switched = switched, Zoomed = uiv != null };
+        string how = null;
+        if (uiv != null)
+        {
+            // zoom to the crop region (what the sheet shows); ZoomToFit as fallback
+            try
+            {
+                if (v.CropBoxActive)
+                {
+                    var cb = v.CropBox; var t = cb.Transform;
+                    uiv.ZoomAndCenterRectangle(t.OfPoint(cb.Min), t.OfPoint(cb.Max)); how = "crop region";
+                }
+                else { uiv.ZoomToFit(); how = "fit"; }
+            }
+            catch { uiv.ZoomToFit(); how = "fit"; }
+            try { uidoc.RefreshActiveView(); } catch { }
+        }
+        return new { View = v.Name, Switched = switched, Zoomed = how ?? "view window not open yet: call again" };
     }
 }

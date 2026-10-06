@@ -184,6 +184,30 @@ public static class OpeningDimsEach
     }
     static bool Has(Ex e, double z, double tol) { return e.Bnd.Any(b => Math.Abs(b - z) < tol); }
 
+    // openings side by side in one row (same sill and head, edges touching or almost): dimensioned as one group
+    static List<int> Group(int id, Dictionary<int, double[]> rects)
+    {
+        var res = new List<int> { id }; if (!rects.ContainsKey(id)) return res;
+        bool grew = true;
+        while (grew)
+        {
+            grew = false;
+            foreach (var kv in rects)
+            {
+                if (res.Contains(kv.Key)) continue;
+                var o = kv.Value;
+                if (res.Any(m =>
+                {
+                    var a = rects[m];
+                    if (Math.Abs(a[2] - o[2]) > 60 / MM || Math.Abs(a[3] - o[3]) > 60 / MM) return false;
+                    double gap = Math.Max(o[0] - a[1], a[0] - o[1]);
+                    return gap > -100 / MM && gap < 150 / MM;
+                })) { res.Add(kv.Key); grew = true; }
+            }
+        }
+        return res.OrderBy(i => rects[i][0]).ToList();
+    }
+
     // vertical status: refs this opening, shows host level (unless no host), bottom (unless at level) and top
     static string VStatus(Op op, List<Ex> ex, out Ex partial)
     {
@@ -192,7 +216,9 @@ public static class OpeningDimsEach
         var mine = ex.Where(e => e.V && e.Els.Contains(id)).ToList();
         foreach (var g in mine.GroupBy(e => Math.Round(e.Line * MM / 50)))
         {
-            var bnd = g.SelectMany(e => e.Bnd).ToList();
+            // collinear dims on the same line count together (stacked openings: window below + louvre above on one line)
+            double ln = g.First().Line;
+            var bnd = ex.Where(e => e.V && Math.Abs(e.Line - ln) < 50 / MM).SelectMany(e => e.Bnd).ToList();
             Func<double, bool> has = z => bnd.Any(b => Math.Abs(b - z) < tol);
             // a dim on the opening itself may measure the leaf instead of the frame (e.g. 2600 vs 2650): 60 mm on top/bottom
             Func<double, bool> near = z => bnd.Any(b => Math.Abs(b - z) < 60 / MM);
@@ -240,6 +266,7 @@ public static class OpeningDimsEach
                 BuiltInCategory.OST_StructuralFraming, BuiltInCategory.OST_GenericModel, BuiltInCategory.OST_Stairs, BuiltInCategory.OST_Ceilings,
                 BuiltInCategory.OST_SpecialityEquipment, BuiltInCategory.OST_MechanicalEquipment }), FindReferenceTarget.Element, v3) { FindReferencesInRevitLinks = true };
             var rows = new List<object>(); var visible = new JArray(); int hidden = 0;
+            var built = new Dictionary<int, Op>(); var vSt = new Dictionary<int, string>(); var hSt = new Dictionary<int, string>();
             foreach (var bic in new[] { BuiltInCategory.OST_Doors, BuiltInCategory.OST_Windows })
                 foreach (FamilyInstance fi in new FilteredElementCollector(doc, v.Id).OfCategory(bic).WhereElementIsNotElementType().OfType<FamilyInstance>())
                 {
@@ -277,11 +304,23 @@ public static class OpeningDimsEach
                     if (!vis) { hidden++; continue; }
                     var op = Build(fi, levels, nominal);
                     visible.Add(fi.Id.IntegerValue);
-                    Ex pt; string vs = VStatus(op, ex, out pt), hs = HStatus(op, ex);
-                    rows.Add(new { Id = fi.Id.IntegerValue, op.Name, Level = op.Lv?.Name + (op.NoHost ? " (host not shown)" : ""), X = Math.Round(op.X0 * MM), Z = Math.Round(op.Z0 * MM), V = vs, H = hs });
+                    Ex pt; built[fi.Id.IntegerValue] = op; vSt[fi.Id.IntegerValue] = VStatus(op, ex, out pt); hSt[fi.Id.IntegerValue] = HStatus(op, ex);
                 }
-            if (cachePath != null) File.WriteAllText(cachePath, new JObject { ["viewId"] = v.Id.IntegerValue, ["visible"] = visible }.ToString());
-            return new { View = v.Name, Visible = visible.Count, Hidden = hidden, MissingV = rows.Count(r => ((dynamic)r).V != "ok"), MissingH = rows.Count(r => !((string)((dynamic)r).H).StartsWith("ok")), Missing = rows.Where(r => ((dynamic)r).V != "ok" || !((string)((dynamic)r).H).StartsWith("ok")).OrderBy(r => ((dynamic)r).Z).ThenBy(r => ((dynamic)r).X).ToList() };
+            var rects = built.ToDictionary(kv => kv.Key, kv => new[] { kv.Value.X0, kv.Value.X1, kv.Value.Z0, kv.Value.Z1 });
+            foreach (var kv in built)
+            {
+                var op = kv.Value; int id = kv.Key; var ag = Group(id, rects);
+                string vs = vSt[id], hs = hSt[id];
+                // one vertical chain beside a group of identical side-by-side openings serves them all
+                if (vs != "ok" && ag.Count > 1 && ag.Any(g => g != id && vSt[g] == "ok")) vs = "ok (group)";
+                rows.Add(new { Id = id, op.Name, Level = op.Lv?.Name + (op.NoHost ? " (host not shown)" : ""), X = Math.Round(op.X0 * MM), Z = Math.Round(op.Z0 * MM), V = vs, H = hs,
+                               Group = ag.Count > 1 ? string.Join("+", ag.Select(g => built[g].Name)) : null });
+            }
+            var jr = new JObject(); foreach (var kv in rects) jr[kv.Key.ToString()] = new JArray(kv.Value);
+            if (cachePath != null) File.WriteAllText(cachePath, new JObject { ["viewId"] = v.Id.IntegerValue, ["visible"] = visible, ["rects"] = jr }.ToString());
+            Func<object, bool> okV = r => ((string)((dynamic)r).V).StartsWith("ok"), okH = r => ((string)((dynamic)r).H).StartsWith("ok");
+            return new { View = v.Name, Visible = visible.Count, Hidden = hidden, MissingV = rows.Count(r => !okV(r)), MissingH = rows.Count(r => !okH(r)),
+                         Missing = rows.Where(r => !okV(r) || !okH(r)).OrderBy(r => ((dynamic)r).Z).ThenBy(r => ((dynamic)r).X).ToList() };
         }
 
         // ---------- one opening ----------
@@ -291,12 +330,27 @@ public static class OpeningDimsEach
         var me = Build(fiT, levels, nominal);
         Ex part; string vStat = VStatus(me, ex, out part), hStat = HStatus(me, ex);
         string only = args.Value<string>("only");
+        // side-by-side group (from the audit cache): one H chain with every edge, one V chain beside the group
+        var rectsC = new Dictionary<int, double[]>();
+        if (cachePath != null && File.Exists(cachePath) && JObject.Parse(File.ReadAllText(cachePath))["rects"] is JObject jrc)
+            foreach (var p in jrc.Properties()) rectsC[int.Parse(p.Name)] = p.Value.Select(t => (double)t).ToArray();
+        var grp = new List<Op> { me };
+        foreach (var gid in Group(fiT.Id.IntegerValue, rectsC).Where(i => i != fiT.Id.IntegerValue))
+        { var gfi = doc.GetElement(new ElementId(gid)) as FamilyInstance; if (gfi != null) grp.Add(Build(gfi, levels, nominal)); }
+        grp = grp.OrderBy(o => o.X0).ToList();
+        double gx0 = grp.Min(o => o.X0), gx1 = grp.Max(o => o.X1);
+        if (grp.Count > 1)
+        {
+            if (vStat != "ok") foreach (var o in grp.Where(o => o != me)) { Ex pp; if (VStatus(o, ex, out pp) == "ok") { vStat = "ok (group)"; break; } }
+            hStat = grp.All(o => HStatus(o, ex).StartsWith("ok")) ? "ok (group)" : "group";
+        }
+        var grpIds = new HashSet<int>(grp.Select(o => o.Fi.Id.IntegerValue));
 
         // obstacles
         var obst = new List<R>();
         foreach (var id in visIds.Where(i => i != fiT.Id.IntegerValue))
         { var e = doc.GetElement(new ElementId(id)); var r = Box(e?.get_BoundingBox(v), "opening " + id); if (r != null) obst.Add(r); }
-        var meRect = new R(me.X0, me.X1, me.Z0, me.Z1, "self");
+        var meRect = new R(gx0, gx1, me.Z0, me.Z1, "self");
         foreach (var e in ex)
         {
             obst.Add(e.V ? new R(e.Line - 0.2 * P1, e.Line + 0.2 * P1, e.Bnd.Min(), e.Bnd.Max(), "dim line " + e.D.Id.IntegerValue)
@@ -330,20 +384,34 @@ public static class OpeningDimsEach
 
         var plans = new List<Tuple<string, double, List<Reference>, List<double>, List<string>>>(); var notes = new List<string>();
         // ---- vertical ----
-        if (vStat != "ok" && only != "H" && me.T != null)
+        if (!vStat.StartsWith("ok") && only != "H" && me.T != null)
         {
             bool atLv = !me.NoHost && Math.Abs(me.Z0 - me.LvZ) < 150 / MM;
             var refs = new List<Reference>(); var at = new List<double>(); var desc = new List<string>();
             if (!me.NoHost && me.Lv != null) { refs.Add(me.Lv.GetPlaneReference()); at.Add(me.LvZ); desc.Add(me.Lv.Name); }
             if ((!atLv || me.NoHost) && me.B != null) { refs.Add(me.B); at.Add(me.Z0); desc.Add("Bottom"); }
             refs.Add(me.T); at.Add(me.Z1); desc.Add("Top");
-            if (refs.Count < 2) notes.Add("no bottom/level reference for V");
+            // stacked on an opening below (same edges, its head = our sill) whose vertical chain reaches our sill:
+            // continue that chain on the same line with bottom -> top
+            Ex below = null;
+            if (me.B != null)
+            {
+                var belowIds = rectsC.Where(kv => kv.Key != fiT.Id.IntegerValue && Math.Abs(kv.Value[0] - me.X0) < 60 / MM && Math.Abs(kv.Value[1] - me.X1) < 60 / MM
+                                                 && Math.Abs(kv.Value[3] - me.Z0) < 100 / MM).Select(kv => kv.Key).ToList();
+                below = ex.FirstOrDefault(q => q.V && q.Els.Overlaps(belowIds) && Has(q, me.Z0, 40 / MM));
+            }
+            if (below != null)
+            {
+                plans.Add(Tuple.Create("V", below.Line, new List<Reference> { me.B, me.T }, new List<double> { me.Z0, me.Z1 }, new List<string> { "Bottom (on the chain of the opening below)", "Top" }));
+                notes.Add("V continues chain " + below.D.Id.IntegerValue + " of the opening below");
+            }
+            else if (refs.Count < 2) notes.Add("no bottom/level reference for V");
             else
             {
                 double best = double.NaN; int bb = int.MaxValue;
                 var cands = new List<double>();
-                for (int k = 0; k < 12; k++) { cands.Add(me.X0 - (2.5 + 1.5 * k) * P1); cands.Add(me.X1 + 1.5 * h + (2.5 + 1.5 * k) * P1); }
-                foreach (var x in cands.OrderBy(x => Math.Min(Math.Abs(x - me.X0), Math.Abs(x - me.X1))))
+                for (int k = 0; k < 12; k++) { cands.Add(gx0 - (2.5 + 1.5 * k) * P1); cands.Add(gx1 + 1.5 * h + (2.5 + 1.5 * k) * P1); }
+                foreach (var x in cands.OrderBy(x => Math.Min(Math.Abs(x - gx0), Math.Abs(x - gx1))))
                 {
                     int b = bad(new R(x - 0.2 * P1, x + 0.2 * P1, at.Min(), at.Max()));
                     for (int i = 0; i + 1 < at.Count; i++)
@@ -358,16 +426,20 @@ public static class OpeningDimsEach
             }
         }
         // ---- horizontal ----
-        if (!hStat.StartsWith("ok") && only != "V" && me.L != null && me.Rr != null)
+        if (!hStat.StartsWith("ok") && only != "V" && grp.All(o => o.L != null && o.Rr != null))
         {
             var grids = new FilteredElementCollector(doc, v.Id).OfClass(typeof(Grid)).Cast<Grid>()
                 .Where(g => g.Curve is Line && Math.Abs(((Line)g.Curve).Direction.DotProduct(Rg)) < 0.01).Select(g => Tuple.Create(g, VX(((Line)g.Curve).Origin))).ToList();
-            var gl = grids.Where(g => g.Item2 <= me.X0 + 2 / MM && g.Item2 >= me.X0 - gridNear).OrderByDescending(g => g.Item2).FirstOrDefault();
-            var gr = grids.Where(g => g.Item2 >= me.X1 - 2 / MM && g.Item2 <= me.X1 + gridNear).OrderBy(g => g.Item2).FirstOrDefault();
+            var gl = grids.Where(g => g.Item2 <= gx0 + 2 / MM && g.Item2 >= gx0 - gridNear).OrderByDescending(g => g.Item2).FirstOrDefault();
+            var gr = grids.Where(g => g.Item2 >= gx1 - 2 / MM && g.Item2 <= gx1 + gridNear).OrderBy(g => g.Item2).FirstOrDefault();
             var refs = new List<Reference>(); var at = new List<double>(); var desc = new List<string>();
-            if (gl != null && me.X0 - gl.Item2 > 2 / MM) { refs.Add(new Reference(gl.Item1)); at.Add(gl.Item2); desc.Add("Grid " + gl.Item1.Name); }
-            refs.Add(me.L); at.Add(me.X0); desc.Add("L"); refs.Add(me.Rr); at.Add(me.X1); desc.Add("R");
-            if (gr != null && gr.Item2 - me.X1 > 2 / MM) { refs.Add(new Reference(gr.Item1)); at.Add(gr.Item2); desc.Add("Grid " + gr.Item1.Name); }
+            if (gl != null && gx0 - gl.Item2 > 2 / MM) { refs.Add(new Reference(gl.Item1)); at.Add(gl.Item2); desc.Add("Grid " + gl.Item1.Name); }
+            foreach (var o in grp)
+            {   // every edge of every opening of the group; a shared joint counts once
+                if (!at.Any(a => Math.Abs(a - o.X0) < 30 / MM)) { refs.Add(o.L); at.Add(o.X0); desc.Add("L " + o.Name); }
+                if (!at.Any(a => Math.Abs(a - o.X1) < 30 / MM)) { refs.Add(o.Rr); at.Add(o.X1); desc.Add("R " + o.Name); }
+            }
+            if (gr != null && gr.Item2 - gx1 > 2 / MM) { refs.Add(new Reference(gr.Item1)); at.Add(gr.Item2); desc.Add("Grid " + gr.Item1.Name); }
             if (gl == null || gr == null) notes.Add("no grid within " + Math.Round(gridNear * MM) + " mm on the " + (gl == null ? "left" : "right"));
             double up = me.Z1 + 3600 / MM; // cut slabs / beams are obstacles; level lines are only datums
             double floor = me.LvZ;
@@ -388,6 +460,9 @@ public static class OpeningDimsEach
                 }
                 if (b < bb) { bb = b; best = z; if (b == 0) break; }
             }
+            // replacing our own partial chain of this group: keep its line (the layout the user already saw)
+            var oldOwn = grp.Count > 1 ? ex.FirstOrDefault(q => !q.V && q.Els.Overlaps(grpIds) && q.D.DimensionType.Name == typeName) : null;
+            if (oldOwn != null) { best = oldOwn.Line; bb = 0; notes.Add("H on the line of replaced chain " + oldOwn.D.Id.IntegerValue); }
             if (double.IsNaN(best)) notes.Add("no line for H inside the storey");
             else
             {
@@ -402,7 +477,7 @@ public static class OpeningDimsEach
         }
 
         var outPlans = plans.Select(p => new { Kind = p.Item1, PosMm = Math.Round(p.Item2 * MM), Values = string.Join(" | ", p.Item4.Zip(p.Item4.Skip(1), (a, b) => Math.Round((b - a) * MM))), Refs = string.Join(" | ", p.Item5) }).ToList();
-        if (mode != "apply") return new { View = v.Name, Opening = me.Name, Id = fiT.Id.IntegerValue, Level = me.Lv?.Name, V = vStat, H = hStat, Planned = outPlans, Notes = notes };
+        if (mode != "apply") return new { View = v.Name, Opening = me.Name, Id = fiT.Id.IntegerValue, Level = me.Lv?.Name, V = vStat, H = hStat, Group = grp.Count > 1 ? string.Join("+", grp.Select(o => o.Name)) : null, Planned = outPlans, Notes = notes };
 
         var created = new List<object>(); var errors = new List<string>(); var removed = new List<object>();
         using (var tx = new Transaction(doc, "Opening dims " + me.Name))
@@ -411,6 +486,46 @@ public static class OpeningDimsEach
             // a new full vertical chain replaces our own incomplete vertical pieces on this opening (check type only; black dims stay)
             if (plans.Any(p => p.Item1 == "V") && vStat == "partial")
                 foreach (var e in ex.Where(q => q.V && q.Els.Contains(fiT.Id.IntegerValue) && q.D.DimensionType.Name == typeName).ToList())
+                {
+                    removed.Add(new { Id = e.D.Id.IntegerValue, Values = string.Join("|", e.Bnd.Zip(e.Bnd.Skip(1), (a, b) => Math.Round((b - a) * MM)).Where(x => x > 0)) });
+                    doc.Delete(e.D.Id);
+                }
+            // an existing horizontal chain (any type) that already runs past the group but misses some of its edges
+            // (e.g. 1000 | 8000 | 1000 over two 4000 windows) is completed in place: same line, same type, the missing edges added
+            if (plans.Any(p => p.Item1 == "H") && (grp.Count > 1 || hStat == "partial"))
+            {
+                var host = ex.Where(q => !q.V && q.Els.Overlaps(grpIds) && q.Line > me.Z0 - 3500 / MM && q.Line < me.Z1 + 3500 / MM
+                                         && q.Bnd.Min() <= gx0 + 40 / MM && q.Bnd.Max() >= gx1 - 40 / MM)
+                             .OrderBy(q => q.D.DimensionType.Name == typeName ? 1 : 0).FirstOrDefault();
+                int hostId = host?.D.Id.IntegerValue ?? 0;
+                if (host != null)
+                {
+                    var ra = new ReferenceArray(); int added = 0;
+                    foreach (Reference r in host.D.References) { var g = doc.GetElement(r.ElementId) as Grid; ra.Append(g != null ? new Reference(g) : r); }
+                    var pos = new List<double>(host.Bnd);   // a joint shared by two openings is added once
+                    foreach (var o in grp)
+                    {
+                        if (!pos.Any(b => Math.Abs(b - o.X0) < 40 / MM) && o.L != null) { ra.Append(o.L); pos.Add(o.X0); added++; }
+                        if (!pos.Any(b => Math.Abs(b - o.X1) < 40 / MM) && o.Rr != null) { ra.Append(o.Rr); pos.Add(o.X1); added++; }
+                    }
+                    if (added > 0)
+                    {
+                        try
+                        {
+                            var nd = doc.Create.NewDimension(v, Line.CreateBound(O + Up * host.Line, O + Up * host.Line + Rg * 10), ra, host.D.DimensionType);
+                            var vals = nd.Segments.Cast<DimensionSegment>().Select(s => Math.Round((s.Value ?? 0) * MM)).ToList();
+                            removed.Add(new { Id = host.D.Id.IntegerValue, Values = string.Join("|", host.Bnd.Zip(host.Bnd.Skip(1), (a, b) => Math.Round((b - a) * MM)).Where(x => x > 0)), Refs = host.D.References.Cast<Reference>().Select(r => r.ConvertToStableRepresentation(doc)).ToList() });
+                            doc.Delete(host.D.Id);
+                            created.Add(new { Id = nd.Id.IntegerValue, Kind = "H (completed " + hostId + ", +" + added + " edges)", Values = string.Join(" | ", vals) });
+                            plans.RemoveAll(p => p.Item1 == "H");
+                        }
+                        catch (Exception exn) { errors.Add("complete chain " + hostId + ": " + exn.Message); }
+                    }
+                }
+            }
+            // a group chain replaces our own horizontal chains that dimension only part of the group (e.g. outer edges only)
+            if (plans.Any(p => p.Item1 == "H") && grp.Count > 1)
+                foreach (var e in ex.Where(q => !q.V && q.Els.Overlaps(grpIds) && q.D.DimensionType.Name == typeName).ToList())
                 {
                     removed.Add(new { Id = e.D.Id.IntegerValue, Values = string.Join("|", e.Bnd.Zip(e.Bnd.Skip(1), (a, b) => Math.Round((b - a) * MM)).Where(x => x > 0)) });
                     doc.Delete(e.D.Id);
@@ -436,6 +551,6 @@ public static class OpeningDimsEach
             foreach (dynamic c in created) lg.Add(new JObject { ["opening"] = fiT.Id.IntegerValue, ["name"] = me.Name, ["id"] = (int)c.Id, ["kind"] = (string)c.Kind, ["values"] = (string)c.Values });
             File.WriteAllText(logPath, lg.ToString());
         }
-        return new { View = v.Name, Opening = me.Name, Id = fiT.Id.IntegerValue, V = vStat, H = hStat, Created = created, ReplacedOwn = removed, Errors = errors, Notes = notes };
+        return new { View = v.Name, Opening = me.Name, Id = fiT.Id.IntegerValue, V = vStat, H = hStat, Created = created, ReplacedOwn = removed.Select(r => (int)((dynamic)r).Id).ToList(), Errors = errors, Notes = notes };
     }
 }

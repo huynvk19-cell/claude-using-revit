@@ -95,7 +95,18 @@ metadata:
 
 **Kiểm tra sau khi tạo**: mỗi đoạn dim phải có ít nhất một đầu nằm trên cửa, trừ đoạn level → bệ và đoạn trục → mép.
 
-## 3. Quy định chung
+## 3. Cửa sát nhau và cửa chồng (user, 2026-10-06)
+
+**Cửa sổ nằm sát nhau** (cùng bệ, cùng đỉnh, mép chạm nhau hoặc cách nhau dưới 150 mm):
+- Dim ngang phải có **điểm nối giữa các cửa**: trục → mép → điểm nối → mép → trục (ví dụ 1000 | 4000 | 4000 | 1000), **không** được 1000 | 8000 | 1000.
+- Nếu đã có chuỗi (kể cả chuỗi đen) chạy qua nhóm mà thiếu điểm nối → **bổ sung điểm nối vào chính chuỗi đó** (cùng đường, cùng type), không vẽ thêm chuỗi riêng.
+- Dim đứng: một chuỗi đặt ở mép ngoài của nhóm là đủ cho các cửa trong nhóm.
+
+**Cửa chồng theo chiều đứng** (cùng mép trái/phải, đỉnh cửa dưới = bệ cửa trên, ví dụ cửa sổ N06 + louvre L02):
+- Dim ngang dùng chung một chuỗi.
+- Dim đứng là **một chuỗi liền**: host level → bệ cửa dưới → đỉnh cửa dưới → đỉnh cửa trên. Đoạn của cửa trên nằm **cùng đường** với chuỗi cửa dưới. Không dời đoạn này khi gỡ chồng lắp.
+
+## 4. Quy định chung
 
 - Type dim: dùng **type kiểm tra** cho tới khi user duyệt (xem `drafting-dimensions.md`).
 - **Mỗi lần gọi một view**, có `timeoutSeconds`.

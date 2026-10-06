@@ -31,7 +31,8 @@ The user requires the work to go **opening by opening**. A row/batch tool that c
 
    It also handles these cases:
    - **Own partial V pieces:** check-type pieces on the opening are replaced by one full chain.
-   - **Stacked openings:** openings with identical edges, e.g. a louvre over a window, share one H chain ("ok (shared)").
+   - **Side-by-side openings** (same sill/head, touching): treated as one group. The H chain gets every joint; an existing chain (any type) missing a joint is completed in place. One V chain beside the group serves all.
+   - **Stacked openings** (same edges, one on top of the other, e.g. louvre over window): share one H chain; the upper one continues the lower V chain on the same line (bottom → top).
    - **Leaf vs frame:** a black dim within 60 mm of the frame top counts, e.g. 2600 leaf vs 2650 frame.
 3. **Re-audit until `MissingV` = `MissingH` = 0.**
    - Bad placement (`Notes` with many clashes, "outside crop", no grid on one side) → delete that dim with `dims_edit` and report it for manual placement.
@@ -41,6 +42,7 @@ The user requires the work to go **opening by opening**. A row/batch tool that c
    ```
    - It moves check-type dims sideways in 1.2 mm steps, away from texts, tags, openings and cut slabs/beams.
    - Black dims move only by explicit `ids`, and only when they really overlap text.
+   - Dims continuing another dim on the same line (stacked openings) are never moved.
 5. **Verify:**
    - Run `annotation_overlaps` per view.
    - Export the sheet images and look (`drafting-visual-check`).
