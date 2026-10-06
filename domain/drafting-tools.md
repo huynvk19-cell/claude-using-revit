@@ -48,7 +48,7 @@ metadata:
 | `grid_dims_add` | Thêm chain + overall cho trục (một view). |
 | `grid_dims_layout` | Bố trí lại dim trục ở view cha: create / deleteSide / hideInViews / compact / undo. |
 | `level_dims_add` | Chain + overall cho level (1V). |
-| `elevation_opening_dims` | Dim cửa (1V): `strictVisibility:true`, `verticalOnly` / `horizontalOnly`, `nominalFamilies:["ROLL UP"]`, `moveExisting:false`, `gridNearDist:12000`, `logPath`. |
+| `elevation_opening_dims` | Dim cửa (1V): `strictVisibility:true`, `verticalMode:"all"`, `hostLevel:true`, `verticalOnly` / `horizontalOnly`, `nominalFamilies:["ROLL UP"]`, `moveExisting:false`, `gridNearDist:12000`, `logPath`. |
 | `opening_vdims` | Dim đứng cho từng cửa chỉ định. |
 | `rollup_dims_add` | Cửa cuốn theo TOP/LEFT/RIGHT; `fixChains` dựng lại chuỗi. |
 | `dedupe_new_vdims` | Xoá dim đứng mới trùng giá trị với dim có sẵn. |

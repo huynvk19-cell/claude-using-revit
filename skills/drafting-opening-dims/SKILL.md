@@ -18,17 +18,25 @@ Standard: `~/.claude/drafting-domain/drafting-opening-dims.md`. Rules Q1–Q5 de
 ## Steps — ONE view per call, `timeoutSeconds` set
 
 1. **Re-anchor** the view id. Note the view's levels and grids.
-2. **Preview** to list the visible openings and the dims they already have:
+2. **Preview, then apply.** `hostLevel:true` enforces Q2 and `verticalMode:"all"` enforces Q1:
    ```
    elevation_opening_dims {viewId, mode:"preview", strictVisibility:true,
-                           verticalMode:"all", gridNearDist:12000,
+                           verticalMode:"all", hostLevel:true, gridNearDist:12000,
                            nominalFamilies:["ROLL UP"], moveExisting:false, logPath}
    ```
-3. **Check the plan against Q2.** The tool picks the nearest level below the opening, not its host level. Compare with each instance's Level parameter.
-   - Where they differ (mezzanines, doors on landings), drop that chain and use `opening_vdims {items:[{openingId, xMm, levelId:<host level>}]}`.
-   - If needed, extend the tool with a `hostLevel` option.
-4. **Apply.**
-5. **Run `dedupe_new_vdims {fromLog}`.** It removes new chains that duplicate an existing correct dim.
+   What `hostLevel` does:
+   - Every vertical chain starts at the instance's own Level.
+   - A door standing above that level gets host level → bottom → top.
+   - An existing vertical dim counts only when it includes the host level.
+   - Own check-type dims of the opening that start at another level are deleted (`replaceStale`).
+   - If the host level is not shown in the view, the chain is bottom → top and it is reported.
+
+   Other behaviour:
+   - Horizontal chains take the nearest grid on each side plus the grids between the openings (Q3).
+   - Dims owned by the parent of a dependent view count as existing.
+3. **Read the `HostLevel` notes and the "complete existing" values.** Doors far above their host level (platforms, mezzanine doors) read e.g. 2200. List them for the user.
+4. **Delete a new H chain that repeats an existing one** with `dims_edit`. This happens when the old chain sits outside the row band.
+5. **Run `dedupe_new_vdims {fromLog}`** if the view had older vertical dims of another type.
 6. **Fix up roll-up doors.** Check with `rollup_dims_check`. Fix with `rollup_dims_add` (TOP for vertical, LEFT/RIGHT for horizontal).
 7. **Long chains.** If a segment is over ~50 m → `dims_split {maxMm:50000}`.
 8. **Verify** (`drafting-visual-check`) for each opening:
