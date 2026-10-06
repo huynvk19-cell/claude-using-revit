@@ -41,6 +41,7 @@ metadata:
 | `viewport_title_audit` | Kiểm tra title. |
 | `template_link_visibility` | Link nào đang hiện trong từng template. |
 | `rollup_dims_check` | Cửa cuốn và các dim đang trỏ vào nó (1V). |
+| `stair_core_audit` | **Lõi thang bộ** (1V, mặt bằng, `drafting-stair-core.md`): vế V1/V2/V3 theo mặt cắt, số bậc/độ sâu từ model + công thức, bề rộng thông thuỷ (tay vịn/tường), tường bao 4 phía, chiếu nghỉ; dim cần có (`Expected`: OK / thiếu / thiếu CLEAR / sai công thức), tag, cao độ, stair path, số bậc; type dùng nhiều nhất trong dự án. |
 | `elements_beyond` | Nét chạy ra ngoài trục cuối. |
 | `annotation_overlaps` | Annotation chồng lắp trong 1 view: chữ dim, tag, text note, cao độ điểm, đường dim cắt qua chữ; trả về id để `highlight_elements` tô đỏ (room tag mặc định bỏ qua). |
 | `highlight_elements` | Tô màu (Override Graphics in View) cho id trong view, có log để `undo`. |
@@ -62,6 +63,7 @@ metadata:
 | `dedupe_new_vdims` | Xoá dim đứng mới trùng giá trị với dim có sẵn. |
 | `dims_split` | Tách chuỗi tại đoạn dài hơn `maxMm`. |
 | `dims_edit` | Xoá / gộp (merge) / đổi type (retype) dim, có log. |
+| `dims_text` | Prefix / Suffix / Above / Below của từng đoạn dim (giữ giá trị đo, không Replace with text): vd. ` CLEAR`, `280mm x 14T = `. Chọn đoạn theo `segmentIndex` hoặc `valueMm`; preview / apply / undo. |
 | `dim_restore` | Dựng lại dim từ stable reference đã log. |
 | `dim_type_check_copy` / `swap_dim_type` | Tạo type kiểm tra / đổi type hàng loạt. |
 
@@ -69,6 +71,7 @@ metadata:
 
 | Lệnh | Việc |
 |---|---|
+| `stair_core_annotate` | Lõi thang bộ (1V): stair path Fixed Up Direction, tắt chữ UP/DOWN (SD); số bậc từng vế (C, `numberSide`); tag vế thang trong phần nhìn thấy, không leader (SB1). preview / apply / undo. |
 | `elevation_opening_tags` | Tag cửa trên mặt đứng/cắt (1V), `addLeader`, `fixExisting`; cửa cuốn lớn: tag nằm trong cửa (`rollupInside`, `rollupFamilies`). |
 | `tag_align` | Căn đầu tag theo tag mẫu. |
 | `room_tags_outside` / `room_tags_broken` | Room tag nằm ngoài phòng / room tag "?". |

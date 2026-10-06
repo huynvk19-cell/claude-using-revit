@@ -28,6 +28,9 @@ metadata:
 | `grid_bubble_elbow` báo "leader not valid" | Hình học bubble hoặc leader không hợp lệ ở tỉ lệ đó. | So le đầu trục 2D thay cho elbow. |
 | Đổi hiển thị link trong template | Revit 2023 không có `SetLinkOverrides`. | Điều khiển UI: View Templates › V/G › Revit Links › Display Settings (bấm lần 1 để chọn, lần 2 để mở). Sau mỗi lần OK, Revit regenerate rất chậm. |
 | Room tag báo chồng lắp khắp nơi | Bounding box của room tag phủ cả khung label của family, rộng hơn chữ nhiều (~29 mm giấy ở 1:200). | Không dò room tag bằng bounding box (`annotation_overlaps` mặc định bỏ qua); soát room tag bằng ảnh. |
+| Phân loại vế thang sai (vế dưới nét cắt bị coi là trên) | `StairsRun.BaseElevation` / `TopElevation` và `StairsLanding.BaseElevation` tính **từ chân thang**, không phải cao độ tuyệt đối. | Cao độ vế = `ProjectElevation` của Base Level + Base Offset của thang + `run.BaseElevation`; so với mặt cắt `GetViewRange()` (CutPlane level + offset). |
+| Đếm bậc trên mặt bằng ra một nửa | Vế cắt (V3) và vế sau nét cắt (V1) chỉ hiện một phần; nét cắt che bậc. | Lấy `ActualTreadsNumber` của từng `StairsRun`, độ sâu `Stairs.ActualTreadDepth`. Không đếm nét. |
+| `NumberSystem.Create(doc, viewId, reference)` không biên dịch | Revit 2023 cần id của vế dạng `LinkElementId`. | `NumberSystem.Create(doc, viewId, new LinkElementId(runId), StairsNumberSystemReferenceOption.Left, new LinkElementId(typeId))`. Vế đã đánh số: `NumberSystem.NumberedElementId`. |
 | Chữ dim tiếng Việt trong script PowerShell bị lỗi | PowerShell 5.1 đọc file không có BOM. | Lưu `.ps1` dạng UTF-8 with BOM. |
 
 ## Mẹo (Tips)
