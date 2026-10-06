@@ -19,7 +19,9 @@ Skills and domain standards that let Claude Code, via Revit MCP, do drawing prod
 
 | Skill | Dùng khi |
 |---|---|
-| `drafting-session` | Mở đầu mọi phiên vẽ, và khi "tiếp tục". Gồm luật cứng, phần mở đầu và phần kết thúc. |
+| `drafting-session` | Mở đầu mọi phiên vẽ, và khi "tiếp tục". Gồm luật cứng, **bảng chọn skill + domain theo việc** (chỉ đọc đúng file cần), phần mở đầu và phần kết thúc lượt. |
+| `drafting-start` | **Bắt đầu việc**: mở các view đang làm (zoom theo crop), ẩn Properties + Project Browser, bật cửa sổ trạng thái |
+| `drafting-end` | **Kết thúc làm việc**: ghi log, bật lại Properties + Project Browser như lúc đầu, đóng cửa sổ trạng thái, báo cáo |
 | `drafting-review-round` | Xử lý một đợt comment (PDF + danh sách task) |
 | `drafting-grid-dims` | Dim trục theo G1–G4: mỗi nhóm trục song song đúng 1 dim cách trục + 1 dim tổng, nằm giữa mép crop và bubble, annotation crop kéo ra tới bubble |
 | `drafting-dims` | Dim cao độ, đổi type dim (dim trục → `drafting-grid-dims`) |
@@ -44,6 +46,8 @@ Skills and domain standards that let Claude Code, via Revit MCP, do drawing prod
 | `drafting-views-sheets.md` | Viewport, crop, dependent view, template |
 | `drafting-tools.md` | Danh mục lệnh MCP theo chủ đề |
 | `drafting-api-pitfalls.md` | Bẫy Revit API và cách tránh |
+
+**Chỉ đọc file cần dùng**: Claude không đọc hết repo. `drafting-session` có bảng việc → skill → domain; mỗi skill chỉ mở đúng một file chuẩn của nó. `drafting-tools.md` và `drafting-api-pitfalls.md` chỉ tra (search) dòng cần. Khi làm việc ngay trong repo, `CLAUDE.md` nhắc lại quy tắc này.
 
 ## Yêu cầu (Requirements)
 

@@ -8,7 +8,7 @@ description: "Work through a reviewer comment round on Revit drawings (comment P
 Read first:
 - `~/.claude/drafting-domain/drafting-work-rules.md`
 - the project profile
-- the topic file for each task (dimensions / annotation / views-sheets)
+- for each task, only its skill and standard: the routing table in `drafting-session` ("Load only what the task needs")
 
 1. **Read everything in the round folder** (PDF, TASKS.md, CSV, images). For each task, note:
    - id: T01…, or `A(1)` for groups — never `A1`
