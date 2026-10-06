@@ -19,7 +19,8 @@ Skills and domain standards that let Claude Code, via Revit MCP, do drawing prod
 |---|---|
 | `drafting-session` | Mở đầu mọi phiên vẽ, và khi "tiếp tục". Gồm luật cứng, phần mở đầu và phần kết thúc. |
 | `drafting-review-round` | Xử lý một đợt comment (PDF + danh sách task) |
-| `drafting-dims` | Dim trục, dim cao độ, dim cửa đi/cửa sổ/cửa cuốn |
+| `drafting-dims` | Dim trục, dim cao độ, đổi type dim |
+| `drafting-opening-dims` | Dim cửa sổ, cửa đi, cửa cuốn trên mặt đứng/mặt cắt (dim đứng + dim ngang) |
 | `drafting-tags-titles` | Tag cửa, room tag, view title |
 | `drafting-views-sheets` | Viewport, crop/scope box, đầu trục 2D, view template, link |
 | `drafting-visual-check` | Xuất ảnh sheet và soát lỗi trình bày |
@@ -29,7 +30,8 @@ Skills and domain standards that let Claude Code, via Revit MCP, do drawing prod
 | File | Nội dung |
 |---|---|
 | `drafting-work-rules.md` | Luật cứng, nhịp làm việc, cách báo cáo |
-| `drafting-dimensions.md` | Chuẩn dim |
+| `drafting-dimensions.md` | Chuẩn dim trục, dim cao độ, type dim |
+| `drafting-opening-dims.md` | 5 quy tắc dim cửa sổ, cửa đi (Q1–Q5) |
 | `drafting-annotation.md` | Chuẩn tag, room tag, title |
 | `drafting-views-sheets.md` | Viewport, crop, dependent view, template |
 | `drafting-tools.md` | Danh mục lệnh MCP theo chủ đề |

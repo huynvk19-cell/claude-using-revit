@@ -1,6 +1,6 @@
 ---
 name: drafting-dims
-description: "Add or fix dimensions on Revit drawings via Revit MCP: grid dims (chain + overall), level dims on sections, door/window/roll-up door dims (vertical + horizontal) on elevations and sections, dim type swap. Use for dim trục, dim cao độ, dim cửa, dim cửa cuốn, dim lỗi, đổi màu dim, grid dimensions, opening dimensions."
+description: "Add or fix dimensions on Revit drawings via Revit MCP: grid dims (chain + overall), level dims on sections, dim type swap (door/window dims → drafting-opening-dims). Use for dim trục, dim cao độ, dim lỗi, đổi màu dim, grid dimensions, level dimensions."
 ---
 
 # Dimensions
@@ -23,24 +23,7 @@ Standards and tools:
 ## Sections / elevations (ONE view per call)
 
 1. Grid dims on the bubble side, plus `level_dims_add` (chain + overall).
-2. Openings, vertical:
-   ```
-   elevation_opening_dims {mode:"apply", strictVisibility:true, verticalOnly:true,
-                           moveExisting:false, gridNearDist:12000,
-                           nominalFamilies:["ROLL UP"], logPath}
-   ```
-   Then run `dedupe_new_vdims {fromLog}`.
-3. Openings, horizontal: the same call with `horizontalOnly:true`.
-   - Do BOTH directions unless the user limits it.
-   - "no free line for row N" → report that row as manual.
-4. Roll-up doors: nominal size only (named references TOP / LEFT / RIGHT).
-   - Check with `rollup_dims_check`.
-   - Fix with `rollup_dims_add` (`fixChains`).
-5. A chain that bridges far-apart openings (segment over ~50 m) → `dims_split {maxMm:50000}`.
-6. Check the result for:
-   - values like 50 / 2135, a sign that a hidden door was dimensioned;
-   - duplicates of existing dims;
-   - overlapping text.
+2. Windows and doors (vertical + horizontal): use the `drafting-opening-dims` skill.
 
 ## Type
 
