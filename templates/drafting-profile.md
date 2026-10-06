@@ -14,7 +14,7 @@ description: "Giá trị riêng của dự án cho bộ skill drafting. Copy fil
 | Tiền tố số sheet | `<vd. DRW-XXX-A>` |
 | Thư mục log / review | `log/YYYY-MM.md`, `review/<ngày>_<mã>/` |
 | Family cửa cuốn (lấy kích thước danh nghĩa) | `ROLL UP` |
-| Phía dim trục trên mặt bằng | `<vd. dưới + trái / hai phía>` |
+| Phía ưu tiên đặt dim trục (G2: mỗi nhóm một phía) | `<vd. dưới + trái>` → `preferSides:["bottom","left"]` |
 | Trục trùng vị trí (tính là một) | `<vd. trục C trùng trục 12>` |
 | View không dim trục | STAIRCASE, PLAN TOILET…, ELEVATION n-UT, `<thêm>` |
 | Sổ tay dự án (nếu có) | `<link>` |

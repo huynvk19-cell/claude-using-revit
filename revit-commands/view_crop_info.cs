@@ -25,7 +25,7 @@ public static class ViewCropInfo
             Func<XYZ, double> R = p => Math.Round((p - v.Origin).DotProduct(v.RightDirection) * MM), U = p => Math.Round((p - v.Origin).DotProduct(v.UpDirection) * MM);
             var sb = doc.GetElement(v.get_Parameter(BuiltInParameter.VIEWER_VOLUME_OF_INTEREST_CROP)?.AsElementId() ?? ElementId.InvalidElementId);
             var m = v.GetCropRegionShapeManager();
-            object ann = null; try { ann = new { L = Math.Round(m.LeftAnnotationCropOffset * MM / v.Scale, 1), R = Math.Round(m.RightAnnotationCropOffset * MM / v.Scale, 1), T = Math.Round(m.TopAnnotationCropOffset * MM / v.Scale, 1), B = Math.Round(m.BottomAnnotationCropOffset * MM / v.Scale, 1) }; } catch { }
+            object ann = null; try { ann = new { L = Math.Round(m.LeftAnnotationCropOffset * MM, 1), R = Math.Round(m.RightAnnotationCropOffset * MM, 1), T = Math.Round(m.TopAnnotationCropOffset * MM, 1), B = Math.Round(m.BottomAnnotationCropOffset * MM, 1) }; } catch { } // API offsets are paper feet
             return new { View = v.Name, Id = v.Id.IntegerValue, Scale = v.Scale, Right = pts.Select(R).Min() + " .. " + pts.Select(R).Max(), Up = pts.Select(U).Min() + " .. " + pts.Select(U).Max(), ScopeBox = sb?.Name, AnnoCropActive = v.get_Parameter(BuiltInParameter.VIEWER_ANNOTATION_CROP_ACTIVE)?.AsInteger(), AnnoOffsetPaperMm = ann };
         }).ToList();
     }

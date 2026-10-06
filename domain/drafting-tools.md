@@ -2,7 +2,7 @@
 name: drafting-tools
 description: "Danh mục lệnh động (dynamic commands) Revit MCP dùng cho triển khai bản vẽ, theo chủ đề, kèm tham số chính. Drafting tool catalog."
 metadata:
-  updated: "2026-10-05"
+  updated: "2026-10-06"
   related: ["drafting-work-rules", "drafting-dimensions", "drafting-annotation", "drafting-views-sheets"]
 ---
 
@@ -34,9 +34,9 @@ metadata:
 |---|---|
 | `sheet_browser_names` | Tên sheet/view theo Project Browser. |
 | `sheet_views_ids` | View id, viewport id, viewport type, template theo tiền tố số sheet. |
-| `view_crop_info` | Crop, annotation crop, scope box. |
+| `view_crop_info` | Crop, annotation crop (offset mm giấy), scope box. |
 | `list_view_dims` | Dim trong một view: theo type, theo phần tử, vị trí, giá trị. |
-| `grid_dims_audit` / `grid_dim_rows` | Dim trục còn thiếu / các hàng dim trục hiện có. |
+| `grid_dims_audit` / `grid_dim_rows` | Dim trục còn thiếu (logic cũ, theo hai phía) / các hàng dim trục hiện có. Chuẩn G1–G4: dùng `grid_dims_band audit`. |
 | `hidden_dims_scan` | Dim không hiện (nằm ngoài crop). |
 | `viewport_title_audit` | Kiểm tra title. |
 | `template_link_visibility` | Link nào đang hiện trong từng template. |
@@ -49,7 +49,8 @@ metadata:
 
 | Lệnh | Việc / tham số chính |
 |---|---|
-| `grid_dims_add` | Thêm chain + overall cho trục (một view). |
+| `grid_dims_band` | **Dim trục theo G1–G4** (`drafting-grid-dims.md`): `audit` (nhiều view, RO, bỏ view ẩn Dimensions): mỗi nhóm trục song song có đúng 1 chain + 1 overall trong dải giữa crop và bubble, annotation crop tới đầu trục có bubble; `preview` / `apply` (1 view): dời dim vào dải, tạo dim thiếu, nhận lại dim dùng chung của view cha, nới annotation crop; `deleteExtra` / `extendGrids` chỉ khi user duyệt; `forceSides`, `extraIds`, `compact`; `undo`. |
+| `grid_dims_add` | Thêm chain + overall cho trục (một view, logic cũ: hai phía, sát bubble phía trong crop). |
 | `grid_dims_layout` | Bố trí lại dim trục ở view cha: create / deleteSide / hideInViews / compact / undo. |
 | `level_dims_add` | Chain + overall cho level (1V). |
 | `elevation_opening_dims` | Dim cửa (1V): `strictVisibility:true`, `verticalMode:"all"`, `hostLevel:true`, `verticalOnly` / `horizontalOnly`, `nominalFamilies:["ROLL UP"]`, `moveExisting:false`, `gridNearDist:12000`, `logPath`. |

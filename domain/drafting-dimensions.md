@@ -1,9 +1,9 @@
 ---
 name: drafting-dimensions
-description: "Chuẩn dim: dim trục (grid), dim cao độ (level), dim cửa đi/cửa sổ/cửa cuốn trên mặt đứng và mặt cắt, type dim. Dimension standards."
+description: "Chuẩn dim: type dim, dim cao độ (level); trỏ sang chuẩn dim trục (drafting-grid-dims) và dim cửa (drafting-opening-dims). Dimension standards."
 metadata:
-  updated: "2026-10-05"
-  related: ["drafting-work-rules", "drafting-tools", "drafting-api-pitfalls"]
+  updated: "2026-10-06"
+  related: ["drafting-work-rules", "drafting-grid-dims", "drafting-tools", "drafting-api-pitfalls"]
 ---
 
 # Chuẩn dim (Dimension standards)
@@ -17,29 +17,20 @@ metadata:
 
 ## 2. Dim trục (Grid dims)
 
-**Thành phần**: một chuỗi trục-trục (chain) và một dim tổng (overall, từ trục đầu đến trục cuối).
+Đã tách ra file riêng: **`drafting-grid-dims.md`**. Gồm 4 quy tắc G1–G4:
+- trục song song là một nhóm;
+- mỗi nhóm trên mỗi bản vẽ có đúng 1 dim cách trục + 1 dim tổng, đặt cùng một phía;
+- dim nằm giữa mép crop và bubble;
+- annotation crop kéo ra tới bubble.
 
-**Vị trí**
-- Ngay phía trong đầu trục (bubble), **bên ngoài công trình**.
-- Chữ của dim tổng nằm đè lên đường trục → dời dọc theo dim sao cho mép chữ cách trục 0.5–1 mm.
-
-**Dim một phía hay hai phía**
-- Chật hoặc vướng → chỉ dim một phía.
-- Phía nào là theo profile hoặc theo comment.
+(2026-10-06: thay cho quy định cũ "phía trong bubble, bên ngoài công trình, một hoặc hai phía".)
 
 **Không dim trục** (mặc định, profile có thể thêm):
 - view STAIRCASE
 - view tiện ích điển hình: toilet, utility
 - dải hẹp của partial plan (1/2, 2/2)
 
-**Các trường hợp khác**
-- Trục trùng vị trí (khai báo trong profile) → tính là một.
-- **Không** tham chiếu trục của link. Dim đang trỏ vào trục link → xoá, dim lại bằng trục host.
-- Dependent view:
-  - Dim thuộc view cha.
-  - Dim phải nằm **trong crop của từng dependent** thì mới hiện.
-  - Không muốn hiện ở dependent kia → ẩn riêng trong view đó.
-- Mặt cắt: dim trục đặt ở phía bubble, kèm dim cao độ.
+Mặt cắt và mặt đứng: dim trục theo G1–G4, kèm dim cao độ.
 
 ## 3. Dim cao độ (Level dims) — mặt cắt / mặt đứng
 

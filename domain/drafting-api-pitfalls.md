@@ -2,7 +2,7 @@
 name: drafting-api-pitfalls
 description: "Các bẫy Revit API (2023) đã gặp khi tự động hoá triển khai bản vẽ, kèm cách tránh. Revit API pitfalls for drafting automation."
 metadata:
-  updated: "2026-10-05"
+  updated: "2026-10-06"
   related: ["drafting-tools", "drafting-dimensions", "drafting-views-sheets"]
 ---
 
@@ -20,6 +20,10 @@ metadata:
 | Không tìm thấy dim đen trong dependent view | Dim thuộc view cha (`OwnerViewId` ≠ dependent). | Thu thập dim bằng `FilteredElementCollector(doc, viewId)`, không lọc theo `OwnerViewId`. |
 | Dim trục không hiện ở dependent | Dim nằm ngoài crop của dependent. | Đặt dim vào trong crop của từng dependent. |
 | Sửa crop không có tác dụng | View gắn Scope Box. | Chỉnh scope box bằng tay. |
+| Offset annotation crop đọc ra nhỏ hơn thực tế hàng trăm lần | `Left/Right/Top/BottomAnnotationCropOffset` tính bằng **feet trên giấy** (0.0164 ft = 5 mm), không phải feet model. | mm giấy = giá trị × 304.8. Không chia cho tỉ lệ view. |
+| Báo "bubble bị annotation crop cắt" nhưng ảnh vẫn thấy bubble | Revit **không cắt trục/bubble** theo annotation crop. Annotation crop chỉ cắt annotation, trong đó có dim. | Kiểm tra annotation crop theo **dim** và **đầu trục có bubble**, không theo vòng tròn bubble. |
+| Trong dependent view, dim trục của view cha tham chiếu cả những trục không hiện | Chain của view cha chạy qua mọi dependent. | Tham chiếu tới trục song song không hiện trong view → bỏ qua. Chain phủ đủ các trục đang hiện vẫn tính là chain của view. |
+| Dời dim trục ở một dependent làm hỏng dependent bên cạnh | Dim thuộc view cha và hiện ở mọi dependent có annotation crop chứa nó. | Trước khi dời, ghi lại view anh em nào đang hiện dim đó (`grid_dims_band` báo "also shown in"). Sau đó chạy lại view đó. Dim thừa đang được view khác dùng → chỉ ẩn ở view này, không xoá. |
 | Đọc `d.Id` sau `RollBack` bị lỗi | Phần tử không còn tồn tại. | Lấy id trước khi rollback. |
 | `grid_bubble_elbow` báo "leader not valid" | Hình học bubble hoặc leader không hợp lệ ở tỉ lệ đó. | So le đầu trục 2D thay cho elbow. |
 | Đổi hiển thị link trong template | Revit 2023 không có `SetLinkOverrides`. | Điều khiển UI: View Templates › V/G › Revit Links › Display Settings (bấm lần 1 để chọn, lần 2 để mở). Sau mỗi lần OK, Revit regenerate rất chậm. |
