@@ -17,6 +17,9 @@ description: "Giá trị riêng của dự án cho bộ skill drafting. Copy fil
 | Phía ưu tiên đặt dim trục (G2: mỗi nhóm một phía) | `<vd. dưới + trái>` → `preferSides:["bottom","left"]` |
 | Trục trùng vị trí (tính là một) | `<vd. trục C trùng trục 12>` |
 | View không dim trục | STAIRCASE, PLAN TOILET…, ELEVATION n-UT, `<thêm>` |
+| View mặt bằng lõi thang bộ (`drafting-stair-plan`) | `<vd. tên chứa STAIRCASE … PLAN>` |
+| Lõi thang: hiện số bậc? / phía số bậc | `<có / không>` · `<left / right>` |
+| Lõi thang: type tag/path riêng (nếu không dùng type phổ biến nhất) | `<vd. stair path: Fixed Up Direction : Arrow only>` |
 | Sổ tay dự án (nếu có) | `<link>` |
 
 ## Ghi chú riêng của dự án

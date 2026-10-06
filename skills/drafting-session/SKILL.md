@@ -5,11 +5,34 @@ description: "Ground rules + start/end routine for any Revit drafting work throu
 
 # Drafting session
 
-Read first:
+Read first (only these two):
 - `~/.claude/drafting-domain/drafting-work-rules.md` (Vietnamese).
 - The project's `drafting-profile.md`, found in the project root or its `domain/`.
   - If it is missing, copy `~/.claude/drafting-domain/templates/drafting-profile.md` into the project.
   - Ask the user once for the blanks.
+
+## Load only what the task needs
+
+Do **not** read the whole `drafting-domain/` folder or every skill. Pick the task's row, load that skill, and let it open its one standard file.
+
+| Task | Skill | Standard (`~/.claude/drafting-domain/`) |
+|---|---|---|
+| Start / end of a work session | `drafting-start` / `drafting-end` | — |
+| A round of comments (PDF, TASKS.md) | `drafting-review-round` | per task, the row below |
+| Grid dims | `drafting-grid-dims` | `drafting-grid-dims.md` |
+| Level dims, dim types | `drafting-dims` | `drafting-dimensions.md` |
+| Door/window dims (elevation, section) | `drafting-opening-dims` | `drafting-opening-dims.md` |
+| Door/window tags (elevation, section) | `drafting-opening-tags` | `drafting-opening-tags.md` |
+| Stair core **plan** | `drafting-stair-plan` | `drafting-stair-plan.md` |
+| Stair **section** | not written yet: ask the user for the rules | — |
+| Room tags, view titles | `drafting-tags-titles` | `drafting-annotation.md` |
+| Viewports, crops, templates, links | `drafting-views-sheets` | `drafting-views-sheets.md` |
+| Checking by image | `drafting-visual-check` | — |
+
+- A task touching two topics → load the two rows, nothing else.
+- `drafting-tools.md` and `drafting-api-pitfalls.md` are look-up lists: search them for the one command or symptom you need (`grep`). Do not read them whole.
+- The `related` list in a standard's header is for maintainers. Do not open those files because of it.
+- A command's parameters: read the header comment of that one `.cs` file only when unsure.
 
 ## Hard rules (recite before acting)
 
@@ -23,7 +46,7 @@ Read first:
 ## Start
 
 1. Re-anchor: `hello_revit` or `get_active_view`. Never reuse ids from an earlier turn or a summary without checking.
-2. Show the status window if the project has one (`work_status show`). If the user wants to watch: hide Properties and Project Browser (`ui_view_focus {action:"toggle", which:"properties"}`, then `"browser"`) and open + zoom each view before working on it (`ui_view_focus {action:"open", viewId}`); toggle them back at the end.
+2. Open the working views, hide Properties and Project Browser, show the status window: follow `drafting-start`. Before each further view: `ui_view_focus {action:"open", viewId}`.
 3. Find the task source (comment PDF, TASKS.md or the user's message) and the latest log in `review/<date>_<code>/`.
 
 ## During
@@ -39,7 +62,7 @@ Read first:
 2. Add new lessons:
    - general → the matching domain file;
    - project-only → the profile.
-3. Close the status window.
+3. Close the status window. The panes stay hidden between turns; when the user ends the work session (kết thúc làm việc), follow `drafting-end`, which brings them back.
 4. Report:
    - exact Revit names (sheet no. – name, view, View Template);
    - a table of what was done;

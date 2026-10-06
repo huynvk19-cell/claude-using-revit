@@ -1,11 +1,11 @@
 /* mcp-tool
 {
-  "description": "UI helper so the user can watch progress. action open: make viewId the active view and zoom to its crop region (call twice when the view was not active: the zoom needs the view window). action 'panes': hide or show the Properties palette and the Project Browser (panes: 'hide' | 'show'). No model change.",
+  "description": "UI helper so the user can watch progress. action open: make viewId the active view and zoom to its crop region (call twice when the view was not active: the zoom needs the view window). action 'panes': hide or show the Properties palette and/or the Project Browser (panes: 'hide' | 'show'; which: properties | browser, default both) and report each pane's state before and after. action 'toggle' flips a View > User Interface checkbox blindly: prefer 'panes'. No model change.",
   "inputSchema": {
     "type": "object",
     "properties": {
       "action": { "type": "string", "enum": ["open", "panes", "toggle"] },
-      "which": { "type": "string", "enum": ["properties", "browser"], "description": "toggle: View > User Interface > Properties / Project Browser (flips the checkbox)" },
+      "which": { "type": "string", "enum": ["properties", "browser"], "description": "panes: only this pane (default both); toggle: View > User Interface > Properties / Project Browser (flips the checkbox)" },
       "viewId": { "type": "number" },
       "panes": { "type": "string", "enum": ["hide", "show"] }
     },
@@ -38,7 +38,11 @@ public static class UiViewFocus
         {
             bool show = (string)args["panes"] == "show";
             var res = new System.Collections.Generic.List<string>();
-            foreach (var id in new[] { DockablePanes.BuiltInDockablePanes.PropertiesPalette, DockablePanes.BuiltInDockablePanes.ProjectBrowser })
+            string only = (string)args["which"];
+            var ids = new System.Collections.Generic.List<DockablePaneId>();
+            if (only != "browser") ids.Add(DockablePanes.BuiltInDockablePanes.PropertiesPalette);
+            if (only != "properties") ids.Add(DockablePanes.BuiltInDockablePanes.ProjectBrowser);
+            foreach (var id in ids)
             {
                 try
                 {

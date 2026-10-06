@@ -7,7 +7,7 @@ description: "Add or fix dimensions on Revit drawings via Revit MCP: level dims 
 
 Standards and tools:
 - `~/.claude/drafting-domain/drafting-dimensions.md`
-- `~/.claude/drafting-domain/drafting-tools.md`
+- `~/.claude/drafting-domain/drafting-tools.md`: search it for the command you need, do not read it whole
 - the project profile (dim types, excluded views)
 
 ## Grid dims (plans, elevations, sections)
