@@ -1,11 +1,30 @@
 /* mcp-tool
 {
-  "description": "Read-only: in one elevation/section view, list the roll-up doors (family name contains familyContains, default 'ROLL UP') with mark, type, nominal Width/Height (type params), whether a tag points at them in this view, and every linear dimension that references them: id, type, direction, values, and for each reference to the door its reference name (e.g. TOP / Left / Right) or 'face' when it is a geometry face (frame/coil box). Use to fix roll-up door dims to the nominal size.",
-  "inputSchema": { "type": "object", "properties": { "viewId": { "type": "number" }, "familyContains": { "type": "string" } }, "required": ["viewId"] },
+  "description": "Read-only, ONE view: roll-up doors, their tag, nominal size and every dim referencing them (named ref or face).",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "viewId": {
+        "type": "number"
+      },
+      "familyContains": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "viewId"
+    ]
+  },
   "timeoutSeconds": 120,
   "readOnly": true
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Read-only: in one elevation/section view, list the roll-up doors (family name contains familyContains, default 'ROLL
+//    UP') with mark, type, nominal Width/Height (type params), whether a tag points at them in this view, and every
+//    linear dimension that references them: id, type, direction, values, and for each reference to the door its
+//    reference name (e.g. TOP / Left / Right) or 'face' when it is a geometry face (frame/coil box). Use to fix roll-
+//    up door dims to the nominal size.
 using System;
 using System.Collections.Generic;
 using System.Linq;

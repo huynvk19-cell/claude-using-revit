@@ -1,11 +1,28 @@
 /* mcp-tool
 {
-  "description": "Read-only: for plan views whose name contains a text, count the annotation elements by category and type (stair run tags, railing tags, spots, stair paths, tread numbers, dims, tags), plus the sheet each view sits on. Use to see how the project already details similar views.",
-  "inputSchema": { "type": "object", "properties": { "nameContains": { "type": "string" }, "outPath": { "type": "string" } }, "required": ["nameContains"] },
+  "description": "Read-only: per plan view whose name contains a text, annotation counts by category + type and the sheet.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "nameContains": {
+        "type": "string"
+      },
+      "outPath": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "nameContains"
+    ]
+  },
   "timeoutSeconds": 300,
   "readOnly": true
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Read-only: for plan views whose name contains a text, count the annotation elements by category and type (stair run
+//    tags, railing tags, spots, stair paths, tread numbers, dims, tags), plus the sheet each view sits on. Use to see
+//    how the project already details similar views.
 using System.Collections.Generic;
 using System.Linq;
 using Autodesk.Revit.DB;

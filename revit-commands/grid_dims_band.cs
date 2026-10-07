@@ -1,38 +1,156 @@
 /* mcp-tool
 {
-  "description": "Grid dims in the band OUTSIDE the crop and INSIDE the grid bubbles. Per view, visible straight host grids are grouped by direction (parallel = one group, any angle; coincident grids count once). Each group needs exactly ONE grid-to-grid chain and ONE overall dim (a 2-grid group: one dim) on ONE side, placed between the crop boundary and the bubbles, and the annotation crop must reach every grid end that carries a bubble and hold every grid dim. mode audit (read-only, many views: sheetPrefix / sheetNumbers / viewIds): status per group. mode preview | apply (ONE view: viewId): move kept dims into the band, create missing ones (dimType), delete extra ones only with deleteExtra, extend 2D grid ends only with extendGrids when the band is too narrow, enlarge the annotation crop to the bubble ends and the dims (never shrinks it). Dims of dependent views live in the parent: with hideInSiblings, new/moved dims are hidden in the other views of the family that are placed on sheets. mode undo: reverts an apply from logPath.",
+  "description": "Grid dims, rules G1-G4: one chain + one overall per parallel group, between crop and bubbles; annotation crop to the bubbles. audit (many views) | preview | apply (ONE view) | undo.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "mode": { "type": "string", "enum": ["audit", "preview", "apply", "undo"] },
-      "viewId": { "type": "number", "description": "preview / apply: the one view to fix" },
-      "viewIds": { "type": "array", "items": { "type": "number" }, "description": "audit" },
-      "sheetPrefix": { "type": "string", "description": "audit: views placed on sheets whose number starts with this" },
-      "sheetNumbers": { "type": "array", "items": { "type": "string" }, "description": "audit" },
-      "excludeNameContains": { "type": "array", "items": { "type": "string" }, "description": "audit: skip views whose name contains any of these (profile: views without grid dims)" },
-      "onlyProblems": { "type": "boolean", "description": "audit: list only views with something to fix" },
-      "dimType": { "type": "string", "description": "linear dimension type name for new dims (profile check type); required when a dim must be created" },
-      "preferSides": { "type": "array", "items": { "type": "string" }, "description": "side order when a group has no dims yet: 'bottom','top','left','right' (profile, e.g. ['bottom','left'])" },
-      "overallMm": { "type": "number", "description": "paper mm from the grid end (bubble) to the overall dim line, default 4" },
-      "stepMm": { "type": "number", "description": "paper mm between overall and chain, default 7" },
-      "cropGapMm": { "type": "number", "description": "paper mm kept clear between the crop boundary and the dim (text included), default 1.5" },
-      "annoMarginMm": { "type": "number", "description": "paper mm the annotation crop keeps beyond the bubble ends of the grids and the grid dims, default 2" },
-      "move": { "type": "boolean", "description": "move kept dims that are outside the band into it (default true)" },
-      "deleteExtra": { "type": "boolean", "description": "delete duplicate / partial / link-grid dims of a group (default false: only listed)" },
-      "extendGrids": { "type": "boolean", "description": "extend the 2D grid ends on the chosen side when the band between crop and bubble is too narrow (default false: only reported)" },
-      "fitAnnoCrop": { "type": "boolean", "description": "enlarge the annotation crop to bubbles + dims (default true)" },
-      "activateAnnoCrop": { "type": "boolean", "description": "turn the annotation crop on when it is off (default false: off = nothing is clipped)" },
-      "hideInSiblings": { "type": "boolean", "description": "dependent families: hide new/moved dims in the other sheet-placed views where they would show (default true)" },
-      "compact": { "type": "boolean", "description": "preview / apply: short result (actions + status after)" },
-      "extraIds": { "type": "array", "items": { "type": "number" }, "description": "preview / apply: dims to treat as extra (with deleteExtra: deleted, or hidden here when another sheet view uses them)" },
-      "forceSides": { "type": "object", "description": "preview / apply: side per group kind, e.g. { horizontal: 'right', vertical: 'bottom' } (user decision, e.g. to keep clear of another viewport)" },
-      "logPath": { "type": "string" }
+      "mode": {
+        "type": "string",
+        "enum": [
+          "audit",
+          "preview",
+          "apply",
+          "undo"
+        ]
+      },
+      "viewId": {
+        "type": "number",
+        "description": "preview / apply: the one view to fix"
+      },
+      "viewIds": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        },
+        "description": "audit"
+      },
+      "sheetPrefix": {
+        "type": "string",
+        "description": "audit: views placed on sheets whose number starts with this"
+      },
+      "sheetNumbers": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "audit"
+      },
+      "excludeNameContains": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "audit: skip views whose name contains any of these"
+      },
+      "onlyProblems": {
+        "type": "boolean",
+        "description": "audit: list only views with something to fix"
+      },
+      "dimType": {
+        "type": "string",
+        "description": "linear dimension type name for new dims (profile check type)"
+      },
+      "preferSides": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "side order when a group has no dims yet: 'bottom','top','left','right' (profile, e.g"
+      },
+      "overallMm": {
+        "type": "number",
+        "description": "paper mm from the grid end (bubble) to the overall dim line, default 4"
+      },
+      "stepMm": {
+        "type": "number",
+        "description": "paper mm between overall and chain, default 7"
+      },
+      "cropGapMm": {
+        "type": "number",
+        "description": "paper mm kept clear between the crop boundary and the dim"
+      },
+      "annoMarginMm": {
+        "type": "number",
+        "description": "paper mm the annotation crop keeps beyond the bubble ends of the grids and the grid…"
+      },
+      "move": {
+        "type": "boolean",
+        "description": "move kept dims that are outside the band into it (default true)"
+      },
+      "deleteExtra": {
+        "type": "boolean",
+        "description": "delete duplicate / partial / link-grid dims of a group (default false"
+      },
+      "extendGrids": {
+        "type": "boolean",
+        "description": "extend the 2D grid ends on the chosen side when the band between crop and bubble is…"
+      },
+      "fitAnnoCrop": {
+        "type": "boolean",
+        "description": "enlarge the annotation crop to bubbles + dims (default true)"
+      },
+      "activateAnnoCrop": {
+        "type": "boolean",
+        "description": "turn the annotation crop on when it is off (default false"
+      },
+      "hideInSiblings": {
+        "type": "boolean",
+        "description": "dependent families"
+      },
+      "compact": {
+        "type": "boolean",
+        "description": "preview / apply: short result (actions + status after)"
+      },
+      "extraIds": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        },
+        "description": "preview / apply"
+      },
+      "forceSides": {
+        "type": "object",
+        "description": "preview / apply: side per group kind, e.g"
+      },
+      "logPath": {
+        "type": "string"
+      }
     },
-    "required": ["mode"]
+    "required": [
+      "mode"
+    ]
   },
   "timeoutSeconds": 300
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Grid dims in the band OUTSIDE the crop and INSIDE the grid bubbles. Per view, visible straight host grids are
+//    grouped by direction (parallel = one group, any angle; coincident grids count once). Each group needs exactly ONE
+//    grid-to-grid chain and ONE overall dim (a 2-grid group: one dim) on ONE side, placed between the crop boundary
+//    and the bubbles, and the annotation crop must reach every grid end that carries a bubble and hold every grid dim.
+//    mode audit (read-only, many views: sheetPrefix / sheetNumbers / viewIds): status per group. mode preview | apply
+//    (ONE view: viewId): move kept dims into the band, create missing ones (dimType), delete extra ones only with
+//    deleteExtra, extend 2D grid ends only with extendGrids when the band is too narrow, enlarge the annotation crop
+//    to the bubble ends and the dims (never shrinks it). Dims of dependent views live in the parent: with
+//    hideInSiblings, new/moved dims are hidden in the other views of the family that are placed on sheets. mode undo:
+//    reverts an apply from logPath.
+// Parameters:
+//   excludeNameContains: audit: skip views whose name contains any of these (profile: views without grid dims)
+//   dimType: linear dimension type name for new dims (profile check type); required when a dim must be created
+//   preferSides: side order when a group has no dims yet: 'bottom','top','left','right' (profile, e.g.
+//    ['bottom','left'])
+//   cropGapMm: paper mm kept clear between the crop boundary and the dim (text included), default 1.5
+//   annoMarginMm: paper mm the annotation crop keeps beyond the bubble ends of the grids and the grid dims, default 2
+//   deleteExtra: delete duplicate / partial / link-grid dims of a group (default false: only listed)
+//   extendGrids: extend the 2D grid ends on the chosen side when the band between crop and bubble is too narrow
+//    (default false: only reported)
+//   activateAnnoCrop: turn the annotation crop on when it is off (default false: off = nothing is clipped)
+//   hideInSiblings: dependent families: hide new/moved dims in the other sheet-placed views where they would show
+//    (default true)
+//   extraIds: preview / apply: dims to treat as extra (with deleteExtra: deleted, or hidden here when another sheet
+//    view uses them)
+//   forceSides: preview / apply: side per group kind, e.g. { horizontal: 'right', vertical: 'bottom' } (user decision,
+//    e.g. to keep clear of another viewport)
 using System;
 using System.Collections.Generic;
 using System.IO;

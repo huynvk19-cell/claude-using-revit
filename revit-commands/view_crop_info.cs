@@ -1,11 +1,27 @@
 /* mcp-tool
 {
-  "description": "Read-only: crop region of views in view coordinates (mm from the view origin along right / up), annotation crop offsets, scope box, scale.",
-  "inputSchema": { "type": "object", "properties": { "viewIds": { "type": "array", "items": { "type": "number" } } }, "required": ["viewIds"] },
+  "description": "Read-only: crop region (mm, view axes), annotation crop offsets, scope box, scale of views.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "viewIds": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        }
+      }
+    },
+    "required": [
+      "viewIds"
+    ]
+  },
   "timeoutSeconds": 60,
   "readOnly": true
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Read-only: crop region of views in view coordinates (mm from the view origin along right / up), annotation crop
+//    offsets, scope box, scale.
 using System;
 using System.Linq;
 using Autodesk.Revit.DB;

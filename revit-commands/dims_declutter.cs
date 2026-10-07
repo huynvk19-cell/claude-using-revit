@@ -1,24 +1,58 @@
 /* mcp-tool
 {
-  "description": "ONE view: move dimensions of one type (default the check type) that overlap other annotation (dim texts/lines, tag heads, text notes, spots) or cross a visible door/window, sideways (perpendicular to the dim line) by the smallest step that clears them (steps of stepMm paper mm, up to maxMm). Only dims of that type move; others are obstacles. ids limits the dims to try. cachePath = opening_dims_each audit cache (visible openings). mode preview | apply (logPath records moves; undo with move_in_view using the negative offsets).",
+  "description": "ONE view: move dims of one type sideways in small steps until they clear other annotation / openings. preview | apply (logPath).",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "viewId": { "type": "number" },
-      "mode": { "type": "string", "enum": ["preview", "apply"] },
-      "typeName": { "type": "string" },
-      "ids": { "type": "array", "items": { "type": "number" } },
-      "cachePath": { "type": "string" },
-      "stepMm": { "type": "number", "description": "paper mm, default 1.2" },
-      "maxMm": { "type": "number", "description": "paper mm, default 7.2" },
-      "logPath": { "type": "string" }
+      "viewId": {
+        "type": "number"
+      },
+      "mode": {
+        "type": "string",
+        "enum": [
+          "preview",
+          "apply"
+        ]
+      },
+      "typeName": {
+        "type": "string"
+      },
+      "ids": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        }
+      },
+      "cachePath": {
+        "type": "string"
+      },
+      "stepMm": {
+        "type": "number",
+        "description": "paper mm, default 1.2"
+      },
+      "maxMm": {
+        "type": "number",
+        "description": "paper mm, default 7.2"
+      },
+      "logPath": {
+        "type": "string"
+      }
     },
-    "required": ["viewId", "mode"]
+    "required": [
+      "viewId",
+      "mode"
+    ]
   },
   "timeoutSeconds": 300,
   "readOnly": false
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// ONE view: move dimensions of one type (default the check type) that overlap other annotation (dim texts/lines, tag
+//    heads, text notes, spots) or cross a visible door/window, sideways (perpendicular to the dim line) by the
+//    smallest step that clears them (steps of stepMm paper mm, up to maxMm). Only dims of that type move; others are
+//    obstacles. ids limits the dims to try. cachePath = opening_dims_each audit cache (visible openings). mode preview
+//    | apply (logPath records moves; undo with move_in_view using the negative offsets).
 using System;
 using System.Collections.Generic;
 using System.IO;

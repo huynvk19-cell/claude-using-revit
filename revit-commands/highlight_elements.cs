@@ -1,21 +1,53 @@
 /* mcp-tool
 {
-  "description": "Colour elements in given views with an Override Graphics in View (projection + cut lines, and a solid surface/cut fill for model elements), saving the previous overrides to a JSON log; mode 'undo' restores them from the log.",
+  "description": "Colour elements in views with a view override, saving previous overrides to a log; undo restores.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "mode": { "type": "string", "enum": ["apply", "undo"] },
-      "items": { "type": "array", "items": { "type": "object" }, "description": "apply: [{ viewId, ids: [..], label }]" },
-      "color": { "type": "array", "items": { "type": "number" }, "description": "[r,g,b], default [255,0,0]" },
-      "lineWeight": { "type": "number", "description": "projection/cut line weight, default 6" },
-      "fill": { "type": "boolean", "description": "solid fill for model elements, default true" },
-      "logPath": { "type": "string" }
+      "mode": {
+        "type": "string",
+        "enum": [
+          "apply",
+          "undo"
+        ]
+      },
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        },
+        "description": "apply: [{ viewId, ids: [..], label }]"
+      },
+      "color": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        },
+        "description": "[r,g,b], default [255,0,0]"
+      },
+      "lineWeight": {
+        "type": "number",
+        "description": "projection/cut line weight, default 6"
+      },
+      "fill": {
+        "type": "boolean",
+        "description": "solid fill for model elements, default true"
+      },
+      "logPath": {
+        "type": "string"
+      }
     },
-    "required": ["mode", "logPath"]
+    "required": [
+      "mode",
+      "logPath"
+    ]
   },
   "timeoutSeconds": 120
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Colour elements in given views with an Override Graphics in View (projection + cut lines, and a solid surface/cut
+//    fill for model elements), saving the previous overrides to a JSON log; mode 'undo' restores them from the log.
 using System;
 using System.Collections.Generic;
 using System.IO;

@@ -1,11 +1,28 @@
 /* mcp-tool
 {
-  "description": "Read-only: for each view, the linear dimensions whose references are all host grids (grid chains / overall grid dims): id, type, direction (H = runs along view right, V = along up), position across in mm from the view origin, segment count, total, and the grid names referenced.",
-  "inputSchema": { "type": "object", "properties": { "viewIds": { "type": "array", "items": { "type": "number" } } }, "required": ["viewIds"] },
+  "description": "Read-only: per view, dims whose references are all grids: direction, position, segments, grid names.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "viewIds": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        }
+      }
+    },
+    "required": [
+      "viewIds"
+    ]
+  },
   "timeoutSeconds": 120,
   "readOnly": true
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Read-only: for each view, the linear dimensions whose references are all host grids (grid chains / overall grid
+//    dims): id, type, direction (H = runs along view right, V = along up), position across in mm from the view origin,
+//    segment count, total, and the grid names referenced.
 using System;
 using System.Collections.Generic;
 using System.Linq;

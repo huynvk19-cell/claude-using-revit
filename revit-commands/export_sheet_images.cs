@@ -1,20 +1,47 @@
 /* mcp-tool
 {
-  "description": "Export sheets (by sheet number) of the active document as PNG images (current state, no printing). Returns the file paths. The view that was active before goes back to the front afterwards (the export brings the sheet up).",
+  "description": "Export sheets (by number) and/or views (viewIds) as PNG images; returns the file paths.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "sheetNumbers": { "type": "array", "items": { "type": "string" } },
-      "folder": { "type": "string", "description": "Output folder (created if missing)." },
-      "pixelWidth": { "type": "number", "description": "Image width in px. Default 6000." },
-      "viewIds": { "type": "array", "items": { "type": "number" }, "description": "also (or instead: sheetNumbers []) export these views; files named view-<id>.png. Use for checking: the exported view comes to the front, a sheet export leaves the sheet in front." }
+      "sheetNumbers": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "folder": {
+        "type": "string",
+        "description": "Output folder (created if missing)."
+      },
+      "pixelWidth": {
+        "type": "number",
+        "description": "Image width in px. Default 6000."
+      },
+      "viewIds": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        },
+        "description": "also/instead export these views (view-<id>.png); the view comes to the front"
+      }
     },
-    "required": ["sheetNumbers", "folder"]
+    "required": [
+      "sheetNumbers",
+      "folder"
+    ]
   },
   "timeoutSeconds": 900,
   "readOnly": true
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Export sheets (by sheet number) of the active document as PNG images (current state, no printing). Returns the file
+//    paths.
+// Parameters:
+//   viewIds: also (or instead: sheetNumbers []) export these views; files named view-<id>.png. Use for checking:
+//    the exported view comes to the front, a sheet export leaves the sheet in front. The view that was active
+//    before goes back to the front afterwards.
 using System;
 using System.Collections.Generic;
 using System.IO;

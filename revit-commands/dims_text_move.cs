@@ -1,19 +1,42 @@
 /* mcp-tool
 {
-  "description": "ONE view: move the text of dimension segments (short segments whose texts sit on each other, e.g. 80 | 30 | 80): items [{dimId, segmentIndex (omit for a single-segment dim), alongMm, acrossMm}] = model mm offsets from the current text position, along the dimension line and across it (+ = view Right / Up side). mode preview (rolled back) | apply (logPath: old positions) | undo (logPath).",
+  "description": "ONE view: move dim segment texts (alongMm / acrossMm) so short-segment texts do not overlap. preview | apply | undo.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "viewId": { "type": "number" },
-      "items": { "type": "array", "items": { "type": "object" } },
-      "mode": { "type": "string", "enum": ["preview", "apply", "undo"] },
-      "logPath": { "type": "string" }
+      "viewId": {
+        "type": "number"
+      },
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      },
+      "mode": {
+        "type": "string",
+        "enum": [
+          "preview",
+          "apply",
+          "undo"
+        ]
+      },
+      "logPath": {
+        "type": "string"
+      }
     },
-    "required": ["mode"]
+    "required": [
+      "mode"
+    ]
   },
   "timeoutSeconds": 60
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// ONE view: move the text of dimension segments (short segments whose texts sit on each other, e.g. 80 | 30 | 80):
+//    items [{dimId, segmentIndex (omit for a single-segment dim), alongMm, acrossMm}] = model mm offsets from the
+//    current text position, along the dimension line and across it (+ = view Right / Up side). mode preview (rolled
+//    back) | apply (logPath: old positions) | undo (logPath).
 using System;
 using System.Collections.Generic;
 using System.IO;

@@ -1,25 +1,72 @@
 /* mcp-tool
 {
-  "description": "Door/window dims ONE OPENING AT A TIME on an elevation/section view (rules Q1-Q5). mode 'audit' (read-only, once per view): finds the openings really visible (multi-ray test), writes them to cachePath and lists, per opening, whether it already has a VERTICAL dim that references it with host level -> sill -> head and a HORIZONTAL dim that references both its edges. mode 'preview' | 'apply' with openingId: adds only what that opening is missing - vertical host level -> bottom -> top (bottom dropped within 150 mm of the level) on the nearest clear line beside it, horizontal nearest grid -> edge -> edge -> nearest grid on the nearest clear line just above the head or below the sill inside its storey. Obstacles: visible openings (from the cache), dims and their texts, tags, text notes, spots, cut slabs/beams. logPath collects created ids (undo: dims_edit delete).",
+  "description": "Elevation/section: door/window dims one opening at a time (Q1-Q5). audit (once per view, cachePath) | preview | apply (openingId).",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "viewId": { "type": "number" },
-      "mode": { "type": "string", "enum": ["audit", "preview", "apply"] },
-      "openingId": { "type": "number" },
-      "cachePath": { "type": "string", "description": "JSON written by audit (visible opening ids); required for preview/apply" },
-      "dimTypeName": { "type": "string", "description": "required: the project check dimension type (drafting-profile)" },
-      "nominalFamilies": { "type": "array", "items": { "type": "string" }, "description": "family name parts sized by named refs LEFT/RIGHT/TOP, default ['ROLL UP']" },
-      "gridNearDist": { "type": "number", "description": "mm, default 12000" },
-      "only": { "type": "string", "enum": ["V", "H"], "description": "add only this direction" },
-      "logPath": { "type": "string" }
+      "viewId": {
+        "type": "number"
+      },
+      "mode": {
+        "type": "string",
+        "enum": [
+          "audit",
+          "preview",
+          "apply"
+        ]
+      },
+      "openingId": {
+        "type": "number"
+      },
+      "cachePath": {
+        "type": "string",
+        "description": "JSON written by audit (visible opening ids); required for preview/apply"
+      },
+      "dimTypeName": {
+        "type": "string",
+        "description": "required: the project check dimension type (drafting-profile)"
+      },
+      "nominalFamilies": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "family name parts sized by named refs LEFT/RIGHT/TOP, default ['ROLL UP']"
+      },
+      "gridNearDist": {
+        "type": "number",
+        "description": "mm, default 12000"
+      },
+      "only": {
+        "type": "string",
+        "enum": [
+          "V",
+          "H"
+        ],
+        "description": "add only this direction"
+      },
+      "logPath": {
+        "type": "string"
+      }
     },
-    "required": ["viewId", "mode"]
+    "required": [
+      "viewId",
+      "mode"
+    ]
   },
   "timeoutSeconds": 600,
   "readOnly": false
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Door/window dims ONE OPENING AT A TIME on an elevation/section view (rules Q1-Q5). mode 'audit' (read-only, once per
+//    view): finds the openings really visible (multi-ray test), writes them to cachePath and lists, per opening,
+//    whether it already has a VERTICAL dim that references it with host level -> sill -> head and a HORIZONTAL dim
+//    that references both its edges. mode 'preview' | 'apply' with openingId: adds only what that opening is missing -
+//    vertical host level -> bottom -> top (bottom dropped within 150 mm of the level) on the nearest clear line beside
+//    it, horizontal nearest grid -> edge -> edge -> nearest grid on the nearest clear line just above the head or
+//    below the sill inside its storey. Obstacles: visible openings (from the cache), dims and their texts, tags, text
+//    notes, spots, cut slabs/beams. logPath collects created ids (undo: dims_edit delete).
 using System;
 using System.Collections.Generic;
 using System.IO;

@@ -1,35 +1,126 @@
 /* mcp-tool
 {
-  "description": "Add opening dimensions to an elevation/section view, reusing what is already there. Dims go to the OUTER FRAME of each door/window as seen in the view (front-most geometry faces). Vertical: Level -> bottom -> top (completes partial existing dims; otherwise one per distinct type+height per row unless verticalMode='all'). Horizontal: one chain per row placed next to that row (widths, gaps, nearby grids); an opening counts as dimensioned only when a dim next to its row already has its frame edges (position based, so no duplicates). Dims and their texts are placed clear of openings, tags and other dims; overlapping texts are moved. Existing vertical dims drawn across their own opening are moved beside it. New dims use a dedicated coloured dimension type. Visibility: ray cast in the default 3D view. mode=preview (default) | apply | undo (reverts everything recorded in logPath).",
+  "description": "Elevation/section, ONE view: dims for visible doors/windows (vertical level->bottom->top, horizontal per row). preview | apply | undo.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "viewId": { "type": "number" },
-      "mode": { "type": "string", "enum": ["preview", "apply", "undo"] },
-      "dimTypeName": { "type": "string" },
-      "baseDimType": { "type": "string" },
-      "color": { "type": "array", "items": { "type": "number" } },
-      "gridNearDist": { "type": "number", "description": "mm, default 3000" },
-      "verticalMode": { "type": "string", "enum": ["perType", "all"] },
-      "verticalEachDoor": { "type": "boolean", "description": "Every door gets its own vertical dim even in perType mode. Default false." },
-      "nominalFamilies": { "type": "array", "items": { "type": "string" }, "description": "Family name parts (e.g. 'ROLL UP') dimensioned to their nominal size: family Left/Right and the reference named TOP (or Top) instead of the outer frame." },
-      "verticalEachMinHeight": { "type": "number", "description": "mm: openings at least this tall get their own vertical dim even in perType mode (e.g. 3000 for tall windows). Default 0 = off." },
-      "moveExisting": { "type": "boolean", "description": "Move existing vertical dims that sit on their own opening. Default true." },
-      "strictVisibility": { "type": "boolean", "description": "multi-ray first-hit test toward the viewer (walls, glazing, other openings, framing, links block); cut openings are visible" },
-      "verticalOnly": { "type": "boolean" },
-      "horizontalOnly": { "type": "boolean" },
-      "excludeIds": { "type": "array", "items": { "type": "number" } },
-      "onlyIds": { "type": "array", "items": { "type": "number" }, "description": "only dimension these openings (others are still obstacles? no: they are skipped entirely)" },
-      "hostLevel": { "type": "boolean", "description": "Vertical chains start at each opening's HOST level (instance Level) instead of the nearest level below: host level -> bottom -> top for windows and doors (bottom dropped when it is within 150 mm of the level). A vertical dim counts as existing only when it includes the host level. Host level not shown in the view: bottom -> top, reported. Own check-type vertical dims of an opening that start at another level are deleted (replaceStale, default true). Default false." },
-      "replaceStale": { "type": "boolean" },
-      "logPath": { "type": "string" }
+      "viewId": {
+        "type": "number"
+      },
+      "mode": {
+        "type": "string",
+        "enum": [
+          "preview",
+          "apply",
+          "undo"
+        ]
+      },
+      "dimTypeName": {
+        "type": "string"
+      },
+      "baseDimType": {
+        "type": "string"
+      },
+      "color": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        }
+      },
+      "gridNearDist": {
+        "type": "number",
+        "description": "mm, default 3000"
+      },
+      "verticalMode": {
+        "type": "string",
+        "enum": [
+          "perType",
+          "all"
+        ]
+      },
+      "verticalEachDoor": {
+        "type": "boolean",
+        "description": "Every door gets its own vertical dim even in perType mode. Default false."
+      },
+      "nominalFamilies": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Family name parts (e.g"
+      },
+      "verticalEachMinHeight": {
+        "type": "number",
+        "description": "mm: openings at least this tall get their own vertical dim even in perType mode (e.g"
+      },
+      "moveExisting": {
+        "type": "boolean",
+        "description": "Move existing vertical dims that sit on their own opening. Default true."
+      },
+      "strictVisibility": {
+        "type": "boolean",
+        "description": "multi-ray first-hit test toward the viewer"
+      },
+      "verticalOnly": {
+        "type": "boolean"
+      },
+      "horizontalOnly": {
+        "type": "boolean"
+      },
+      "excludeIds": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        }
+      },
+      "onlyIds": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        },
+        "description": "only dimension these openings (others are still obstacles? no"
+      },
+      "hostLevel": {
+        "type": "boolean",
+        "description": "Vertical chains start at each opening's HOST level"
+      },
+      "replaceStale": {
+        "type": "boolean"
+      },
+      "logPath": {
+        "type": "string"
+      }
     },
-    "required": ["viewId"]
+    "required": [
+      "viewId"
+    ]
   },
   "timeoutSeconds": 900,
   "readOnly": false
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Add opening dimensions to an elevation/section view, reusing what is already there. Dims go to the OUTER FRAME of
+//    each door/window as seen in the view (front-most geometry faces). Vertical: Level -> bottom -> top (completes
+//    partial existing dims; otherwise one per distinct type+height per row unless verticalMode='all'). Horizontal: one
+//    chain per row placed next to that row (widths, gaps, nearby grids); an opening counts as dimensioned only when a
+//    dim next to its row already has its frame edges (position based, so no duplicates). Dims and their texts are
+//    placed clear of openings, tags and other dims; overlapping texts are moved. Existing vertical dims drawn across
+//    their own opening are moved beside it. New dims use a dedicated coloured dimension type. Visibility: ray cast in
+//    the default 3D view. mode=preview (default) | apply | undo (reverts everything recorded in logPath).
+// Parameters:
+//   nominalFamilies: Family name parts (e.g. 'ROLL UP') dimensioned to their nominal size: family Left/Right and the
+//    reference named TOP (or Top) instead of the outer frame.
+//   verticalEachMinHeight: mm: openings at least this tall get their own vertical dim even in perType mode (e.g. 3000
+//    for tall windows). Default 0 = off.
+//   strictVisibility: multi-ray first-hit test toward the viewer (walls, glazing, other openings, framing, links
+//    block); cut openings are visible
+//   onlyIds: only dimension these openings (others are still obstacles? no: they are skipped entirely)
+//   hostLevel: Vertical chains start at each opening's HOST level (instance Level) instead of the nearest level below:
+//    host level -> bottom -> top for windows and doors (bottom dropped when it is within 150 mm of the level). A
+//    vertical dim counts as existing only when it includes the host level. Host level not shown in the view: bottom ->
+//    top, reported. Own check-type vertical dims of an opening that start at another level are deleted (replaceStale,
+//    default true). Default false.
 using System;
 using System.Collections.Generic;
 using System.IO;

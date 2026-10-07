@@ -1,19 +1,45 @@
 /* mcp-tool
 {
-  "description": "Add an elbow (leader) to grid bubbles in one view so bubbles of close grids no longer overlap. For each item {grid, end: 'low'|'high' (along the view's up direction for grids running up, along right for grids running right), shiftMm (paper mm, + = toward the view's right/up), anchorMm, elbowMm (paper mm measured inward from the grid end; defaults 8 and 4)}. The bubble keeps its distance from the building and is moved sideways. Modes: preview (rolled back) | apply (writes logPath). Leaders cannot be removed through the API: undo with Ctrl+Z in Revit or the grid's Remove Elbow grip.",
+  "description": "Add elbows to grid bubbles in one view so close bubbles stop overlapping. preview | apply (undo by hand in Revit).",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "viewId": { "type": "number" },
-      "items": { "type": "array", "items": { "type": "object" } },
-      "mode": { "type": "string", "enum": ["preview", "apply"] },
-      "logPath": { "type": "string" }
+      "viewId": {
+        "type": "number"
+      },
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      },
+      "mode": {
+        "type": "string",
+        "enum": [
+          "preview",
+          "apply"
+        ]
+      },
+      "logPath": {
+        "type": "string"
+      }
     },
-    "required": ["viewId", "items", "mode"]
+    "required": [
+      "viewId",
+      "items",
+      "mode"
+    ]
   },
   "timeoutSeconds": 120
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Add an elbow (leader) to grid bubbles in one view so bubbles of close grids no longer overlap. For each item {grid,
+//    end: 'low'|'high' (along the view's up direction for grids running up, along right for grids running right),
+//    shiftMm (paper mm, + = toward the view's right/up), anchorMm, elbowMm (paper mm measured inward from the grid
+//    end; defaults 8 and 4)}. The bubble keeps its distance from the building and is moved sideways. Modes: preview
+//    (rolled back) | apply (writes logPath). Leaders cannot be removed through the API: undo with Ctrl+Z in Revit or
+//    the grid's Remove Elbow grip.
 using System;
 using System.Collections.Generic;
 using System.IO;

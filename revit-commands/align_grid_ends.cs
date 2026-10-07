@@ -1,20 +1,52 @@
 /* mcp-tool
 {
-  "description": "Line up the 2D ends of straight host grids in a view. Grids are grouped by direction (along the view's up direction = 'vertical', along right = 'horizontal'); each side of a group goes to a target coordinate (default: the most common current value, or given in mm). Ends are switched to 2D (ViewSpecific) in this view only; pinned grids are unpinned and re-pinned. Modes: preview, apply, undo (from log).",
+  "description": "Line up the 2D ends of straight grids in one view, per direction group. preview | apply | undo (logPath).",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "mode": { "type": "string", "enum": ["preview", "apply", "undo"] },
-      "viewId": { "type": "number", "description": "default: active view" },
-      "targets": { "type": "object", "description": "optional { vertical: { low, high }, horizontal: { low, high } } in mm along the view's up / right direction from the view origin" },
-      "only": { "type": "array", "items": { "type": "string" }, "description": "optional grid names to change (others still count for the default target)" },
-      "logPath": { "type": "string" }
+      "mode": {
+        "type": "string",
+        "enum": [
+          "preview",
+          "apply",
+          "undo"
+        ]
+      },
+      "viewId": {
+        "type": "number",
+        "description": "default: active view"
+      },
+      "targets": {
+        "type": "object",
+        "description": "optional { vertical"
+      },
+      "only": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "optional grid names to change (others still count for the default target)"
+      },
+      "logPath": {
+        "type": "string"
+      }
     },
-    "required": ["mode", "logPath"]
+    "required": [
+      "mode",
+      "logPath"
+    ]
   },
   "timeoutSeconds": 180
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Line up the 2D ends of straight host grids in a view. Grids are grouped by direction (along the view's up direction
+//    = 'vertical', along right = 'horizontal'); each side of a group goes to a target coordinate (default: the most
+//    common current value, or given in mm). Ends are switched to 2D (ViewSpecific) in this view only; pinned grids are
+//    unpinned and re-pinned. Modes: preview, apply, undo (from log).
+// Parameters:
+//   targets: optional { vertical: { low, high }, horizontal: { low, high } } in mm along the view's up / right
+//    direction from the view origin
 using System;
 using System.Collections.Generic;
 using System.IO;

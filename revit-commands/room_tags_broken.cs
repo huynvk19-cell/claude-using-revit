@@ -1,19 +1,40 @@
 /* mcp-tool
 {
-  "description": "Find room tags showing '?' (no room, or the room's Name/Number is empty) in given views; mode preview lists them (view, tag, room id/number/name/level, tag position); apply colours them red with a view override (annotation only, the rooms are not changed) and logs the previous overrides to logPath; undo restores.",
+  "description": "Room tags showing '?' in views: preview lists, apply colours them red (log), undo restores.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "viewIds": { "type": "array", "items": { "type": "number" } },
-      "mode": { "type": "string", "enum": ["preview", "apply", "undo"] },
-      "logPath": { "type": "string" }
+      "viewIds": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        }
+      },
+      "mode": {
+        "type": "string",
+        "enum": [
+          "preview",
+          "apply",
+          "undo"
+        ]
+      },
+      "logPath": {
+        "type": "string"
+      }
     },
-    "required": ["mode", "logPath"]
+    "required": [
+      "mode",
+      "logPath"
+    ]
   },
   "timeoutSeconds": 180,
   "readOnly": false
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Find room tags showing '?' (no room, or the room's Name/Number is empty) in given views; mode preview lists them
+//    (view, tag, room id/number/name/level, tag position); apply colours them red with a view override (annotation
+//    only, the rooms are not changed) and logs the previous overrides to logPath; undo restores.
 using System;
 using System.Collections.Generic;
 using System.IO;

@@ -1,11 +1,34 @@
 /* mcp-tool
 {
-  "description": "Read-only: for element ids in ONE view (or allAnnotations:true = every annotation owned by the view), the view bounding box in model mm (X/Y) AND in the view frame (Right/Up from View.Origin, as stair_plan_audit), plus for dimensions the line origin/direction, values and type.",
-  "inputSchema": { "type": "object", "properties": { "viewId": { "type": "number" }, "ids": { "type": "array", "items": { "type": "number" } }, "allAnnotations": { "type": "boolean" } }, "required": ["viewId"] },
+  "description": "Read-only: boxes of elements (or all annotations) of ONE view in model mm and view frame mm; dim line data.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "viewId": {
+        "type": "number"
+      },
+      "ids": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        }
+      },
+      "allAnnotations": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "viewId"
+    ]
+  },
   "timeoutSeconds": 60,
   "readOnly": true
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Read-only: for element ids in ONE view (or allAnnotations:true = every annotation owned by the view), the view
+//    bounding box in model mm (X/Y) AND in the view frame (Right/Up from View.Origin, as stair_plan_audit), plus for
+//    dimensions the line origin/direction, values and type.
 using System.Collections.Generic;
 using System.Linq;
 using Autodesk.Revit.DB;

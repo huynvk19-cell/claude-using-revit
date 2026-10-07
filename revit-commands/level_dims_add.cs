@@ -1,24 +1,63 @@
 /* mcp-tool
 {
-  "description": "Section/elevation view: add a vertical chain between all visible host levels (in names list, or all) and an overall (lowest to highest) dimension, next to the level heads on one side (left/right). The dims sit chainMm / overallMm paper mm inside the levels' 2D end on that side (toward the building). Skipped if the view already has a vertical dim referencing 3+ levels. mode preview | apply (logPath).",
+  "description": "Section/elevation: level chain + overall next to the level heads on one side. Skips views with a level chain. preview | apply (logPath).",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "viewId": { "type": "number" },
-      "side": { "type": "string", "enum": ["left", "right"] },
-      "chainMm": { "type": "number", "description": "paper mm from the level end to the chain (default 14)" },
-      "overallMm": { "type": "number", "description": "paper mm from the level end to the overall (default 8)" },
-      "names": { "type": "array", "items": { "type": "string" } },
-      "typeName": { "type": "string" },
-      "mode": { "type": "string", "enum": ["preview", "apply"] },
-      "logPath": { "type": "string" }
+      "viewId": {
+        "type": "number"
+      },
+      "side": {
+        "type": "string",
+        "enum": [
+          "left",
+          "right"
+        ]
+      },
+      "chainMm": {
+        "type": "number",
+        "description": "paper mm from the level end to the chain (default 14)"
+      },
+      "overallMm": {
+        "type": "number",
+        "description": "paper mm from the level end to the overall (default 8)"
+      },
+      "names": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "typeName": {
+        "type": "string"
+      },
+      "mode": {
+        "type": "string",
+        "enum": [
+          "preview",
+          "apply"
+        ]
+      },
+      "logPath": {
+        "type": "string"
+      }
     },
-    "required": ["viewId", "side", "mode", "logPath"]
+    "required": [
+      "viewId",
+      "side",
+      "mode",
+      "logPath"
+    ]
   },
   "timeoutSeconds": 120,
   "readOnly": false
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Section/elevation view: add a vertical chain between all visible host levels (in names list, or all) and an overall
+//    (lowest to highest) dimension, next to the level heads on one side (left/right). The dims sit chainMm / overallMm
+//    paper mm inside the levels' 2D end on that side (toward the building). Skipped if the view already has a vertical
+//    dim referencing 3+ levels. mode preview | apply (logPath).
 using System;
 using System.Collections.Generic;
 using System.IO;

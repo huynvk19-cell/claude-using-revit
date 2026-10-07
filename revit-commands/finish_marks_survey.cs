@@ -1,11 +1,24 @@
 /* mcp-tool
 {
-  "description": "Read-only: for plan views whose name contains a text, list the finish marks drawn as Generic Annotations (family/type name contains FINISH): code (first string parameter shaped like F13 / W05), type, count per view.",
-  "inputSchema": { "type": "object", "properties": { "nameContains": { "type": "string" } }, "required": ["nameContains"] },
+  "description": "Read-only: finish marks (Generic Annotations, F.. / W.. codes) per plan view whose name contains a text.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "nameContains": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "nameContains"
+    ]
+  },
   "timeoutSeconds": 120,
   "readOnly": true
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Read-only: for plan views whose name contains a text, list the finish marks drawn as Generic Annotations
+//    (family/type name contains FINISH): code (first string parameter shaped like F13 / W05), type, count per view.
 using System.Collections.Generic;
 using System.Linq;
 using Autodesk.Revit.DB;

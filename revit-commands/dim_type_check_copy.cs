@@ -1,18 +1,34 @@
 /* mcp-tool
 {
-  "description": "Create (or reuse) a review copy of a linear dimension type: duplicate baseType as newName and set its Color (RGB). Returns the type id. Use for temporary check types that are swapped back to the official type after review.",
+  "description": "Create or reuse a coloured review copy of a linear dimension type (baseType -> newName, RGB). Returns the type id.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "baseType": { "type": "string" },
-      "newName": { "type": "string" },
-      "color": { "type": "array", "items": { "type": "number" }, "description": "[r,g,b], default [0,0,255]" }
+      "baseType": {
+        "type": "string"
+      },
+      "newName": {
+        "type": "string"
+      },
+      "color": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        },
+        "description": "[r,g,b], default [0,0,255]"
+      }
     },
-    "required": ["baseType", "newName"]
+    "required": [
+      "baseType",
+      "newName"
+    ]
   },
   "timeoutSeconds": 60
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Create (or reuse) a review copy of a linear dimension type: duplicate baseType as newName and set its Color (RGB).
+//    Returns the type id. Use for temporary check types that are swapped back to the official type after review.
 using System.Linq;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;

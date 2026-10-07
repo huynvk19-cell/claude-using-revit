@@ -1,17 +1,25 @@
 /* mcp-tool
 {
-  "description": "Read-only: list sheets as the Project Browser names them - the sheet parameter values used for grouping (any text parameter whose value matches valuePattern, default '^[A-Z]\\d{2}\\. '), 'NUMBER - NAME', and each placed view as '<ViewType>: <name>'. Use to refer to sheets/views exactly as the project does.",
+  "description": "Read-only: sheets and their views named exactly as the Project Browser shows them.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "sheetNumberPrefix": { "type": "string" },
-      "valuePattern": { "type": "string" }
+      "sheetNumberPrefix": {
+        "type": "string"
+      },
+      "valuePattern": {
+        "type": "string"
+      }
     }
   },
   "timeoutSeconds": 300,
   "readOnly": true
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Read-only: list sheets as the Project Browser names them - the sheet parameter values used for grouping (any text
+//    parameter whose value matches valuePattern, default '^[A-Z]\d{2}\. '), 'NUMBER - NAME', and each placed view as
+//    '<ViewType>: <name>'. Use to refer to sheets/views exactly as the project does.
 using System.Linq;
 using System.Text.RegularExpressions;
 using Autodesk.Revit.DB;

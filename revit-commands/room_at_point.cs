@@ -1,20 +1,45 @@
 /* mcp-tool
 {
-  "description": "Read-only: the room(s) at points of ONE plan view (view frame mm Right / Up, as stair_plan_audit; tested 1 m above the view's level) and their parameters whose name contains a filter (default 'Finish'), e.g. Wall Finish / Floor Finish codes for finish tags. Also lists rooms of the view's level whose name contains roomNameContains.",
+  "description": "Read-only: rooms at view-frame points of ONE plan view and their 'Finish' parameters; rooms by name.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "viewId": { "type": "number" },
-      "points": { "type": "array", "items": { "type": "object", "properties": { "right": { "type": "number" }, "up": { "type": "number" } } } },
-      "paramContains": { "type": "string" },
-      "roomNameContains": { "type": "string" }
+      "viewId": {
+        "type": "number"
+      },
+      "points": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "right": {
+              "type": "number"
+            },
+            "up": {
+              "type": "number"
+            }
+          }
+        }
+      },
+      "paramContains": {
+        "type": "string"
+      },
+      "roomNameContains": {
+        "type": "string"
+      }
     },
-    "required": ["viewId"]
+    "required": [
+      "viewId"
+    ]
   },
   "timeoutSeconds": 60,
   "readOnly": true
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Read-only: the room(s) at points of ONE plan view (view frame mm Right / Up, as stair_plan_audit; tested 1 m above
+//    the view's level) and their parameters whose name contains a filter (default 'Finish'), e.g. Wall Finish / Floor
+//    Finish codes for finish tags. Also lists rooms of the view's level whose name contains roomNameContains.
 using System;
 using System.Collections.Generic;
 using System.Linq;

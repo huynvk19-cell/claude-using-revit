@@ -1,20 +1,47 @@
 /* mcp-tool
 {
-  "description": "Room tags whose head lies outside their own room in plan views. mode preview lists them (view, tag id, room number/name, distance outside, leader); apply moves the selected tags (ids, or all listed) to the room's location point (leader off) and writes logPath with the old positions; undo restores from logPath.",
+  "description": "Plan: room tags whose head lies outside their room; apply moves them to the room point (log); undo restores.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "viewIds": { "type": "array", "items": { "type": "number" } },
-      "tagIds": { "type": "array", "items": { "type": "number" }, "description": "apply only to these tags" },
-      "mode": { "type": "string", "enum": ["preview", "apply", "undo"] },
-      "logPath": { "type": "string" }
+      "viewIds": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        }
+      },
+      "tagIds": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        },
+        "description": "apply only to these tags"
+      },
+      "mode": {
+        "type": "string",
+        "enum": [
+          "preview",
+          "apply",
+          "undo"
+        ]
+      },
+      "logPath": {
+        "type": "string"
+      }
     },
-    "required": ["mode", "logPath"]
+    "required": [
+      "mode",
+      "logPath"
+    ]
   },
   "timeoutSeconds": 300,
   "readOnly": false
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Room tags whose head lies outside their own room in plan views. mode preview lists them (view, tag id, room
+//    number/name, distance outside, leader); apply moves the selected tags (ids, or all listed) to the room's location
+//    point (leader off) and writes logPath with the old positions; undo restores from logPath.
 using System;
 using System.Collections.Generic;
 using System.IO;

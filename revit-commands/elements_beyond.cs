@@ -1,19 +1,42 @@
 /* mcp-tool
 {
-  "description": "Read-only: host elements visible in a plan view whose extent goes beyond a coordinate on one side (view right/left/up/down from the view origin, mm), e.g. lines running out past the last grid. Lists id, category, class, line style / type, view-specific or model, extents in view mm. Also lists Revit link instances visible in the view.",
+  "description": "Read-only, plan: elements running past a coordinate on one side (e.g. beyond the last grid), plus visible links.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "viewId": { "type": "number" },
-      "side": { "type": "string", "enum": ["right", "left", "up", "down"] },
-      "beyondMm": { "type": "number", "description": "coordinate along the side axis (mm from view origin); default = outermost host grid end" }
+      "viewId": {
+        "type": "number"
+      },
+      "side": {
+        "type": "string",
+        "enum": [
+          "right",
+          "left",
+          "up",
+          "down"
+        ]
+      },
+      "beyondMm": {
+        "type": "number",
+        "description": "coordinate along the side axis (mm from view origin)"
+      }
     },
-    "required": ["viewId", "side"]
+    "required": [
+      "viewId",
+      "side"
+    ]
   },
   "timeoutSeconds": 120,
   "readOnly": true
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Read-only: host elements visible in a plan view whose extent goes beyond a coordinate on one side (view
+//    right/left/up/down from the view origin, mm), e.g. lines running out past the last grid. Lists id, category,
+//    class, line style / type, view-specific or model, extents in view mm. Also lists Revit link instances visible in
+//    the view.
+// Parameters:
+//   beyondMm: coordinate along the side axis (mm from view origin); default = outermost host grid end
 using System;
 using System.Collections.Generic;
 using System.Linq;

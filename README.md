@@ -11,7 +11,7 @@ Skills and domain standards that let Claude Code, via Revit MCP, do drawing prod
 | `skills/` | Quy trình từng bước, ngắn, mỗi skill một chủ đề | English |
 | `domain/` | Quy chuẩn bản vẽ: con số, vị trí, ngoại lệ, bẫy API | Tiếng Việt + thuật ngữ Revit |
 | `templates/drafting-profile.md` | Giá trị riêng của từng dự án (dim type, model cấm chạm, view loại trừ…) | Tiếng Việt |
-| `revit-commands/` | 71 lệnh động (dynamic commands) C# cho Revit MCP: dim, tag, title, viewport, crop, lõi thang, dim bám tay vịn, filled region cột theo kết cấu, kiểm tra chồng lắp… Không chứa giá trị riêng dự án | C# |
+| `revit-commands/` | 72 lệnh động (dynamic commands) C# cho Revit MCP: dim, tag, title, viewport, crop, lõi thang, dim bám tay vịn, filled region cột theo kết cấu, mặt cắt dọc thang, kiểm tra chồng lắp… Không chứa giá trị riêng dự án | C# |
 | `tools/crop.ps1` | Cắt vùng ảnh sheet để kiểm tra | PowerShell |
 | `tools/work-status/` | Cửa sổ "Đang xử lý" luôn nổi trên màn hình (tuỳ chọn) | PowerShell |
 
@@ -27,6 +27,7 @@ Skills and domain standards that let Claude Code, via Revit MCP, do drawing prod
 | `drafting-dims` | Dim cao độ, đổi type dim (dim trục → `drafting-grid-dims`) |
 | `drafting-opening-dims` | Dim cửa sổ, cửa đi, cửa cuốn trên mặt đứng/mặt cắt (dim đứng + dim ngang) |
 | `drafting-opening-tags` | Tag cửa sổ, cửa đi, cửa cuốn trên mặt đứng/mặt cắt (T1–T8) |
+| `drafting-stair-section-parallel` | **Mặt cắt dọc** thang bộ (cắt song song stair path, LA–LC): chiều cao vế `169.4mm x 16R = 2710 (EQUAL RISERS)`, cao độ tầng, chiều dài vế, thông thuỷ dưới chiếu nghỉ, tay vịn; tag vế, P01, cao độ, F../C.., cửa; số bậc liên tục |
 | `drafting-stair-plan` | **Mặt bằng** lõi thang bộ (SA1–SD; mặt cắt thang sẽ là skill riêng): 3 vế + mọi chiếu nghỉ thấy được (kể cả dưới View Depth), dim tay vịn không cần dim tay, dim thông thuỷ (CLEAR chỉ trên bề rộng vế; mép lan can → mép bậc → tường), chiều dài vế có công thức (bậc trên cùng ngang chiếu nghỉ không tính), chuỗi chiếu nghỉ / tổng khép tới tường, tường/cửa tới trục; tag vế, tay vịn, cao độ, cửa, hoàn thiện; đếm/đánh số bậc từng vế; stair path chỉ có mũi tên |
 | `drafting-tags-titles` | Room tag, view title |
 | `drafting-views-sheets` | Viewport, crop/scope box, đầu trục 2D, view template, link |
@@ -38,6 +39,7 @@ Skills and domain standards that let Claude Code, via Revit MCP, do drawing prod
 |---|---|
 | `drafting-work-rules.md` | Luật cứng, nhịp làm việc, cách báo cáo |
 | `drafting-grid-dims.md` | 4 quy tắc dim trục (G1–G4): nhóm trục, 1 chain + 1 overall, dải giữa crop và bubble, annotation crop |
+| `drafting-stair-section-parallel.md` | Mặt cắt dọc thang bộ: vế F1…, công thức R/T, lớp dim, tag, số bậc (LA–LC) |
 | `drafting-stair-plan.md` | Mặt bằng lõi thang bộ: 3 vế V1/V2/V3, lớp dim, mép thông thuỷ, CLEAR chỉ cho bề rộng vế, công thức chiều dài vế, tag, đếm bậc, stair path (SA1–SD) |
 | `drafting-dimensions.md` | Chuẩn dim cao độ, type dim (dim trục → `drafting-grid-dims.md`) |
 | `drafting-opening-dims.md` | 5 quy tắc dim cửa sổ, cửa đi (Q1–Q5) |
@@ -72,6 +74,29 @@ Lệnh trên copy:
 **Lệnh dùng chung, giá trị theo dự án**: tool không ghi cứng tên type hay tên family của dự án nào. Tên dim type (`dimTypeName` / `typeName`), family cửa cuốn (`nominalFamilies` / `rollupFamilies`)… được truyền vào khi gọi, lấy từ `drafting-profile.md` của dự án. Thiếu tham số bắt buộc thì tool báo lỗi, không tự đoán.
 
 Mỗi dự án cần một file `drafting-profile.md`: copy từ `templates/` vào thư mục gốc dự án rồi điền.
+
+## Tiết kiệm token (Token use)
+
+Mỗi bước Claude gọi tool, **toàn bộ danh sách tool** được gửi lại cho model. Danh sách càng dài, mỗi bước càng tốn.
+
+| Phần | Trước | Sau | Cách |
+|---|---|---|---|
+| 72 lệnh của repo này (header `mcp-tool`) | ~16.1k token (64.3k ký tự JSON) | ~9.9k token (39.7k ký tự) | **B (đã làm)**: mô tả trong header còn 1–2 dòng, mô tả tham số ≤ 80 ký tự; giải thích đầy đủ chuyển xuống comment `// ---- Details` ngay dưới header (MCP không gửi phần này) |
+| Tool có sẵn của Revit MCP (profile `full`, 192 tool) | ~36.6k token | ~2.7k token (26 tool) | **A (cần làm trên máy)**: profile `drafting` |
+
+### A — Profile `drafting` cho Revit MCP
+
+Revit MCP chọn nhóm tool có sẵn theo biến môi trường `MCP_PROFILE` (`full` mặc định, `architect`, `mep`, `structural`, `fire-safety`). Bộ skill drafting chỉ cần nhóm cơ bản (`get_active_view`…) và các lệnh động.
+
+1. Áp patch `tools/revit-mcp/drafting-profile.patch` vào thư mục Revit MCP (thêm profile `drafting: [baseTools]` trong `MCP-Server/src/tools/index.ts`), rồi build lại: `cd MCP-Server && npm run build`.
+2. Thêm `MCP_PROFILE` vào cấu hình MCP của Claude:
+   ```json
+   "revit-mcp": { "command": "node", "args": ["<…>/MCP-Server/build/index.js"], "env": { "MCP_PROFILE": "drafting" } }
+   ```
+3. Mở phiên Claude Code mới, kiểm tra: `hello_revit` và các lệnh động vẫn gọi được.
+   - Bản Revit MCP có lệnh động (`dynamic-commands`, `run_dynamic_command`) là bản riêng, không có trong mã gốc. Nếu lệnh động nằm trong một module của `PROFILE_MODULES`, thêm module đó vào `drafting`.
+   - Đặt `drafting` mà **chưa** áp patch → Revit MCP tự quay về `full` (không hỏng, chỉ không tiết kiệm).
+4. Việc cần tool khác (MEP, room, tạo view…) → đổi lại `MCP_PROFILE` = `architect` hoặc `full`.
 
 ## Cập nhật bài học (Keeping it alive)
 

@@ -1,19 +1,36 @@
 /* mcp-tool
 {
-  "description": "Read-only: for sheets whose number starts with a prefix, list every viewport with its type, whether the type shows the title, box outline, label outline, label offset/line length (sheet mm), and checks: title shown, centred under the box, below the box, overlapping other viewports or other titles. Also the viewport types in use.",
+  "description": "Read-only: viewport titles on sheets (prefix): shown, centred, below the box, overlaps; viewport types in use.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "sheetPrefix": { "type": "string" },
-      "sheetNumbers": { "type": "array", "items": { "type": "string" } },
-      "includeLegends": { "type": "boolean", "description": "default true" },
-      "onlyIssues": { "type": "boolean", "description": "default false" }
+      "sheetPrefix": {
+        "type": "string"
+      },
+      "sheetNumbers": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "includeLegends": {
+        "type": "boolean",
+        "description": "default true"
+      },
+      "onlyIssues": {
+        "type": "boolean",
+        "description": "default false"
+      }
     }
   },
   "timeoutSeconds": 180,
   "readOnly": true
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Read-only: for sheets whose number starts with a prefix, list every viewport with its type, whether the type shows
+//    the title, box outline, label outline, label offset/line length (sheet mm), and checks: title shown, centred
+//    under the box, below the box, overlapping other viewports or other titles. Also the viewport types in use.
 using System;
 using System.Collections.Generic;
 using System.Linq;

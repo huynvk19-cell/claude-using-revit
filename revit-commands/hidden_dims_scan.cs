@@ -1,11 +1,25 @@
 /* mcp-tool
 {
-  "description": "Read-only: linear dimensions owned by views placed on sheets (sheet number prefix) that do not show in their view: no bounding box in the view, or entirely outside the view's crop/annotation crop region. Lists id, view, sheet, values, reason.",
-  "inputSchema": { "type": "object", "properties": { "sheetPrefix": { "type": "string" } }, "required": ["sheetPrefix"] },
+  "description": "Read-only: dims of sheet views (sheet prefix) that do not show: no box in view or outside the crop / annotation crop.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "sheetPrefix": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "sheetPrefix"
+    ]
+  },
   "timeoutSeconds": 300,
   "readOnly": true
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Read-only: linear dimensions owned by views placed on sheets (sheet number prefix) that do not show in their view:
+//    no bounding box in the view, or entirely outside the view's crop/annotation crop region. Lists id, view, sheet,
+//    values, reason.
 using System;
 using System.Collections.Generic;
 using System.Linq;

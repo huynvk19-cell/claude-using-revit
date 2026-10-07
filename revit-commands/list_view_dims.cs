@@ -1,20 +1,36 @@
 /* mcp-tool
 {
-  "description": "Read-only: list linear dimensions in a view, optionally only those of a given dimension type or referencing a given element: id, type, direction, line position (mm, along the view or height), values.",
+  "description": "Read-only: linear dims in a view (optionally of one type or referencing one element): id, type, direction, position, values.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "viewId": { "type": "number" },
-      "typeName": { "type": "string" },
-      "elementId": { "type": "number" },
-      "ids": { "type": "array", "items": { "type": "number" } }
+      "viewId": {
+        "type": "number"
+      },
+      "typeName": {
+        "type": "string"
+      },
+      "elementId": {
+        "type": "number"
+      },
+      "ids": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        }
+      }
     },
-    "required": ["viewId"]
+    "required": [
+      "viewId"
+    ]
   },
   "timeoutSeconds": 120,
   "readOnly": true
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Read-only: list linear dimensions in a view, optionally only those of a given dimension type or referencing a given
+//    element: id, type, direction, line position (mm, along the view or height), values.
 using System;
 using System.Linq;
 using Autodesk.Revit.DB;

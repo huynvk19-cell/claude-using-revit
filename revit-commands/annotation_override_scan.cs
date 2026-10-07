@@ -1,18 +1,29 @@
 /* mcp-tool
 {
-  "description": "Read-only: in the views placed on sheets (sheet number prefix), list annotations (dimensions, spot dimensions, tags, text notes) that carry an Override Graphics in View with a line colour, e.g. review colouring left behind. Returns id, kind, view, colour.",
+  "description": "Read-only: annotations with a colour Override in views on sheets (number prefix): id, kind, view, colour.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "sheetPrefix": { "type": "string" },
-      "limit": { "type": "number", "description": "max items listed (default 200)" }
+      "sheetPrefix": {
+        "type": "string"
+      },
+      "limit": {
+        "type": "number",
+        "description": "max items listed (default 200)"
+      }
     },
-    "required": ["sheetPrefix"]
+    "required": [
+      "sheetPrefix"
+    ]
   },
   "timeoutSeconds": 600,
   "readOnly": true
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Read-only: in the views placed on sheets (sheet number prefix), list annotations (dimensions, spot dimensions,
+//    tags, text notes) that carry an Override Graphics in View with a line colour, e.g. review colouring left behind.
+//    Returns id, kind, view, colour.
 using System;
 using System.Collections.Generic;
 using System.Linq;

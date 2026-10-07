@@ -1,11 +1,29 @@
 /* mcp-tool
 {
-  "description": "Read-only: every linear dimension of ONE view in the view frame (mm Right / Up from View.Origin, as stair_plan_audit): id, type, measured direction, line position, witness positions, segment values with prefix / suffix / below, references (element + category). outPath writes the JSON. Use to learn how the user adjusted dims (snapshot before / after).",
-  "inputSchema": { "type": "object", "properties": { "viewId": { "type": "number" }, "outPath": { "type": "string" } }, "required": ["viewId"] },
+  "description": "Read-only: every linear dim of ONE view in the view frame: lines, witness positions, values, texts, references.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "viewId": {
+        "type": "number"
+      },
+      "outPath": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "viewId"
+    ]
+  },
   "timeoutSeconds": 60,
   "readOnly": true
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Read-only: every linear dimension of ONE view in the view frame (mm Right / Up from View.Origin, as
+//    stair_plan_audit): id, type, measured direction, line position, witness positions, segment values with prefix /
+//    suffix / below, references (element + category). outPath writes the JSON. Use to learn how the user adjusted
+//    dims (snapshot before / after).
 using System;
 using System.Collections.Generic;
 using System.Linq;

@@ -1,18 +1,30 @@
 /* mcp-tool
 {
-  "description": "Read-only: plan view range (top, cut, bottom, view depth) as absolute elevations in mm, plus the levels used, and for given element ids their Z range (bounding box, mm).",
+  "description": "Read-only: plan view range as absolute elevations (mm) and the Z range of given elements.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "viewId": { "type": "integer" },
-      "ids": { "type": "array", "items": { "type": "integer" } }
+      "viewId": {
+        "type": "integer"
+      },
+      "ids": {
+        "type": "array",
+        "items": {
+          "type": "integer"
+        }
+      }
     },
-    "required": ["viewId"]
+    "required": [
+      "viewId"
+    ]
   },
   "timeoutSeconds": 30,
   "readOnly": true
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Read-only: plan view range (top, cut, bottom, view depth) as absolute elevations in mm, plus the levels used, and
+//    for given element ids their Z range (bounding box, mm).
 using System;
 using System.Collections.Generic;
 using System.Linq;

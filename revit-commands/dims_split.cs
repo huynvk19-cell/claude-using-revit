@@ -1,18 +1,41 @@
 /* mcp-tool
 {
-  "description": "Split a chain dimension at every segment longer than maxMm: each run of references between long segments becomes its own dim on the same line and type (runs with fewer than 2 references are dropped); the original dim is deleted. mode preview | apply. Reports the new ids and values.",
+  "description": "Split a chain dim at every segment longer than maxMm into separate dims on the same line. preview | apply.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "viewId": { "type": "number" }, "dimId": { "type": "number" }, "maxMm": { "type": "number" },
-      "mode": { "type": "string", "enum": ["preview", "apply"] }
+      "viewId": {
+        "type": "number"
+      },
+      "dimId": {
+        "type": "number"
+      },
+      "maxMm": {
+        "type": "number"
+      },
+      "mode": {
+        "type": "string",
+        "enum": [
+          "preview",
+          "apply"
+        ]
+      }
     },
-    "required": ["viewId", "dimId", "maxMm", "mode"]
+    "required": [
+      "viewId",
+      "dimId",
+      "maxMm",
+      "mode"
+    ]
   },
   "timeoutSeconds": 60,
   "readOnly": false
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Split a chain dimension at every segment longer than maxMm: each run of references between long segments becomes its
+//    own dim on the same line and type (runs with fewer than 2 references are dropped); the original dim is deleted.
+//    mode preview | apply. Reports the new ids and values.
 using System;
 using System.Collections.Generic;
 using System.Linq;

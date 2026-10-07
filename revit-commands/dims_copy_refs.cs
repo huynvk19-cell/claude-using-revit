@@ -1,20 +1,46 @@
 /* mcp-tool
 {
-  "description": "Copy linear dimensions to another view by REUSING their references (stable representations), e.g. dims drawn by hand on railings that the API cannot reference so that Revit draws them. Each item: sourceDimId, optional offsetMm [dRight, dUp] model mm to shift the dim line, optional typeName (default: source type). Segment prefix / suffix / above / below texts are copied unless copyText false. mode preview (rolled back, reports values and whether each new dim is drawn in the target view) | apply (logPath: created ids) | undo (logPath).",
+  "description": "Copy linear dims to another view by reusing their references (e.g. hand dims on railings). preview | apply | undo.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "targetViewId": { "type": "integer" },
-      "items": { "type": "array", "items": { "type": "object" } },
-      "copyText": { "type": "boolean" },
-      "mode": { "type": "string", "enum": ["preview", "apply", "undo"] },
-      "logPath": { "type": "string" }
+      "targetViewId": {
+        "type": "integer"
+      },
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      },
+      "copyText": {
+        "type": "boolean"
+      },
+      "mode": {
+        "type": "string",
+        "enum": [
+          "preview",
+          "apply",
+          "undo"
+        ]
+      },
+      "logPath": {
+        "type": "string"
+      }
     },
-    "required": ["mode"]
+    "required": [
+      "mode"
+    ]
   },
   "timeoutSeconds": 120
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Copy linear dimensions to another view by REUSING their references (stable representations), e.g. dims drawn by
+//    hand on railings that the API cannot reference so that Revit draws them. Each item: sourceDimId, optional
+//    offsetMm [dRight, dUp] model mm to shift the dim line, optional typeName (default: source type). Segment prefix
+//    / suffix / above / below texts are copied unless copyText false. mode preview (rolled back, reports values and
+//    whether each new dim is drawn in the target view) | apply (logPath: created ids) | undo (logPath).
 using System;
 using System.Collections.Generic;
 using System.Linq;

@@ -1,19 +1,42 @@
 /* mcp-tool
 {
-  "description": "Copy the display settings of one stair tread/riser number (NumberSystem) to others: Display Rule, Number Size, Justify, Justify Offset, Orientation, Offset from Reference, Tag Type (values copied as stored, no unit parsing). Reference (side) is kept per target unless copyReference. mode preview | apply.",
+  "description": "Copy stair tread/riser number display settings (values as stored, no unit parsing) from one to others. preview | apply.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "sourceId": { "type": "integer" },
-      "targetIds": { "type": "array", "items": { "type": "integer" } },
-      "copyReference": { "type": "boolean" },
-      "mode": { "type": "string", "enum": ["preview", "apply"] }
+      "sourceId": {
+        "type": "integer"
+      },
+      "targetIds": {
+        "type": "array",
+        "items": {
+          "type": "integer"
+        }
+      },
+      "copyReference": {
+        "type": "boolean"
+      },
+      "mode": {
+        "type": "string",
+        "enum": [
+          "preview",
+          "apply"
+        ]
+      }
     },
-    "required": ["sourceId", "targetIds", "mode"]
+    "required": [
+      "sourceId",
+      "targetIds",
+      "mode"
+    ]
   },
   "timeoutSeconds": 60
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Copy the display settings of one stair tread/riser number (NumberSystem) to others: Display Rule, Number Size,
+//    Justify, Justify Offset, Orientation, Offset from Reference, Tag Type (values copied as stored, no unit
+//    parsing). Reference (side) is kept per target unless copyReference. mode preview | apply.
 using System;
 using System.Collections.Generic;
 using System.Linq;

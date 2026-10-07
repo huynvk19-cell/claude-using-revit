@@ -1,11 +1,32 @@
 /* mcp-tool
 {
-  "description": "Read-only: in ONE view, whether given built-in categories (and their subcategories) are hidden, and whether the view template controls V/G. Example cats: OST_StairsRailing, OST_RailingTopRail, OST_RailingHandRail, OST_StairsRuns.",
-  "inputSchema": { "type": "object", "properties": { "viewId": { "type": "number" }, "cats": { "type": "array", "items": { "type": "string" } } }, "required": ["viewId", "cats"] },
+  "description": "Read-only: in ONE view, whether given built-in categories / subcategories are hidden and if the template controls V/G.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "viewId": {
+        "type": "number"
+      },
+      "cats": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "viewId",
+      "cats"
+    ]
+  },
   "timeoutSeconds": 60,
   "readOnly": true
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Read-only: in ONE view, whether given built-in categories (and their subcategories) are hidden, and whether the
+//    view template controls V/G. Example cats: OST_StairsRailing, OST_RailingTopRail, OST_RailingHandRail,
+//    OST_StairsRuns.
 using System;
 using System.Collections.Generic;
 using System.Linq;

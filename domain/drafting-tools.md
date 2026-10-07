@@ -16,7 +16,7 @@ metadata:
 
 **Cách gọi**
 - Gọi trực tiếp tool `<tên>`, hoặc qua `run_dynamic_command {name, args}`.
-- Khi không chắc tham số: đọc header của file.
+- Khi không chắc tham số: đọc header của file (`/* mcp-tool */`) và comment `// ---- Details` ngay dưới nó (giải thích đầy đủ).
 - Ký hiệu: RO = read-only; **1V** = mỗi lần gọi chỉ một view.
 
 ## Phiên làm việc
@@ -41,6 +41,7 @@ metadata:
 | `viewport_title_audit` | Kiểm tra title. |
 | `template_link_visibility` | Link nào đang hiện trong từng template. |
 | `rollup_dims_check` | Cửa cuốn và các dim đang trỏ vào nó (1V). |
+| `stair_section_info` | **Mặt cắt dọc thang** (1V, section, `drafting-stair-section-parallel.md`): các vế F1… theo chiều đi lên (cắt / phía sau, lên trái / phải), From EL – To EL, R × chiều cao cổ bậc, T × độ sâu, chữ công thức; dim LA1/LA3 đã có (OK / thiếu / sai chữ), tag vế, số bậc; type tag vế dùng nhiều nhất trong mặt cắt. |
 | `stair_plan_audit` | **Lõi thang bộ** (1V, mặt bằng, `drafting-stair-plan.md`): vế V1/V2/V3 theo mặt cắt, số bậc tính (bậc trên cùng ngang chiếu nghỉ không tính) + công thức, bề rộng thông thuỷ (mép tay vịn → mép bậc → tường), tường bao 4 phía, chiếu nghỉ (đầu tay vịn giữa → tay vịn/lan can chắn → tường, theo nét tay vịn đang hiện); dim cần có (`Expected`: OK / thiếu / thiếu CLEAR / CLEAR sai chỗ / sai công thức), tag, ô mã hoàn thiện (Generic Annotation, `FinishMarks`), cao độ, stair path, số bậc; type dùng nhiều nhất trong dự án. |
 | `stair_views_survey` | Các view mặt bằng có tên chứa một chuỗi: đếm chú thích theo category + type, sheet chứa view. Dùng để xem các view cùng loại đã xong của dự án làm gì. |
 | `finish_marks_survey` | Ô mã hoàn thiện (Generic Annotation tên có FINISH) trên các view theo tên: mã (F13, W05…) và số lượng. |

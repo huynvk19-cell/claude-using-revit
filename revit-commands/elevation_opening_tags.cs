@@ -1,37 +1,148 @@
 /* mcp-tool
 {
-  "description": "Door/window tags on elevation and section views. Finds the doors/windows really visible in each view (rays from the view plane), adds a tag to every one without a tag and checks the tags already there. Placement rules: the tag head never sits on its own element; door tags only directly ABOVE the door, window tags directly above or below, touching the element (gapMm); best spot = tag over plain wall face / empty. Every spot is scored by what lies under the tag head: model elements seen in the view (ray cast in the default 3D view, links included: stairs, railings, lifts/equipment, columns, beams, other doors/windows... = hard; floors, roofs, curtain panels/mullions, levels/grids lines = soft) and annotation (dimension lines/texts, other tags, text notes = hard). Existing tags: reports on_host, door tag not above, window tag beside, far from the element, covering things; fixExisting moves the wrongly placed ones (no leader) to a valid spot. Tags still covering a dimension or a model element are coloured red in the view (original overrides saved in logPath). mode=preview (default, nothing kept) | apply | undo (deletes created tags, moves tags back, restores overrides from logPath). Never syncs.",
+  "description": "Elevation/section, ONE view: tag every visible untagged door/window above (windows above/below) and check existing tags (rules T1-T8). preview | apply | undo.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "mode": { "type": "string", "enum": ["preview", "apply", "undo", "clearhighlight"], "description": "clearhighlight: restore the original overrides of the red tags (tags stay where they are)." },
-      "repositionAll": { "type": "boolean", "description": "Re-place every door/window tag of the view by the rules (above + centred first), not only wrong ones. Default false." },
-      "addLeader": { "type": "boolean", "description": "Give every processed tag a free-end vertical leader ending leaderInsetMm inside the element edge. Logged for undo. Default false." },
-      "leaderInsetMm": { "type": "number", "description": "Paper mm the leader end goes inside the element. Default 1.5." },
-      "allowMultipleViews": { "type": "boolean", "description": "Default false: one view per call (elevations/sections are heavy)." },
-      "maxSeconds": { "type": "number", "description": "Time budget; when exceeded everything is rolled back. Default 90." },
-      "maxOffsetSteps": { "type": "number", "description": "Candidate offsets from the element (1 / 2.5 / 4 mm paper ...). Default 3." },
-      "debugIds": { "type": "array", "items": { "type": "number" } },
-      "debugXY": { "type": "array", "items": { "type": "number" } },
-      "viewIds": { "type": "array", "items": { "type": "number" } },
-      "sheetNumbers": { "type": "array", "items": { "type": "string" }, "description": "Use the Elevation/Section views placed on these sheets." },
-      "excludeIds": { "type": "array", "items": { "type": "number" }, "description": "Doors/windows never tagged (e.g. known hidden ones)." },
-      "doorTagTypeId": { "type": "number", "description": "Default: the door tag type used most in the chosen views." },
-      "windowTagTypeId": { "type": "number" },
-      "gapMm": { "type": "number", "description": "Paper mm between element and tag head. Default 1.0." },
-      "maxGapMm": { "type": "number", "description": "Paper mm: an existing tag (no leader) farther than this from its element is reported 'far'. Default 4." },
-      "fixExisting": { "type": "boolean", "description": "Move existing tags (no leader) that sit on their element, a door tag not above its door, a window tag beside its window, or that cover a dim/model element, to a clean valid spot. Default false." },
-      "highlight": { "type": "boolean", "description": "Colour tags that still cover a dim or model element red (apply only). Default true." },
-      "logPath": { "type": "string", "description": "JSON log (created tags, moves, original overrides). Required for apply/undo." },
-      "rollupInside": { "type": "boolean", "description": "Roll-up doors ONLY (family name contains a rollupFamilies part): when the tag head is <= 1/3 of the visible door width and <= 1/4 of its visible height, the tag may sit inside the door, centred, no leader; such existing tags are accepted. Default true." },
-      "rollupFamilies": { "type": "array", "items": { "type": "string" }, "description": "Default ['ROLL UP']." },
-      "maxItems": { "type": "number", "description": "Max rows per list per view. Default 300." }
+      "mode": {
+        "type": "string",
+        "enum": [
+          "preview",
+          "apply",
+          "undo",
+          "clearhighlight"
+        ],
+        "description": "clearhighlight: restore the original overrides of the red tags"
+      },
+      "repositionAll": {
+        "type": "boolean",
+        "description": "Re-place every door/window tag of the view by the rules"
+      },
+      "addLeader": {
+        "type": "boolean",
+        "description": "Give every processed tag a free-end vertical leader ending leaderInsetMm inside the…"
+      },
+      "leaderInsetMm": {
+        "type": "number",
+        "description": "Paper mm the leader end goes inside the element. Default 1.5."
+      },
+      "allowMultipleViews": {
+        "type": "boolean",
+        "description": "Default false: one view per call (elevations/sections are heavy)."
+      },
+      "maxSeconds": {
+        "type": "number",
+        "description": "Time budget; when exceeded everything is rolled back. Default 90."
+      },
+      "maxOffsetSteps": {
+        "type": "number",
+        "description": "Candidate offsets from the element (1 / 2.5 / 4 mm paper ...). Default 3."
+      },
+      "debugIds": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        }
+      },
+      "debugXY": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        }
+      },
+      "viewIds": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        }
+      },
+      "sheetNumbers": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Use the Elevation/Section views placed on these sheets."
+      },
+      "excludeIds": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        },
+        "description": "Doors/windows never tagged (e.g. known hidden ones)."
+      },
+      "doorTagTypeId": {
+        "type": "number",
+        "description": "Default: the door tag type used most in the chosen views."
+      },
+      "windowTagTypeId": {
+        "type": "number"
+      },
+      "gapMm": {
+        "type": "number",
+        "description": "Paper mm between element and tag head. Default 1.0."
+      },
+      "maxGapMm": {
+        "type": "number",
+        "description": "Paper mm: an existing tag (no leader) farther than this from its element is reported 'far'"
+      },
+      "fixExisting": {
+        "type": "boolean",
+        "description": "Move existing tags"
+      },
+      "highlight": {
+        "type": "boolean",
+        "description": "Colour tags that still cover a dim or model element red (apply only)"
+      },
+      "logPath": {
+        "type": "string",
+        "description": "JSON log (created tags, moves, original overrides). Required for apply/undo."
+      },
+      "rollupInside": {
+        "type": "boolean",
+        "description": "Roll-up doors ONLY (family name contains a rollupFamilies part)"
+      },
+      "rollupFamilies": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Default ['ROLL UP']."
+      },
+      "maxItems": {
+        "type": "number",
+        "description": "Max rows per list per view. Default 300."
+      }
     }
   },
   "timeoutSeconds": 1800,
   "readOnly": false
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Door/window tags on elevation and section views. Finds the doors/windows really visible in each view (rays from the
+//    view plane), adds a tag to every one without a tag and checks the tags already there. Placement rules: the tag
+//    head never sits on its own element; door tags only directly ABOVE the door, window tags directly above or below,
+//    touching the element (gapMm); best spot = tag over plain wall face / empty. Every spot is scored by what lies
+//    under the tag head: model elements seen in the view (ray cast in the default 3D view, links included: stairs,
+//    railings, lifts/equipment, columns, beams, other doors/windows... = hard; floors, roofs, curtain panels/mullions,
+//    levels/grids lines = soft) and annotation (dimension lines/texts, other tags, text notes = hard). Existing tags:
+//    reports on_host, door tag not above, window tag beside, far from the element, covering things; fixExisting moves
+//    the wrongly placed ones (no leader) to a valid spot. Tags still covering a dimension or a model element are
+//    coloured red in the view (original overrides saved in logPath). mode=preview (default, nothing kept) | apply |
+//    undo (deletes created tags, moves tags back, restores overrides from logPath). Never syncs.
+// Parameters:
+//   mode: clearhighlight: restore the original overrides of the red tags (tags stay where they are).
+//   repositionAll: Re-place every door/window tag of the view by the rules (above + centred first), not only wrong
+//    ones. Default false.
+//   addLeader: Give every processed tag a free-end vertical leader ending leaderInsetMm inside the element edge.
+//    Logged for undo. Default false.
+//   maxGapMm: Paper mm: an existing tag (no leader) farther than this from its element is reported 'far'. Default 4.
+//   fixExisting: Move existing tags (no leader) that sit on their element, a door tag not above its door, a window tag
+//    beside its window, or that cover a dim/model element, to a clean valid spot. Default false.
+//   highlight: Colour tags that still cover a dim or model element red (apply only). Default true.
+//   rollupInside: Roll-up doors ONLY (family name contains a rollupFamilies part): when the tag head is <= 1/3 of the
+//    visible door width and <= 1/4 of its visible height, the tag may sit inside the door, centred, no leader; such
+//    existing tags are accepted. Default true.
 using System;
 using System.Collections.Generic;
 using System.IO;

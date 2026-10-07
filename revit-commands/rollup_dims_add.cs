@@ -1,22 +1,54 @@
 /* mcp-tool
 {
-  "description": "Roll-up doors on an elevation/section view, nominal size from the family's named references (TOP, LEFT, RIGHT; case-insensitive): items [{doorId, levelId, vX? (mm along view right: vertical Level->TOP dim on that line), hZ? (mm elevation: horizontal LEFT->RIGHT dim at that height)}]. fixChains [{dimId, doorId}]: rebuild a chain that hooks the door's frame faces so it uses LEFT/RIGHT instead (same line and type; old dim deleted). typeName (required) = dimension type for new dims. mode preview | apply (logPath).",
+  "description": "Roll-up doors: nominal dims from family references TOP / LEFT / RIGHT; fixChains rebuilds chains on LEFT/RIGHT. preview | apply.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "viewId": { "type": "number" },
-      "items": { "type": "array", "items": { "type": "object" } },
-      "fixChains": { "type": "array", "items": { "type": "object" } },
-      "typeName": { "type": "string" },
-      "mode": { "type": "string", "enum": ["preview", "apply"] },
-      "logPath": { "type": "string" }
+      "viewId": {
+        "type": "number"
+      },
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      },
+      "fixChains": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      },
+      "typeName": {
+        "type": "string"
+      },
+      "mode": {
+        "type": "string",
+        "enum": [
+          "preview",
+          "apply"
+        ]
+      },
+      "logPath": {
+        "type": "string"
+      }
     },
-    "required": ["viewId", "mode", "logPath"]
+    "required": [
+      "viewId",
+      "mode",
+      "logPath"
+    ]
   },
   "timeoutSeconds": 120,
   "readOnly": false
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Roll-up doors on an elevation/section view, nominal size from the family's named references (TOP, LEFT, RIGHT; case-
+//    insensitive): items [{doorId, levelId, vX? (mm along view right: vertical Level->TOP dim on that line), hZ? (mm
+//    elevation: horizontal LEFT->RIGHT dim at that height)}]. fixChains [{dimId, doorId}]: rebuild a chain that hooks
+//    the door's frame faces so it uses LEFT/RIGHT instead (same line and type; old dim deleted). typeName (required) =
+//    dimension type for new dims. mode preview | apply (logPath).
 using System;
 using System.Collections.Generic;
 using System.IO;

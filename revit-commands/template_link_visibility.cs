@@ -1,11 +1,27 @@
 /* mcp-tool
 {
-  "description": "Read-only: for view templates (by name list, or those used by views on sheets with sheetPrefix), which Revit link types are visible (link instance not hidden in the template) - the rows ticked in V/G > Revit Links.",
-  "inputSchema": { "type": "object", "properties": { "sheetPrefix": { "type": "string" }, "names": { "type": "array", "items": { "type": "string" } } } },
+  "description": "Read-only: per view template, which Revit link types are visible.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "sheetPrefix": {
+        "type": "string"
+      },
+      "names": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    }
+  },
   "timeoutSeconds": 120,
   "readOnly": true
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Read-only: for view templates (by name list, or those used by views on sheets with sheetPrefix), which Revit link
+//    types are visible (link instance not hidden in the template) - the rows ticked in V/G > Revit Links.
 using System;
 using System.Collections.Generic;
 using System.Linq;

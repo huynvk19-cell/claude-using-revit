@@ -1,18 +1,34 @@
 /* mcp-tool
 {
-  "description": "Read-only: for plan views, list the filled regions owned by each view (id, type, outline in mm, bbox) and the columns (Structural Columns + Columns, host and every loaded link) that cross the view's cut plane inside its crop: link, id, type, section outline at the cut plane (mm, host coords). Pairs each region with the column section it overlaps most. outPath writes the full JSON and returns a summary.",
+  "description": "Read-only: filled regions in plan views vs column sections at the cut plane (host + links), paired by overlap.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "viewIds": { "type": "array", "items": { "type": "integer" } },
-      "outPath": { "type": "string" },
-      "verbose": { "type": "boolean" }
+      "viewIds": {
+        "type": "array",
+        "items": {
+          "type": "integer"
+        }
+      },
+      "outPath": {
+        "type": "string"
+      },
+      "verbose": {
+        "type": "boolean"
+      }
     },
-    "required": ["viewIds"]
+    "required": [
+      "viewIds"
+    ]
   },
   "timeoutSeconds": 600
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Read-only: for plan views, list the filled regions owned by each view (id, type, outline in mm, bbox) and the
+//    columns (Structural Columns + Columns, host and every loaded link) that cross the view's cut plane inside its
+//    crop: link, id, type, section outline at the cut plane (mm, host coords). Pairs each region with the column
+//    section it overlaps most. outPath writes the full JSON and returns a summary.
 using System;
 using System.Collections.Generic;
 using System.Linq;

@@ -1,19 +1,41 @@
 /* mcp-tool
 {
-  "description": "Small 'work in progress' window shown on top of every app (standalone Windows process, not tied to Revit). action show: open/replace with title + message; update: change message/step; close: close it. Neutral wording only. Same window as %USERPROFILE%\\Tools\\WorkStatus\\ws.ps1.",
+  "description": "Small always-on-top 'work in progress' window: show | update | close.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "action": { "type": "string", "enum": ["show", "update", "close"] },
-      "title": { "type": "string", "description": "task name, e.g. 'Rà soát bản vẽ ES'" },
-      "message": { "type": "string", "description": "current step" },
-      "step": { "type": "string", "description": "optional progress text, e.g. '3/12'" }
+      "action": {
+        "type": "string",
+        "enum": [
+          "show",
+          "update",
+          "close"
+        ]
+      },
+      "title": {
+        "type": "string",
+        "description": "task name, e.g. 'Rà soát bản vẽ ES'"
+      },
+      "message": {
+        "type": "string",
+        "description": "current step"
+      },
+      "step": {
+        "type": "string",
+        "description": "optional progress text, e.g. '3/12'"
+      }
     },
-    "required": ["action"]
+    "required": [
+      "action"
+    ]
   },
   "timeoutSeconds": 30
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Small 'work in progress' window shown on top of every app (standalone Windows process, not tied to Revit). action
+//    show: open/replace with title + message; update: change message/step; close: close it. Neutral wording only. Same
+//    window as %USERPROFILE%\Tools\WorkStatus\ws.ps1.
 using System;
 using System.Diagnostics;
 using System.IO;

@@ -1,19 +1,35 @@
 /* mcp-tool
 {
-  "description": "Export PNG images of a region of views: items [{viewId, x, y, halfMm, name}] (model mm). Activates each view, zooms to the square around (x,y) and exports the visible region at pixels (default 1600). Does not change the model; the last view stays active.",
+  "description": "Export PNGs of square regions of views around given points (zooms the view; no model change).",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "items": { "type": "array", "items": { "type": "object" } },
-      "folder": { "type": "string" },
-      "pixels": { "type": "integer" }
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      },
+      "folder": {
+        "type": "string"
+      },
+      "pixels": {
+        "type": "integer"
+      }
     },
-    "required": ["items", "folder"]
+    "required": [
+      "items",
+      "folder"
+    ]
   },
   "timeoutSeconds": 600,
   "readOnly": true
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Export PNG images of a region of views: items [{viewId, x, y, halfMm, name}] (model mm). Activates each view, zooms
+//    to the square around (x,y) and exports the visible region at pixels (default 1600). Does not change the model;
+//    the last view stays active.
 using System;
 using System.Collections.Generic;
 using System.IO;

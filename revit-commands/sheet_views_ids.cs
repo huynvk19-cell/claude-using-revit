@@ -1,11 +1,31 @@
 /* mcp-tool
 {
-  "description": "Read-only: for sheets whose number starts with a prefix, list each placed view (not legends/schedules unless includeAll) with view id, viewport id, viewport type, view type, scale, view template (id + name). Optional outPath writes the full list as JSON and returns only counts.",
-  "inputSchema": { "type": "object", "properties": { "sheetPrefix": { "type": "string" }, "includeAll": { "type": "boolean" }, "outPath": { "type": "string" } }, "required": ["sheetPrefix"] },
+  "description": "Read-only: views placed on sheets with a number prefix: view id, viewport id/type, view type, scale, template. outPath for JSON.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "sheetPrefix": {
+        "type": "string"
+      },
+      "includeAll": {
+        "type": "boolean"
+      },
+      "outPath": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "sheetPrefix"
+    ]
+  },
   "timeoutSeconds": 120,
   "readOnly": true
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Read-only: for sheets whose number starts with a prefix, list each placed view (not legends/schedules unless
+//    includeAll) with view id, viewport id, viewport type, view type, scale, view template (id + name). Optional
+//    outPath writes the full list as JSON and returns only counts.
 using System.Linq;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;

@@ -1,18 +1,32 @@
 /* mcp-tool
 {
-  "description": "Read-only: for every tag (IndependentTag) and spot elevation in ONE view (or the given ids): type, tagged element, head position, leader on/off, end condition, leader end and elbow per reference (view frame mm: Right / Up from the view origin), and the leader segment directions (H = horizontal, V = vertical, D = diagonal). Use to learn how the user draws leaders.",
+  "description": "Read-only: tags / spots in ONE view: head, leader end, elbow (view frame mm) and segment directions H / V / D.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "viewId": { "type": "integer" },
-      "ids": { "type": "array", "items": { "type": "integer" } }
+      "viewId": {
+        "type": "integer"
+      },
+      "ids": {
+        "type": "array",
+        "items": {
+          "type": "integer"
+        }
+      }
     },
-    "required": ["viewId"]
+    "required": [
+      "viewId"
+    ]
   },
   "timeoutSeconds": 60,
   "readOnly": true
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Read-only: for every tag (IndependentTag) and spot elevation in ONE view (or the given ids): type, tagged element,
+//    head position, leader on/off, end condition, leader end and elbow per reference (view frame mm: Right / Up from
+//    the view origin), and the leader segment directions (H = horizontal, V = vertical, D = diagonal). Use to learn
+//    how the user draws leaders.
 using System;
 using System.Collections.Generic;
 using System.Linq;

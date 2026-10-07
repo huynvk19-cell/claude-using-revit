@@ -1,30 +1,107 @@
 /* mcp-tool
 {
-  "description": "ONE plan view: create linear dimensions whose witness lines sit at given positions, each referencing REAL geometry found at that position (planar faces / lines of walls, railings incl. top rail and handrails, stair runs and landings, floors, doors/windows, columns; grids). Positions are in the view frame used by stair_plan_audit / view_crop_info: mm along the view's Right / Up from the view origin. Each dim: measure 'right' (positions are Right values, line at Up = lineMm) or 'up' (positions are Up values, line at Right = lineMm); a position may be a number or {mm, id} to take the reference from that element only. A position with no reference found within toleranceMm fails the dim (nothing guessed, no detail lines). typeName is required (the project's check dim type). mode preview (rolled back, reports found references and values) | apply (logPath) | undo (logPath: deletes the created dims).",
+  "description": "ONE plan view: linear dims at view-frame positions, each on real geometry found there (walls, rails, stairs, grids). preview | apply | undo.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "viewId": { "type": "number" },
-      "typeName": { "type": "string" },
-      "dims": { "type": "array", "items": { "type": "object", "properties": {
-        "name": { "type": "string" },
-        "measure": { "type": "string", "enum": ["right", "up"] },
-        "positions": { "type": "array", "description": "numbers (mm) or {mm, id, src: 'view' | '3d'} (src: take the reference from the plan geometry or from the 3D faces only; walls: 3d is stable, Stairs: view is what displays)" },
-        "lineMm": { "type": "number" },
-        "candidateIds": { "type": "array", "items": { "type": "number" }, "description": "look only in these elements (plus their rails)" },
-        "use3D": { "type": "boolean", "description": "also take the 3D faces of every element and prefer them (railings: dims on their plan lines are not drawn)" }
-      }, "required": ["measure", "positions", "lineMm"] } },
-      "toleranceMm": { "type": "number", "description": "default 2" },
-      "use3D": { "type": "boolean", "description": "default for every dim" },
-      "refDims": { "type": "array", "items": { "type": "number" }, "description": "existing dims (same view, same direction) whose references are reused first at their witness positions: use a dim drawn by hand when API references are not drawn (railings)" },
-      "mode": { "type": "string", "enum": ["preview", "apply", "undo"] },
-      "logPath": { "type": "string" }
+      "viewId": {
+        "type": "number"
+      },
+      "typeName": {
+        "type": "string"
+      },
+      "dims": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "measure": {
+              "type": "string",
+              "enum": [
+                "right",
+                "up"
+              ]
+            },
+            "positions": {
+              "type": "array",
+              "description": "numbers (mm) or {mm, id, src: 'view' | '3d'} (src: take the reference from…"
+            },
+            "lineMm": {
+              "type": "number"
+            },
+            "candidateIds": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "description": "look only in these elements (plus their rails)"
+            },
+            "use3D": {
+              "type": "boolean",
+              "description": "also take the 3D faces of every element and prefer them (railings: dims on…"
+            }
+          },
+          "required": [
+            "measure",
+            "positions",
+            "lineMm"
+          ]
+        }
+      },
+      "toleranceMm": {
+        "type": "number",
+        "description": "default 2"
+      },
+      "use3D": {
+        "type": "boolean",
+        "description": "default for every dim"
+      },
+      "refDims": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        },
+        "description": "existing dims whose references are reused first (e.g. a hand dim on railings)"
+      },
+      "mode": {
+        "type": "string",
+        "enum": [
+          "preview",
+          "apply",
+          "undo"
+        ]
+      },
+      "logPath": {
+        "type": "string"
+      }
     },
-    "required": ["mode"]
+    "required": [
+      "mode"
+    ]
   },
   "timeoutSeconds": 300
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// ONE plan view: create linear dimensions whose witness lines sit at given positions, each referencing REAL geometry
+//    found at that position (planar faces / lines of walls, railings incl. top rail and handrails, stair runs and
+//    landings, floors, doors/windows, columns; grids). Positions are in the view frame used by stair_plan_audit /
+//    view_crop_info: mm along the view's Right / Up from the view origin. Each dim: measure 'right' (positions are
+//    Right values, line at Up = lineMm) or 'up' (positions are Up values, line at Right = lineMm); a position may be
+//    a number or {mm, id} to take the reference from that element only. A position with no reference found within
+//    toleranceMm fails the dim (nothing guessed, no detail lines). typeName is required (the project's check dim
+//    type). mode preview (rolled back, reports found references and values) | apply (logPath) | undo (logPath:
+//    deletes the created dims).
+// Parameters:
+//   dims[].positions: numbers (mm) or {mm, id, src: 'view' | '3d'} (src: take the reference from the plan geometry or
+//    from the 3D faces only; walls: 3d is stable, Stairs: view is what displays)
+//   dims[].use3D: also take the 3D faces of every element and prefer them (railings: dims on their plan lines are not
+//    drawn)
+//   refDims: existing dims (same view, same direction) whose references are reused first at their witness positions:
+//    use a dim drawn by hand when API references are not drawn (railings)
 using System;
 using System.Collections.Generic;
 using System.IO;

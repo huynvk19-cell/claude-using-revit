@@ -1,23 +1,63 @@
 /* mcp-tool
 {
-  "description": "Add missing grid dimensions in ONE view: per group of parallel grids, a grid-to-grid chain and an overall (first-to-last) dimension near the grid ends, on both sides for plans (one side, the bubble side, for sections/elevations/details). A side is skipped when it already has them or has a partial grid chain; if the chain text is tight or a side's band is blocked by other content, only one side is dimensioned. New dims use the given (check) dimension type. Modes: preview, apply, undo (log).",
+  "description": "Old logic (use grid_dims_band): add grid chain + overall per parallel group near the grid ends in ONE view. preview | apply | undo.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "mode": { "type": "string", "enum": ["preview", "apply", "undo"] },
-      "viewId": { "type": "number" },
-      "dimType": { "type": "string", "description": "linear dimension type name" },
-      "overallMm": { "type": "number", "description": "sheet mm from the grid end to the overall dim line (default 4: dims sit just inside the grid bubbles, outside the building)" },
-      "stepMm": { "type": "number", "description": "sheet mm between overall and chain (default 7)" },
-      "forceSides": { "type": "object", "description": "optional { x: ['low'|'high'...], y: [...] } sides to dimension (x = grids spaced left-right)" },
-      "force": { "type": "boolean", "description": "with forceSides: add on those sides even if the best band still touches something" },
-      "logPath": { "type": "string" }
+      "mode": {
+        "type": "string",
+        "enum": [
+          "preview",
+          "apply",
+          "undo"
+        ]
+      },
+      "viewId": {
+        "type": "number"
+      },
+      "dimType": {
+        "type": "string",
+        "description": "linear dimension type name"
+      },
+      "overallMm": {
+        "type": "number",
+        "description": "sheet mm from the grid end to the overall dim line (default 4"
+      },
+      "stepMm": {
+        "type": "number",
+        "description": "sheet mm between overall and chain (default 7)"
+      },
+      "forceSides": {
+        "type": "object",
+        "description": "optional { x: ['low'|'high'...], y: [...] } sides to dimension"
+      },
+      "force": {
+        "type": "boolean",
+        "description": "with forceSides"
+      },
+      "logPath": {
+        "type": "string"
+      }
     },
-    "required": ["mode", "logPath"]
+    "required": [
+      "mode",
+      "logPath"
+    ]
   },
   "timeoutSeconds": 300
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Add missing grid dimensions in ONE view: per group of parallel grids, a grid-to-grid chain and an overall (first-to-
+//    last) dimension near the grid ends, on both sides for plans (one side, the bubble side, for
+//    sections/elevations/details). A side is skipped when it already has them or has a partial grid chain; if the
+//    chain text is tight or a side's band is blocked by other content, only one side is dimensioned. New dims use the
+//    given (check) dimension type. Modes: preview, apply, undo (log).
+// Parameters:
+//   overallMm: sheet mm from the grid end to the overall dim line (default 4: dims sit just inside the grid bubbles,
+//    outside the building)
+//   forceSides: optional { x: ['low'|'high'...], y: [...] } sides to dimension (x = grids spaced left-right)
+//   force: with forceSides: add on those sides even if the best band still touches something
 using System;
 using System.Collections.Generic;
 using System.IO;

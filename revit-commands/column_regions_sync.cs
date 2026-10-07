@@ -1,24 +1,64 @@
 /* mcp-tool
 {
-  "description": "Redraw column filled regions in plan views to match the real column sections. For each view: columns (Structural Columns + Columns, host + loaded links) cut by the view's cut plane inside the crop; each filled region loop (optionally only region types in regionTypes) is paired with the column section it overlaps most. Loops that already match (within tolMm) stay; changed ones take the column section; unmatched loops are kept; columns inside the crop with no loop are listed (addMissing true also adds them to the region of the same view). A changed region is recreated with the same type, view, element overrides and Comments, then the old one is deleted; regions referenced by dimensions are skipped unless force. mode preview / apply / undo (undo only deletes regions created, listed in logPath; old ones come back with Revit Undo). Writes logPath.",
+  "description": "Redraw column filled regions in plan views to match the real column sections at the cut plane. preview | apply.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "mode": { "type": "string", "enum": ["preview", "apply"] },
-      "viewIds": { "type": "array", "items": { "type": "integer" } },
-      "regionTypes": { "type": "array", "items": { "type": "string" } },
-      "tolMm": { "type": "number" },
-      "addMissing": { "type": "boolean" },
-      "dropUnmatched": { "type": "boolean" },
-      "force": { "type": "boolean" },
-      "logPath": { "type": "string" },
-      "verbose": { "type": "boolean" }
+      "mode": {
+        "type": "string",
+        "enum": [
+          "preview",
+          "apply"
+        ]
+      },
+      "viewIds": {
+        "type": "array",
+        "items": {
+          "type": "integer"
+        }
+      },
+      "regionTypes": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "tolMm": {
+        "type": "number"
+      },
+      "addMissing": {
+        "type": "boolean"
+      },
+      "dropUnmatched": {
+        "type": "boolean"
+      },
+      "force": {
+        "type": "boolean"
+      },
+      "logPath": {
+        "type": "string"
+      },
+      "verbose": {
+        "type": "boolean"
+      }
     },
-    "required": ["mode", "viewIds"]
+    "required": [
+      "mode",
+      "viewIds"
+    ]
   },
   "timeoutSeconds": 900
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Redraw column filled regions in plan views to match the real column sections. For each view: columns (Structural
+//    Columns + Columns, host + loaded links) cut by the view's cut plane inside the crop; each filled region loop
+//    (optionally only region types in regionTypes) is paired with the column section it overlaps most. Loops that
+//    already match (within tolMm) stay; changed ones take the column section; unmatched loops are kept; columns
+//    inside the crop with no loop are listed (addMissing true also adds them to the region of the same view). A
+//    changed region is recreated with the same type, view, element overrides and Comments, then the old one is
+//    deleted; regions referenced by dimensions are skipped unless force. mode preview / apply / undo (undo only
+//    deletes regions created, listed in logPath; old ones come back with Revit Undo). Writes logPath.
 using System;
 using System.Collections.Generic;
 using System.Linq;

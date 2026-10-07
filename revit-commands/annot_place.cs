@@ -1,19 +1,46 @@
 /* mcp-tool
 {
-  "description": "ONE plan view: place tags and spot elevations at given points in the view frame (mm along the view's Right / Up from the view origin, as stair_plan_audit / view_elem_boxes ViewBox). items: {kind:'tag', elementId, typeName (tag type name, category from the element), right, up (head), leader (default false), endRight, endUp (free leader end on the element, optional; leaders are kept orthogonal: if the end is not straight above/beside the head an elbow is added, elbowFirst V (default: vertical from the head, then horizontal) or H, or explicit elbowRight / elbowUp)} | {kind:'spot', elementId (floor / landing / run: its highest horizontal face), typeName (spot elevation type), right, up (point on the face)}. Types must already exist in the project (never created). mode preview (rolled back) | apply (logPath) | undo (logPath: deletes what was created).",
+  "description": "ONE plan view: place tags / spot elevations at view-frame points (Right/Up mm); orthogonal leaders. preview | apply | undo.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "viewId": { "type": "number" },
-      "items": { "type": "array", "items": { "type": "object" } },
-      "mode": { "type": "string", "enum": ["preview", "apply", "undo"] },
-      "logPath": { "type": "string" }
+      "viewId": {
+        "type": "number"
+      },
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      },
+      "mode": {
+        "type": "string",
+        "enum": [
+          "preview",
+          "apply",
+          "undo"
+        ]
+      },
+      "logPath": {
+        "type": "string"
+      }
     },
-    "required": ["mode"]
+    "required": [
+      "mode"
+    ]
   },
   "timeoutSeconds": 120
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// ONE plan view: place tags and spot elevations at given points in the view frame (mm along the view's Right / Up
+//    from the view origin, as stair_plan_audit / view_elem_boxes ViewBox). items: {kind:'tag', elementId, typeName
+//    (tag type name, category from the element), right, up (head), leader (default false), endRight, endUp (free
+//    leader end on the element, optional; leaders are kept orthogonal: if the end is not straight above/beside the
+//    head an elbow is added, elbowFirst V (default: vertical from the head, then horizontal) or H, or explicit
+//    elbowRight / elbowUp)} | {kind:'spot', elementId (floor / landing / run: its highest horizontal face), typeName
+//    (spot elevation type), right, up (point on the face)}. Types must already exist in the project (never created).
+//    mode preview (rolled back) | apply (logPath) | undo (logPath: deletes what was created).
 using System;
 using System.Collections.Generic;
 using System.IO;

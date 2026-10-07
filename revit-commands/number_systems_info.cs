@@ -1,11 +1,27 @@
 /* mcp-tool
 {
-  "description": "Read-only: list the stair tread/riser numbers (NumberSystem) in the given views with their host run, type and every instance parameter value (start number, display rule, side, orientation...).",
-  "inputSchema": { "type": "object", "properties": { "viewIds": { "type": "array", "items": { "type": "number" } } }, "required": ["viewIds"] },
+  "description": "Read-only: stair tread/riser numbers in views: host run, type, every instance parameter value.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "viewIds": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        }
+      }
+    },
+    "required": [
+      "viewIds"
+    ]
+  },
   "timeoutSeconds": 60,
   "readOnly": true
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Read-only: list the stair tread/riser numbers (NumberSystem) in the given views with their host run, type and every
+//    instance parameter value (start number, display rule, side, orientation...).
 using System.Collections.Generic;
 using System.Linq;
 using Autodesk.Revit.DB;

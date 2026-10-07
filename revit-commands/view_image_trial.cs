@@ -1,21 +1,44 @@
 /* mcp-tool
 {
-  "description": "Read-only trial: inside a transaction that is always rolled back, optionally hide elements (e.g. a Revit link instance) in a view or remove its view template, then export the view (or a sheet) as PNG. Shows what a visibility change would look like without changing the model.",
+  "description": "Read-only trial (always rolled back): hide elements or drop the template, then export the view/sheet as PNG.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "viewId": { "type": "number", "description": "View whose visibility is changed." },
-      "hideIds": { "type": "array", "items": { "type": "number" } },
-      "exportId": { "type": "number", "description": "View or sheet to export (default viewId)." },
-      "file": { "type": "string", "description": "Output PNG path without extension." },
-      "pixelWidth": { "type": "number" }
+      "viewId": {
+        "type": "number",
+        "description": "View whose visibility is changed."
+      },
+      "hideIds": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        }
+      },
+      "exportId": {
+        "type": "number",
+        "description": "View or sheet to export (default viewId)."
+      },
+      "file": {
+        "type": "string",
+        "description": "Output PNG path without extension."
+      },
+      "pixelWidth": {
+        "type": "number"
+      }
     },
-    "required": ["viewId", "file"]
+    "required": [
+      "viewId",
+      "file"
+    ]
   },
   "timeoutSeconds": 300,
   "readOnly": true
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Read-only trial: inside a transaction that is always rolled back, optionally hide elements (e.g. a Revit link
+//    instance) in a view or remove its view template, then export the view (or a sheet) as PNG. Shows what a
+//    visibility change would look like without changing the model.
 using System;
 using System.Collections.Generic;
 using System.IO;

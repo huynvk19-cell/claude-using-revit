@@ -1,20 +1,42 @@
 /* mcp-tool
 {
-  "description": "Read-only: for plan/section/elevation views placed on sheets, group the visible straight grids by direction and check whether linear dimensions already give a grid-to-grid chain and an overall (first-to-last grid) dimension on each side (low = bottom/left, high = top/right in view axes). Dimension ends are matched to grid positions (works for host or linked grid references).",
+  "description": "Old logic (use grid_dims_band audit), read-only: which sides of each grid group have chain + overall dims.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "sheetPrefix": { "type": "string" },
-      "sheetNumbers": { "type": "array", "items": { "type": "string" } },
-      "viewIds": { "type": "array", "items": { "type": "number" } },
-      "onlyMissing": { "type": "boolean" },
-      "detail": { "type": "boolean", "description": "list the matching dimensions" }
+      "sheetPrefix": {
+        "type": "string"
+      },
+      "sheetNumbers": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "viewIds": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        }
+      },
+      "onlyMissing": {
+        "type": "boolean"
+      },
+      "detail": {
+        "type": "boolean",
+        "description": "list the matching dimensions"
+      }
     }
   },
   "timeoutSeconds": 300,
   "readOnly": true
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Read-only: for plan/section/elevation views placed on sheets, group the visible straight grids by direction and
+//    check whether linear dimensions already give a grid-to-grid chain and an overall (first-to-last grid) dimension
+//    on each side (low = bottom/left, high = top/right in view axes). Dimension ends are matched to grid positions
+//    (works for host or linked grid references).
 using System;
 using System.Collections.Generic;
 using System.Linq;

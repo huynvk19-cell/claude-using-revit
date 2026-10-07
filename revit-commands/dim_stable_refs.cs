@@ -1,17 +1,31 @@
 /* mcp-tool
 {
-  "description": "Read-only: (1) for dimension ids, each reference's stable representation, element id / UniqueId / category and the position of that reference along the dim; (2) for railing ids, their top rail / handrail element ids and UniqueIds. Use to rebuild hand-picked railing references (which Revit draws) on other railings of the same type.",
+  "description": "Read-only: stable references of dims (element, position) and top rail / handrail ids of railings.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "dimIds": { "type": "array", "items": { "type": "integer" } },
-      "railingIds": { "type": "array", "items": { "type": "integer" } }
+      "dimIds": {
+        "type": "array",
+        "items": {
+          "type": "integer"
+        }
+      },
+      "railingIds": {
+        "type": "array",
+        "items": {
+          "type": "integer"
+        }
+      }
     }
   },
   "timeoutSeconds": 60,
   "readOnly": true
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Read-only: (1) for dimension ids, each reference's stable representation, element id / UniqueId / category and the
+//    position of that reference along the dim; (2) for railing ids, their top rail / handrail element ids and
+//    UniqueIds. Use to rebuild hand-picked railing references (which Revit draws) on other railings of the same type.
 using System;
 using System.Collections.Generic;
 using System.Linq;

@@ -1,21 +1,51 @@
 /* mcp-tool
 {
-  "description": "ONE plan view: linear dims whose railing references are built like a hand pick (what Revit draws): '<top rail UniqueId>:1:INSTANCE:<symbol line stable ref>' from the rail's view geometry (Options.View = the view). Positions: {mm, rail: topRailId} | {mm, wall: wallId} (wall side face at mm) | {mm, ref: '<stable representation>'} | {mm, dimId, index} (reuse a reference of an existing dim). measure 'up' (positions along the view Up, line at Right = lineMm) or 'right'. mode probe (lists the rail lines near each position) | preview (rolled back, reports values and whether drawn) | apply (logPath) | undo (logPath).",
+  "description": "ONE plan view: linear dims on railing edges built like a hand pick (drawn by Revit), walls, refs. probe | preview | apply | undo.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "viewId": { "type": "integer" },
-      "typeName": { "type": "string" },
-      "toleranceMm": { "type": "number" },
-      "dims": { "type": "array", "items": { "type": "object" } },
-      "mode": { "type": "string", "enum": ["probe", "preview", "apply", "undo"] },
-      "logPath": { "type": "string" }
+      "viewId": {
+        "type": "integer"
+      },
+      "typeName": {
+        "type": "string"
+      },
+      "toleranceMm": {
+        "type": "number"
+      },
+      "dims": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      },
+      "mode": {
+        "type": "string",
+        "enum": [
+          "probe",
+          "preview",
+          "apply",
+          "undo"
+        ]
+      },
+      "logPath": {
+        "type": "string"
+      }
     },
-    "required": ["mode"]
+    "required": [
+      "mode"
+    ]
   },
   "timeoutSeconds": 120
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// ONE plan view: linear dims whose railing references are built like a hand pick (what Revit draws): '<top rail
+//    UniqueId>:1:INSTANCE:<symbol line stable ref>' from the rail's view geometry (Options.View = the view).
+//    Positions: {mm, rail: topRailId} | {mm, wall: wallId} (wall side face at mm) | {mm, ref: '<stable
+//    representation>'} | {mm, dimId, index} (reuse a reference of an existing dim). measure 'up' (positions along the
+//    view Up, line at Right = lineMm) or 'right'. mode probe (lists the rail lines near each position) | preview
+//    (rolled back, reports values and whether drawn) | apply (logPath) | undo (logPath).
 using System;
 using System.Collections.Generic;
 using System.Linq;

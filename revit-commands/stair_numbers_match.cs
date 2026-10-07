@@ -1,20 +1,64 @@
 /* mcp-tool
 {
-  "description": "Stair tread/riser numbers (NumberSystem) in ONE view: copy the display settings of a source number (Display Rule, Number Size, Justify, Justify Offset, Orientation, Tag Type, Offset from Reference) onto target numbers, and set each target's Reference (left | right | center | leftQuarter | rightQuarter). Use to match the numbers already used on the project's sheets. mode preview (rolled back) | apply (logPath: old values) | undo (logPath).",
+  "description": "ONE view: copy tread/riser number settings from a source onto targets and set each target's Reference side. preview | apply | undo.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "viewId": { "type": "number" },
-      "sourceId": { "type": "number", "description": "a NumberSystem whose settings are copied (any view)" },
-      "targets": { "type": "array", "items": { "type": "object", "properties": { "id": { "type": "number" }, "reference": { "type": "string", "enum": ["left", "right", "center", "leftQuarter", "rightQuarter"] } }, "required": ["id"] } },
-      "mode": { "type": "string", "enum": ["preview", "apply", "undo"] },
-      "logPath": { "type": "string" }
+      "viewId": {
+        "type": "number"
+      },
+      "sourceId": {
+        "type": "number",
+        "description": "a NumberSystem whose settings are copied (any view)"
+      },
+      "targets": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "number"
+            },
+            "reference": {
+              "type": "string",
+              "enum": [
+                "left",
+                "right",
+                "center",
+                "leftQuarter",
+                "rightQuarter"
+              ]
+            }
+          },
+          "required": [
+            "id"
+          ]
+        }
+      },
+      "mode": {
+        "type": "string",
+        "enum": [
+          "preview",
+          "apply",
+          "undo"
+        ]
+      },
+      "logPath": {
+        "type": "string"
+      }
     },
-    "required": ["mode"]
+    "required": [
+      "mode"
+    ]
   },
   "timeoutSeconds": 120
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Stair tread/riser numbers (NumberSystem) in ONE view: copy the display settings of a source number (Display Rule,
+//    Number Size, Justify, Justify Offset, Orientation, Tag Type, Offset from Reference) onto target numbers, and set
+//    each target's Reference (left | right | center | leftQuarter | rightQuarter). Use to match the numbers already
+//    used on the project's sheets. mode preview (rolled back) | apply (logPath: old values) | undo (logPath).
 using System;
 using System.Collections.Generic;
 using System.IO;

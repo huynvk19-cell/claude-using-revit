@@ -1,18 +1,32 @@
 /* mcp-tool
 {
-  "description": "Read-only: every linear dimension of a given type (or given ids): owner view, view type/scale, sheet, segment count, values, line position, text offset along the line from its default centre (sheet mm, single-segment only), nearest grid line to the text (sheet mm), sheet rectangle, view override colour. Optionally writes JSON to outPath.",
+  "description": "Read-only: every linear dim of a type (or ids): view, sheet, values, line position, text offset, nearest grid. outPath for JSON.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "typeName": { "type": "string" },
-      "ids": { "type": "array", "items": { "type": "number" } },
-      "outPath": { "type": "string" }
+      "typeName": {
+        "type": "string"
+      },
+      "ids": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        }
+      },
+      "outPath": {
+        "type": "string"
+      }
     }
   },
   "timeoutSeconds": 300,
   "readOnly": true
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Read-only: every linear dimension of a given type (or given ids): owner view, view type/scale, sheet, segment count,
+//    values, line position, text offset along the line from its default centre (sheet mm, single-segment only),
+//    nearest grid line to the text (sheet mm), sheet rectangle, view override colour. Optionally writes JSON to
+//    outPath.
 using System;
 using System.Collections.Generic;
 using System.Linq;
