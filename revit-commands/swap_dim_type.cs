@@ -1,20 +1,40 @@
 /* mcp-tool
 {
-  "description": "Change every dimension of one type (fromType, by name) to another type (toTypeId or toType name), e.g. return check-type dims to the official type. Mode preview lists counts per view; apply changes them and writes a log of ids.",
+  "description": "Change every dim of one type to another type (e.g. check type back to official). preview | apply (log).",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "mode": { "type": "string", "enum": ["preview", "apply"] },
-      "fromType": { "type": "string" },
-      "toTypeId": { "type": "number" },
-      "toType": { "type": "string" },
-      "logPath": { "type": "string" }
+      "mode": {
+        "type": "string",
+        "enum": [
+          "preview",
+          "apply"
+        ]
+      },
+      "fromType": {
+        "type": "string"
+      },
+      "toTypeId": {
+        "type": "number"
+      },
+      "toType": {
+        "type": "string"
+      },
+      "logPath": {
+        "type": "string"
+      }
     },
-    "required": ["mode", "fromType"]
+    "required": [
+      "mode",
+      "fromType"
+    ]
   },
   "timeoutSeconds": 300
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Change every dimension of one type (fromType, by name) to another type (toTypeId or toType name), e.g. return check-
+//    type dims to the official type. Mode preview lists counts per view; apply changes them and writes a log of ids.
 using System;
 using System.Collections.Generic;
 using System.IO;

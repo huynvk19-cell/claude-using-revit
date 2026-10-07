@@ -1,19 +1,38 @@
 /* mcp-tool
 {
-  "description": "Read-only: stair SECTION cut parallel to the stair path (drafting-stair-section-parallel.md). Lists the host stairs (by component) seen in ONE section view, every flight ordered going up (F1, F2…): cut by the section plane or seen beyond, rising to the left or right on the sheet, From EL / To EL (level-based elevations), risers x riser height = flight height with the rise text ('169.4mm x 16R = ' + height, below '(EQUAL RISERS)'), treads x tread depth = going with the going text ('280mm x 15T = ' + going, below '(EQUAL TREADS)'), landings with their elevation and side. Checks the existing dims of the view against those values (prefix / below text), tags and tread/riser numbers per flight, and the project's most-used stair run tag types. Returns an Issues list per rule.",
+  "description": "Read-only, stair SECTION along the flights (LA-LC): flights F1.. with risers/treads from the model, formula text, dim/tag/number checks.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "viewId": { "type": "number", "description": "the stair section view" },
-      "toleranceMm": { "type": "number", "description": "value tolerance when matching existing dims, default 1" },
-      "outPath": { "type": "string", "description": "write the full result as JSON here" }
+      "viewId": {
+        "type": "number",
+        "description": "the stair section view"
+      },
+      "toleranceMm": {
+        "type": "number",
+        "description": "value tolerance when matching existing dims, default 1"
+      },
+      "outPath": {
+        "type": "string",
+        "description": "write the full result as JSON here"
+      }
     },
-    "required": ["viewId"]
+    "required": [
+      "viewId"
+    ]
   },
   "timeoutSeconds": 120,
   "readOnly": true
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Read-only: stair SECTION cut parallel to the stair path (drafting-stair-section-parallel.md). Lists the host stairs
+//    (by component) seen in ONE section view, every flight ordered going up (F1, F2…): cut by the section plane or
+//    seen beyond, rising to the left or right on the sheet, From EL / To EL (level-based elevations), risers x riser
+//    height = flight height with the rise text ('169.4mm x 16R = ' + height, below '(EQUAL RISERS)'), treads x tread
+//    depth = going with the going text ('280mm x 15T = ' + going, below '(EQUAL TREADS)'), landings with their
+//    elevation and side. Checks the existing dims of the view against those values (prefix / below text), tags and
+//    tread/riser numbers per flight, and the project's most-used stair run tag types. Returns an Issues list per rule.
 using System;
 using System.Collections.Generic;
 using System.IO;

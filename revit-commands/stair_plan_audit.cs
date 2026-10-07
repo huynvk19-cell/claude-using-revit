@@ -1,20 +1,49 @@
 /* mcp-tool
 {
-  "description": "Read-only: stair core PLAN view, rules SA1-SD (drafting-stair-plan.md). Finds the host stairs (by component) seen in the view and classifies every run against the view cut plane, going up: V1 = below the cut and under a cut run (half, beyond the cut line), V2 = fully seen, V3 = cut (half, before the cut line). Per run, from the MODEL: risers, treads, tread depth, length = treads x depth checked against the footprint, the formula prefix ('280mm x 14T = '), the run's clear width between the inner handrail edges (railing geometry) or the finish wall face. Finds the walls around the core (finish face = face nearest the stair, outer face of the wall stack) on the 4 sides, wall-to-wall clear both ways, landing clear widths and depths, doors/windows in the core walls, the visible grids. Lists the expected dims per rule with the existing dim segment that matches (value + position) and whether it carries the CLEAR suffix / formula prefix; tags on runs, railings, doors/windows, landings, core walls; spot elevations on landings and outside the core doors; stair paths (type family, UP/DOWN text); tread numbers per run; and the project's most-used tag / spot / path types. Returns an Issues list per rule.",
+  "description": "Read-only, stair core PLAN (SA1-SD): runs V1/V2/V3, treads from the model + formula, clear widths, walls, landings, expected dims/tags/paths status.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "viewId": { "type": "number", "description": "the stair core plan view" },
-      "searchMm": { "type": "number", "description": "how far beyond the stair footprint to look for the end walls (perpendicular to travel), default 3000; side walls: 1000" },
-      "toleranceMm": { "type": "number", "description": "value / position tolerance when matching existing dims, default 2" },
-      "outPath": { "type": "string", "description": "write the full result as JSON here" }
+      "viewId": {
+        "type": "number",
+        "description": "the stair core plan view"
+      },
+      "searchMm": {
+        "type": "number",
+        "description": "how far beyond the stair footprint to look for the end walls"
+      },
+      "toleranceMm": {
+        "type": "number",
+        "description": "value / position tolerance when matching existing dims, default 2"
+      },
+      "outPath": {
+        "type": "string",
+        "description": "write the full result as JSON here"
+      }
     },
-    "required": ["viewId"]
+    "required": [
+      "viewId"
+    ]
   },
   "timeoutSeconds": 120,
   "readOnly": true
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Read-only: stair core PLAN view, rules SA1-SD (drafting-stair-plan.md). Finds the host stairs (by component) seen in
+//    the view and classifies every run against the view cut plane, going up: V1 = below the cut and under a cut run
+//    (half, beyond the cut line), V2 = fully seen, V3 = cut (half, before the cut line). Per run, from the MODEL:
+//    risers, treads, tread depth, length = treads x depth checked against the footprint, the formula prefix ('280mm x
+//    14T = '), the run's clear width between the inner handrail edges (railing geometry) or the finish wall face.
+//    Finds the walls around the core (finish face = face nearest the stair, outer face of the wall stack) on the 4
+//    sides, wall-to-wall clear both ways, landing clear widths and depths, doors/windows in the core walls, the
+//    visible grids. Lists the expected dims per rule with the existing dim segment that matches (value + position) and
+//    whether it carries the CLEAR suffix / formula prefix; tags on runs, railings, doors/windows, landings, core
+//    walls; spot elevations on landings and outside the core doors; stair paths (type family, UP/DOWN text); tread
+//    numbers per run; and the project's most-used tag / spot / path types. Returns an Issues list per rule.
+// Parameters:
+//   searchMm: how far beyond the stair footprint to look for the end walls (perpendicular to travel), default 3000;
+//    side walls: 1000
 using System;
 using System.Collections.Generic;
 using System.IO;

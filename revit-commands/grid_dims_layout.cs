@@ -1,20 +1,66 @@
 /* mcp-tool
 {
-  "description": "Lay out grid dimensions in ONE view (the view that owns them, e.g. the parent of dependent views). dir 'H' = dims running along view right (number grids), 'V' = along view up (letter grids). Lists the host grids of that orientation visible in the view with their position along the dim direction, and the existing all-grid dims of that direction (id, position across, grids). create: [{acrossMm, kind:'chain'|'overall', fromGrid?, toGrid?}] makes new dims (chain = every grid between from and to, overall = from and to only) at that position (mm from the view origin across the dim direction). deleteIds: existing dims to delete (their grids, position, type are logged so they can be recreated). typeName: dimension type for new dims. mode preview (rolled back) | apply | undo (deletes created dims and recreates deleted ones from logPath).",
+  "description": "ONE view (parent of dependents): list grids + grid dims of a direction; create chain/overall at a position, delete ids. preview | apply | undo.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "viewId": { "type": "number" }, "dir": { "type": "string", "enum": ["H", "V"] },
-      "create": { "type": "array", "items": { "type": "object" } },
-      "deleteIds": { "type": "array", "items": { "type": "number" } },
-      "typeName": { "type": "string" }, "mode": { "type": "string", "enum": ["preview", "apply", "undo"] }, "logPath": { "type": "string" }
+      "viewId": {
+        "type": "number"
+      },
+      "dir": {
+        "type": "string",
+        "enum": [
+          "H",
+          "V"
+        ]
+      },
+      "create": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      },
+      "deleteIds": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        }
+      },
+      "typeName": {
+        "type": "string"
+      },
+      "mode": {
+        "type": "string",
+        "enum": [
+          "preview",
+          "apply",
+          "undo"
+        ]
+      },
+      "logPath": {
+        "type": "string"
+      }
     },
-    "required": ["viewId", "dir", "mode", "logPath"]
+    "required": [
+      "viewId",
+      "dir",
+      "mode",
+      "logPath"
+    ]
   },
   "timeoutSeconds": 300,
   "readOnly": false
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Lay out grid dimensions in ONE view (the view that owns them, e.g. the parent of dependent views). dir 'H' = dims
+//    running along view right (number grids), 'V' = along view up (letter grids). Lists the host grids of that
+//    orientation visible in the view with their position along the dim direction, and the existing all-grid dims of
+//    that direction (id, position across, grids). create: [{acrossMm, kind:'chain'|'overall', fromGrid?, toGrid?}]
+//    makes new dims (chain = every grid between from and to, overall = from and to only) at that position (mm from the
+//    view origin across the dim direction). deleteIds: existing dims to delete (their grids, position, type are logged
+//    so they can be recreated). typeName: dimension type for new dims. mode preview (rolled back) | apply | undo
+//    (deletes created dims and recreates deleted ones from logPath).
 using System;
 using System.Collections.Generic;
 using System.IO;

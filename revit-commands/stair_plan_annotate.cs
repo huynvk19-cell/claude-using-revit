@@ -1,26 +1,90 @@
 /* mcp-tool
 {
-  "description": "Stair core PLAN, ONE view (drafting-stair-plan.md): places the deterministic parts. parts (default all three): 'path' (SD) - one stair path per stairs that has a seen run, of a type in family Fixed Up Direction (pathTypeName, else the project's most-used Fixed Up type, else any existing one; never creates a type), Show Up/Down Text off; an existing path stays where it is: its type is changed to Fixed Up and its text turned off. 'numbers' (C) - tread numbers on every seen run that has none; V1 sharing a lane with V3 gets the mirrored side so the two never overlap (numberSide relative to walking up: left | right | center | leftQuarter | rightQuarter, default left; numberTypeName, else the project's most-used type). 'runTags' (SB1) - a Stair Run tag for every untagged seen run, aimed at its SEEN part (V1 beyond the cut line, V2 middle, V3 before the cut line): default runTagPlace outside = head just outside the side wall of the run's lane (text along the run), free-end leader into the run; inside = head in the seen part, no leader (runTagTypeName, else the project's most-used stair run tag type; none used in the project -> error, ask the user). Runs are classified like stair_plan_audit. mode preview (rolled back) | apply (logPath) | undo (logPath: deletes what was created, restores path types / text).",
+  "description": "Stair core PLAN, ONE view: stair path (Fixed Up, no UP/DOWN), tread numbers, run tags (outside with leader by default). preview | apply | undo.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "viewId": { "type": "number" },
-      "mode": { "type": "string", "enum": ["preview", "apply", "undo"] },
-      "parts": { "type": "array", "items": { "type": "string", "enum": ["path", "numbers", "runTags"] } },
-      "pathTypeName": { "type": "string" },
-      "numberSide": { "type": "string", "enum": ["left", "right", "center", "leftQuarter", "rightQuarter"] },
-      "numberTypeName": { "type": "string" },
-      "runTagTypeName": { "type": "string" },
-      "runTagPlace": { "type": "string", "enum": ["outside", "inside"], "description": "outside (default, as the project sheets): head just outside the side wall of the run's lane, text along the run, leader into the seen part; inside: head inside the seen part, no leader" },
-      "runTagOffsetMm": { "type": "number", "description": "outside: paper mm from the outer wall face to the tag head point, default 5" },
-      "logPath": { "type": "string" }
+      "viewId": {
+        "type": "number"
+      },
+      "mode": {
+        "type": "string",
+        "enum": [
+          "preview",
+          "apply",
+          "undo"
+        ]
+      },
+      "parts": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": [
+            "path",
+            "numbers",
+            "runTags"
+          ]
+        }
+      },
+      "pathTypeName": {
+        "type": "string"
+      },
+      "numberSide": {
+        "type": "string",
+        "enum": [
+          "left",
+          "right",
+          "center",
+          "leftQuarter",
+          "rightQuarter"
+        ]
+      },
+      "numberTypeName": {
+        "type": "string"
+      },
+      "runTagTypeName": {
+        "type": "string"
+      },
+      "runTagPlace": {
+        "type": "string",
+        "enum": [
+          "outside",
+          "inside"
+        ],
+        "description": "outside (default, as the project sheets)"
+      },
+      "runTagOffsetMm": {
+        "type": "number",
+        "description": "outside: paper mm from the outer wall face to the tag head point, default 5"
+      },
+      "logPath": {
+        "type": "string"
+      }
     },
-    "required": ["mode"]
+    "required": [
+      "mode"
+    ]
   },
   "timeoutSeconds": 120,
   "readOnly": false
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Stair core PLAN, ONE view (drafting-stair-plan.md): places the deterministic parts. parts (default all three):
+//    'path' (SD) - one stair path per stairs that has a seen run, of a type in family Fixed Up Direction
+//    (pathTypeName, else the project's most-used Fixed Up type, else any existing one; never creates a type), Show
+//    Up/Down Text off; an existing path stays where it is: its type is changed to Fixed Up and its text turned off.
+//    'numbers' (C) - tread numbers on every seen run that has none; V1 sharing a lane with V3 gets the mirrored side
+//    so the two never overlap (numberSide relative to walking up: left | right | center | leftQuarter | rightQuarter,
+//    default left; numberTypeName, else the project's most-used type). 'runTags' (SB1) - a Stair Run tag for every
+//    untagged seen run, aimed at its SEEN part (V1 beyond the cut line, V2 middle, V3 before the cut line): default
+//    runTagPlace outside = head just outside the side wall of the run's lane (text along the run), free-end leader
+//    into the run; inside = head in the seen part, no leader (runTagTypeName, else the project's most-used stair run
+//    tag type; none used in the project -> error, ask the user). Runs are classified like stair_plan_audit. mode
+//    preview (rolled back) | apply (logPath) | undo (logPath: deletes what was created, restores path types / text).
+// Parameters:
+//   runTagPlace: outside (default, as the project sheets): head just outside the side wall of the run's lane, text
+//    along the run, leader into the seen part; inside: head inside the seen part, no leader
 using System;
 using System.Collections.Generic;
 using System.IO;

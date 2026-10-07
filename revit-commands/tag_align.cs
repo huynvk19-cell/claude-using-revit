@@ -1,21 +1,49 @@
 /* mcp-tool
 {
-  "description": "Elevation/section view: move door/window tags (by tag text) so their head sits at the same height as a reference tag (by tag text), directly above their own element (x = element centre), with a leader to the element; clears any graphic override on the moved tag. mode preview (report only) | apply (writes logPath with old head positions and leader state).",
+  "description": "Elevation/section: move door/window tags to the height of a reference tag, above their element, with a leader. preview | apply.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "viewId": { "type": "number" },
-      "tagTexts": { "type": "array", "items": { "type": "string" } },
-      "refTagText": { "type": "string" },
-      "mode": { "type": "string", "enum": ["preview", "apply"] },
-      "logPath": { "type": "string" }
+      "viewId": {
+        "type": "number"
+      },
+      "tagTexts": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "refTagText": {
+        "type": "string"
+      },
+      "mode": {
+        "type": "string",
+        "enum": [
+          "preview",
+          "apply"
+        ]
+      },
+      "logPath": {
+        "type": "string"
+      }
     },
-    "required": ["viewId", "tagTexts", "refTagText", "mode", "logPath"]
+    "required": [
+      "viewId",
+      "tagTexts",
+      "refTagText",
+      "mode",
+      "logPath"
+    ]
   },
   "timeoutSeconds": 120,
   "readOnly": false
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Elevation/section view: move door/window tags (by tag text) so their head sits at the same height as a reference tag
+//    (by tag text), directly above their own element (x = element centre), with a leader to the element; clears any
+//    graphic override on the moved tag. mode preview (report only) | apply (writes logPath with old head positions and
+//    leader state).
 using System;
 using System.Collections.Generic;
 using System.IO;

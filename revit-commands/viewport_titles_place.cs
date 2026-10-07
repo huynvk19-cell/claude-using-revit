@@ -1,25 +1,81 @@
 /* mcp-tool
 {
-  "description": "Turn on and place viewport titles on sheets: optionally switch untitled viewports to a titled viewport type, then centre each title under its view's drawing (crop region centre), just below the lowest visible content (crop region, grid/level heads, dimensions, tags, text...) under the title span, and report collisions with other viewports' content or titles. Legends are skipped. Modes: preview, apply, undo (from log).",
+  "description": "Turn on and centre viewport titles under each view's drawing, below its lowest content; reports collisions. preview | apply | undo.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "mode": { "type": "string", "enum": ["preview", "apply", "undo"] },
-      "sheetNumbers": { "type": "array", "items": { "type": "string" } },
-      "titledType": { "type": "string", "description": "viewport type name to give untitled (non-legend) viewports, e.g. 'Detail Ref - Title - Scale'" },
-      "gapMm": { "type": "number", "description": "gap between content and title top, sheet mm (default 4)" },
-      "skipViewports": { "type": "array", "items": { "type": "number" } },
-      "align": { "type": "string", "enum": ["centre", "left"], "description": "centre (default) under the crop centre, or left: title starts at the leftmost content of the view (bottom-left title)" },
-      "onlyViewports": { "type": "array", "items": { "type": "number" }, "description": "only place these viewports (others on the sheet are obstacles only)" },
-      "logPath": { "type": "string" },
-      "ignoreCrop": { "type": "boolean", "description": "treat a visible crop region as non-printing: use the model/annotation extents instead" },
-      "debugVp": { "type": "number" }
+      "mode": {
+        "type": "string",
+        "enum": [
+          "preview",
+          "apply",
+          "undo"
+        ]
+      },
+      "sheetNumbers": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "titledType": {
+        "type": "string",
+        "description": "viewport type name to give untitled (non-legend) viewports, e.g"
+      },
+      "gapMm": {
+        "type": "number",
+        "description": "gap between content and title top, sheet mm (default 4)"
+      },
+      "skipViewports": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        }
+      },
+      "align": {
+        "type": "string",
+        "enum": [
+          "centre",
+          "left"
+        ],
+        "description": "centre (default) under the crop centre, or left"
+      },
+      "onlyViewports": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        },
+        "description": "only place these viewports (others on the sheet are obstacles only)"
+      },
+      "logPath": {
+        "type": "string"
+      },
+      "ignoreCrop": {
+        "type": "boolean",
+        "description": "treat a visible crop region as non-printing"
+      },
+      "debugVp": {
+        "type": "number"
+      }
     },
-    "required": ["mode", "logPath"]
+    "required": [
+      "mode",
+      "logPath"
+    ]
   },
   "timeoutSeconds": 600
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Turn on and place viewport titles on sheets: optionally switch untitled viewports to a titled viewport type, then
+//    centre each title under its view's drawing (crop region centre), just below the lowest visible content (crop
+//    region, grid/level heads, dimensions, tags, text...) under the title span, and report collisions with other
+//    viewports' content or titles. Legends are skipped. Modes: preview, apply, undo (from log).
+// Parameters:
+//   titledType: viewport type name to give untitled (non-legend) viewports, e.g. 'Detail Ref - Title - Scale'
+//   align: centre (default) under the crop centre, or left: title starts at the leftmost content of the view (bottom-
+//    left title)
+//   ignoreCrop: treat a visible crop region as non-printing: use the model/annotation extents instead
 using System;
 using System.Collections.Generic;
 using System.IO;

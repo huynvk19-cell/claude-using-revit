@@ -1,15 +1,31 @@
 /* mcp-tool
 {
-  "description": "Read-only: doors/windows in ONE view whose Mark is in marks: id, category, type mark, mark, family/type, level, and the ids + values of the dimensions of that view (and its parent) that reference them.",
+  "description": "Read-only, ONE view: doors/windows by Mark with their type, level and the dims (view + parent) that reference them.",
   "inputSchema": {
     "type": "object",
-    "properties": { "viewId": { "type": "number" }, "marks": { "type": "array", "items": { "type": "string" } } },
-    "required": ["viewId", "marks"]
+    "properties": {
+      "viewId": {
+        "type": "number"
+      },
+      "marks": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "viewId",
+      "marks"
+    ]
   },
   "timeoutSeconds": 60,
   "readOnly": true
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Read-only: doors/windows in ONE view whose Mark is in marks: id, category, type mark, mark, family/type, level, and
+//    the ids + values of the dimensions of that view (and its parent) that reference them.
 using System;
 using System.Collections.Generic;
 using System.Linq;

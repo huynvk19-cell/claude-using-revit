@@ -1,18 +1,35 @@
 /* mcp-tool
 {
-  "description": "Read-only: for given element ids and views, tell whether each element is collected in the view and whether a tag in that view points at it (tag text), plus its horizontal position in the view (mm) for locating it on an exported image.",
+  "description": "Read-only: for element ids and views, whether each element is in the view, its tag text, and its position (mm).",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "viewIds": { "type": "array", "items": { "type": "number" } },
-      "ids": { "type": "array", "items": { "type": "number" } }
+      "viewIds": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        }
+      },
+      "ids": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        }
+      }
     },
-    "required": ["viewIds", "ids"]
+    "required": [
+      "viewIds",
+      "ids"
+    ]
   },
   "timeoutSeconds": 120,
   "readOnly": true
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Read-only: for given element ids and views, tell whether each element is collected in the view and whether a tag in
+//    that view points at it (tag text), plus its horizontal position in the view (mm) for locating it on an exported
+//    image.
 using System;
 using System.Collections.Generic;
 using System.Linq;

@@ -1,21 +1,48 @@
 /* mcp-tool
 {
-  "description": "Elevation/section view: add a vertical dimension for given doors/windows from the family's Bottom and Top references (optionally starting at a Level: Level -> bottom -> top), on a vertical line at xMm (mm along the view's right direction from the view origin). items [{openingId, xMm, levelId?}]. typeName = dimension type. mode preview (rolled back, reports values) | apply (writes logPath with created ids).",
+  "description": "Elevation/section: vertical dim for given doors/windows from family Bottom/Top (optionally from a level) on a line at xMm. preview | apply.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "viewId": { "type": "number" },
-      "items": { "type": "array", "items": { "type": "object" } },
-      "typeName": { "type": "string" },
-      "mode": { "type": "string", "enum": ["preview", "apply"] },
-      "logPath": { "type": "string" }
+      "viewId": {
+        "type": "number"
+      },
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      },
+      "typeName": {
+        "type": "string"
+      },
+      "mode": {
+        "type": "string",
+        "enum": [
+          "preview",
+          "apply"
+        ]
+      },
+      "logPath": {
+        "type": "string"
+      }
     },
-    "required": ["viewId", "items", "mode", "logPath"]
+    "required": [
+      "viewId",
+      "items",
+      "mode",
+      "logPath"
+    ]
   },
   "timeoutSeconds": 120,
   "readOnly": false
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Elevation/section view: add a vertical dimension for given doors/windows from the family's Bottom and Top references
+//    (optionally starting at a Level: Level -> bottom -> top), on a vertical line at xMm (mm along the view's right
+//    direction from the view origin). items [{openingId, xMm, levelId?}]. typeName = dimension type. mode preview
+//    (rolled back, reports values) | apply (writes logPath with created ids).
 using System;
 using System.Collections.Generic;
 using System.IO;

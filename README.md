@@ -75,6 +75,29 @@ Lệnh trên copy:
 
 Mỗi dự án cần một file `drafting-profile.md`: copy từ `templates/` vào thư mục gốc dự án rồi điền.
 
+## Tiết kiệm token (Token use)
+
+Mỗi bước Claude gọi tool, **toàn bộ danh sách tool** được gửi lại cho model. Danh sách càng dài, mỗi bước càng tốn.
+
+| Phần | Trước | Sau | Cách |
+|---|---|---|---|
+| 52 lệnh của repo này (header `mcp-tool`) | ~11.8k token | ~7.0k token | **B (đã làm)**: mô tả trong header còn 1–2 dòng; giải thích đầy đủ chuyển xuống comment `// ---- Details` ngay dưới header (MCP không gửi phần này) |
+| Tool có sẵn của Revit MCP (profile `full`, 192 tool) | ~36.6k token | ~2.7k token (26 tool) | **A (cần làm trên máy)**: profile `drafting` |
+
+### A — Profile `drafting` cho Revit MCP
+
+Revit MCP chọn nhóm tool có sẵn theo biến môi trường `MCP_PROFILE` (`full` mặc định, `architect`, `mep`, `structural`, `fire-safety`). Bộ skill drafting chỉ cần nhóm cơ bản (`get_active_view`…) và các lệnh động.
+
+1. Áp patch `tools/revit-mcp/drafting-profile.patch` vào thư mục Revit MCP (thêm profile `drafting: [baseTools]` trong `MCP-Server/src/tools/index.ts`), rồi build lại: `cd MCP-Server && npm run build`.
+2. Thêm `MCP_PROFILE` vào cấu hình MCP của Claude:
+   ```json
+   "revit-mcp": { "command": "node", "args": ["<…>/MCP-Server/build/index.js"], "env": { "MCP_PROFILE": "drafting" } }
+   ```
+3. Mở phiên Claude Code mới, kiểm tra: `hello_revit` và các lệnh động vẫn gọi được.
+   - Bản Revit MCP có lệnh động (`dynamic-commands`, `run_dynamic_command`) là bản riêng, không có trong mã gốc. Nếu lệnh động nằm trong một module của `PROFILE_MODULES`, thêm module đó vào `drafting`.
+   - Đặt `drafting` mà **chưa** áp patch → Revit MCP tự quay về `full` (không hỏng, chỉ không tiết kiệm).
+4. Việc cần tool khác (MEP, room, tạo view…) → đổi lại `MCP_PROFILE` = `architect` hoặc `full`.
+
 ## Cập nhật bài học (Keeping it alive)
 
 Mỗi lần user sửa lại kết quả của Claude, ghi bài học thành **một dòng có ngày**:

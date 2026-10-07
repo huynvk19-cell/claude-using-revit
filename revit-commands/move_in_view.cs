@@ -1,19 +1,35 @@
 /* mcp-tool
 {
-  "description": "Move elements (e.g. dimensions, tags, text) of a view along that view's right direction (dx, mm) and up (dz, mm).",
+  "description": "Move elements of a view by dx (view right) and dz (view up), mm.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "viewId": { "type": "number" },
-      "ids": { "type": "array", "items": { "type": "number" } },
-      "dx": { "type": "number" },
-      "dz": { "type": "number" }
+      "viewId": {
+        "type": "number"
+      },
+      "ids": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        }
+      },
+      "dx": {
+        "type": "number"
+      },
+      "dz": {
+        "type": "number"
+      }
     },
-    "required": ["viewId", "ids"]
+    "required": [
+      "viewId",
+      "ids"
+    ]
   },
   "timeoutSeconds": 60
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Move elements (e.g. dimensions, tags, text) of a view along that view's right direction (dx, mm) and up (dz, mm).
 using System.Linq;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;

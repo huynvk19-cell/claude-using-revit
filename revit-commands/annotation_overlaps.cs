@@ -1,21 +1,47 @@
 /* mcp-tool
 {
-  "description": "Read-only: in ONE view, find annotations that overlap each other: dimension texts, tag heads (door/window/room tags, leaders ignored), text notes and spot dimensions overlapping one another, or crossed by another dimension's line. Dimension texts are estimated boxes (text size x character count) anchored on the text position. Returns the overlapping pairs (kinds, ids, values/texts, sheet-scale position) and the list of element ids involved, ready for highlight_elements.",
+  "description": "Read-only, ONE view: annotation pairs that overlap (dim texts/lines, tag heads, text notes, spots); returns ids for highlight_elements.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "viewId": { "type": "number" },
-      "minOverlapMm": { "type": "number", "description": "paper mm both ways an overlap must exceed to count, default 0.3" },
-      "outPath": { "type": "string" },
-      "includeRoomTags": { "type": "boolean", "description": "default false: room tag bounding boxes span the family's whole label frame, far wider than the text" },
-      "debugIds": { "type": "array", "items": { "type": "number" } }
+      "viewId": {
+        "type": "number"
+      },
+      "minOverlapMm": {
+        "type": "number",
+        "description": "paper mm both ways an overlap must exceed to count, default 0.3"
+      },
+      "outPath": {
+        "type": "string"
+      },
+      "includeRoomTags": {
+        "type": "boolean",
+        "description": "default false: room tag bounding boxes span the family's whole label frame, far…"
+      },
+      "debugIds": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        }
+      }
     },
-    "required": ["viewId"]
+    "required": [
+      "viewId"
+    ]
   },
   "timeoutSeconds": 120,
   "readOnly": true
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Read-only: in ONE view, find annotations that overlap each other: dimension texts, tag heads (door/window/room tags,
+//    leaders ignored), text notes and spot dimensions overlapping one another, or crossed by another dimension's line.
+//    Dimension texts are estimated boxes (text size x character count) anchored on the text position. Returns the
+//    overlapping pairs (kinds, ids, values/texts, sheet-scale position) and the list of element ids involved, ready
+//    for highlight_elements.
+// Parameters:
+//   includeRoomTags: default false: room tag bounding boxes span the family's whole label frame, far wider than the
+//    text
 using System;
 using System.Collections.Generic;
 using System.IO;

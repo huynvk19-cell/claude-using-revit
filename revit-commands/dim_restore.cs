@@ -1,20 +1,56 @@
 /* mcp-tool
 {
-  "description": "Recreate a dimension from stable reference strings (as logged by dims_edit / rollup_dims_add 'Removed'), on the line of an existing dim (lineDimId) and with a type name; optionally delete lineDimId afterwards. Optional swap: [{from: stable string, to: stable string}] replaces references before creating. mode preview | apply. Reports values.",
+  "description": "Recreate a dim from logged stable references on the line of lineDimId (optional reference swap). preview | apply.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "viewId": { "type": "number" }, "refs": { "type": "array", "items": { "type": "string" } },
-      "lineDimId": { "type": "number" }, "deleteLineDim": { "type": "boolean" }, "typeName": { "type": "string" },
-      "swap": { "type": "array", "items": { "type": "object" } },
-      "mode": { "type": "string", "enum": ["preview", "apply"] }
+      "viewId": {
+        "type": "number"
+      },
+      "refs": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "lineDimId": {
+        "type": "number"
+      },
+      "deleteLineDim": {
+        "type": "boolean"
+      },
+      "typeName": {
+        "type": "string"
+      },
+      "swap": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      },
+      "mode": {
+        "type": "string",
+        "enum": [
+          "preview",
+          "apply"
+        ]
+      }
     },
-    "required": ["viewId", "lineDimId", "mode"]
+    "required": [
+      "viewId",
+      "lineDimId",
+      "mode"
+    ]
   },
   "timeoutSeconds": 60,
   "readOnly": false
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Recreate a dimension from stable reference strings (as logged by dims_edit / rollup_dims_add 'Removed'), on the line
+//    of an existing dim (lineDimId) and with a type name; optionally delete lineDimId afterwards. Optional swap:
+//    [{from: stable string, to: stable string}] replaces references before creating. mode preview | apply. Reports
+//    values.
 using System;
 using System.Collections.Generic;
 using System.Linq;

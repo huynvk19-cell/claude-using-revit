@@ -1,24 +1,76 @@
 /* mcp-tool
 {
-  "description": "Check door/window tags in views of the active document. mode=audit (default, no changes): per view, list doors/windows without a tag, broken tags (orphaned, empty/'?' text, host hidden, duplicate) and tags whose head is crossed by the visible linework (frame, leaf, swing) of the element it tags. Untagged elements are only reported in views that contain at least one door/window tag. mode=highlight: colour those issues in their views (overlap tag = red, broken tag = magenta, untagged element = orange) after saving each element's original view overrides to backupPath. mode=restore: put the saved overrides back from backupPath. Never syncs.",
+  "description": "Door/window tag check across views: untagged, broken, duplicate, head crossed by linework. audit | highlight | restore (backupPath).",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "mode": { "type": "string", "enum": ["audit", "highlight", "restore"], "description": "Default audit." },
-      "viewIds": { "type": "array", "items": { "type": "number" }, "description": "Only these views. Default: all non-template views of viewTypes (placed on sheets if onlyOnSheets)." },
-      "viewTypes": { "type": "array", "items": { "type": "string" }, "description": "ViewType names. Default [\"FloorPlan\"]." },
-      "onlyOnSheets": { "type": "boolean", "description": "Default true." },
-      "sheetNumberPrefix": { "type": "string", "description": "Only views placed on sheets whose number starts with this text (implies onlyOnSheets)." },
-      "overlapMin": { "type": "number", "description": "Min length (paper mm) of the element's visible linework inside the tag head to count as overlap. Default 1.0." },
-      "untaggedOnlyInTaggedViews": { "type": "boolean", "description": "Report untagged elements only in views that already have door/window tags. Default true." },
-      "backupPath": { "type": "string", "description": "JSON file for original overrides (required for highlight/restore)." },
-      "maxItems": { "type": "number", "description": "Max issue rows returned per view. Default 200." }
+      "mode": {
+        "type": "string",
+        "enum": [
+          "audit",
+          "highlight",
+          "restore"
+        ],
+        "description": "Default audit."
+      },
+      "viewIds": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        },
+        "description": "Only these views"
+      },
+      "viewTypes": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "ViewType names. Default [\"FloorPlan\"]."
+      },
+      "onlyOnSheets": {
+        "type": "boolean",
+        "description": "Default true."
+      },
+      "sheetNumberPrefix": {
+        "type": "string",
+        "description": "Only views placed on sheets whose number starts with this text"
+      },
+      "overlapMin": {
+        "type": "number",
+        "description": "Min length (paper mm) of the element's visible linework inside the tag head to count…"
+      },
+      "untaggedOnlyInTaggedViews": {
+        "type": "boolean",
+        "description": "Report untagged elements only in views that already have door/window tags"
+      },
+      "backupPath": {
+        "type": "string",
+        "description": "JSON file for original overrides (required for highlight/restore)."
+      },
+      "maxItems": {
+        "type": "number",
+        "description": "Max issue rows returned per view. Default 200."
+      }
     }
   },
   "timeoutSeconds": 900,
   "readOnly": false
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Check door/window tags in views of the active document. mode=audit (default, no changes): per view, list
+//    doors/windows without a tag, broken tags (orphaned, empty/'?' text, host hidden, duplicate) and tags whose head
+//    is crossed by the visible linework (frame, leaf, swing) of the element it tags. Untagged elements are only
+//    reported in views that contain at least one door/window tag. mode=highlight: colour those issues in their views
+//    (overlap tag = red, broken tag = magenta, untagged element = orange) after saving each element's original view
+//    overrides to backupPath. mode=restore: put the saved overrides back from backupPath. Never syncs.
+// Parameters:
+//   viewIds: Only these views. Default: all non-template views of viewTypes (placed on sheets if onlyOnSheets).
+//   sheetNumberPrefix: Only views placed on sheets whose number starts with this text (implies onlyOnSheets).
+//   overlapMin: Min length (paper mm) of the element's visible linework inside the tag head to count as overlap.
+//    Default 1.0.
+//   untaggedOnlyInTaggedViews: Report untagged elements only in views that already have door/window tags. Default
+//    true.
 using System;
 using System.Collections.Generic;
 using System.IO;

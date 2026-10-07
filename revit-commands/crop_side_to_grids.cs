@@ -1,20 +1,45 @@
 /* mcp-tool
 {
-  "description": "Plan views: move one side of the rectangular crop region (right/left/top/bottom in view axes) to just beyond the outermost host grid end (bubble included) on that side, plus marginMm paper. View setting only, no model element changes. mode preview | apply | undo (restores crop boxes from logPath).",
+  "description": "Plan: move one crop side just past the outermost grid end on that side (+marginMm). preview | apply | undo.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "items": { "type": "array", "items": { "type": "object" }, "description": "[{viewId, side: 'right'|'left'|'top'|'bottom'}]" },
-      "marginMm": { "type": "number", "description": "paper mm beyond the bubble edge (default 6)" },
-      "mode": { "type": "string", "enum": ["preview", "apply", "undo"] },
-      "logPath": { "type": "string" }
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        },
+        "description": "[{viewId, side: 'right'|'left'|'top'|'bottom'}]"
+      },
+      "marginMm": {
+        "type": "number",
+        "description": "paper mm beyond the bubble edge (default 6)"
+      },
+      "mode": {
+        "type": "string",
+        "enum": [
+          "preview",
+          "apply",
+          "undo"
+        ]
+      },
+      "logPath": {
+        "type": "string"
+      }
     },
-    "required": ["mode", "logPath"]
+    "required": [
+      "mode",
+      "logPath"
+    ]
   },
   "timeoutSeconds": 120,
   "readOnly": false
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Plan views: move one side of the rectangular crop region (right/left/top/bottom in view axes) to just beyond the
+//    outermost host grid end (bubble included) on that side, plus marginMm paper. View setting only, no model element
+//    changes. mode preview | apply | undo (restores crop boxes from logPath).
 using System;
 using System.Collections.Generic;
 using System.IO;

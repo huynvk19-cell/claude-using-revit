@@ -1,24 +1,66 @@
 /* mcp-tool
 {
-  "description": "Edit linear dimensions of ONE view: delete ids; merge groups (each group = dim ids whose references are combined into one new dimension on the line of the first dim, then the group is deleted); retype ids to a dimension type. Everything removed is logged (id, type, view, values, line, references as stable strings) to logPath so it can be checked or rebuilt. mode preview (rolled back) | apply.",
+  "description": "ONE view: delete, merge (groups into one dim) or retype linear dims; everything removed is logged for rebuild. preview | apply.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "viewId": { "type": "number" },
-      "deleteIds": { "type": "array", "items": { "type": "number" } },
-      "merge": { "type": "array", "items": { "type": "array", "items": { "type": "number" } } },
-      "mergeType": { "type": "string", "description": "type for merged dims (default: type of the first dim)" },
-      "retypeIds": { "type": "array", "items": { "type": "number" } },
-      "retypeTo": { "type": "string" },
-      "mode": { "type": "string", "enum": ["preview", "apply"] },
-      "logPath": { "type": "string" }
+      "viewId": {
+        "type": "number"
+      },
+      "deleteIds": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        }
+      },
+      "merge": {
+        "type": "array",
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      },
+      "mergeType": {
+        "type": "string",
+        "description": "type for merged dims (default: type of the first dim)"
+      },
+      "retypeIds": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        }
+      },
+      "retypeTo": {
+        "type": "string"
+      },
+      "mode": {
+        "type": "string",
+        "enum": [
+          "preview",
+          "apply"
+        ]
+      },
+      "logPath": {
+        "type": "string"
+      }
     },
-    "required": ["viewId", "mode", "logPath"]
+    "required": [
+      "viewId",
+      "mode",
+      "logPath"
+    ]
   },
   "timeoutSeconds": 180,
   "readOnly": false
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Edit linear dimensions of ONE view: delete ids; merge groups (each group = dim ids whose references are combined
+//    into one new dimension on the line of the first dim, then the group is deleted); retype ids to a dimension type.
+//    Everything removed is logged (id, type, view, values, line, references as stable strings) to logPath so it can be
+//    checked or rebuilt. mode preview (rolled back) | apply.
 using System;
 using System.Collections.Generic;
 using System.IO;

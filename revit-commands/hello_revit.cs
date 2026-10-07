@@ -1,11 +1,17 @@
 /* mcp-tool
 {
-  "description": "Smoke test for the dynamic command pipeline: returns Revit version, open documents and the active view. Edit this file and call it again to see changes apply with no restart.",
-  "inputSchema": { "type": "object", "properties": {} },
+  "description": "Smoke test: Revit version, open documents, active view.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {}
+  },
   "timeoutSeconds": 120,
   "readOnly": true
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Smoke test for the dynamic command pipeline: returns Revit version, open documents and the active view. Edit this
+//    file and call it again to see changes apply with no restart.
 using System.Linq;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;

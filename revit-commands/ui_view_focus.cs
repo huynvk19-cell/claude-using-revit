@@ -1,20 +1,53 @@
 /* mcp-tool
 {
-  "description": "UI helper so the user can watch progress. action open: make viewId the active view and zoom to its crop region (call twice when the view was not active: the zoom needs the view window). action 'panes': hide or show the Properties palette and/or the Project Browser (panes: 'hide' | 'show'; which: properties | browser, default both) and report each pane's state before and after. action 'toggle' flips a View > User Interface checkbox blindly: prefer 'panes'. No model change.",
+  "description": "UI only: open a view zoomed to its crop (open); hide/show Properties and Project Browser (panes, which).",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "action": { "type": "string", "enum": ["open", "panes", "toggle"] },
-      "which": { "type": "string", "enum": ["properties", "browser"], "description": "panes: only this pane (default both); toggle: View > User Interface > Properties / Project Browser (flips the checkbox)" },
-      "viewId": { "type": "number" },
-      "panes": { "type": "string", "enum": ["hide", "show"] }
+      "action": {
+        "type": "string",
+        "enum": [
+          "open",
+          "panes",
+          "toggle"
+        ]
+      },
+      "which": {
+        "type": "string",
+        "enum": [
+          "properties",
+          "browser"
+        ],
+        "description": "panes: only this pane (default both)"
+      },
+      "viewId": {
+        "type": "number"
+      },
+      "panes": {
+        "type": "string",
+        "enum": [
+          "hide",
+          "show"
+        ]
+      }
     },
-    "required": ["action"]
+    "required": [
+      "action"
+    ]
   },
   "timeoutSeconds": 60,
   "readOnly": true
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// UI helper so the user can watch progress. action open: make viewId the active view and zoom to its crop region (call
+//    twice when the view was not active: the zoom needs the view window). action 'panes': hide or show the Properties
+//    palette and/or the Project Browser (panes: 'hide' | 'show'; which: properties | browser, default both) and report
+//    each pane's state before and after. action 'toggle' flips a View > User Interface checkbox blindly: prefer
+//    'panes'. No model change.
+// Parameters:
+//   which: panes: only this pane (default both); toggle: View > User Interface > Properties / Project Browser (flips
+//    the checkbox)
 using System;
 using System.Linq;
 using Autodesk.Revit.DB;

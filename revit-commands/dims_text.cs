@@ -1,35 +1,70 @@
 /* mcp-tool
 {
-  "description": "Set the Prefix / Suffix (and optionally Above / Below text) of dimension segments in ONE view, keeping the measured value live (never Replace with text). Each item names a dim and the segment: segmentIndex (0-based), or valueMm (the segment whose value matches within 1 mm), or neither for a single-segment dim. Use for the stair core rules: suffix ' CLEAR' on clear widths, prefix '280mm x 14T = ' on run lengths. mode preview (reports before -> after, changes nothing) | apply (logPath) | undo (logPath).",
+  "description": "Set prefix / suffix / above / below text of dim segments (value stays live), e.g. ' CLEAR', '280mm x 14T = '. preview | apply | undo.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "viewId": { "type": "number" },
+      "viewId": {
+        "type": "number"
+      },
       "items": {
         "type": "array",
         "items": {
           "type": "object",
           "properties": {
-            "dimId": { "type": "number" },
-            "segmentIndex": { "type": "number" },
-            "valueMm": { "type": "number" },
-            "prefix": { "type": "string" },
-            "suffix": { "type": "string" },
-            "above": { "type": "string" },
-            "below": { "type": "string" }
+            "dimId": {
+              "type": "number"
+            },
+            "segmentIndex": {
+              "type": "number"
+            },
+            "valueMm": {
+              "type": "number"
+            },
+            "prefix": {
+              "type": "string"
+            },
+            "suffix": {
+              "type": "string"
+            },
+            "above": {
+              "type": "string"
+            },
+            "below": {
+              "type": "string"
+            }
           },
-          "required": ["dimId"]
+          "required": [
+            "dimId"
+          ]
         }
       },
-      "mode": { "type": "string", "enum": ["preview", "apply", "undo"] },
-      "logPath": { "type": "string" }
+      "mode": {
+        "type": "string",
+        "enum": [
+          "preview",
+          "apply",
+          "undo"
+        ]
+      },
+      "logPath": {
+        "type": "string"
+      }
     },
-    "required": ["mode"]
+    "required": [
+      "mode"
+    ]
   },
   "timeoutSeconds": 60,
   "readOnly": false
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Set the Prefix / Suffix (and optionally Above / Below text) of dimension segments in ONE view, keeping the measured
+//    value live (never Replace with text). Each item names a dim and the segment: segmentIndex (0-based), or valueMm
+//    (the segment whose value matches within 1 mm), or neither for a single-segment dim. Use for the stair core rules:
+//    suffix ' CLEAR' on clear widths, prefix '280mm x 14T = ' on run lengths. mode preview (reports before -> after,
+//    changes nothing) | apply (logPath) | undo (logPath).
 using System;
 using System.Collections.Generic;
 using System.IO;

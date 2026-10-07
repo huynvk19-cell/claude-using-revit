@@ -1,18 +1,46 @@
 /* mcp-tool
 {
-  "description": "In one view, for newly created vertical dims (ids, or the 'Created' ids in a log file written by elevation_opening_dims), delete those whose door/window already has another vertical dim (not in the new set) referencing it. mode preview | apply (logPath gets the deleted ids with values).",
+  "description": "ONE view: delete newly created vertical dims whose door/window already has another vertical dim. preview | apply (logPath).",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "viewId": { "type": "number" }, "ids": { "type": "array", "items": { "type": "number" } }, "fromLog": { "type": "string" },
-      "mode": { "type": "string", "enum": ["preview", "apply"] }, "logPath": { "type": "string" }
+      "viewId": {
+        "type": "number"
+      },
+      "ids": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        }
+      },
+      "fromLog": {
+        "type": "string"
+      },
+      "mode": {
+        "type": "string",
+        "enum": [
+          "preview",
+          "apply"
+        ]
+      },
+      "logPath": {
+        "type": "string"
+      }
     },
-    "required": ["viewId", "mode", "logPath"]
+    "required": [
+      "viewId",
+      "mode",
+      "logPath"
+    ]
   },
   "timeoutSeconds": 120,
   "readOnly": false
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// In one view, for newly created vertical dims (ids, or the 'Created' ids in a log file written by
+//    elevation_opening_dims), delete those whose door/window already has another vertical dim (not in the new set)
+//    referencing it. mode preview | apply (logPath gets the deleted ids with values).
 using System;
 using System.Collections.Generic;
 using System.IO;

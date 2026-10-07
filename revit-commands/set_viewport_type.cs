@@ -1,20 +1,37 @@
 /* mcp-tool
 {
-  "description": "Change the type of given viewports to a viewport type (by name). Reports old type, detail number and title position before/after. mode preview | apply | undo (restores old types from logPath).",
+  "description": "Change viewports to a viewport type (by name); reports before/after. preview | apply | undo.",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "viewportIds": { "type": "array", "items": { "type": "number" } },
-      "typeName": { "type": "string" },
-      "mode": { "type": "string" },
-      "logPath": { "type": "string" }
+      "viewportIds": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        }
+      },
+      "typeName": {
+        "type": "string"
+      },
+      "mode": {
+        "type": "string"
+      },
+      "logPath": {
+        "type": "string"
+      }
     },
-    "required": ["mode", "logPath"]
+    "required": [
+      "mode",
+      "logPath"
+    ]
   },
   "timeoutSeconds": 120,
   "readOnly": false
 }
 */
+// ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
+// Change the type of given viewports to a viewport type (by name). Reports old type, detail number and title position
+//    before/after. mode preview | apply | undo (restores old types from logPath).
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
