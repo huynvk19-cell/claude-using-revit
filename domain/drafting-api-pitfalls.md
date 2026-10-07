@@ -58,3 +58,5 @@ metadata:
 - 2026-10-07: stair path Fixed Up: thuộc tính `StairsPath.ShowUpText` báo lỗi, nhưng tham số instance "Show Up Text" chỉnh được và **mặc định bật** (chữ "UP" hiện). Đặt 0 (`stair_plan_annotate` đã làm).
 - 2026-10-07: `move_in_view` trên tag có leader Free dời cả đầu tag lẫn điểm cuối; muốn đổi riêng điểm cuối / điểm gấp → tạo lại tag bằng `annot_place` rồi xoá tag cũ. Đổi Start Number của thang có thể làm tag vế leader Free nhảy chỗ → xuất ảnh kiểm lại.
 - 2026-10-07: gọi song song nhiều lệnh MCP vào Revit → các lệnh sau timeout. Lệnh ghi (open view, apply) chạy tuần tự.
+- 2026-10-07: tham số số bậc qua `modify_element_parameter` (số nguyên): **Display Rule** 1 = Odd, 2 = Even; **Justify** 0 = Front, 1 = Center, 2 = Back. Chữ "Odd"/"Even" bị từ chối.
+- 2026-10-07: số bậc (nhất là số sát chiếu nghỉ / đầu vế) trông **bị che một phần trên ảnh xuất** (`export_sheet_images`): đó là lỗi khi xuất ảnh, không phải lỗi bản vẽ (user). **Không** dời dim, chữ hay đổi Justify để "chữa".

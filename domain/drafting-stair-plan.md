@@ -190,7 +190,7 @@ Chiếu nghỉ có lan can chắn (vd. lan can bên shaft / lỗ mở): đo **t�
 - **Kiểm tra chéo**: số mặt bậc của model × độ sâu = chiều dài footprint của vế (± 1 mm). Lệch → báo user, không tự sửa model.
 - **Đánh số bậc** (Stair Tread/Riser Number), theo mẫu:
   - số **liên tục cả cầu thang**, từ cổ bậc đầu tiên ở tầng thấp nhất (mẫu: vế tầng trệt 1…15, vế tiếp 16…30, vế tầng trên 31…45);
-  - hiện **cách một số** (số lẻ 1, 3, 5…) cho đỡ dày;
+  - hiện **cách một số**, **luôn là số lẻ** (Display Rule = Odd; user, 2026-10-07): 1, 3, 5… — kể cả khi số bắt đầu là số chẵn, kể cả số rơi vào bậc phẳng sát chiếu nghỉ;
   - V1 và V3 cùng dải → hai cột số ở **hai phía** của dải, không chồng nhau (mẫu: V3 sát tường, V1 sát lan can giữa);
   - số không đè mũi tên path, tag, nét cắt.
   - Số bắt đầu của mỗi vế = số cuối của vế trước + 1. Trong một thang Revit tự đánh liên tục; **giữa các thang** số bắt đầu là tham số của Stairs "Tread/Riser Start Number" (tham số model → hỏi user một lần): số bắt đầu = số bắt đầu thang dưới + Actual Number of Risers của thang dưới, tính từ thang thấp nhất của lõi. Ghi cả chuỗi thang (id → tầng gốc/đỉnh → số cổ bậc → số bắt đầu) vào profile. Kiểm tra bằng ảnh.
