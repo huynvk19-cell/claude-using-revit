@@ -13,6 +13,6 @@ This repo holds drafting **skills** (`skills/`, English), **standards** (`domain
 ## Editing the repo
 
 - A new topic = one skill (`skills/<name>/SKILL.md`) + one standard (`domain/<name>.md`) + a row in the `drafting-session` routing table + rows in `README.md`.
-- Plan and section of the same element are separate topics (e.g. `drafting-stair-plan` vs `drafting-stair-section`).
+- Plan and section of the same element are separate topics (e.g. `drafting-stair-plan` vs `drafting-stair-section-parallel`).
 - No client names, model names, sheet numbers or machine paths in the repo (README, "Keeping it alive").
 - Commands take project values as arguments (from `drafting-profile.md`), never hard-coded.

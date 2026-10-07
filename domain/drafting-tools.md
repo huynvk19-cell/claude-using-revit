@@ -41,6 +41,7 @@ metadata:
 | `viewport_title_audit` | Kiểm tra title. |
 | `template_link_visibility` | Link nào đang hiện trong từng template. |
 | `rollup_dims_check` | Cửa cuốn và các dim đang trỏ vào nó (1V). |
+| `stair_section_info` | **Mặt cắt dọc thang** (1V, section, `drafting-stair-section-parallel.md`): các vế F1… theo chiều đi lên (cắt / phía sau, lên trái / phải), From EL – To EL, R × chiều cao cổ bậc, T × độ sâu, chữ công thức; dim LA1/LA3 đã có (OK / thiếu / sai chữ), tag vế, số bậc; type tag vế dùng nhiều nhất trong mặt cắt. |
 | `stair_plan_audit` | **Lõi thang bộ** (1V, mặt bằng, `drafting-stair-plan.md`): vế V1/V2/V3 theo mặt cắt, số bậc/độ sâu từ model + công thức, bề rộng thông thuỷ (tay vịn/tường), tường bao 4 phía, chiếu nghỉ; dim cần có (`Expected`: OK / thiếu / thiếu CLEAR / sai công thức), tag, cao độ, stair path, số bậc; type dùng nhiều nhất trong dự án. |
 | `elements_beyond` | Nét chạy ra ngoài trục cuối. |
 | `annotation_overlaps` | Annotation chồng lắp trong 1 view: chữ dim, tag, text note, cao độ điểm, đường dim cắt qua chữ; trả về id để `highlight_elements` tô đỏ (room tag mặc định bỏ qua). |
