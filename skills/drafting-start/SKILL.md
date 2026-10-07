@@ -21,11 +21,14 @@ No model change. Load `drafting-session` first if it is not loaded yet.
    ui_view_focus {action:"panes", panes:"hide"}
    ```
    Note what it reports as `was shown / was hidden` for each pane in the session log entry (`UI: Properties was …, Project Browser was …`). `drafting-end` restores exactly that.
+   Known bug (2026-10-06/07): `panes` can report "was hidden" while both panes are on screen. If the user says they still see them, use `toggle` once per pane (`which:"properties"`, then `which:"browser"`) and log that.
 4. **Open the views**, the one to work on first opened last (it stays active):
    ```
    ui_view_focus {action:"open", viewId}
    ```
    Reply `view window not open yet: call again` → call it once more for that view (the zoom needs the window).
+   `Switched:false` while the user sees a sheet = that sheet has the view's viewport **activated**: every view request lands on the sheet. Ask the user to deactivate it (double-click outside the viewport), then open again.
+   Checking by image during the work: export the **view** (`export_sheet_images {sheetNumbers:[], viewIds:[id]}`), not the sheet: a sheet export leaves the sheet in front and the user loses the view.
 5. **Status window** (if the project uses it): `work_status {action:"show", title:<task>, message:"Bắt đầu"}`.
 
 ## Report
@@ -35,5 +38,5 @@ One short table: view (exact Project Browser name) → sheet → opened. Then on
 ## Never
 
 - Close or rearrange the user's own view windows.
-- Use `toggle` for the panes (it flips blindly); use `panes` with `hide` / `show`.
+- Use `toggle` for the panes (it flips blindly) unless `panes` misreports (above).
 - Change anything in the model.

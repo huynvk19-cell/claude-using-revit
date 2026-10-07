@@ -168,7 +168,7 @@ public static class StairPlanAnnotate
                         try
                         {
                             var p = StairsPath.Create(doc, new LinkElementId(s.Id), pathType.Id, v.Id);
-                            p.ShowUpText = false; p.ShowDownText = false; log.Created.Add(p.Id.IntegerValue);
+                            log.Created.Add(p.Id.IntegerValue); // Fixed Up paths have no UP/DOWN text (ShowUpText throws on them)
                             done1.Add(new { Part = "path", Stairs = s.Id.IntegerValue, Created = p.Id.IntegerValue, Type = pathType.FamilyName + " : " + pathType.Name });
                         }
                         catch (Exception e) { errors.Add("path for stairs " + s.Id.IntegerValue + ": " + e.Message); }
@@ -179,12 +179,12 @@ public static class StairPlanAnnotate
                     {
                         var ty = doc.GetElement(p.GetTypeId()) as ElementType;
                         bool wrongType = !(ty?.FamilyName ?? "").ToLower().Contains("fixed");
-                        if (!wrongType && !p.ShowUpText && !p.ShowDownText) continue;
+                        if (!wrongType) continue; // Fixed Up: no UP/DOWN text to turn off
                         log.Paths.Add(new PathChange { Id = p.Id.IntegerValue, OldType = p.GetTypeId().IntegerValue, Up = p.ShowUpText, Down = p.ShowDownText });
                         try
                         {
-                            if (wrongType) p.ChangeTypeId(pathType.Id);
-                            p.ShowUpText = false; p.ShowDownText = false;
+                            p.ShowUpText = false; p.ShowDownText = false; // only allowed while the type is Automatic
+                            p.ChangeTypeId(pathType.Id);
                             done1.Add(new { Part = "path", Stairs = s.Id.IntegerValue, Fixed = p.Id.IntegerValue, Was = ty?.FamilyName + " : " + ty?.Name, Now = pathType.FamilyName + " : " + pathType.Name + ", no UP/DOWN text" });
                         }
                         catch (Exception e) { errors.Add("path " + p.Id.IntegerValue + ": " + e.Message); }
@@ -203,7 +203,9 @@ public static class StairPlanAnnotate
                     {
                         var o = opt;
                         if (r.State == "beyond cut" && cutRuns.Any(x => Ov(r.X0, r.X1, x.X0, x.X1) > 0 && Ov(r.Y0, r.Y1, x.Y0, x.Y1) > 0)) o = Mirror(opt); // V1 and V3 share the lane
-                        var ns = NumberSystem.Create(doc, v.Id, new LinkElementId(r.R.Id), o, new LinkElementId(numType));
+                        // the (option, LinkElementId) overload wants a multistory placement LEVEL, not the type: use the run's number reference
+                        var ns = NumberSystem.Create(doc, v.Id, new LinkElementId(r.R.Id), r.R.GetNumberSystemReference(o));
+                        if (ns.GetTypeId() != numType) ns.ChangeTypeId(numType);
                         log.Created.Add(ns.Id.IntegerValue);
                         done1.Add(new { Part = "numbers", Run = r.Label, RunId = r.R.Id.IntegerValue, Created = ns.Id.IntegerValue, Risers = r.R.ActualRisersNumber, Treads = r.R.ActualTreadsNumber, Side = o.ToString() });
                     }

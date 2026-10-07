@@ -41,6 +41,16 @@ Việc cần sửa model (vd. room không có tên → tag "?") → ghi vào **v
    - Thêm một dòng vào file domain tương ứng nếu áp dụng cho mọi dự án.
    - Thêm vào profile nếu chỉ riêng dự án này.
 
+## 2b. Tiêu chí hoàn thành: ĐỦ – ĐÚNG – ĐẸP (user, 2026-10-07)
+
+Một bản vẽ chỉ được báo "xong" khi đạt cả ba. Kiểm tra trước khi báo cáo, mỗi view một lần.
+
+| | Yêu cầu | Cách kiểm |
+|---|---|---|
+| **ĐỦ** | Mọi mục của chuẩn (dim, tag, cao độ, hoàn thiện, path, số bậc…) đều có trên view. **Không bỏ qua mục nào im lặng**: mục không làm được → hỏi user hoặc ghi rõ vào "Việc tồn" kèm lý do. Không tự kết luận "dự án không dùng" khi chưa xem bản vẽ cùng loại của dự án. | Audit của chuẩn (vd. `stair_plan_audit`) không còn `missing`, trừ mục user đã duyệt bỏ. Đối chiếu với view cùng sheet đã hoàn chỉnh. |
+| **ĐÚNG** | Số liệu lấy từ model (không đếm bằng mắt, không bịa). Dim bám hình học thật, đúng mép theo chuẩn (vd. thông thuỷ: lan can → mép bậc/chiếu nghỉ → tường hoàn thiện). Giá trị khớp tính toán (± 1 mm). Mã/tên đúng type, đúng tham số. Mọi dim/tag **thật sự được vẽ** (Box ≠ null, thấy trên ảnh). | Audit `OK`; `view_elem_boxes` (Box ≠ null); ảnh view. |
+| **ĐẸP** | Không chữ/tag/dim đè nhau hay đè nét chính; các dòng dim cách đều (7 mm giấy), thẳng hàng; chữ đoạn ngắn được tách ra; leader ngắn, không cắt chữ; tag gần chủ thể; cùng kiểu trình bày với các view đã có trên cùng sheet. | `annotation_overlaps` = 0; ảnh view (xuất **view**, không xuất sheet). |
+
 ## 3. Báo cáo (Report)
 
 - Viết bằng ngôn ngữ của user.

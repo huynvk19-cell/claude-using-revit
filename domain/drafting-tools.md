@@ -41,7 +41,16 @@ metadata:
 | `viewport_title_audit` | Kiểm tra title. |
 | `template_link_visibility` | Link nào đang hiện trong từng template. |
 | `rollup_dims_check` | Cửa cuốn và các dim đang trỏ vào nó (1V). |
-| `stair_plan_audit` | **Lõi thang bộ** (1V, mặt bằng, `drafting-stair-plan.md`): vế V1/V2/V3 theo mặt cắt, số bậc/độ sâu từ model + công thức, bề rộng thông thuỷ (tay vịn/tường), tường bao 4 phía, chiếu nghỉ; dim cần có (`Expected`: OK / thiếu / thiếu CLEAR / sai công thức), tag, cao độ, stair path, số bậc; type dùng nhiều nhất trong dự án. |
+| `stair_plan_audit` | **Lõi thang bộ** (1V, mặt bằng, `drafting-stair-plan.md`): vế V1/V2/V3 theo mặt cắt, số bậc tính (bậc trên cùng ngang chiếu nghỉ không tính) + công thức, bề rộng thông thuỷ (mép tay vịn → mép bậc → tường), tường bao 4 phía, chiếu nghỉ (đầu tay vịn giữa → tay vịn/lan can chắn → tường, theo nét tay vịn đang hiện); dim cần có (`Expected`: OK / thiếu / thiếu CLEAR / CLEAR sai chỗ / sai công thức), tag, ô mã hoàn thiện (Generic Annotation, `FinishMarks`), cao độ, stair path, số bậc; type dùng nhiều nhất trong dự án. |
+| `stair_views_survey` | Các view mặt bằng có tên chứa một chuỗi: đếm chú thích theo category + type, sheet chứa view. Dùng để xem các view cùng loại đã xong của dự án làm gì. |
+| `finish_marks_survey` | Ô mã hoàn thiện (Generic Annotation tên có FINISH) trên các view theo tên: mã (F13, W05…) và số lượng. |
+| `room_at_point` | Room tại các điểm khung view (+1 m trên level) và tham số chứa "Finish" (Wall / Floor Finish…); tìm room theo tên. |
+| `number_systems_info` | Số bậc (NumberSystem) trong các view: run, type, mọi tham số (Display Rule, Reference…). |
+| `view_cat_hidden` | Category / subcategory nào đang ẩn trong 1 view (vd. `<Above> Top Rails`). |
+| `dims_by_type_inventory` | Mọi dim của 1 type (hoặc ids): view, sheet, giá trị, vị trí đường dim, chữ bị dời. |
+| `opening_tags_in_views` | Phần tử (cửa…) có được thấy trong view không và có tag nào trỏ vào không. |
+| `door_window_tag_check` | Kiểm tag cửa đi / cửa sổ trong view: thiếu, hỏng, trùng, bị nét đè (audit / sửa). |
+| `annotation_override_scan` | Chú thích còn bị Override màu nét (vd. tô đỏ khi soát chưa xoá) trên các view của sheet theo tiền tố. |
 | `elements_beyond` | Nét chạy ra ngoài trục cuối. |
 | `annotation_overlaps` | Annotation chồng lắp trong 1 view: chữ dim, tag, text note, cao độ điểm, đường dim cắt qua chữ; trả về id để `highlight_elements` tô đỏ (room tag mặc định bỏ qua). |
 | `highlight_elements` | Tô màu (Override Graphics in View) cho id trong view, có log để `undo`. |
@@ -71,7 +80,14 @@ metadata:
 
 | Lệnh | Việc |
 |---|---|
-| `stair_plan_annotate` | Lõi thang bộ (1V): stair path Fixed Up Direction, tắt chữ UP/DOWN (SD); số bậc từng vế, V1 phía đối diện V3 (C, `numberSide`); tag vế thang ngoài tường bên, leader vào phần nhìn thấy (SB1, `runTagPlace`). preview / apply / undo. |
+| `stair_plan_annotate` | Lõi thang bộ (1V): stair path Fixed Up Direction, tắt chữ UP/DOWN (SD); số bậc từng vế, V1 phía đối diện V3 (C, `numberSide`); tag vế thang ngoài tường bên, leader vào phần nhìn thấy (SB1, `runTagPlace`). preview / apply / undo. Truyền `pathTypeName` / `runTagTypeName` theo bản vẽ cùng sheet. |
+| `stair_numbers_match` | Số bậc (1V): chép Display Rule, Number Size, Justify, Orientation… từ một số bậc mẫu của dự án (`sourceId`) và đặt Reference từng vế (Left/Right Quarter…). preview / apply / undo. |
+| `dims_at_positions` | Dim (1V) đặt theo toạ độ khung view (như `stair_plan_audit`): mỗi vị trí phải có tham chiếu thật (mặt/nét tường, lan can, vế thang – fallback mặt 3D, sàn, cửa, cột, trục); `{mm, id}` ép đúng phần tử; không tìm thấy → báo các tham chiếu gần nhất. `typeName` bắt buộc. `src:"3d"|"view"` theo từng điểm, `use3D`, `refDims` (dùng lại tham chiếu của dim vẽ tay). Bỏ nét thuộc subcategory bị ẩn. preview / apply / undo. **Sau khi tạo kiểm tra dim có hiện không** (`view_elem_boxes`: Box ≠ null). |
+| `annot_place` | Tag (có/không leader, đầu leader tự do) và cao độ (spot, trên mặt plan của phần tử chứa điểm, vd. Stairs) đặt theo toạ độ khung view; type phải có sẵn. preview / apply / undo. |
+| `dims_text_move` | Dời chữ của từng đoạn dim (dọc / ngang đường dim) khi chữ đoạn ngắn đè nhau. preview / apply / undo. |
+| `move_in_view` | Dời phần tử chú thích (dim, tag, text) theo Right / Up của view (mm). |
+| `view_elem_boxes` | (read-only) Hộp bao của phần tử trong view, theo mm model và khung view (ViewBox); `allAnnotations:true` = mọi chú thích của view. Box `null` = không được vẽ. |
+| `view_dims_snapshot` | (read-only) Mọi dim tuyến tính của 1 view theo khung view: vị trí đường dim, các điểm gióng, giá trị + prefix/suffix/below từng đoạn, tham chiếu. Chụp trước / sau khi user chỉnh tay để học cách user dim (`outPath`). |
 | `elevation_opening_tags` | Tag cửa trên mặt đứng/cắt (1V), `addLeader`, `fixExisting`; cửa cuốn lớn: tag nằm trong cửa (`rollupInside`, `rollupFamilies`). |
 | `tag_align` | Căn đầu tag theo tag mẫu. |
 | `room_tags_outside` / `room_tags_broken` | Room tag nằm ngoài phòng / room tag "?". |

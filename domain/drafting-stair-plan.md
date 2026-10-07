@@ -60,20 +60,30 @@ Mặt bằng tầng điển hình thường thấy **3 vế thang**. Đi theo ch
 - **Mép tường hoàn thiện** = mặt tường **gần lòng thang nhất**, đã gồm lớp hoàn thiện (lớp trát, ốp). Nếu hoàn thiện vẽ bằng tường riêng thì lấy mặt của tường hoàn thiện đó.
 - **Mép trong tay vịn** = mép tay vịn quay về **phía lòng vế thang**.
 
+### Mép giới hạn thông thuỷ (user, 2026-10-07) — dùng cho mọi kích thước thông thuỷ
+
+Mỗi đầu của một kích thước thông thuỷ lấy theo thứ tự ưu tiên:
+
+1. **Mép lan can / tay vịn** (mép trong, quay về phía lối đi);
+2. không có lan can → **mép bậc / mép chiếu nghỉ** (cạnh của thang);
+3. không có cả hai → **mép tường hoàn thiện**.
+
+Chiếu nghỉ có lan can chắn (vd. lan can bên shaft / lỗ mở): đo **tới lan can chắn đó**, không đo xuyên qua lỗ mở tới tường.
+
 ## A. DIM
 
-**Mọi kích thước thông thuỷ đều có suffix `CLEAR`** (Suffix của từng đoạn dim, không Replace with text): SA1 bề rộng vế, SA1 tường–tường, SA2 tường–tường, SA3 chiếu nghỉ / chiếu tới.
+**Suffix `CLEAR` chỉ dùng cho bề rộng thông thuỷ của vế thang** (SA1, các đoạn giữa hai mép giới hạn của một vế; Suffix của đoạn dim, không Replace with text). Các kích thước khác — chiếu nghỉ (SA3), tổng (SA1, SA2), tay vịn, tường — **không** ghi CLEAR (user, 2026-10-07).
 
 ### Bố trí dim (theo mẫu của user, 2026-10-06)
 
 ```text
   SA2  SB1        tường đầu (phía chiếu nghỉ)        SB1  SA2
    |    |   +-----------------------------------+    |    |
-   |    |   |     SA3: 1965 CLEAR (dọc giếng)   |    |    |
+   |    |   |     SA3: 1965 (dọc giếng)         |    |    |
    |    |   |  SA1: 70|1550 CLEAR|80|300|80|... |    |    |
    |    +-->|  [ V1 / V3 ]   lan can   [ V2 ]   |<---+    |
    |        |  SA1: 70|1550 CLEAR|80|300|80|... |         |
-   |        |     SA3: 1965 CLEAR (chiếu tới)   |         |
+   |        |     SA3: 1965 (chiếu tới)         |         |
    |        +-----------------------------------+         |
                  tường đầu (phía sàn tầng / cửa)
                  SA4: trục → mép tường … ; tổng
@@ -93,22 +103,21 @@ Mặt bằng tầng điển hình thường thấy **3 vế thang**. Đi theo ch
 
 ### SA1 — Bề rộng thông thuỷ vế thang (phương ngang)
 
-- **Bề rộng thông thuỷ** một vế = khoảng cách giữa **mép trong hai tay vịn** của vế đó.
-  - Phía không có tay vịn → tính tới **mép tường hoàn thiện**.
+- **Bề rộng thông thuỷ** một vế = khoảng cách giữa hai mép giới hạn của vế đó, theo thứ tự ưu tiên ở mục 0: **mép trong tay vịn** → không có thì **mép bậc** → không có thì **mép tường hoàn thiện**.
 - **Chuỗi**, ví dụ lõi chữ U có lan can giữa (mẫu: `70 | 1550 CLEAR | 80 | 300 | 80 | 1550 CLEAR | 70`):
 
   `tường HT → [tay vịn tường nhô ra] → mép trong tay vịn → [vế 1 CLEAR] → mép trong tay vịn giữa → [tay vịn] → [giếng thang] → [tay vịn] → mép trong tay vịn giữa → [vế 2 CLEAR] → mép trong tay vịn tường → [tay vịn tường] → tường HT`
 
   - Đoạn tường HT → mép trong tay vịn (70) = phần tay vịn tường nhô ra. Không có tay vịn tường thì không có đoạn này.
   - Lan can giữa tách thành **tay vịn | giếng | tay vịn** (80 | 300 | 80).
-- **Tổng**: **tường HT → tường HT** giữa hai tường **song song hướng đi** + `CLEAR`.
+- **Tổng** (không ghi CLEAR): đo theo cùng thứ tự ưu tiên ở mục 0, **mép trong tay vịn → mép trong tay vịn** ngoài cùng, đặt trong một **chuỗi khép tới tường**: `tay vịn | tổng | tay vịn | khe tới tường` (user, 2026-10-07: `80 | 2590 | 80 | 390`). Chỉ khi không có tay vịn và mép bậc mới đo tường HT → tường HT (user, 2026-10-07: `3140` tường–tường là sai).
 - **Vị trí**: **trong lòng thang**, đường dim sát đầu vế: một chuỗi phía chiếu nghỉ, một chuỗi phía chiếu tới (mẫu có cả hai). Không đè số bậc, mũi tên, tag.
 
 ### SA2 — Chiều dài vế thang (hướng đi)
 
-- **Chiều dài vế** = **số bậc × độ sâu mặt bậc**.
+- **Chiều dài vế** = **số bậc (đếm theo mục C) × độ sâu mặt bậc**, đo từ **cổ bậc đầu** tới **cổ bậc cuối** (cổ bậc bước lên chiếu nghỉ / sàn). Bậc trên cùng ngang cao độ chiếu nghỉ thuộc chiếu nghỉ: nó nằm trong đoạn chiếu nghỉ của chuỗi, không nằm trong đoạn công thức (vd. 16 cổ bậc → `280mm x 15T = 4200`, 280 còn lại cộng vào chiếu nghỉ).
 - Đoạn dim chiều dài vế **có công thức**:
-  - Prefix `280mm x 14T = ` → hiện `280mm x 14T = 3920`.
+  - Prefix `280mm x 14T =` (không dấu cách cuối — Revit tự chèn) → hiện `280mm x 14T = 3920`. Suffix ghi `CLEAR` (không dấu cách đầu).
   - Below `(EQUAL TREADS)`.
   - 280 = độ sâu mặt bậc (mm), 14T = số bậc (T = tread), 3920 = giá trị dim đo được.
   - **Một cách viết cho cả dự án**: `280mm x 14T = `. Không dùng `280x13T= ` (mẫu có lẫn hai kiểu → sửa về một kiểu).
@@ -120,7 +129,7 @@ Mặt bằng tầng điển hình thường thấy **3 vế thang**. Đi theo ch
 
   - Phải có đoạn **bề rộng chiếu nghỉ tới mép tường**.
   - **Trục đi qua lòng thang** (vd. trục F) được chèn vào chuỗi (mẫu: 1805 | 400).
-- **Tổng** (dòng ngoài, mẫu 8330): **tường HT → tường HT** giữa hai tường **vuông góc hướng đi** + `CLEAR`.
+- **Tổng** (dòng ngoài, mẫu 8330): **tường HT → tường HT** giữa hai tường **vuông góc hướng đi** (không ghi CLEAR).
 - **Vị trí**: ngoài **tường bên**. Mỗi dải vế dim ở **phía tường gần nó**:
   - lõi chữ U: dải V1/V3 dim ở tường bên phía nó, dải V2 dim ở tường bên phía còn lại.
 - **Dải V1/V3** chỉ có **một** dim chiều dài:
@@ -129,8 +138,9 @@ Mặt bằng tầng điển hình thường thấy **3 vế thang**. Đi theo ch
 
 ### SA3 — Chiếu nghỉ, chiếu tới
 
-- Mỗi **chiếu nghỉ nhìn thấy** và **chiếu tới** (phần sàn tầng trong lõi thang) cần **bề rộng thông thuỷ** + `CLEAR` (mẫu: `1965 CLEAR`, hai chỗ).
-- Đo theo hướng đi, từ **mép trong tay vịn** (đầu lan can giữa) tới **mép tường hoàn thiện** (hoặc mép tay vịn tường).
+- Mỗi **chiếu nghỉ nhìn thấy** và **chiếu tới** (phần sàn tầng trong lõi thang) cần **bề rộng thông thuỷ** (mẫu: `1965`, hai chỗ; không ghi CLEAR).
+- Đo theo hướng đi, từ **đầu mút tay vịn giữa** = đường đầu tay vịn đầu tiên ngay sau cổ bậc cuối (vd. cổ bậc ± 80; không lấy trụ hay đoạn kéo dài phía xa; dim mẫu của user 2026-10-07: `1600`, `1393`) tới vật cản đầu tiên về phía tường, theo thứ tự ưu tiên ở mục 0: **lan can / tay vịn** (tay vịn tường, lan can chắn shaft…) → **mép chiếu nghỉ** → **mép tường hoàn thiện**. Không đo xuyên qua lỗ mở.
+- **Chuỗi khép tới tường** (user, 2026-10-07): một đường dim gồm `[khe tới tường] | [tay vịn / lan can] | [thông thuỷ chiếu nghỉ]`, đo từ **mép tường hoàn thiện** → mép ngoài tay vịn → mép trong tay vịn → đầu mút tay vịn giữa. Mẫu: `49 | 80 | 1600` (chiếu nghỉ có tay vịn tường), `1393 | 80 | 2618` (chiếu nghỉ có lan can chắn shaft, phần còn lại tới tường).
 - Đặt **trong lòng thang**, đường dim **dọc trục giếng thang** (giữa hai vế), không cắt qua chữ cao độ, tag, mũi tên.
 
 ### SA4 — Tường bao, cửa đi, cửa sổ → trục
@@ -158,18 +168,22 @@ Mặt bằng tầng điển hình thường thấy **3 vế thang**. Đi theo ch
 | **SB3** | Cao độ (Spot Elevation) | 1 / chiếu nghỉ nhìn thấy (mẫu `2625`); 1 / chiếu tới trong lõi thang (mẫu `5250`, `0.000`); 1 sàn **ngoài cửa buồng thang** | Trên mặt chiếu nghỉ / mặt sàn. Không trên cung mở cửa, không trên mũi tên path. |
 | **SB4** | Cửa đi, cửa sổ (Door/Window Tag) | đúng 1 / cửa nhìn thấy | Sát cửa, không đè dim (SA4), không nằm trên cung mở cửa. |
 | **SB5** | Hoàn thiện sàn — mẫu: `F13` | 1 / chiếu nghỉ và 1 / chiếu tới | Cùng cụm với cao độ SB3 của sàn đó, không đè path, không đè dim SA3. |
-| **SB6** | Hoàn thiện tường bao lõi thang | ≥ 1 / loại hoàn thiện tường | **Leader gần chủ thể nhất có thể.** Đầu tag có thể **dồn vào góc tường** (góc trong lõi thang còn trống). |
+| **SB6** | Hoàn thiện tường bao lõi thang — mã `W..` | **Bắt buộc**, ≥ 1 / loại hoàn thiện tường thấy trên view (thường mỗi mặt tường một tag) | **Leader gần chủ thể nhất có thể**, chạm mặt tường hoàn thiện. Đầu tag có thể **dồn vào góc tường** (góc trong lõi thang còn trống). |
 
 - Tag nào cũng phải: gần chủ thể, không đè dim, không đè tag khác, không nằm trên nét vế thang.
 - Mỗi chủ thể **đúng một** tag. Tag trùng → xoá bớt (giữ tag đặt tốt hơn).
 - SB5/SB6 dùng loại tag mà dự án đang dùng cho hoàn thiện (mẫu: tag ô vuông mã `F..`). Dự án chưa thống nhất → hỏi, ghi vào profile.
+  - Nhiều dự án vẽ ô mã hoàn thiện bằng **Generic Annotation** (không bám phần tử): `stair_plan_audit` nhận theo vị trí + mã (`FinishMarks`), `F..` = sàn, `W..` = tường.
+  - **Mã lấy từ**: tham số hoàn thiện của Room (Wall Finish / Floor Finish), bảng hoàn thiện / legend trên sheet, hoặc view cùng lõi thang đã có. Không suy ra được → **hỏi user**, không tự đặt mã, không bỏ qua.
+  - **Không bao giờ bỏ qua SB5/SB6 im lặng** (lỗi 2026-10-07: đã bỏ SB6 vì "dự án không dùng" — sai).
 
 ## C. ĐẾM SỐ BẬC
 
 - **Nguồn số liệu duy nhất là model**: số bậc (Actual Number of Treads), số cổ bậc (Actual Number of Risers) của **từng vế**, độ sâu mặt bậc (Actual Tread Depth) của thang chứa vế đó.
 - **Không** đếm nét trên mặt bằng: V1 và V3 chỉ hiện một nửa, nét cắt che bậc.
 - Đếm **riêng từng vế** V1, V2, V3. V1/V3 thuộc hai thang khác nhau → có thể khác số bậc (mẫu: tầng trệt `175.0mm x 15R`, tầng điển hình `280mm x 14T`, tầng trên `280mm x 13T`).
-- **Kiểm tra chéo**: số bậc × độ sâu = chiều dài vế đo trên footprint (± 1 mm). Lệch → báo user, không tự sửa model.
+- **Bậc trên cùng ngang cao độ chiếu nghỉ / sàn không tính** (user, 2026-10-07): nó đã là chiếu nghỉ. Model có số mặt bậc = số cổ bậc (Actual Number of Treads = Actual Number of Risers) → **số bậc tính = số cổ bậc − 1** (vd. 16R → 15T, 15R → 14T). Tag vế (`…T`) và công thức SA2 dùng cùng số này.
+- **Kiểm tra chéo**: số mặt bậc của model × độ sâu = chiều dài footprint của vế (± 1 mm). Lệch → báo user, không tự sửa model.
 - **Đánh số bậc** (Stair Tread/Riser Number), theo mẫu:
   - số **liên tục cả cầu thang**, từ cổ bậc đầu tiên ở tầng thấp nhất (mẫu: vế tầng trệt 1…15, vế tiếp 16…30, vế tầng trên 31…45);
   - hiện **cách một số** (số lẻ 1, 3, 5…) cho đỡ dày;
@@ -195,22 +209,30 @@ Sheet mặt bằng lõi thang bộ của user, view tầng điển hình (thấy
 | V1 / V2 / V3 | tag `From EL +0 To EL +2625` · `From EL +2625 To EL +5250` · `From EL +5250 To EL +7875`, đều `280mm x 14T` |
 | SA1 (hai đầu vế, trong lõi) | `70 \| 1550 CLEAR \| 80 \| 300 \| 80 \| 1550 CLEAR \| 70` |
 | SA2 (ngoài tường bên, cả hai phía) | `2205 \| 280mm x 14T = 3920 (EQUAL TREADS) \| 1805 \| 400`, tổng `8330` |
-| SA3 | `1965 CLEAR` trên chiếu nghỉ và trên chiếu tới, dọc trục giếng |
+| SA3 | `1965` trên chiếu nghỉ và trên chiếu tới, dọc trục giếng |
 | SA4 (ngoài tường đầu) | `140 \| 3560`, tổng `3700` |
 | SB2 / SB3 / SB5 | `P01`, `P02` · `2625`, `5250` · `F13` |
 
 Chỗ mẫu khác với quy tắc viết → **làm theo quy tắc**:
-- tổng tường–tường (`8330`, `3700`) chưa có `CLEAR` → thêm `CLEAR`;
 - `280x13T= 3640` (một view khác trên cùng sheet) → sửa về `280mm x 13T = 3640`;
 - tag `P01`/`P02` đè nét bậc → dời ra chỗ trống.
 
-## Kiểm tra sau khi làm
+## Kiểm tra sau khi làm — ĐỦ / ĐÚNG / ĐẸP (`drafting-work-rules.md` §2b)
 
-- `stair_plan_audit` lại: mọi mục SA1–SD đều `OK` (hoặc `OK (split)` khi đoạn được chia nhỏ trên cùng một đường dim, vd. có trục chen giữa).
-- `annotation_overlaps` cho view.
-- Xuất ảnh sheet, nhìn: 3 vế, 3 tag vế ngoài tường có leader, số bậc liên tục đúng, mũi tên đúng chiều, không chữ UP/DOWN, các lớp dim thẳng hàng và đúng thứ tự.
+**ĐỦ**
+- `stair_plan_audit` lại: mọi mục SA1–SD đều `OK` (hoặc `OK (split)` khi đoạn được chia nhỏ trên cùng một đường dim, vd. có trục chen giữa). Mục còn `missing` → làm, hoặc hỏi user / ghi Việc tồn kèm lý do.
+- Danh mục phải có trên view: SA1 (2 đầu vế, `CLEAR` trên bề rộng từng vế, + tổng), SA2 (mỗi dải: công thức + chiếu nghỉ + tổng), SA3 (mỗi chiếu nghỉ / chiếu tới), SA4 (tường → trục, cửa), SB1 (mỗi vế), SB2 (mỗi lan can), SB3 (mỗi chiếu nghỉ + chiếu tới + sàn ngoài cửa nếu thấy), SB4 (mỗi cửa thấy), SB5 (mỗi chiếu nghỉ / chiếu tới), **SB6 (hoàn thiện tường)**, C (số bậc), SD (path).
 
+**ĐÚNG**
+- Số bậc = số cổ bậc − 1 khi bậc trên cùng ngang chiếu nghỉ (mục C); công thức và tag vế cùng số.
+- Thông thuỷ đúng mép: lan can → mép bậc / chiếu nghỉ → tường hoàn thiện; không đo xuyên lỗ mở.
+- Mọi dim/tag mới thật sự được vẽ: `view_elem_boxes` (Box ≠ null).
+
+**ĐẸP**
+- `annotation_overlaps` = 0.
+- Ảnh **view** (không xuất sheet): 3 vế, 3 tag vế ngoài tường có leader, số bậc liên tục đúng, mũi tên đúng chiều, không chữ UP/DOWN, các lớp dim thẳng hàng, cách đều, đúng thứ tự; chữ đoạn ngắn (80 | 30 | 80) tách ra; cùng kiểu với các view đã xong trên cùng sheet.
 ## Bài học (ghi thêm một dòng, kèm ngày)
 
 - 2026-10-06: `stair_plan_audit`, `stair_plan_annotate`, `dims_text` đã biên dịch với RevitAPI 2023 nhưng **chưa chạy thử trên model thật**. Lần đầu: chạy trên một view, đối chiếu kết quả với bản vẽ, ghi bài học.
 - 2026-10-06: chuẩn A–D lấy từ user. Bố trí dim/tag, cách viết công thức, đánh số bậc liên tục và mũi tên chữ V lấy theo ảnh mẫu của user (sheet lõi thang, 1:50).
+- 2026-10-07: chạy thật trên view lõi thang 1:50. User chốt: (1) thông thuỷ ưu tiên mép lan can → mép bậc/chiếu nghỉ → mép tường hoàn thiện; (2) bậc trên cùng ngang cao độ chiếu nghỉ không tính (16R → 15T); (3) SB6 bắt buộc, không được bỏ; (4) mọi bản vẽ phải ĐỦ – ĐÚNG – ĐẸP.

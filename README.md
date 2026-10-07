@@ -11,7 +11,7 @@ Skills and domain standards that let Claude Code, via Revit MCP, do drawing prod
 | `skills/` | Quy trình từng bước, ngắn, mỗi skill một chủ đề | English |
 | `domain/` | Quy chuẩn bản vẽ: con số, vị trí, ngoại lệ, bẫy API | Tiếng Việt + thuật ngữ Revit |
 | `templates/drafting-profile.md` | Giá trị riêng của từng dự án (dim type, model cấm chạm, view loại trừ…) | Tiếng Việt |
-| `revit-commands/` | 51 lệnh động (dynamic commands) C# cho Revit MCP: dim, tag, title, viewport, crop, lõi thang, kiểm tra chồng lắp… Không chứa giá trị riêng dự án | C# |
+| `revit-commands/` | 63 lệnh động (dynamic commands) C# cho Revit MCP: dim, tag, title, viewport, crop, lõi thang, kiểm tra chồng lắp… Không chứa giá trị riêng dự án | C# |
 | `tools/crop.ps1` | Cắt vùng ảnh sheet để kiểm tra | PowerShell |
 | `tools/work-status/` | Cửa sổ "Đang xử lý" luôn nổi trên màn hình (tuỳ chọn) | PowerShell |
 
@@ -27,7 +27,7 @@ Skills and domain standards that let Claude Code, via Revit MCP, do drawing prod
 | `drafting-dims` | Dim cao độ, đổi type dim (dim trục → `drafting-grid-dims`) |
 | `drafting-opening-dims` | Dim cửa sổ, cửa đi, cửa cuốn trên mặt đứng/mặt cắt (dim đứng + dim ngang) |
 | `drafting-opening-tags` | Tag cửa sổ, cửa đi, cửa cuốn trên mặt đứng/mặt cắt (T1–T8) |
-| `drafting-stair-plan` | **Mặt bằng** lõi thang bộ (SA1–SD; mặt cắt thang sẽ là skill riêng): dim thông thuỷ CLEAR, chiều dài vế có công thức, chiếu nghỉ, tường/cửa tới trục; tag vế, tay vịn, cao độ, cửa, hoàn thiện; đếm/đánh số bậc từng vế; stair path chỉ có mũi tên |
+| `drafting-stair-plan` | **Mặt bằng** lõi thang bộ (SA1–SD; mặt cắt thang sẽ là skill riêng): dim thông thuỷ (CLEAR chỉ trên bề rộng vế; mép lan can → mép bậc → tường), chiều dài vế có công thức (bậc trên cùng ngang chiếu nghỉ không tính), chuỗi chiếu nghỉ / tổng khép tới tường, tường/cửa tới trục; tag vế, tay vịn, cao độ, cửa, hoàn thiện; đếm/đánh số bậc từng vế; stair path chỉ có mũi tên |
 | `drafting-tags-titles` | Room tag, view title |
 | `drafting-views-sheets` | Viewport, crop/scope box, đầu trục 2D, view template, link |
 | `drafting-visual-check` | Xuất ảnh sheet và soát lỗi trình bày |
@@ -38,7 +38,7 @@ Skills and domain standards that let Claude Code, via Revit MCP, do drawing prod
 |---|---|
 | `drafting-work-rules.md` | Luật cứng, nhịp làm việc, cách báo cáo |
 | `drafting-grid-dims.md` | 4 quy tắc dim trục (G1–G4): nhóm trục, 1 chain + 1 overall, dải giữa crop và bubble, annotation crop |
-| `drafting-stair-plan.md` | Mặt bằng lõi thang bộ: 3 vế V1/V2/V3, lớp dim, CLEAR, công thức chiều dài vế, tag, đếm bậc, stair path (SA1–SD) |
+| `drafting-stair-plan.md` | Mặt bằng lõi thang bộ: 3 vế V1/V2/V3, lớp dim, mép thông thuỷ, CLEAR chỉ cho bề rộng vế, công thức chiều dài vế, tag, đếm bậc, stair path (SA1–SD) |
 | `drafting-dimensions.md` | Chuẩn dim cao độ, type dim (dim trục → `drafting-grid-dims.md`) |
 | `drafting-opening-dims.md` | 5 quy tắc dim cửa sổ, cửa đi (Q1–Q5) |
 | `drafting-opening-tags.md` | 8 quy tắc tag cửa sổ, cửa đi (T1–T8) |

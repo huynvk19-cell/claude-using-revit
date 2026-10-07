@@ -1,12 +1,13 @@
 /* mcp-tool
 {
-  "description": "Export sheets (by sheet number) of the active document as PNG images (current state, no printing). Returns the file paths.",
+  "description": "Export sheets (by sheet number) of the active document as PNG images (current state, no printing). Returns the file paths. The view that was active before goes back to the front afterwards (the export brings the sheet up).",
   "inputSchema": {
     "type": "object",
     "properties": {
       "sheetNumbers": { "type": "array", "items": { "type": "string" } },
       "folder": { "type": "string", "description": "Output folder (created if missing)." },
-      "pixelWidth": { "type": "number", "description": "Image width in px. Default 6000." }
+      "pixelWidth": { "type": "number", "description": "Image width in px. Default 6000." },
+      "viewIds": { "type": "array", "items": { "type": "number" }, "description": "also (or instead: sheetNumbers []) export these views; files named view-<id>.png. Use for checking: the exported view comes to the front, a sheet export leaves the sheet in front." }
     },
     "required": ["sheetNumbers", "folder"]
   },
@@ -31,13 +32,19 @@ public static class ExportSheetImages
         Directory.CreateDirectory(folder);
         int px = args.Value<int?>("pixelWidth") ?? 6000;
         var wanted = args["sheetNumbers"].Values<string>().ToList();
-        var sheets = new FilteredElementCollector(doc).OfClass(typeof(ViewSheet)).Cast<ViewSheet>()
-            .Where(s => wanted.Contains(s.SheetNumber)).ToList();
+        var sheets = new FilteredElementCollector(doc).OfClass(typeof(ViewSheet)).Cast<View>()
+            .Where(s => wanted.Contains(((ViewSheet)s).SheetNumber)).ToList();
+        // viewIds: export views instead of sheets (Revit brings the exported view to the front, so the working view stays in sight)
+        if (args["viewIds"] is JArray vids)
+            foreach (var vid in vids) { var vv = doc.GetElement(new ElementId((int)vid)) as View; if (vv != null) sheets.Add(vv); }
 
+        var uidoc = app.ActiveUIDocument;
+        var working = uidoc.ActiveView; // ExportImage activates the sheet in the UI: go back to this view afterwards
         var files = new List<object>();
         foreach (var s in sheets)
         {
-            string prefix = Path.Combine(folder, s.SheetNumber);
+            string key = s is ViewSheet vs ? vs.SheetNumber : "view-" + s.Id.IntegerValue;
+            string prefix = Path.Combine(folder, key);
             var before = new HashSet<string>(Directory.GetFiles(folder));
             var opt = new ImageExportOptions
             {
@@ -57,8 +64,22 @@ public static class ExportSheetImages
             string target = prefix + ".png";
             var src = created.FirstOrDefault(f => f.EndsWith(".png", StringComparison.OrdinalIgnoreCase));
             if (src != null && src != target) { if (File.Exists(target)) File.Delete(target); File.Move(src, target); }
-            files.Add(new { Sheet = s.SheetNumber, File = File.Exists(target) ? target : src });
+            files.Add(new { Sheet = key, File = File.Exists(target) ? target : src });
         }
-        return new { Exported = files, Missing = wanted.Except(sheets.Select(s => s.SheetNumber)).ToList() };
+        string back = null;
+        // ActiveView still reports the working view while the sheet window is in front, so RequestViewChange alone does nothing:
+        // close the exported sheets' windows (not the working view), then bring the working view forward
+        try
+        {
+            if (working != null)
+            {
+                var sheetIds = new HashSet<int>(sheets.Select(s => s.Id.IntegerValue));
+                foreach (var uv in uidoc.GetOpenUIViews().ToList())
+                    if (uv.ViewId != working.Id && sheetIds.Contains(uv.ViewId.IntegerValue)) { try { uv.Close(); } catch { } }
+                uidoc.RequestViewChange(working); back = working.Name;
+            }
+        }
+        catch (Exception e) { back = "could not return: " + e.Message; }
+        return new { Exported = files, BackTo = back, Missing = wanted.Except(sheets.OfType<ViewSheet>().Select(s => s.SheetNumber)).ToList() };
     }
 }

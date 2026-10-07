@@ -1,6 +1,6 @@
 ---
 name: drafting-stair-plan
-description: "Detail a stair core PLAN view (floor plan only, NOT a stair section) via Revit MCP, rules SA1–SD: clear-width dims with suffix CLEAR (runs between inner handrail edges, wall to wall, landings), run-length dims with the formula '280mm x 14T = 3920 (EQUAL TREADS)' plus the landing to the wall, wall/door/window chains to the grids in an outer layer; run tags outside the side walls with leaders on the 3 seen runs (V1 half beyond the cut, V2 full, V3 half before the cut), railings (P01/P02), spot elevations (landings, floor outside the stair door), doors/windows, landing and wall finishes (F..); tread counts per run from the model, riser numbers continuous over the whole stair; stair path with an arrow only (no UP/DOWN). Use for mặt bằng thang, mặt bằng lõi thang, mặt bằng thang bộ, dim thang trên mặt bằng, thông thuỷ vế thang, CLEAR, chiếu nghỉ trên mặt bằng, vế thang, đếm bậc, đánh số bậc, tag vế thang, tay vịn, stair path, mũi tên thang, stair core plan, staircase plan. Not for mặt cắt thang / stair sections."
+description: "Detail a stair core PLAN view (floor plan only, NOT a stair section) via Revit MCP, rules SA1–SD: clear widths bounded by the railing edge, else the step / landing edge, else the finish wall (suffix CLEAR only on the clear width of a run; landings and overalls as chains closed on the wall, no CLEAR), run-length dims with the formula 280mm x 14T = 3920 (EQUAL TREADS), the top tread at landing level not counted, plus the landing to the wall, wall/door/window chains to the grids in an outer layer; run tags outside the side walls with leaders on the 3 seen runs (V1 half beyond the cut, V2 full, V3 half before the cut), railings (P01/P02), spot elevations (landings, floor outside the stair door), doors/windows, landing and wall finishes (F.., W.. mandatory); tread counts per run from the model, riser numbers continuous over the whole stair; stair path with an arrow only (no UP/DOWN). Use for mặt bằng thang, mặt bằng lõi thang, mặt bằng thang bộ, dim thang trên mặt bằng, thông thuỷ vế thang, CLEAR, chiếu nghỉ trên mặt bằng, vế thang, đếm bậc, đánh số bậc, tag vế thang, tay vịn, stair path, mũi tên thang, stair core plan, staircase plan. Not for mặt cắt thang / stair sections."
 ---
 
 # Stair core plan (SA1–SD)
@@ -23,10 +23,12 @@ stair_plan_audit {viewId, outPath:"<review>/stair-<viewId>.json"}
 ```
 
 Read, in this order:
-1. `Runs`: label **V1 / V2 / V3** (beyond cut / full / cut), treads, tread depth, `Text` (e.g. `280mm x 14T = 3920`), `ClearWidth` and what bounds it (`ClearFrom` / `ClearTo`). These numbers come from the model: **never count treads from the drawing**.
+1. `Runs`: label **V1 / V2 / V3** (beyond cut / full / cut), treads, tread depth, `Text` (e.g. `280mm x 15T = 4200`), `ClearWidth` and what bounds it (`ClearFrom` / `ClearTo`). These numbers come from the model: **never count treads from the drawing**.
+   - **Treads (user rule)**: the top tread that sits at the landing / floor level is not counted: `Treads` = risers − 1 when the model has as many treads as risers (`TopTreadAtLanding: true`, e.g. 16R → 15T). `RunLengthMm` = first riser → last riser; the flush top tread belongs to the landing segment.
+   - **Clear width bounds (user rule)**: railing edge, else the step / landing edge, else the finish wall face. A landing with a guard rail (shaft, opening) is measured to that rail, never across the opening.
 2. `Lanes`: which run carries the lane's length dim, on which side, `V1V3Same`.
 3. `Walls`: finish face and outer face per side; `ClearAcross`, `ClearAlong`; `Landings` (depth to wall, clear).
-4. `Expected`: every dim the rules need, with `Status` (`OK` / `missing` / `no CLEAR suffix` / `prefix should be …`) and the matching `DimId`.
+4. `Expected`: every dim the rules need, with `Status` (`OK` / `missing` / `no CLEAR suffix` / `CLEAR is only for the clear width of a run` / `prefix should be …`) and the matching `DimId`.
 5. `Tags`, `Spots`, `Paths`, `TreadNumbers`, `ProjectTypes`, `Notes`, `Issues`.
 
 Show the user one table per view: run → state → treads × depth → length → clear width; then the issues grouped by rule (SA, SB, C, SD).
@@ -43,13 +45,13 @@ Stop and ask when:
 Existing dims that match but lack the text:
 
 ```
-dims_text {viewId, mode:"preview", items:[{dimId, valueMm:1550, suffix:" CLEAR"}, {dimId, valueMm:3920, prefix:"280mm x 14T = ", below:"(EQUAL TREADS)"}]}
+dims_text {viewId, mode:"preview", items:[{dimId, valueMm:1550, suffix:"CLEAR"}, {dimId, valueMm:3920, prefix:"280mm x 14T =", below:"(EQUAL TREADS)"}]}
 dims_text {viewId, mode:"apply", items:[...], logPath}
 ```
 
 - Prefix/suffix only. The value stays live. Never "Replace with text".
 - Take the prefix from the audit's `Text`, the value from `Expected`.
-- One spelling for the whole project: `280mm x 14T = `. Rewrite variants such as `280x13T= `.
+- One spelling for the whole project: `280mm x 14T = 3920` (set prefix `280mm x 14T =` and suffix `CLEAR`: Revit adds the space itself). Rewrite variants such as `280x13T= `.
 
 ## 3. Path, tread numbers, run tags (deterministic)
 
@@ -70,9 +72,23 @@ After apply, export the view image and check:
 
 Undo: `stair_plan_annotate {mode:"undo", logPath}`.
 
-## 4. Dims SA1–SA4 (no batch tool yet)
+## 4. Dims SA1–SA4 (`dims_at_positions`)
 
-Write a one-off dynamic command per view: preview → apply with `logPath` (created ids) → undo by deleting them (`dims_edit`). It must **reference real geometry**, never detail lines:
+Positions come from the audit (`Expected` FromMm / ToMm, view frame). Proven on a real view (2026-10-07):
+
+```
+dims_at_positions {viewId, mode:"preview", use3D:true, typeName:<check type>, refDims:[<a dim drawn by hand, if any>],
+  dims:[{name:"SA2 bottom", measure:"right", lineMm:<line>, positions:[<grid>, {mm:<wall finish>, src:"3d"}, {mm:<run end>, id:<STAIRS id>, src:"view"}, {mm:<run start>, id:<STAIRS id>, src:"view"}, <grid>, {mm:<wall finish>, src:"3d"}]}]}
+```
+
+- Walls: 3D faces (`src:"3d"`), plan faces drift.
+- Runs / landings: the plan lines of the **Stairs** element (`id:<stairs>, src:"view"`); faces of `StairsRun` / `StairsLanding` give dims that are not drawn.
+- Handrails: Revit hides dims on `<Above>` rail lines. When a hand-drawn dim exists, pass it in `refDims` and its references are reused; otherwise draw that chain by hand.
+- After apply: `view_elem_boxes {ids}` → a dim with `Box: null` is not drawn: delete it and change the reference.
+- Then `dims_text` (`CLEAR`, `280mm x 16T =`), `dims_text_move` for short segments whose texts overlap (80 | 30 | 80).
+
+Older method, still valid: a one-off dynamic command per view: preview → apply with `logPath` (created ids) → undo by deleting them (`dims_edit`). It must **reference real geometry**, never detail lines:
+
 
 | What | Reference |
 |---|---|
@@ -86,23 +102,26 @@ Placement (as the sample sheet; spacing between dim lines 7 paper mm):
 
 | Where | Content |
 |---|---|
-| Inside the core, across, next to both ends of the runs | SA1: `70 \| 1550 CLEAR \| 80 \| 300 \| 80 \| 1550 CLEAR \| 70`, plus the wall-to-wall overall with ` CLEAR` |
-| Inside the core, along the well axis | SA3: `1965 CLEAR` on the mid landing and on the floor landing |
-| Outside each side wall | the SB1 run tags, then the SA2 chain `landing \| formula \| floor landing \| (grid) \| …`, then the wall-to-wall overall with ` CLEAR` |
+| Inside the core, across, next to both ends of the runs | SA1: `70 \| 1550 CLEAR \| 80 \| 300 \| 80 \| 1550 CLEAR \| 70`, plus the overall as a chain closed on the walls: `handrail \| overall \| handrail \| gap` (e.g. `80 \| 2590 \| 80 \| 390`), no CLEAR |
+| Inside the core, along the well axis | SA3 chain closed on the finish wall: `gap \| handrail \| landing clear` (e.g. `49 \| 80 \| 1600`, `1393 \| 80 \| 2618`), no CLEAR, on the mid landing and on the floor landing |
+| Outside each side wall | the SB1 run tags, then the SA2 chain `landing \| formula \| floor landing \| (grid) \| …`, then the overall (no CLEAR) |
 | Outside the end walls | SA4: grid → wall faces → door/window edges → grid; overall |
 
 A grid crossing the core goes into the SA2 chain. The audit accepts the split (`OK (split)`).
 
-Then set the text with `dims_text` (CLEAR suffixes, formula prefixes). Re-run the audit: every `Expected` row must read `OK`.
+Then set the text with `dims_text`: `CLEAR` suffix **only on the clear width of each run**, formula prefixes on the run lengths. Re-run the audit: every `Expected` row must read `OK`.
 
-## 5. Tags SB2–SB6 (one-off command or by hand)
+## 5. Tags SB2–SB6, spots (`annot_place`)
+
+`annot_place {viewId, mode, items:[{kind:"tag", elementId, typeName, right, up, leader, endRight, endUp}, {kind:"spot", elementId:<STAIRS id>, typeName, right, up}]}` — points in the view frame; read free space first with `view_elem_boxes {allAnnotations:true}` (ViewBox). Spots go on the **Stairs** element (its plan face at the point), as the project sheets do. A door the view does not draw gets no tag.
 
 - Type: `ProjectTypes` from the audit (most used in the project). Never create a type.
 - SB2 railing: `IndependentTag.Create(..., addLeader:true, ...)`, head off the run lines (stair well, landing or beside the railing), short leader.
 - SB2: `P01` on each wall handrail, `P02` on the centre railing (the project's codes). Keep the heads off the tread lines, even where the sample has them on the lines.
 - SB3 spot elevation: `doc.Create.NewSpotElevation(view, topFaceRef, …)` on the mid landing, on the floor landing inside the core, and on the floor just outside the stair door (link floor → link reference). Not on the door swing or the arrow.
 - SB4 doors/windows: exactly one tag each, close, off the dims.
-- SB5 floor finish (`F13` in the sample) on the mid landing and the floor landing, next to their spot elevation. SB6 wall finish: the tag kind the project already uses. The SB6 leader goes to the nearest wall face; the heads may gather in a free inside corner of the core.
+- SB5 floor finish (`F13` in the sample) on the mid landing and the floor landing, next to their spot elevation.
+- **SB6 wall finish is mandatory** (`W..`, one per wall finish kind seen, usually one per wall face): the mark the project already uses (often a Generic Annotation box, listed by the audit as `FinishMarks`). Code from the room's Wall Finish parameter, the finish legend, or the finished views of the same core; unknown → ask, never skip. Leader to the nearest wall face; heads may gather in a free inside corner of the core.
 
 ## 6. Verify and report
 
@@ -118,6 +137,10 @@ Then set the text with `dims_text` (CLEAR suffixes, formula prefixes). Re-run th
 - Use a tag, spot or path type the project does not already have without asking.
 - Show UP/DOWN text on a stair path.
 - Put a run tag under a dim, or a railing tag head on the run lines.
-- Mix formula spellings (`280mm x 14T = ` only).
+- Mix formula spellings (`280mm x 14T = 3920` only).
+- Count the top tread that sits at the landing level.
+- Put `CLEAR` on anything but the clear width of a run (not on landings, overalls, handrails, walls).
+- Measure a clear width across an opening (shaft) or to a wall when a railing / step edge comes first.
+- Skip an item of the standard silently (SB6!). Done means ĐỦ – ĐÚNG – ĐẸP (`drafting-session`).
 - Dim the same length on both sides of the core.
 - Edit stairs, railings, walls or floors (R1).

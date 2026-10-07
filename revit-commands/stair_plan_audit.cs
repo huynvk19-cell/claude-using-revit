@@ -39,11 +39,13 @@ public static class StairPlanAudit
     {
         public StairsRun R; public Stairs S; public double Z0, Z1; public List<XYZ> Foot = new List<XYZ>(); public XYZ P0, P1;
         public string State, Label; public double X0, X1, Y0, Y1, A0, A1, C0, C1;
-        public int Treads, Risers; public double Depth, RiserH, Len, FootLen;
+        public int Treads, Risers, ModelTreads; public bool FlushTop; public double Depth, RiserH, Len, FootLen;
+        public double LA0, LA1; // the counted treads along the travel axis: first riser -> last riser
         public double InLow, InHigh; public string InLowBy, InHighBy; public int Lane = -1;
-        public string Formula { get { return Num(Depth) + "mm x " + Treads + "T = "; } }
+        public string Formula { get { return Num(Depth) + "mm x " + Treads + "T ="; } } // Revit adds the space before the value
     }
-    class LandI { public StairsLanding L; public Stairs S; public double Z; public double A0, A1, C0, C1; public string WallSide; public double? Depth, Clear; public double ClrA, ClrB; public string ClearFrom, ClearTo; }
+    class FinMark { public int Id; public string Type, Code; public double A, C; }
+    class LandI { public StairsLanding L; public Stairs S; public double Z; public double A0, A1, C0, C1; public string WallSide; public double? Depth, Clear; public double ClrA, ClrB; public double? RailOuter; public double WallF; public string ClearFrom, ClearTo; }
     class WallI { public Wall W; public bool ParAlong; public double N0, N1, T0, T1; }
     class SideI { public string Key, Label, Kind; public double? Finish, Outer; public List<WallI> Stack = new List<WallI>(); }
     class Seg { public int DimId; public bool Cross; public double Val, Pos, Line; public string Prefix, Suffix, Below; }
@@ -124,7 +126,10 @@ public static class StairPlanAudit
             foreach (var rid in s.GetStairsRuns())
             {
                 var r = doc.GetElement(rid) as StairsRun; if (r == null) continue;
-                var ri = new RunI { R = r, S = s, Z0 = sb + r.BaseElevation, Z1 = sb + r.TopElevation, Treads = r.ActualTreadsNumber, Risers = r.ActualRisersNumber, Depth = s.ActualTreadDepth * MM, RiserH = s.ActualRiserHeight * MM };
+                var ri = new RunI { R = r, S = s, Z0 = sb + r.BaseElevation, Z1 = sb + r.TopElevation, ModelTreads = r.ActualTreadsNumber, Risers = r.ActualRisersNumber, Depth = s.ActualTreadDepth * MM, RiserH = s.ActualRiserHeight * MM };
+                // C (user rule 2026-10-07): the top tread of a run that sits at the landing / floor level belongs to the landing, it is not counted
+                ri.FlushTop = ri.ModelTreads >= ri.Risers;
+                ri.Treads = ri.FlushTop ? ri.Risers - 1 : ri.ModelTreads;
                 try { ri.Foot = LoopPts(r.GetFootprintBoundary()); } catch { }
                 try { var pc = r.GetStairsPath().Cast<Curve>().ToList(); ri.P0 = pc.First().GetEndPoint(0); ri.P1 = pc.Last().GetEndPoint(1); } catch { }
                 if (ri.Foot.Count == 0) { var bb = r.get_BoundingBox(null); if (bb != null) ri.Foot = new List<XYZ> { bb.Min, bb.Max, new XYZ(bb.Min.X, bb.Max.Y, bb.Min.Z), new XYZ(bb.Max.X, bb.Min.Y, bb.Min.Z) }; }
@@ -174,6 +179,9 @@ public static class StairPlanAudit
         {
             r.A0 = AlongX ? r.X0 : r.Y0; r.A1 = AlongX ? r.X1 : r.Y1; r.C0 = AlongX ? r.Y0 : r.X0; r.C1 = AlongX ? r.Y1 : r.X1;
             r.FootLen = r.A1 - r.A0; r.Len = r.Treads * r.Depth;
+            // counted part starts at the bottom end (first riser); a flush top tread is left to the landing
+            bool upPlus = r.P0 == null || Al(r.P1) >= Al(r.P0);
+            if (upPlus) { r.LA0 = r.A0; r.LA1 = r.A0 + r.Len; } else { r.LA1 = r.A1; r.LA0 = r.A1 - r.Len; }
         }
         foreach (var l in lands)
         {
@@ -250,6 +258,36 @@ public static class StairPlanAudit
             railPts[rl.Id.IntegerValue] = pts;
         }
         var railIds = new HashSet<int>(railPts.Keys);
+        // handrail ends as drawn: lines of the top rail / handrails across the travel (visible styles only) = what a hand dim snaps to
+        var railEnds = new Dictionary<int, List<double[]>>(); // railing id -> {A, C0, C1}
+        var alongDir = AlongX ? Rg : Up;
+        foreach (var rid in railIds)
+        {
+            var rl = (Railing)doc.GetElement(new ElementId(rid)); var parts = new List<Element>();
+            try { var tr = doc.GetElement(rl.TopRail); if (tr != null) parts.Add(tr); } catch { }
+            try { foreach (var h in rl.GetHandRails()) { var he = doc.GetElement(h); if (he != null) parts.Add(he); } } catch { }
+            var list = new List<double[]>();
+            foreach (var e in parts)
+            {
+                GeometryElement ge = null; try { ge = e.get_Geometry(new Options { View = v }); } catch { }
+                var stack = new Stack<GeometryElement>(); if (ge != null) stack.Push(ge);
+                while (stack.Count > 0)
+                    foreach (var g in stack.Pop())
+                    {
+                        if (g is GeometryInstance gi) { stack.Push(gi.GetInstanceGeometry()); continue; }
+                        if (!(g is Line ln)) continue;
+                        if (g.GraphicsStyleId != ElementId.InvalidElementId)
+                        {
+                            var gs = doc.GetElement(g.GraphicsStyleId) as GraphicsStyle; var gc = gs?.GraphicsStyleCategory;
+                            if (gc != null && (v.GetCategoryHidden(gc.Id) || (gc.Parent != null && v.GetCategoryHidden(gc.Parent.Id)))) continue; // e.g. <Above> Top Rails
+                        }
+                        if (Math.Abs(ln.Direction.DotProduct(alongDir)) > 0.01) continue; // only lines across the travel
+                        double c0 = Cr(ln.GetEndPoint(0)), c1 = Cr(ln.GetEndPoint(1));
+                        list.Add(new[] { Al(ln.GetEndPoint(0)), Math.Min(c0, c1), Math.Max(c0, c1) });
+                    }
+            }
+            if (list.Count > 0) railEnds[rid] = list;
+        }
 
         // ---- lanes: visible runs grouped by cross overlap
         var lanes = new List<List<RunI>>();
@@ -274,9 +312,10 @@ public static class StairPlanAudit
                 if (lo.Count > 0) { double e = lo.Max(p => p[1]); if (r.InLowBy == "run edge" || r.InLowBy.StartsWith("wall") || e > r.InLow) { r.InLow = e; r.InLowBy = "handrail of railing " + kv.Key; } }
                 if (hi.Count > 0) { double e = hi.Min(p => p[1]); if (r.InHighBy == "run edge" || r.InHighBy.StartsWith("wall") || e < r.InHigh) { r.InHigh = e; r.InHighBy = "handrail of railing " + kv.Key; } }
             }
-            if (r.InLowBy == "run edge" && sLowC.Finish != null && r.C0 - sLowC.Finish.Value < 400) { r.InLow = sLowC.Finish.Value; r.InLowBy = "wall finish (" + lowC + ")"; }
-            if (r.InHighBy == "run edge" && sHighC.Finish != null && sHighC.Finish.Value - r.C1 < 400) { r.InHigh = sHighC.Finish.Value; r.InHighBy = "wall finish (" + highC + ")"; }
-            if (r.InLowBy == "run edge" || r.InHighBy == "run edge") issues.Add("SA1: run " + r.Label + " has no handrail / wall on one side: clear width measured to the run edge, check by hand");
+            // user rule 2026-10-07: railing edge, else the step (run) edge, else the finish wall face (only when the run reaches past the wall)
+            if (r.InLowBy == "run edge" && sLowC.Finish != null && r.C0 < sLowC.Finish.Value) { r.InLow = sLowC.Finish.Value; r.InLowBy = "wall finish (" + lowC + ")"; }
+            if (r.InHighBy == "run edge" && sHighC.Finish != null && r.C1 > sHighC.Finish.Value) { r.InHigh = sHighC.Finish.Value; r.InHighBy = "wall finish (" + highC + ")"; }
+            if (r.InLowBy == "run edge" || r.InHighBy == "run edge") notes.Add("SA1: run " + r.Label + ": no railing on one side, clear width measured to the step edge");
         }
 
         // landings: depth (riser line -> end wall) and clear (inner handrail / wall -> wall / handrail)
@@ -286,15 +325,46 @@ public static class StairPlanAudit
             bool low = (l.A0 + l.A1) / 2 < coreMidA; var sw = low ? sLowA : sHighA; l.WallSide = sw.Label;
             if (sw.Finish == null) { l.ClearFrom = "no end wall found"; continue; }
             double f = sw.Finish.Value, edge = low ? l.A1 : l.A0; l.Depth = Math.Abs(edge - f);
-            var pts = railPts.Values.SelectMany(p => p).Where(p => p[1] > l.C0 && p[1] < l.C1 && p[0] > l.A0 - 50 && p[0] < l.A1 + 50).ToList();
-            // far = the railing that turns on the landing (keep clear of the side-wall handrails running onto it)
-            var atWall = pts.Where(p => Math.Abs(p[0] - f) < 150).ToList(); var far = pts.Where(p => Math.Abs(p[0] - f) >= 150 && p[1] > l.C0 + 300 && p[1] < l.C1 - 300).ToList();
-            double a = f; l.ClearFrom = "wall finish (" + sw.Label + ")";
-            if (atWall.Count > 0) { a = low ? atWall.Max(p => p[0]) : atWall.Min(p => p[0]); l.ClearFrom = "wall handrail"; }
-            double b = edge; l.ClearTo = "landing edge (no railing on the landing)";
-            if (far.Count > 0) { b = low ? far.Min(p => p[0]) : far.Max(p => p[0]); l.ClearTo = "inner handrail edge"; }
-            l.Clear = Math.Abs(b - a); l.ClrA = a; l.ClrB = b;
-            if (far.Count == 0) issues.Add("SA3: landing " + l.L.Id.IntegerValue + " has no railing on it: clear measured to the landing edge, check");
+            // clear (user rule 2026-10-07): each bound = railing edge, else the landing / step edge, else the finish wall face
+            Func<double[], bool> inBand = p => p[1] > l.C0 + 300 && p[1] < l.C1 - 300 && p[0] > l.A0 - 50 && p[0] < l.A1 + 50;
+            // run side = the centre railing (inside the well along the runs); wall side = the first railing crossing the well axis toward the wall
+            double w0 = l.C0 + 300, w1 = l.C1 - 300;
+            var centreIds = new List<int>();
+            if (lanes.Count >= 2)
+            {
+                w0 = PickRun(lanes[0]).InHigh - 20; w1 = PickRun(lanes[1]).InLow + 20;
+                double rA0 = vis.Min(x => Math.Min(x.A0, x.A1)) + 300, rA1 = vis.Max(x => Math.Max(x.A0, x.A1)) - 300;
+                centreIds = railPts.Where(kv => kv.Value.Any(p => p[1] >= w0 && p[1] <= w1 && p[0] > rA0 && p[0] < rA1)).Select(kv => kv.Key).ToList();
+            }
+            else centreIds = railPts.Where(kv => kv.Value.Any(inBand) && kv.Value.Any(p => p[1] > w0 && p[1] < w1 && (low ? p[0] > l.A1 + 50 : p[0] < l.A0 - 50))).Select(kv => kv.Key).ToList();
+            double wb0 = w0, wb1 = w1;
+            Func<double[], bool> crossesWell = e => e[2] >= wb0 && e[1] <= wb1; // the handrail end line crosses the well axis
+            // (1) handrail ends as drawn (what a hand dim snaps to), (2) else railing geometry points
+            var cEnds = railEnds.Where(kv => centreIds.Contains(kv.Key)).SelectMany(kv => kv.Value)
+                                .Where(e => crossesWell(e) && (low ? e[0] < edge - 5 && e[0] > f + 150 : e[0] > edge + 5 && e[0] < f - 150)).ToList();
+            double b = edge; l.ClearTo = "landing edge (no railing on the run side)";
+            if (cEnds.Count > 0) { b = low ? cEnds.Max(e => e[0]) : cEnds.Min(e => e[0]); l.ClearTo = "end of the centre handrail"; } // the first handrail end line past the last riser, as the user dims it
+            else
+            {
+                var centre = railPts.Where(kv => centreIds.Contains(kv.Key)).SelectMany(kv => kv.Value)
+                                    .Where(p => p[1] >= w0 && p[1] <= w1 && p[0] > l.A0 - 50 && p[0] < l.A1 + 50 && Math.Abs(p[0] - f) > 150).ToList();
+                if (centre.Count > 0) { b = low ? centre.Min(p => p[0]) : centre.Max(p => p[0]); l.ClearTo = "centre railing (geometry)"; }
+            }
+            // wall side: the nearest handrail line crossing the well axis between b and the wall, else the landing edge, else the finish wall face
+            var wEnds = railEnds.Where(kv => !centreIds.Contains(kv.Key)).SelectMany(kv => kv.Value)
+                                .Where(e => crossesWell(e) && (low ? e[0] < b - 50 && e[0] >= f - 5 : e[0] > b + 50 && e[0] <= f + 5)).ToList();
+            double landOuter = low ? l.A0 : l.A1, a;
+            if (wEnds.Count > 0)
+            {
+                a = low ? wEnds.Max(e => e[0]) : wEnds.Min(e => e[0]); l.ClearFrom = "handrail / guard rail edge";
+                // the other edge of that handrail (its width), so the chain can close on the finish wall (user, 2026-10-07: 49 | 80 | 1600, 1393 | 80 | 2618)
+                double aa = a; var beyond = wEnds.Where(e => low ? e[0] < aa - 5 : e[0] > aa + 5).ToList();
+                if (beyond.Count > 0) l.RailOuter = low ? beyond.Max(e => e[0]) : beyond.Min(e => e[0]);
+            }
+            else if (Math.Abs(landOuter - f) > 5 && (low ? landOuter > f : landOuter < f)) { a = landOuter; l.ClearFrom = "landing edge"; }
+            else { a = f; l.ClearFrom = "wall finish (" + sw.Label + ")"; }
+            l.Clear = Math.Abs(b - a); l.ClrA = a; l.ClrB = b; l.WallF = f;
+            if (l.ClearTo.StartsWith("landing edge")) notes.Add("SA3: landing " + l.L.Id.IntegerValue + ": no railing on the run side, clear measured from the landing edge");
         }
 
         // ---- expected dims
@@ -308,7 +378,8 @@ public static class StairPlanAudit
         }
         if (sLowC.Finish != null) exp.Add(new Exp { Rule = "SA1", Item = "wall finish -> inner handrail (" + lowC + ")", Cross = true, From = sLowC.Finish.Value, To = PickRun(lanes[0]).InLow });
         if (sHighC.Finish != null) exp.Add(new Exp { Rule = "SA1", Item = "inner handrail -> wall finish (" + highC + ")", Cross = true, From = PickRun(lanes.Last()).InHigh, To = sHighC.Finish.Value });
-        if (sLowC.Finish != null && sHighC.Finish != null) exp.Add(new Exp { Rule = "SA1", Item = "wall to wall (side walls)", Cross = true, From = sLowC.Finish.Value, To = sHighC.Finish.Value, NeedClear = true });
+        // overall clear across (user rule 2026-10-07): bounded like every clear width (handrail edge > step edge > finish wall), not wall to wall
+        exp.Add(new Exp { Rule = "SA1", Item = "overall clear across (" + PickRun(lanes[0]).InLowBy + " -> " + PickRun(lanes.Last()).InHighBy + ")", Cross = true, From = PickRun(lanes[0]).InLow, To = PickRun(lanes.Last()).InHigh });
         exp.RemoveAll(e => e.Mm < 1);
         // SA2: along, per lane
         var laneOut = new List<object>();
@@ -320,15 +391,21 @@ public static class StairPlanAudit
             bool same = v1 == null || v3 == null || (v1.Treads == v3.Treads && Math.Abs(v1.Depth - v3.Depth) < 0.5 && Math.Abs(v1.A0 - v3.A0) <= 5 && Math.Abs(v1.A1 - v3.A1) <= 5);
             if (!same) issues.Add("SA2: lane " + (i + 1) + ": V1 (" + v1.Treads + "T x " + Num(v1.Depth) + ") and V3 (" + v3.Treads + "T x " + Num(v3.Depth) + ") differ: dim follows V3, V1 goes to 'Cần xem'");
             string dimSide = (r.C0 + r.C1) / 2 < coreMidC ? lowC : highC;
-            exp.Add(new Exp { Rule = "SA2", Item = "run length " + string.Join("/", lanes[i].Select(x => x.Label)) + " (outside the " + dimSide + " wall)", Cross = false, From = r.A0, To = r.A1, Prefix = r.Formula, Below = "(EQUAL TREADS)" });
-            if (sLowA.Finish != null) exp.Add(new Exp { Rule = "SA2", Item = "wall finish (" + lowA + ") -> run " + r.Label, Cross = false, From = sLowA.Finish.Value, To = r.A0 });
-            if (sHighA.Finish != null) exp.Add(new Exp { Rule = "SA2", Item = "run " + r.Label + " -> wall finish (" + highA + ")", Cross = false, From = r.A1, To = sHighA.Finish.Value });
-            laneOut.Add(new { Lane = i + 1, Runs = string.Join("/", lanes[i].Select(x => x.Label)), DimRun = r.Label, DimSide = dimSide, Formula = r.Formula + R0(r.Len), V1V3Same = same });
+            exp.Add(new Exp { Rule = "SA2", Item = "run length " + string.Join("/", lanes[i].Select(x => x.Label)) + " (outside the " + dimSide + " wall, first riser -> last riser)", Cross = false, From = r.LA0, To = r.LA1, Prefix = r.Formula, Below = "(EQUAL TREADS)" });
+            if (sLowA.Finish != null) exp.Add(new Exp { Rule = "SA2", Item = "wall finish (" + lowA + ") -> run " + r.Label, Cross = false, From = sLowA.Finish.Value, To = r.LA0 });
+            if (sHighA.Finish != null) exp.Add(new Exp { Rule = "SA2", Item = "run " + r.Label + " -> wall finish (" + highA + ")", Cross = false, From = r.LA1, To = sHighA.Finish.Value });
+            laneOut.Add(new { Lane = i + 1, Runs = string.Join("/", lanes[i].Select(x => x.Label)), DimRun = r.Label, DimSide = dimSide, Formula = r.Formula + " " + R0(r.Len), V1V3Same = same });
         }
-        if (sLowA.Finish != null && sHighA.Finish != null) exp.Add(new Exp { Rule = "SA2", Item = "wall to wall (end walls)", Cross = false, From = sLowA.Finish.Value, To = sHighA.Finish.Value, NeedClear = true });
+        if (sLowA.Finish != null && sHighA.Finish != null) exp.Add(new Exp { Rule = "SA2", Item = "wall to wall (end walls)", Cross = false, From = sLowA.Finish.Value, To = sHighA.Finish.Value });
         // SA3
         foreach (var l in lands.Where(l => l.Clear != null))
-            exp.Add(new Exp { Rule = "SA3", Item = "landing " + l.L.Id.IntegerValue + " clear (" + l.ClearFrom + " -> " + l.ClearTo + ")", Cross = false, From = l.ClrA, To = l.ClrB, NeedClear = true });
+        {
+            exp.Add(new Exp { Rule = "SA3", Item = "landing " + l.L.Id.IntegerValue + " clear (" + l.ClearFrom + " -> " + l.ClearTo + ")", Cross = false, From = l.ClrA, To = l.ClrB });
+            // the same chain closes on the finish wall: handrail width, then the gap to the wall
+            double toWallFrom = l.ClrA;
+            if (l.RailOuter != null) { exp.Add(new Exp { Rule = "SA3", Item = "landing " + l.L.Id.IntegerValue + " handrail width (same chain)", Cross = false, From = l.ClrA, To = l.RailOuter.Value }); toWallFrom = l.RailOuter.Value; }
+            if (Math.Abs(l.WallF - toWallFrom) > 1) exp.Add(new Exp { Rule = "SA3", Item = "landing " + l.L.Id.IntegerValue + " handrail -> wall finish (same chain)", Cross = false, From = toWallFrom, To = l.WallF });
+        }
         foreach (var l in lands.Where(l => l.Depth != null && !exp.Any(e => e.Rule == "SA2" && Math.Abs(e.Mm - l.Depth.Value) < 1)))
         {
             double f = (l.WallSide == lowA ? sLowA : sHighA).Finish.Value, edge = l.WallSide == lowA ? l.A1 : l.A0;
@@ -342,7 +419,7 @@ public static class StairPlanAudit
             var pts = railPts.Values.SelectMany(p => p).Where(p => p[1] > kC0 + 300 && p[1] < kC1 - 300 && (low ? p[0] > f + 150 : p[0] < f - 150)).ToList();
             if (pts.Count == 0) continue;
             double b = low ? pts.Min(p => p[0]) : pts.Max(p => p[0]);
-            exp.Add(new Exp { Rule = "SA3", Item = "floor landing clear (railing end -> wall finish " + sw.Label + ")", Cross = false, From = f, To = b, NeedClear = true });
+            exp.Add(new Exp { Rule = "SA3", Item = "floor landing clear (railing end -> wall finish " + sw.Label + ")", Cross = false, From = f, To = b });
         }
         // SA4: wall thickness (finish -> outer face) on each side with walls
         foreach (var s in sides.Where(s => s.Finish != null && s.Outer != null && Math.Abs(s.Outer.Value - s.Finish.Value) > 1))
@@ -380,6 +457,7 @@ public static class StairPlanAudit
             e.DimId = best.DimId; e.Found = (best.Prefix ?? "") + R0(best.Val) + (best.Suffix ?? "");
             var bad = new List<string>();
             if (e.NeedClear && !(best.Suffix ?? "").ToUpper().Contains("CLEAR")) bad.Add("no CLEAR suffix");
+            if (!e.NeedClear && (best.Suffix ?? "").ToUpper().Contains("CLEAR")) bad.Add("CLEAR is only for the clear width of a run: remove it");
             if (e.Prefix != null && norm(best.Prefix) != norm(e.Prefix)) bad.Add("prefix should be '" + e.Prefix + "'");
             if (e.Below != null && !(best.Below ?? "").ToUpper().Contains("EQUAL TREADS")) bad.Add("below text should be '" + e.Below + "'");
             e.Status = bad.Count == 0 ? "OK" : string.Join("; ", bad);
@@ -387,8 +465,10 @@ public static class StairPlanAudit
         }
 
         // ---- C: tread counts (model) vs footprint
-        foreach (var r in vis.Where(r => Math.Abs(r.Len - r.FootLen) > 1))
-            issues.Add("C: run " + r.Label + " " + r.Treads + "T x " + Num(r.Depth) + " = " + R0(r.Len) + " but the footprint is " + R0(r.FootLen) + " long: check the run (do not edit the model)");
+        foreach (var r in vis.Where(r => Math.Abs(r.ModelTreads * r.Depth - r.FootLen) > 1))
+            issues.Add("C: run " + r.Label + " " + r.ModelTreads + " model treads x " + Num(r.Depth) + " = " + R0(r.ModelTreads * r.Depth) + " but the footprint is " + R0(r.FootLen) + " long: check the run (do not edit the model)");
+        foreach (var r in vis.Where(r => r.FlushTop))
+            notes.Add("C: run " + r.Label + ": top tread at the landing / floor level, not counted -> " + r.Treads + "T (" + r.Risers + " risers); run length = " + R0(r.Len) + ", the last " + Num(r.Depth) + " goes to the landing");
 
         // ---- openings in the core walls
         var openings = new List<Tuple<FamilyInstance, string>>();
@@ -425,10 +505,31 @@ public static class StairPlanAudit
         }
         var openTags = openings.Select(o => new { Id = o.Item1.Id.IntegerValue, Category = o.Item1.Category.Name, Mark = o.Item1.get_Parameter(BuiltInParameter.ALL_MODEL_MARK)?.AsString(), Type = o.Item1.Symbol.Name, Wall = o.Item2, Tags = tagsOn(new[] { o.Item1.Id.IntegerValue }).Select(tagInfo).ToList() }).ToList();
         foreach (var o in openTags.Where(o => o.Tags.Count != 1)) issues.Add("SB4: " + o.Category + " " + o.Id + " (" + o.Mark + ") has " + o.Tags.Count + " tags");
-        var landTags = lands.Select(l => new { Landing = l.L.Id.IntegerValue, Tags = tagsOn(new[] { l.L.Id.IntegerValue }).Select(tagInfo).ToList() }).ToList();
-        foreach (var lt in landTags.Where(x => x.Tags.Count == 0)) issues.Add("SB5: landing " + lt.Landing + " has no finish tag (tag on the landing itself; a finish floor / material tag on another element must be checked by hand)");
+        // finish marks drawn as generic annotations (a box with a code such as F13 / W05): not tags of an element, found by position + code
+        var codeRx = new System.Text.RegularExpressions.Regex(@"^[A-Z]{1,2}\d{1,3}[A-Z]?$");
+        var finishMarks = new List<FinMark>();
+        foreach (var ga in new FilteredElementCollector(doc, v.Id).OfCategory(BuiltInCategory.OST_GenericAnnotation).WhereElementIsNotElementType())
+        {
+            var gt = doc.GetElement(ga.GetTypeId()) as ElementType;
+            string nm = ((gt?.FamilyName ?? "") + " " + (gt?.Name ?? "")).ToUpper();
+            if (!nm.Contains("FINISH")) continue;
+            string code = null;
+            foreach (Parameter p in ga.Parameters) { if (p.StorageType != StorageType.String) continue; var s = (p.AsString() ?? "").Trim(); if (codeRx.IsMatch(s)) { code = s; break; } }
+            var gbb = ga.get_BoundingBox(v); if (gbb == null) continue;
+            var c = (gbb.Min + gbb.Max) / 2;
+            finishMarks.Add(new FinMark { Id = ga.Id.IntegerValue, Type = gt?.FamilyName + " : " + gt?.Name, Code = code, A = Al(c), C = Cr(c) });
+        }
+        var landTags = lands.Select(l => new
+        {
+            Landing = l.L.Id.IntegerValue,
+            Tags = tagsOn(new[] { l.L.Id.IntegerValue }).Select(tagInfo).ToList(),
+            FinishMarks = finishMarks.Where(m => m.A >= l.A0 - 50 && m.A <= l.A1 + 50 && m.C >= l.C0 - 50 && m.C <= l.C1 + 50).Select(m => m.Id + " " + (m.Code ?? "?")).ToList()
+        }).ToList();
+        foreach (var lt in landTags.Where(x => x.Tags.Count == 0 && x.FinishMarks.Count == 0)) issues.Add("SB5: landing " + lt.Landing + " has no floor finish mark (tag or finish annotation F..)");
         var wallTags = sides.Where(s => s.Stack.Count > 0).Select(s => new { Side = s.Label, Walls = s.Stack.Select(w => w.W.Id.IntegerValue + " " + w.W.Name).ToList(), Tags = tagsOn(s.Stack.Select(w => w.W.Id.IntegerValue)).Select(tagInfo).ToList() }).ToList();
-        foreach (var wt in wallTags.Where(x => x.Tags.Count == 0)) issues.Add("SB6: no finish tag on the " + wt.Side + " core wall");
+        var wallMarks = finishMarks.Where(m => m.Code != null && m.Code.StartsWith("W")).ToList();
+        if (wallMarks.Count == 0 && wallTags.All(x => x.Tags.Count == 0))
+            issues.Add("SB6: no wall finish mark (W..) in the core: one per wall finish kind, leader to the nearest wall face (sides: " + string.Join(", ", wallTags.Select(x => x.Side)) + "); code from the room's Wall Finish / finish legend, ask if unknown");
 
         // ---- spot elevations
         var spots = new List<object>(); var spotOnLanding = new HashSet<int>(); bool spotOutside = false;
@@ -501,7 +602,7 @@ public static class StairPlanAudit
             Runs = vis.Select(r => new
             {
                 r.Label, Id = r.R.Id.IntegerValue, Stairs = r.S.Id.IntegerValue, r.State, Up = upDir(r), BaseAboveLevelMm = R0((r.Z0 - lvZ) * MM), TopAboveLevelMm = R0((r.Z1 - lvZ) * MM),
-                r.Risers, r.Treads, TreadDepth = Num(r.Depth), RiserHeight = Num(r.RiserH), Length = R0(r.Len), FootprintLength = R0(r.FootLen), Text = r.Formula + R0(r.Len),
+                r.Risers, r.Treads, ModelTreads = r.ModelTreads, TopTreadAtLanding = r.FlushTop, TreadDepth = Num(r.Depth), RiserHeight = Num(r.RiserH), Length = R0(r.Len), FootprintLength = R0(r.FootLen), RunLengthMm = new[] { R0(Math.Min(r.LA0, r.LA1)), R0(Math.Max(r.LA0, r.LA1)) }, Text = r.Formula + " " + R0(r.Len),
                 Lane = r.Lane + 1, ClearWidth = R0(r.InHigh - r.InLow), ClearFrom = r.InLowBy, ClearTo = r.InHighBy, Width = R0(r.C1 - r.C0)
             }).ToList(),
             NotSeen = runs.Where(r => !vis.Contains(r)).Select(r => new { Id = r.R.Id.IntegerValue, Stairs = r.S.Id.IntegerValue, r.State, r.Treads }).ToList(),
@@ -510,9 +611,9 @@ public static class StairPlanAudit
             Walls = sides.Select(s => new { Side = s.Label, s.Kind, FinishFaceMm = s.Finish.HasValue ? R0(s.Finish.Value) : (double?)null, OuterFaceMm = s.Outer.HasValue ? R0(s.Outer.Value) : (double?)null, Walls = s.Stack.Select(w => w.W.Id.IntegerValue + " " + w.W.Name).ToList() }).ToList(),
             ClearAcross = sLowC.Finish != null && sHighC.Finish != null ? R0(sHighC.Finish.Value - sLowC.Finish.Value) : (double?)null,
             ClearAlong = sLowA.Finish != null && sHighA.Finish != null ? R0(sHighA.Finish.Value - sLowA.Finish.Value) : (double?)null,
-            Expected = exp.Select(e => new { e.Rule, e.Item, Measures = e.Cross ? "across" : "along", Mm = R0(e.Mm), FromMm = R0(Math.Min(e.From, e.To)), ToMm = R0(Math.Max(e.From, e.To)), Text = (e.Prefix ?? "") + R0(e.Mm) + (e.NeedClear ? " CLEAR" : "") + (e.Below != null ? " / below: " + e.Below : ""), e.Status, e.DimId, e.Found }).ToList(),
+            Expected = exp.Select(e => new { e.Rule, e.Item, Measures = e.Cross ? "across" : "along", Mm = R0(e.Mm), FromMm = R0(Math.Min(e.From, e.To)), ToMm = R0(Math.Max(e.From, e.To)), Text = (e.Prefix != null ? e.Prefix + " " : "") + R0(e.Mm) + (e.NeedClear ? " CLEAR" : "") + (e.Below != null ? " / below: " + e.Below : ""), e.Status, e.DimId, e.Found }).ToList(),
             Openings = openTags, Grids = grids,
-            Tags = new { Runs = runTags, Railings = railTags, Landings = landTags, Walls = wallTags },
+            Tags = new { Runs = runTags, Railings = railTags, Landings = landTags, Walls = wallTags, FinishMarks = finishMarks.Select(m => new { m.Id, m.Type, m.Code, AtMm = new[] { R0(m.A), R0(m.C) } }).ToList() },
             Spots = spots, Paths = paths, TreadNumbers = numbers,
             ProjectTypes = new { Tags = tagTypes, Spots = spotTypes, StairPaths = pathTypes },
             Notes = notes, Issues = issues

@@ -53,8 +53,15 @@ Do **not** read the whole `drafting-domain/` folder or every skill. Pick the tas
 
 - Preview first, then apply with `logPath`.
 - New dims use the profile's **check** dim type.
-- After each view: export an image and check it (`drafting-visual-check`).
+- After each view: export an image **of the view** (`export_sheet_images {sheetNumbers:[], viewIds:[id]}`) and check it (`drafting-visual-check`). No computer-use screenshots unless the user asks.
 - Give the user a one-line progress update when they have not heard from you for a while.
+
+## Done = ĐỦ – ĐÚNG – ĐẸP (`drafting-work-rules.md` §2b)
+
+Before calling a view finished, check all three:
+- **Đủ (complete)**: every item of the topic's standard is on the view; the topic audit shows no `missing` except items the user agreed to drop. Never skip an item silently ("the project does not use it" needs proof from the project's own finished views); otherwise ask or list it under Việc tồn with the reason.
+- **Đúng (correct)**: numbers from the model, references on real geometry at the edge the standard names, values match, every new dim/tag is actually drawn (`view_elem_boxes` Box ≠ null, seen on the image).
+- **Đẹp (neat)**: `annotation_overlaps` = 0, dim lines evenly spaced and aligned, short-segment texts moved apart, short leaders, same look as the finished views on the same sheet.
 
 ## End of turn
 
