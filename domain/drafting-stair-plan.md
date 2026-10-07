@@ -1,8 +1,8 @@
----
+ **Type**: dự án thường có một type tag vế cho mỗi cao độ gốc (type cộng cao độ tầng vào cao độ tương đối của vế) → chọn type cho ra đúng `From EL … To EL …` tuyệt đối (preview, đọc chữ), mỗi thang có thể một type khác; ghi cặp thang → type vào profile. |---
 name: drafting-stair-plan
 description: "Chuẩn triển khai chi tiết MẶT BẰNG lõi thang bộ (không dùng cho mặt cắt thang): dim thông thuỷ vế thang (CLEAR), dim chiều dài vế thang kèm công thức (280mm x 14T = 3920), dim chiếu nghỉ, dim tường/cửa tới trục; tag vế thang, tay vịn, cao độ, cửa, hoàn thiện sàn và tường; đếm/đánh số bậc từng vế; stair path chỉ có mũi tên. Stair core plan detailing standard."
 metadata:
-  updated: "2026-10-06"
+  updated: "2026-10-07"
   related: ["drafting-grid-dims", "drafting-opening-tags", "drafting-annotation", "drafting-tools", "drafting-api-pitfalls", "drafting-work-rules"]
 ---
 
@@ -48,6 +48,9 @@ Mặt bằng tầng điển hình thường thấy **3 vế thang**. Đi theo ch
 - **V1 và V3 nằm chung một dải (lane)**, ngăn bởi nét cắt. Hai vế này thuộc **hai thang khác nhau** và có thể khác số bậc.
 - Tầng thấp nhất thường chỉ có V3. Tầng trên cùng thường chỉ có V1 + V2 (V1 thấy đầy đủ vì không có vế nào phía trên).
 - **Không đếm vế bằng mắt.** Xác định V1/V2/V3 bằng `stair_plan_audit`: so cao độ vế với mặt cắt của view và độ chồng lên nhau của footprint.
+- **V1 thường thuộc thang tầng dưới** và có thể nằm **dưới View Depth** (đỉnh vế = cao độ sàn = View Depth) nhưng Revit vẫn vẽ: thang nào view thu thập được thì vẽ đủ mọi bộ phận. Vế / chiếu nghỉ **thấy được** = không bị vế / chiếu nghỉ cao hơn che; vế nằm dưới vế bị cắt = V1. Tầng điển hình: **3 vế, 2 chiếu nghỉ** → 3 tag vế, cao độ cho mọi chiếu nghỉ thấy được.
+- Thang **khác nằm ngoài lõi** nhưng lọt một phần vào crop: loại ra khỏi audit (`excludeStairIds`), không tag / dim nó.
+- View đã có annotation của user: **giữ nguyên**, chỉ bổ sung phần thiếu, và lấy cách bố trí đó làm mẫu cho các view còn lại.
 
 ### Hai phương
 
@@ -139,7 +142,7 @@ Chiếu nghỉ có lan can chắn (vd. lan can bên shaft / lỗ mở): đo **t�
 ### SA3 — Chiếu nghỉ, chiếu tới
 
 - Mỗi **chiếu nghỉ nhìn thấy** và **chiếu tới** (phần sàn tầng trong lõi thang) cần **bề rộng thông thuỷ** (mẫu: `1965`, hai chỗ; không ghi CLEAR).
-- Đo theo hướng đi, từ **đầu mút tay vịn giữa** = đường đầu tay vịn đầu tiên ngay sau cổ bậc cuối (vd. cổ bậc ± 80; không lấy trụ hay đoạn kéo dài phía xa; dim mẫu của user 2026-10-07: `1600`, `1393`) tới vật cản đầu tiên về phía tường, theo thứ tự ưu tiên ở mục 0: **lan can / tay vịn** (tay vịn tường, lan can chắn shaft…) → **mép chiếu nghỉ** → **mép tường hoàn thiện**. Không đo xuyên qua lỗ mở.
+- Đo theo hướng đi, từ **đầu mút tay vịn giữa** = **đầu tay vịn nhìn thấy trên bản vẽ** (đầu bo tròn của tay vịn giữa, ngay sau cổ bậc cuối; không lấy trụ, đoạn kéo dài phía xa hay cạnh nằm trong tay vịn; vị trí so với cổ bậc thay đổi theo thang — đã gặp −80 và +120 — nên phải kiểm bằng ảnh phóng to, không cố định ± 80) tới vật cản đầu tiên về phía tường, theo thứ tự ưu tiên ở mục 0: **lan can / tay vịn** (tay vịn tường, lan can chắn shaft…) → **mép chiếu nghỉ** → **mép tường hoàn thiện**. Không đo xuyên qua lỗ mở.
 - **Chuỗi khép tới tường** (user, 2026-10-07): một đường dim gồm `[khe tới tường] | [tay vịn / lan can] | [thông thuỷ chiếu nghỉ]`, đo từ **mép tường hoàn thiện** → mép ngoài tay vịn → mép trong tay vịn → đầu mút tay vịn giữa. Mẫu: `49 | 80 | 1600` (chiếu nghỉ có tay vịn tường), `1393 | 80 | 2618` (chiếu nghỉ có lan can chắn shaft, phần còn lại tới tường).
 - Đặt **trong lòng thang**, đường dim **dọc trục giếng thang** (giữa hai vế), không cắt qua chữ cao độ, tag, mũi tên.
 
@@ -171,6 +174,7 @@ Chiếu nghỉ có lan can chắn (vd. lan can bên shaft / lỗ mở): đo **t�
 | **SB6** | Hoàn thiện tường bao lõi thang — mã `W..` | **Bắt buộc**, ≥ 1 / loại hoàn thiện tường thấy trên view (thường mỗi mặt tường một tag) | **Leader gần chủ thể nhất có thể**, chạm mặt tường hoàn thiện. Đầu tag có thể **dồn vào góc tường** (góc trong lõi thang còn trống). |
 
 - Tag nào cũng phải: gần chủ thể, không đè dim, không đè tag khác, không nằm trên nét vế thang.
+- **Leader luôn vuông góc** (user, 2026-10-07): chỉ đoạn ngang (H) hoặc dọc (V). Đầu tag thẳng hàng với điểm chạm → một đoạn thẳng; không thẳng hàng → đúng **một điểm gấp** (V+H hoặc H+V). Không leader xiên. Điểm cuối chạm đúng mép chủ thể (vd. mép lan can). Mẫu: tag vế và P02 tay vịn tường = một đoạn V; P02 lan can giữa = V+H / H+V tới đầu lan can.
 - Mỗi chủ thể **đúng một** tag. Tag trùng → xoá bớt (giữ tag đặt tốt hơn).
 - SB5/SB6 dùng loại tag mà dự án đang dùng cho hoàn thiện (mẫu: tag ô vuông mã `F..`). Dự án chưa thống nhất → hỏi, ghi vào profile.
   - Nhiều dự án vẽ ô mã hoàn thiện bằng **Generic Annotation** (không bám phần tử): `stair_plan_audit` nhận theo vị trí + mã (`FinishMarks`), `F..` = sàn, `W..` = tường.
@@ -189,13 +193,14 @@ Chiếu nghỉ có lan can chắn (vd. lan can bên shaft / lỗ mở): đo **t�
   - hiện **cách một số** (số lẻ 1, 3, 5…) cho đỡ dày;
   - V1 và V3 cùng dải → hai cột số ở **hai phía** của dải, không chồng nhau (mẫu: V3 sát tường, V1 sát lan can giữa);
   - số không đè mũi tên path, tag, nét cắt.
-  - Số bắt đầu của mỗi vế = số cuối của vế trước + 1. Kiểm tra bằng ảnh; sai thì chỉnh số bắt đầu của tread number (làm tay nếu tool không chỉnh được).
+  - Số bắt đầu của mỗi vế = số cuối của vế trước + 1. Trong một thang Revit tự đánh liên tục; **giữa các thang** số bắt đầu là tham số của Stairs "Tread/Riser Start Number" (tham số model → hỏi user một lần): số bắt đầu = số bắt đầu thang dưới + Actual Number of Risers của thang dưới, tính từ thang thấp nhất của lõi. Ghi cả chuỗi thang (id → tầng gốc/đỉnh → số cổ bậc → số bắt đầu) vào profile. Kiểm tra bằng ảnh.
+  - Thiết lập số bậc (Display Rule, cỡ chữ, Justify…) giống view đã hoàn chỉnh của cùng lõi: chép bằng `number_systems_copy`, **không** gõ giá trị chiều dài qua `modify_element_parameter` (hiểu là feet → số khổng lồ, view đen).
 
 ## D. STAIR PATH
 
 - Mỗi **thang** nhìn thấy có **một** stair path (V1+V2 cùng thang dưới → 1 path; V3 thang tầng này → 1 path).
 - Path thể hiện chiều đi **từ dưới lên trên**: type thuộc family **Fixed Up Direction** (mũi tên luôn chỉ chiều đi lên).
-- **Không** hiện chữ UP / DOWN: tắt Show Up Text và Show Down Text. **Chỉ có hình mũi tên.**
+- **Không** hiện chữ UP / DOWN: tắt Show Up Text và Show Down Text. **Chỉ có hình mũi tên.** Path Fixed Up: thuộc tính API `ShowUpText` báo lỗi nhưng tham số instance "Show Up Text" vẫn chỉnh được và **mặc định bật** (chữ UP hiện dù type không có) → đặt 0.
 - Mẫu: mũi tên dạng **chữ V phủ hết bề rộng vế** (full step arrow) ở **đầu trên** của mỗi vế.
 - Path không đè tag, số bậc, chữ cao độ.
 - Không tạo type path mới nếu dự án đã có type Fixed Up Direction; chưa có → hỏi user.
@@ -236,3 +241,5 @@ Chỗ mẫu khác với quy tắc viết → **làm theo quy tắc**:
 - 2026-10-06: `stair_plan_audit`, `stair_plan_annotate`, `dims_text` đã biên dịch với RevitAPI 2023 nhưng **chưa chạy thử trên model thật**. Lần đầu: chạy trên một view, đối chiếu kết quả với bản vẽ, ghi bài học.
 - 2026-10-06: chuẩn A–D lấy từ user. Bố trí dim/tag, cách viết công thức, đánh số bậc liên tục và mũi tên chữ V lấy theo ảnh mẫu của user (sheet lõi thang, 1:50).
 - 2026-10-07: chạy thật trên view lõi thang 1:50. User chốt: (1) thông thuỷ ưu tiên mép lan can → mép bậc/chiếu nghỉ → mép tường hoàn thiện; (2) bậc trên cùng ngang cao độ chiếu nghỉ không tính (16R → 15T); (3) SB6 bắt buộc, không được bỏ; (4) mọi bản vẽ phải ĐỦ – ĐÚNG – ĐẸP.
+- 2026-10-07: V1 thường thuộc **thang tầng dưới** và có thể nằm **dưới View Depth** (vd. đỉnh vế = cao độ sàn = View Depth) nhưng Revit vẫn vẽ (thang nào được view thu thập thì vẽ đủ các bộ phận). Vế/chiếu nghỉ thấy được = không bị vế/chiếu nghỉ cao hơn che; vế dưới vế cắt = V1. `stair_plan_audit` / `stair_plan_annotate` đã theo quy tắc này (trước đó bỏ sót V1 và cao độ chiếu nghỉ — user nhắc). Mỗi mặt bằng tầng điển hình phải có **3 tag vế** và **cao độ cho mọi chiếu nghỉ / chiếu tới nhìn thấy**.
+- 2026-10-07: SA3 — "đầu mút tay vịn giữa" là **đầu tay vịn nhìn thấy trên bản vẽ** (đầu bo tròn), không phải cạnh đầu tiên tìm được trên Top Rail, cũng không cố định "cổ bậc ± 80" (trên một mặt bằng: một chiếu nghỉ −80, chiếu nghỉ kia +120 so với cổ bậc; user bác hai giá trị đo tới cạnh trong tay vịn). Cách làm: `dims_rail_refs mode probe` liệt kê các cạnh, xuất ảnh view độ phân giải cao, cắt vùng chiếu nghỉ, chọn cạnh trùng đầu bo tròn của tay vịn; giá trị audit (`Clear`) chỉ để tham khảo.

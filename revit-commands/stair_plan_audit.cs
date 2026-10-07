@@ -7,6 +7,7 @@
       "viewId": { "type": "number", "description": "the stair core plan view" },
       "searchMm": { "type": "number", "description": "how far beyond the stair footprint to look for the end walls (perpendicular to travel), default 3000; side walls: 1000" },
       "toleranceMm": { "type": "number", "description": "value / position tolerance when matching existing dims, default 2" },
+      "excludeStairIds": { "type": "array", "items": { "type": "integer" }, "description": "stairs to leave out (e.g. a neighbouring stair outside the core, partly in the crop)" },
       "outPath": { "type": "string", "description": "write the full result as JSON here" }
     },
     "required": ["viewId"]
@@ -113,7 +114,9 @@ public static class StairPlanAudit
         var stairs = new FilteredElementCollector(doc, v.Id).OfCategory(BuiltInCategory.OST_Stairs).WhereElementIsNotElementType().ToElements();
         var legacy = stairs.Where(e => !(e is Stairs)).Select(e => e.Id.IntegerValue).ToList();
         if (legacy.Count > 0) issues.Add("Stairs not by component (not audited): " + string.Join(", ", legacy));
-        var sts = stairs.OfType<Stairs>().ToList();
+        var excl = args["excludeStairIds"] != null ? new HashSet<int>(((Newtonsoft.Json.Linq.JArray)args["excludeStairIds"]).Select(x => (int)x)) : new HashSet<int>();
+        var sts = stairs.OfType<Stairs>().Where(s => !excl.Contains(s.Id.IntegerValue)).ToList();
+        if (excl.Count > 0) notes.Add("stairs left out: " + string.Join(", ", excl));
         if (sts.Count == 0) return new { View = v.Name, Error = "no host stairs (by component) in this view - stairs in a link are not audited", Legacy = legacy };
         var runs = new List<RunI>(); var lands = new List<LandI>();
         var stBase = new Dictionary<int, double>();
@@ -143,20 +146,47 @@ public static class StairPlanAudit
             {
                 var l = doc.GetElement(lid) as StairsLanding; if (l == null) continue;
                 var li = new LandI { L = l, S = s, Z = sb + l.BaseElevation };
-                if (li.Z > cut + 10 / MM || li.Z < bottom) continue;
+                if (li.Z > cut + 10 / MM) continue; // below the view depth: kept if the stair is shown (filtered below)
                 List<XYZ> fp = new List<XYZ>(); try { fp = LoopPts(l.GetFootprintBoundary()); } catch { }
                 if (fp.Count == 0) continue;
                 li.A0 = fp.Min(VX); li.A1 = fp.Max(VX); li.C0 = fp.Min(VY); li.C1 = fp.Max(VY); // view X/Y for now, swapped below
                 lands.Add(li);
             }
         }
+        // Revit draws every stair collected in the view with all its components, even below the view depth.
+        // Seen = not covered by a higher run / landing: below runs under a cut run are V1 (beyond the cut),
+        // below runs under nothing are V2, below runs / landings under a higher run or landing are hidden.
+        foreach (var r in runs.Where(r => r.State == "below view depth")) r.State = "below";
         var cutRuns = runs.Where(r => r.State == "cut").ToList();
-        foreach (var r in runs.Where(r => r.State == "below"))
+        var cover = new List<double[]>(); // footprints of things already seen above, highest first
+        Func<double, double, double, double, bool> covered = (x0, x1, y0, y1) =>
         {
-            double area = (r.X1 - r.X0) * (r.Y1 - r.Y0);
-            bool under = cutRuns.Any(c => { double ox = Ov(r.X0, r.X1, c.X0, c.X1), oy = Ov(r.Y0, r.Y1, c.Y0, c.Y1); return ox > 0 && oy > 0 && ox * oy > 0.3 * area; });
-            r.State = under ? "beyond cut" : "full";
+            double area = (x1 - x0) * (y1 - y0);
+            return cover.Any(c => { double ox = Ov(x0, x1, c[0], c[1]), oy = Ov(y0, y1, c[2], c[3]); return ox > 0 && oy > 0 && ox * oy > 0.3 * area; });
+        };
+        var belowItems = runs.Where(r => r.State == "below").Select(r => new { Z = r.Z1, Run = r, Land = (LandI)null })
+            .Concat(lands.Select(l => new { Z = l.Z, Run = (RunI)null, Land = l })).OrderByDescending(x => x.Z).ToList();
+        var hiddenLands = new HashSet<LandI>();
+        foreach (var it in belowItems)
+        {
+            if (it.Run != null)
+            {
+                var r = it.Run;
+                if (covered(r.X0, r.X1, r.Y0, r.Y1)) { r.State = "hidden (under a higher run)"; continue; }
+                double area = (r.X1 - r.X0) * (r.Y1 - r.Y0);
+                bool under = cutRuns.Any(c => { double ox = Ov(r.X0, r.X1, c.X0, c.X1), oy = Ov(r.Y0, r.Y1, c.Y0, c.Y1); return ox > 0 && oy > 0 && ox * oy > 0.3 * area; });
+                r.State = under ? "beyond cut" : "full";
+                if (r.Z1 < bottom) notes.Add("run " + r.R.Id.IntegerValue + " is below the view depth but drawn with its stairs " + r.S.Id.IntegerValue);
+                cover.Add(new[] { r.X0, r.X1, r.Y0, r.Y1 });
+            }
+            else
+            {
+                var l = it.Land;
+                if (covered(l.A0, l.A1, l.C0, l.C1)) { hiddenLands.Add(l); continue; }
+                cover.Add(new[] { l.A0, l.A1, l.C0, l.C1 });
+            }
         }
+        lands = lands.Where(l => !hiddenLands.Contains(l)).ToList();
         var vis = runs.Where(r => r.State == "beyond cut" || r.State == "full" || r.State == "cut").OrderBy(r => r.Z0).ToList();
         if (vis.Count == 0) return new { View = v.Name, Error = "no stair run is seen in this view (all above the cut or below the view depth)", Runs = runs.Select(r => new { r.R.Id.IntegerValue, r.State }) };
         foreach (var g in vis.GroupBy(r => r.State))

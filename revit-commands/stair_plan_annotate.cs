@@ -5,6 +5,7 @@
     "type": "object",
     "properties": {
       "viewId": { "type": "number" },
+      "excludeStairIds": { "type": "array", "items": { "type": "integer" } },
       "mode": { "type": "string", "enum": ["preview", "apply", "undo"] },
       "parts": { "type": "array", "items": { "type": "string", "enum": ["path", "numbers", "runTags"] } },
       "pathTypeName": { "type": "string" },
@@ -90,7 +91,8 @@ public static class StairPlanAnnotate
         catch { }
         if (double.IsNaN(cut)) cut = lvZ + 1200 / MM;
         var runs = new List<RunI>();
-        foreach (var s in new FilteredElementCollector(doc, v.Id).OfCategory(BuiltInCategory.OST_Stairs).WhereElementIsNotElementType().OfType<Stairs>())
+        var excl = args["excludeStairIds"] != null ? new HashSet<int>(((Newtonsoft.Json.Linq.JArray)args["excludeStairIds"]).Select(x => (int)x)) : new HashSet<int>();
+        foreach (var s in new FilteredElementCollector(doc, v.Id).OfCategory(BuiltInCategory.OST_Stairs).WhereElementIsNotElementType().OfType<Stairs>().Where(x => !excl.Contains(x.Id.IntegerValue)))
         {
             double sb = s.BaseElevation;
             var pl = s.get_Parameter(BuiltInParameter.STAIRS_BASE_LEVEL_PARAM);
@@ -109,11 +111,18 @@ public static class StairPlanAnnotate
                 runs.Add(ri);
             }
         }
+        // Revit draws every stair collected in the view with all its components (also below the view depth);
+        // a below run is seen unless a higher seen run covers it: under a cut run = V1, else V2 (same rule as stair_plan_audit)
+        foreach (var r in runs.Where(r => r.State == "below view depth")) r.State = "below";
         var cutRuns = runs.Where(r => r.State == "cut").ToList();
-        foreach (var r in runs.Where(r => r.State == "below"))
+        var cover = new List<RunI>();
+        foreach (var r in runs.Where(r => r.State == "below").OrderByDescending(r => r.Z1).ToList())
         {
             double area = (r.X1 - r.X0) * (r.Y1 - r.Y0);
-            r.State = cutRuns.Any(c => { double ox = Ov(r.X0, r.X1, c.X0, c.X1), oy = Ov(r.Y0, r.Y1, c.Y0, c.Y1); return ox > 0 && oy > 0 && ox * oy > 0.3 * area; }) ? "beyond cut" : "full";
+            Func<RunI, bool> over = c => { double ox = Ov(r.X0, r.X1, c.X0, c.X1), oy = Ov(r.Y0, r.Y1, c.Y0, c.Y1); return ox > 0 && oy > 0 && ox * oy > 0.3 * area; };
+            if (cover.Any(over)) { r.State = "hidden"; continue; }
+            r.State = cutRuns.Any(over) ? "beyond cut" : "full";
+            cover.Add(r);
         }
         var vis = runs.Where(r => r.State == "beyond cut" || r.State == "full" || r.State == "cut").OrderBy(r => r.Z0).ToList();
         foreach (var r in vis) r.Label = r.State == "beyond cut" ? "V1" : r.State == "full" ? "V2" : "V3";
@@ -168,7 +177,9 @@ public static class StairPlanAnnotate
                         try
                         {
                             var p = StairsPath.Create(doc, new LinkElementId(s.Id), pathType.Id, v.Id);
-                            log.Created.Add(p.Id.IntegerValue); // Fixed Up paths have no UP/DOWN text (ShowUpText throws on them)
+                            log.Created.Add(p.Id.IntegerValue);
+                            // Fixed Up: the ShowUpText property throws, but the instance parameter "Show Up Text" works
+                            try { var sp = p.LookupParameter("Show Up Text"); if (sp != null && !sp.IsReadOnly) sp.Set(0); } catch { }
                             done1.Add(new { Part = "path", Stairs = s.Id.IntegerValue, Created = p.Id.IntegerValue, Type = pathType.FamilyName + " : " + pathType.Name });
                         }
                         catch (Exception e) { errors.Add("path for stairs " + s.Id.IntegerValue + ": " + e.Message); }
@@ -179,7 +190,11 @@ public static class StairPlanAnnotate
                     {
                         var ty = doc.GetElement(p.GetTypeId()) as ElementType;
                         bool wrongType = !(ty?.FamilyName ?? "").ToLower().Contains("fixed");
-                        if (!wrongType) continue; // Fixed Up: no UP/DOWN text to turn off
+                        if (!wrongType)
+                        {
+                            try { var sp = p.LookupParameter("Show Up Text"); if (sp != null && !sp.IsReadOnly && sp.AsInteger() != 0) { sp.Set(0); done1.Add(new { Part = "path", Stairs = s.Id.IntegerValue, Fixed = p.Id.IntegerValue, Now = "Show Up Text off" }); } } catch { }
+                            continue;
+                        }
                         log.Paths.Add(new PathChange { Id = p.Id.IntegerValue, OldType = p.GetTypeId().IntegerValue, Up = p.ShowUpText, Down = p.ShowDownText });
                         try
                         {

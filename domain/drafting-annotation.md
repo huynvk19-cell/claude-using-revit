@@ -33,3 +33,9 @@ metadata:
 - Title của view cầu thang để nguyên, trừ khi comment yêu cầu.
 
 **Kiểm tra**: `viewport_title_audit`.
+
+## Leader của tag (mọi loại tag, user 2026-10-07)
+
+- Leader **luôn vuông góc**: chỉ đoạn ngang hoặc dọc so với view. Đầu tag thẳng hàng với điểm chạm → một đoạn thẳng; không thì đúng một điểm gấp (dọc rồi ngang, hoặc ngang rồi dọc). Không có leader xiên.
+- Điểm cuối chạm đúng mép chủ thể.
+- Tool: `annot_place` tự thêm điểm gấp (`elbowFirst` V mặc định / H, hoặc `elbowRight/elbowUp`); kiểm tra bằng `tag_leaders_info` (cột shape: V, H, V+H, H+V; `D` = xiên → sửa).

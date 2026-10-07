@@ -103,3 +103,11 @@ metadata:
 | `align_grid_ends` | Căn đầu trục 2D (`compact`). |
 | `grid_bubble_elbow` | Elbow cho bubble (hay lỗi → dùng so le đầu trục). |
 | `view_image_trial` | Thử ẩn/bỏ template rồi xuất ảnh, luôn rollback. |
+| `tag_leaders_info` | (RO) Tag + leader trong view: đầu tag, điểm gấp, điểm cuối, hình dạng (V / H / V+H / H+V / D xiên). |
+| `view_range_info` | (RO) View range (top / cut / bottom / view depth, cao độ tuyệt đối) + cao độ Z của phần tử. |
+| `dim_stable_refs` | (RO) Stable reference của từng tham chiếu trong dim + id / UniqueId Top Rail của lan can. |
+| `number_systems_copy` | Chép thiết lập số bậc (Display Rule, Number Size, Justify…) từ một tread number chuẩn sang các tread number khác, giá trị lưu sẵn (không parse đơn vị). |
+| `dims_rail_refs` | Dim bám tay vịn mà Revit VẼ ĐƯỢC: dựng tham chiếu như khi pick tay (`<UniqueId top rail>:1:INSTANCE:<cạnh symbol>:LINEAR`), tự thử từng cạnh bằng dim thử tới trục (giá trị đúng + có Box). Vị trí: `{mm, rail}` / `{mm, wall}` / `{mm, ref}` / `{mm, dimId, index}`; `mode probe` liệt kê cạnh. Tay vịn nằm trên mặt cắt (<Above>) không dim được. |
+| `dims_copy_refs` | Chép dim sang view khác bằng chính tham chiếu của dim nguồn (stable representation): dùng dim vẽ tay bám tay vịn (Top Rail) mà API không tham chiếu được để Revit vẫn vẽ; giữ prefix/suffix; preview báo dim có được vẽ không. |
+| `column_regions_survey` | (RO) Filled region trong view + cột (Structural Columns/Columns, host + link) bị mặt cắt view cắt qua: mặt cắt cột tại cut plane, cao độ đáy/đỉnh. |
+| `column_regions_sync` | Vẽ lại filled region cột theo mặt cắt cột thật tại cut plane (preview / apply): loop khớp giữ, loop lệch thay; `regionTypes` lọc type; `dropUnmatched` bỏ loop không còn cột (cột dừng dưới cut plane); `addMissing` thêm cột chưa có. Tạo lại region (giữ type, override, Comments), bỏ qua region có dim bám. |

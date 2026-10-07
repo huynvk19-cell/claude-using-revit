@@ -49,3 +49,12 @@ metadata:
 - Lệnh có `mode: preview` → chạy trong transaction rồi rollback, trả về giá trị dự kiến. Đọc kỹ trước khi apply.
 - Log `apply` cần giữ lại các id đã tạo hoặc xoá, và stable reference của dim bị xoá, để `dim_restore` và `undo` dùng được.
 - Kiểm tra bằng ảnh: script `crop.ps1` (System.Drawing) cắt vùng theo tỉ lệ ảnh: `-Cx -Cy -W -H` (0–1).
+
+- 2026-10-07: `modify_element_parameter` với tham số **chiều dài** (vd. "Number Size" của số bậc) hiểu chuỗi là feet ("2" → 610 mm, cả view đen) và đọc sai số thập phân ("0.0065…" → 2e10 mm). Không dùng cho chiều dài: chép giá trị từ phần tử chuẩn (`number_systems_copy`, giá trị lưu sẵn, không parse) hoặc lệnh động dùng `Parameter.Set(double)` theo feet. Tham số số nguyên (Start Number, Show Up Text) thì dùng được.
+- 2026-10-07: thang khác nằm ngoài lõi lọt một phần vào crop làm `stair_plan_audit` sai (thêm dải, không thấy tường bên): truyền `excludeStairIds` cho audit và `stair_plan_annotate`.
+- 2026-10-07: vế / chiếu nghỉ **dưới View Depth** vẫn được Revit vẽ nếu thang của nó được view thu thập (`FilteredElementCollector(doc, viewId)` trả về cả thang). Đừng lọc theo View Depth; lọc theo "bị phần cao hơn che".
+- 2026-10-07: dim do API dựng trên nét Top Rail **không được vẽ** (mất đoạn). Tham chiếu của dim **pick tay** thì vẽ được, kể cả dùng lại ở mặt bằng khác có cùng lan can: `dims_copy_refs` (`Reference.ParseFromStableRepresentation`).
+- 2026-10-07: dim tay vịn **không cần dim tay**: dựng tham chiếu giống pick tay `<UniqueId top rail>:1:INSTANCE:<stable cạnh của symbol>:LINEAR` (cạnh trong symbol geometry, `Options.View` = view); chỉ một số cạnh vẽ được (cạnh khác cho giá trị rác, vd. −305) → thử từng cạnh bằng dim tạm tới trục (`dims_rail_refs`). Tay vịn nằm trên mặt cắt không bao giờ dim được. Phép thử tự động có thể loại nhầm với dim đo theo phương Right: lấy cạnh từ `probe`, truyền `{ref}`.
+- 2026-10-07: stair path Fixed Up: thuộc tính `StairsPath.ShowUpText` báo lỗi, nhưng tham số instance "Show Up Text" chỉnh được và **mặc định bật** (chữ "UP" hiện). Đặt 0 (`stair_plan_annotate` đã làm).
+- 2026-10-07: `move_in_view` trên tag có leader Free dời cả đầu tag lẫn điểm cuối; muốn đổi riêng điểm cuối / điểm gấp → tạo lại tag bằng `annot_place` rồi xoá tag cũ. Đổi Start Number của thang có thể làm tag vế leader Free nhảy chỗ → xuất ảnh kiểm lại.
+- 2026-10-07: gọi song song nhiều lệnh MCP vào Revit → các lệnh sau timeout. Lệnh ghi (open view, apply) chạy tuần tự.

@@ -19,8 +19,12 @@ Plan views only. **One view per call.** Tools have no project defaults.
 ## 1. Audit (read-only)
 
 ```
-stair_plan_audit {viewId, outPath:"<review>/stair-<viewId>.json"}
+stair_plan_audit {viewId, excludeStairIds:[<stairs outside the core>], outPath:"<review>/stair-<viewId>.json"}
 ```
+
+- **A neighbouring stair outside the core, partly in the crop**, breaks the audit (an extra lane, a side wall not found, every expectation shifted). Find it in `Runs` / `Lanes` (a lane beyond a core wall, a run cut by the crop) and re-run with `excludeStairIds`. Pass the same list to `stair_plan_annotate`.
+- **V1 often belongs to the stair of the floor below and can sit under the View Depth** (its top = the floor = the view depth). Revit still draws every component of a stair the view collects; the audit counts a run / landing as seen when no higher run / landing covers it, and a below run under a cut run is V1. A typical floor shows **3 runs and 2 landings**: if the audit reports fewer while the view shows more, say so and check `view_range_info`, do not annotate a partial set.
+- **Keep what the user already drew** (dims, tags, spots, numbers): add only what is missing, and copy their layout to the views still to do.
 
 Read, in this order:
 1. `Runs`: label **V1 / V2 / V3** (beyond cut / full / cut), treads, tread depth, `Text` (e.g. `280mm x 15T = 4200`), `ClearWidth` and what bounds it (`ClearFrom` / `ClearTo`). These numbers come from the model: **never count treads from the drawing**.
@@ -63,7 +67,11 @@ stair_plan_annotate {viewId, mode:"apply", logPath:"<review>/stair-annot-<viewId
 - `path` (SD): one Fixed Up Direction path per stairs, UP/DOWN text off. An existing path keeps its place; its type and text are fixed.
 - `numbers` (C): tread numbers on each seen run without them (`numberSide`, default `left`). V1 gets the mirrored side, so the V1 and V3 columns never overlap in their shared lane.
 - `runTags` (SB1): one tag per untagged run. By default (`runTagPlace:"outside"`) the head sits just outside the side wall of the run's lane (`runTagOffsetMm`, default 5 paper mm), with its text along the run and a leader into the seen part. The SA2 chain then goes outside these tags.
-- Use `parts:[...]` to run only some of them.
+- Use `parts:[...]` to run only some of them. The command only adds what is missing, so re-running it on a half-done view is safe. Do **not** exclude a core stair to target one run: the seen / hidden test needs all of them; to give one stair another tag type, run `parts:["runTags"]` with the other stairs in `excludeStairIds` after the rest is placed.
+- **Run tag type**: projects often have one stair run tag type per base level (it adds that level to the run's relative elevations). Preview `runTags` and read `Text`: `From EL … To EL …` must be the run's absolute elevations. Wrong → preview the next type; never guess from the type name. Record the stair → type pairs in the profile.
+- **Tread number settings**: copy them from a finished view of the same core with `number_systems_copy {sourceId, targetIds}` (Display Rule, Number Size, Justify… copied as stored values). Never set a length parameter with `modify_element_parameter`: it parses the text as feet ("2" → 610 mm, the whole view turns black).
+- **Riser numbering across stairs**: the start number is the Stairs parameter "Tread/Riser Start Number" (a model parameter: ask the user once for permission). Start = previous stair's start + its Actual Number of Risers, from the lowest stair of the core; list the whole chain (stairs id → base/top level → risers → start) in the profile.
+- Stair paths: a Fixed Up path's `ShowUpText` property throws, the instance parameter "Show Up Text" works and is ON by default; the command turns it off (also on existing paths).
 
 After apply, export the view image and check:
 - the arrows point **up** (from the lower run to the higher);
@@ -83,7 +91,11 @@ dims_at_positions {viewId, mode:"preview", use3D:true, typeName:<check type>, re
 
 - Walls: 3D faces (`src:"3d"`), plan faces drift.
 - Runs / landings: the plan lines of the **Stairs** element (`id:<stairs>, src:"view"`); faces of `StairsRun` / `StairsLanding` give dims that are not drawn.
-- Handrails: Revit hides dims on `<Above>` rail lines. When a hand-drawn dim exists, pass it in `refDims` and its references are reused; otherwise draw that chain by hand.
+- Handrails (SA1, SA3): dims the API builds on Top Rail lines are not drawn. **No hand dim is needed**:
+  - `dims_rail_refs {viewId, mode:"probe" | "preview" | "apply", dims:[{measure, lineMm, positions:[{mm, rail:<top rail id>}, {mm, wall:<wall id>}, {mm, ref:"<stable>"}]}]}` builds each reference like a UI pick (`<top rail UniqueId>:1:INSTANCE:<symbol edge>:LINEAR`) and keeps only edges that give the right value and are drawn. Top rail ids: `dim_stable_refs {railingIds}`. If the automatic edge test rejects every edge (it happens on dims measured along the view Right), take the edge from `probe` and pass it as `{ref}`; a value of `-305` means that edge is not drawable.
+  - A chain the user drew by hand in another view of the same railings: `dims_copy_refs {targetViewId, items:[{sourceDimId, typeName}]}` reuses its references (texts copied).
+  - Rails above the cut plane are never dimensionable: use a rail below the cut at the same position.
+- **SA3 end = the handrail end drawn on the view** (the rounded end of the centre handrail), not the first edge found and not a fixed "riser ± 80" (seen: −80 on one landing, +120 on the other). Probe the edges, export the view at 6000 px, crop the landing, pick the edge on that rounded end. The audit's `Clear` is a hint only.
 - After apply: `view_elem_boxes {ids}` → a dim with `Box: null` is not drawn: delete it and change the reference.
 - Then `dims_text` (`CLEAR`, `280mm x 16T =`), `dims_text_move` for short segments whose texts overlap (80 | 30 | 80).
 
@@ -116,6 +128,7 @@ Then set the text with `dims_text`: `CLEAR` suffix **only on the clear width of 
 `annot_place {viewId, mode, items:[{kind:"tag", elementId, typeName, right, up, leader, endRight, endUp}, {kind:"spot", elementId:<STAIRS id>, typeName, right, up}]}` — points in the view frame; read free space first with `view_elem_boxes {allAnnotations:true}` (ViewBox). Spots go on the **Stairs** element (its plan face at the point), as the project sheets do. A door the view does not draw gets no tag.
 
 - Type: `ProjectTypes` from the audit (most used in the project). Never create a type.
+- **Leaders are orthogonal** (user rule): one horizontal or vertical segment when the head lines up with the target, otherwise exactly one elbow (V+H or H+V); never diagonal. `annot_place` adds the elbow (`elbowFirst` V default / H); check with `tag_leaders_info` (shape `D` = diagonal → fix). Run tags: head straight above / below the seen part, vertical leader; keep the head box off wall notches and dims.
 - SB2 railing: `IndependentTag.Create(..., addLeader:true, ...)`, head off the run lines (stair well, landing or beside the railing), short leader.
 - SB2: `P01` on each wall handrail, `P02` on the centre railing (the project's codes). Keep the heads off the tread lines, even where the sample has them on the lines.
 - SB3 spot elevation: `doc.Create.NewSpotElevation(view, topFaceRef, …)` on the mid landing, on the floor landing inside the core, and on the floor just outside the stair door (link floor → link reference). Not on the door swing or the arrow.
@@ -127,7 +140,7 @@ Then set the text with `dims_text`: `CLEAR` suffix **only on the clear width of 
 
 1. `stair_plan_audit` again → no `Issues` left except those the user accepted.
 2. `annotation_overlaps {viewId}` → fix overlaps.
-3. Export the sheet image and look (`drafting-visual-check`): 3 runs, 3 run tags outside the walls with leaders, continuous numbers, a V-shaped arrow at the top end of each run, no UP/DOWN, dim lines aligned and in order. Compare with the sample sheet in the standard.
+3. Export the **view** image (`export_sheet_images {sheetNumbers:[], viewIds:[id]}`) and look (`drafting-visual-check`): 3 runs, 3 run tags outside the walls with leaders, a spot on every seen landing, continuous numbers, a V-shaped arrow at the top end of each run, no UP/DOWN, dim lines aligned and in order, short texts (80 | 30 | 80, 49 | 80) apart, no dim line through a CLEAR text or a tag. `annotation_overlaps` does not see generic-annotation finish marks or path texts: look at the image. Compare with the views already finished on the same sheet.
 4. Report per `drafting-session`: exact view names; table per view of what was added / fixed; **Cần xem** (V1 ≠ V3, measured-to-run-edge widths, tags moved by hand); **Việc tồn** (model mismatches, link stairs/walls, dims still in the check type).
 
 ## Never
@@ -143,4 +156,8 @@ Then set the text with `dims_text`: `CLEAR` suffix **only on the clear width of 
 - Measure a clear width across an opening (shaft) or to a wall when a railing / step edge comes first.
 - Skip an item of the standard silently (SB6!). Done means ĐỦ – ĐÚNG – ĐẸP (`drafting-session`).
 - Dim the same length on both sides of the core.
-- Edit stairs, railings, walls or floors (R1).
+- Edit stairs, railings, walls or floors (R1). Exception, with the user's permission: the Stairs "Tread/Riser Start Number" for continuous numbering.
+- Set a length parameter with `modify_element_parameter` (unit parsing: feet).
+- Draw a diagonal leader.
+- Take the SA3 end from the audit without checking the drawn handrail end on the image.
+- Annotate with fewer runs / landings than the view shows.

@@ -1,6 +1,6 @@
 /* mcp-tool
 {
-  "description": "ONE plan view: place tags and spot elevations at given points in the view frame (mm along the view's Right / Up from the view origin, as stair_plan_audit / view_elem_boxes ViewBox). items: {kind:'tag', elementId, typeName (tag type name, category from the element), right, up (head), leader (default false), endRight, endUp (free leader end on the element, optional)} | {kind:'spot', elementId (floor / landing / run: its highest horizontal face), typeName (spot elevation type), right, up (point on the face)}. Types must already exist in the project (never created). mode preview (rolled back) | apply (logPath) | undo (logPath: deletes what was created).",
+  "description": "ONE plan view: place tags and spot elevations at given points in the view frame (mm along the view's Right / Up from the view origin, as stair_plan_audit / view_elem_boxes ViewBox). items: {kind:'tag', elementId, typeName (tag type name, category from the element), right, up (head), leader (default false), endRight, endUp (free leader end on the element, optional; leaders are kept orthogonal: if the end is not straight above/beside the head an elbow is added, elbowFirst V (default: vertical from the head, then horizontal) or H, or explicit elbowRight / elbowUp)} | {kind:'spot', elementId (floor / landing / run: its highest horizontal face), typeName (spot elevation type), right, up (point on the face)}. Types must already exist in the project (never created). mode preview (rolled back) | apply (logPath) | undo (logPath: deletes what was created).",
   "inputSchema": {
     "type": "object",
     "properties": {
@@ -126,6 +126,20 @@ public static class AnnotPlace
                             tg.SetLeaderEnd(new Reference(e), P((double)it["endRight"], (double)it["endUp"], z0));
                         }
                         tg.TagHeadPosition = head;
+                        if (leader && it["endRight"] != null)
+                        {
+                            // leaders are orthogonal (user rule): straight H / V, else one elbow
+                            double er = (double)it["endRight"], eu = (double)it["endUp"];
+                            bool alignedR = Math.Abs(er - r) < 1, alignedU = Math.Abs(eu - u) < 1;
+                            if (!alignedR && !alignedU)
+                            {
+                                XYZ elb;
+                                if (it["elbowRight"] != null) elb = P((double)it["elbowRight"], (double)it["elbowUp"], z0);
+                                else if (((string)it["elbowFirst"] ?? "V").ToUpper() == "H") elb = P(er, u, z0);
+                                else elb = P(r, eu, z0);
+                                tg.SetLeaderElbow(new Reference(e), elb);
+                            }
+                        }
                         created.Add(tg.Id.IntegerValue);
                         done.Add(new { Item = i, Kind = "tag", Id = tg.Id.IntegerValue, On = e.Id.IntegerValue, Text = tg.TagText, Type = typeName });
                     }
