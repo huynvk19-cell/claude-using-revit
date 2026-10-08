@@ -29,10 +29,26 @@ Show the user one table: flight → state → risers × height → treads × dep
 
 Stop and ask when: no host stairs (link); `LC:` model mismatch; no run tag type used in sections.
 
-## 2. Dims
+## 2. Dims, tags, numbers: `stair_section_annotate` (one view)
+
+```
+stair_section_annotate {viewId, mode:"preview", dimTypeName:<check type>, la1LineMm,
+  runTagTypes:[{fromMm, type}], spotTypeName, numberSourceId:<a finished NumberSystem>,
+  parts:["LA1","LA3","LA4","LB1","LB3","LC"], items:[{part, flight|landing, x, z}]}
+```
+Read `Done` (texts, values, positions) → same with `mode:"apply", logPath` → `view_elem_boxes` on the new ids (Box ≠ null) → export the view image. Undo: `mode:"undo", logPath`.
+
+- References are taken on the **Stairs** element (run / landing 3D faces are hidden: dims on them are created but not drawn); level plane where no landing.
+- Formula text on riser numbers or on the flight → `dims_text_move` (alongMm) into the free space under the flight, clear of the witness lines.
+- Layout that worked (1:50): LA3 line at 30 % of the flight height, run tag head at 8 % with a horizontal leader to the soffit; LA1 300 mm inside an existing overall dim; spots on the landing away from the F.. box.
+- **LA5 is MANDATORY on every cut landing** (user, 2026-10-08): landing top → top of the rail along the landing edge (P02 → 1200). `la5Auto:true, la5RailingIds, la5TargetMm:1200, la5LeftX, la5RightX` finds the rail reference without a sample; values far from the nominal height → check with `rail_top_at`, do not place when unsure, ask the user for one hand dim (`la5FromDimId`). `stair_section_info` lists every landing without it — never report a section done while one is missing. Rails often have no straight line in the API geometry: ask the user for ONE hand dim, then `parts:["LA5"], la5FromDimId:<that dim>, la5IndexFrom, la5IndexTo, items:[{part:"LA5", landing, x}]` reuses its rail reference with other indices until the value matches and the dim is drawn. Landings listed with `x` only; `skip:true` for the ones the user dimmed.
+- **LB2** railing tags (skip a rail hidden behind a bigger one, e.g. a wall handrail behind the 1200 railing): `annot_place` (kind tag, the railing tag type used in the project, orthogonal leader); view-frame `up` = elevation + the frame offset of the view (a level's witness in `view_dims_snapshot`).
+- **LB1** tags and **LC** numbers only on **cut** flights (user, 2026-10-08). **LA3** counts T = R − 1 (top tread level with the landing belongs to the landing segment), as the plan.
+
+The manual reference notes below stay for cases the tool does not cover:
 
 1. **LA2 levels**: `level_dims_add {viewId, side:<opposite of LA1>, typeName:<check type>, mode:"preview", logPath}` → same with `mode:"apply"`. Skipped if the view already has a level chain.
-2. **LA1, LA3, LA4, LA5, LA6**: no batch tool yet. Write a one-off dynamic command per view (preview → apply with `logPath`; undo = delete the logged ids with `dims_edit`). References:
+2. **LA1, LA3, LA4, LA5, LA6** references:
    | Dim | References |
    |---|---|
    | LA1 rise chain | top faces of the landings / floors (`HostObjectUtils.GetTopFaces` for floors; landing geometry with `Options{ComputeReferences=true, View=v}`), or the level when the finish floor sits on it |
@@ -51,7 +67,7 @@ Stop and ask when: no host stairs (link); `LC:` model mismatch; no run tag type 
 
 ## 3. Tags and numbers
 
-- **LB1** run tag on every seen flight (cut and beyond): `IndependentTag.Create(doc, type, viewId, new Reference(run), true, Horizontal, head)`. Put the head in the free space under or beside the flight, with a short leader into it. Check the tag reads `From EL … To EL … / …R`.
+- **LB1** run tag on every **cut** flight: `IndependentTag.Create(doc, type, viewId, new Reference(run), true, Horizontal, head)`. Put the head in the free space under the flight, with a short leader into it. Check the tag reads `From EL … To EL … / …R`.
 - **LB2** railing `P01`, **LB3** spot elevation on every landing / floor top at each end (`doc.Create.NewSpotElevation`), **LB4** `F..` above each landing with its leader down, **LB5** `C..` under each landing with its leader up, in the same column as LB4.
 - **LB6** doors/windows: `elevation_opening_tags {viewIds:[id], mode:"preview"}` → `apply`, rules T1–T8.
 - **LC** riser numbers on each cut flight: `NumberSystem.Create(doc, viewId, new LinkElementId(runId), StairsNumberSystemReferenceOption.Left, new LinkElementId(typeId))`. The numbers continue over the whole stair (every second one shown) and must match the plan at the same riser. Wrong start → fix it by hand or ask.

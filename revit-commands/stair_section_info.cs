@@ -8,6 +8,7 @@
         "type": "number",
         "description": "the stair section view"
       },
+      "excludeStairIds": { "type": "array", "items": { "type": "number" }, "description": "stairs seen but not part of this core" },
       "toleranceMm": {
         "type": "number",
         "description": "value tolerance when matching existing dims, default 1"
@@ -68,8 +69,9 @@ public static class StairSectionInfo
         double tol = args.Value<double?>("toleranceMm") ?? 1;
         var issues = new List<string>(); var notes = new List<string>();
 
-        var fl = new List<Fl>(); var lands = new List<object>();
-        foreach (var s in new FilteredElementCollector(doc, v.Id).OfCategory(BuiltInCategory.OST_Stairs).WhereElementIsNotElementType().OfType<Stairs>())
+        var fl = new List<Fl>(); var lands = new List<object>(); var cutLand = new List<Tuple<double, double, double, double>>();   // internal Z (ft), x0, x1, elevation mm
+        var excl = new HashSet<int>(((JArray)args["excludeStairIds"] ?? new JArray()).Select(x => (int)x));
+        foreach (var s in new FilteredElementCollector(doc, v.Id).OfCategory(BuiltInCategory.OST_Stairs).WhereElementIsNotElementType().OfType<Stairs>().Where(s => !excl.Contains(s.Id.IntegerValue)))
         {
             // level-based elevation (as the tags read it): base level Elevation + base offset
             var pl = s.get_Parameter(BuiltInParameter.STAIRS_BASE_LEVEL_PARAM);
@@ -80,7 +82,7 @@ public static class StairSectionInfo
             foreach (var rid in s.GetStairsRuns())
             {
                 var r = doc.GetElement(rid) as StairsRun; if (r == null) continue;
-                var f = new Fl { R = r, S = s, El0 = (sb + r.BaseElevation) * MM, El1 = (sb + r.TopElevation) * MM, Risers = r.ActualRisersNumber, Treads = r.ActualTreadsNumber, RiserH = s.ActualRiserHeight * MM, Depth = s.ActualTreadDepth * MM };
+                var f = new Fl { R = r, S = s, El0 = (sb + r.BaseElevation) * MM, El1 = (sb + r.TopElevation) * MM, Risers = r.ActualRisersNumber, Treads = r.ActualTreadsNumber >= r.ActualRisersNumber ? r.ActualRisersNumber - 1 : r.ActualTreadsNumber, RiserH = s.ActualRiserHeight * MM, Depth = s.ActualTreadDepth * MM };   // top tread level with the landing is not counted (plan rule C)
                 f.Height = f.El1 - f.El0; f.Going = f.Treads * f.Depth;
                 var fp = new List<XYZ>(); try { foreach (Curve c in r.GetFootprintBoundary()) fp.AddRange(c.Tessellate()); } catch { }
                 if (fp.Count == 0) continue;
@@ -97,6 +99,7 @@ public static class StairSectionInfo
                 if (fp.Count == 0) continue;
                 double d0 = fp.Min(Depth), d1 = fp.Max(Depth); double cx = (fp.Min(VX) + fp.Max(VX)) / 2;
                 lands.Add(new { Id = l.Id.IntegerValue, Stairs = s.Id.IntegerValue, ElMm = Math.Round((sb + l.BaseElevation) * MM), State = d0 <= 0 && d1 >= 0 ? "cut" : d1 < 0 ? "beyond" : "in front", XMm = Math.Round(cx) });
+                if (d0 <= 0 && d1 >= 0) cutLand.Add(Tuple.Create(sb - bl.Elevation + bl.ProjectElevation + l.BaseElevation, fp.Min(VX), fp.Max(VX), Math.Round((sb + l.BaseElevation) * MM)));
             }
         }
         fl = fl.Where(f => f.State != "in front of the section (not seen)").OrderBy(f => f.El0).ToList();
@@ -110,15 +113,15 @@ public static class StairSectionInfo
                 issues.Add("LC: " + f.Label + " " + f.Risers + "R x " + Num(f.RiserH) + " = " + Math.Round(f.Risers * f.RiserH) + " but the flight rises " + Math.Round(f.Height) + ": check the model (do not edit it)");
 
         // existing dims vs the flights
-        var segs = new List<Tuple<int, bool, double, string, string>>(); // dim id, vertical, value, prefix, below
+        var segs = new List<Tuple<int, bool, double, string, string, string>>(); // dim id, vertical, value, prefix, below, Replace with text
         foreach (var d in new FilteredElementCollector(doc, v.Id).OfClass(typeof(Dimension)).Cast<Dimension>())
         {
             if (d is SpotDimension) continue;
             var ln = d.Curve as Line; if (ln == null) continue;
             bool vert = Math.Abs(ln.Direction.DotProduct(Up)) > 0.999, hor = Math.Abs(ln.Direction.DotProduct(Rg)) > 0.999;
             if (!vert && !hor) continue;
-            if (d.NumberOfSegments > 1) foreach (DimensionSegment g in d.Segments) segs.Add(Tuple.Create(d.Id.IntegerValue, vert, (g.Value ?? 0) * MM, g.Prefix, g.Below));
-            else segs.Add(Tuple.Create(d.Id.IntegerValue, vert, (d.Value ?? 0) * MM, d.Prefix, d.Below));
+            if (d.NumberOfSegments > 1) foreach (DimensionSegment g in d.Segments) segs.Add(Tuple.Create(d.Id.IntegerValue, vert, (g.Value ?? 0) * MM, g.Prefix, g.Below, g.ValueOverride));
+            else segs.Add(Tuple.Create(d.Id.IntegerValue, vert, (d.Value ?? 0) * MM, d.Prefix, d.Below, d.ValueOverride));
         }
         Func<string, string> norm = x => (x ?? "").Replace(" ", "").Replace("×", "x").ToLowerInvariant();
         var dimCheck = new List<object>();
@@ -133,7 +136,8 @@ public static class StairSectionInfo
                 else
                 {
                     var bad = new List<string>();
-                    if (norm(hit.Item4) != norm(pre)) bad.Add("prefix should be '" + pre + "'");
+                    if (!string.IsNullOrEmpty(hit.Item6)) bad.Add("Replace with text '" + hit.Item6 + "' (value not live): clear it, prefix '" + pre + "'");
+                    else if (norm(hit.Item4) != norm(pre)) bad.Add("prefix should be '" + pre + "' (now '" + (hit.Item4 ?? "") + "')");
                     if (!(hit.Item5 ?? "").ToUpper().Contains(vert ? "EQUAL RISERS" : "EQUAL TREADS")) bad.Add("below text should be '" + below + "'");
                     st = bad.Count == 0 ? "OK" : string.Join("; ", bad);
                 }
@@ -141,6 +145,23 @@ public static class StairSectionInfo
                 dimCheck.Add(new { Flight = f.Label, Rule = vert ? "LA1" : "LA3", Text = pre + Math.Round(val) + " / " + below, Status = st, DimId = hit?.Item1 });
                 if (st != "OK" && !st.StartsWith("missing (")) issues.Add((vert ? "LA1" : "LA3") + ": " + f.Label + " " + (vert ? "rise" : "going") + " dim: " + st);
             }
+        }
+
+        // LA5 (mandatory): every cut landing has a vertical dim from its top to a rail (top rail / handrail / railing)
+        var railCats = new HashSet<int> { (int)BuiltInCategory.OST_RailingTopRail, (int)BuiltInCategory.OST_RailingHandRail, (int)BuiltInCategory.OST_StairsRailing };
+        var railDims = new List<Tuple<int, double, double, double>>();   // id, lower Z (ft), x mm, value mm
+        foreach (var d in new FilteredElementCollector(doc, v.Id).OfClass(typeof(Dimension)).Cast<Dimension>())
+        {
+            if (d is SpotDimension || d.NumberOfSegments > 1 || !(d.Curve is Line ln) || Math.Abs(ln.Direction.DotProduct(Up)) < 0.999) continue;
+            bool rail = false; foreach (Reference r in d.References) { var e = doc.GetElement(r.ElementId); if (e?.Category != null && railCats.Contains(e.Category.Id.IntegerValue)) rail = true; }
+            if (!rail || d.Value == null) continue;
+            railDims.Add(Tuple.Create(d.Id.IntegerValue, d.Origin.Z - d.Value.Value / 2, VX(d.Origin), d.Value.Value * MM));
+        }
+        foreach (var cl in cutLand.OrderBy(c => c.Item1))
+        {
+            var hit = railDims.FirstOrDefault(r => Math.Abs(r.Item2 - cl.Item1) * MM < 10 && r.Item3 > cl.Item2 - 400 && r.Item3 < cl.Item3 + 400);
+            dimCheck.Add(new { Landing = Num(cl.Item4), Rule = "LA5", Text = "rail height", Status = hit == null ? "missing" : "OK " + Math.Round(hit.Item4), DimId = hit?.Item1 });
+            if (hit == null) issues.Add("LA5: landing " + Num(cl.Item4) + ": rail height dim missing (mandatory)");
         }
 
         // tags and numbers per flight
@@ -153,7 +174,7 @@ public static class StairSectionInfo
         foreach (var f in fl)
         {
             int n = tagged.ContainsKey(f.R.Id.IntegerValue) ? tagged[f.R.Id.IntegerValue].Count : 0;
-            if (n != 1) issues.Add("LB1: " + f.Label + " has " + n + " run tags");
+            if (f.State == "cut" ? n != 1 : n > 0) issues.Add("LB1: " + f.Label + " (" + f.State + ") has " + n + " run tags" + (f.State == "cut" ? "" : ": only the cut flights are tagged (user, 2026-10-08)"));
             if (f.State == "cut" && !numbered.Contains(f.R.Id.IntegerValue)) issues.Add("LC: " + f.Label + " (cut) has no riser numbers");
         }
         var runTagTypes = new FilteredElementCollector(doc).OfClass(typeof(IndependentTag)).Cast<IndependentTag>()

@@ -43,6 +43,7 @@ Do **not** read the whole `drafting-domain/` folder or every skill. Pick the tas
 4. "dừng" / "tạm dừng" → stop immediately and report where you stopped.
 5. No "Claude"/"AI" in anything written to the model.
 6. Hide via View Template, not Hide in View.
+7. Never "Replace with text" on a dim: the value stays live; extra text goes in Prefix / Suffix / Above / Below (`dims_text`).
 
 ## Start
 
