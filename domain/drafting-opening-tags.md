@@ -18,6 +18,7 @@ Các quy tắc dưới đây rút ra từ những lần user tự chỉnh lại 
 |---|---|
 | Cửa **thật sự nhìn thấy** trong view | Có **đúng một** tag |
 | Cửa bị che (sau tường, sau kính, sau cửa khác) | **Không** tag |
+| Mặt cắt: cửa nằm **trong tường bị cắt** (thấy mặt cắt khung cửa, không thấy chính diện) | **Có** tag (user, 2026-10-08): đầu tag ngoài tường, leader **ngang** vào cửa ở khoảng giữa chiều cao cửa. `elevation_opening_tags` bỏ sót loại cửa này → kiểm tay |
 | View OVERALL (tỉ lệ nhỏ) | **Không** tag cửa (và không dim cửa) |
 | Hai tag trên cùng một cửa | Xoá bớt một (ví dụ hai tag "252" trên cùng cửa) |
 | Tag mồ côi, tag hiện "?" hoặc rỗng | Báo user |
@@ -27,6 +28,7 @@ Các quy tắc dưới đây rút ra từ những lần user tự chỉnh lại 
 - Tag nằm **ngay phía trên** cửa của nó.
 - Căn giữa theo cửa, sát mép cửa (cách khoảng 1 mm giấy).
 - Leader đứng ngắn, đi vào trong cửa, đầu leader cách mép cửa khoảng **1.5 mm giấy**.
+- Mặt cắt chi tiết (vd. mặt cắt thang): tag cửa **luôn có leader** (user, 2026-10-08; mẫu 1:50: đầu tag trên đỉnh cửa ~190 mm, đầu leader trong cửa ~130 mm). Chạy `elevation_opening_tags` với `addLeader:true`.
 - Đầu tag **không** nằm đè lên chính cửa của nó. Ngoại lệ duy nhất là cửa cuốn lớn, xem T5.
 
 ### T3 — Cửa sổ

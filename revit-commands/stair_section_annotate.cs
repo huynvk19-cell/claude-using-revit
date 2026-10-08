@@ -20,6 +20,9 @@
       "excludeStairIds": { "type": "array", "items": { "type": "number" }, "description": "stairs seen in the view but not part of this core" },
       "la5Auto": { "type": "boolean", "description": "LA5 without a sample dim: rail refs found from the top rails" },
       "la5LeftX": { "type": "number" }, "la5RightX": { "type": "number" },
+      "la5RailingIds": { "type": "array", "items": { "type": "number" }, "description": "LA5 auto: only these railings" },
+      "la5TargetMm": { "type": "number", "description": "LA5: nominal rail height (1200 / 900), nearest wins" },
+      "la5FromDimId": { "type": "number", "description": "LA5: a hand dim whose rail reference is reused" },
       "items": { "type": "array", "items": { "type": "object" }, "description": "overrides: {part, flight|landing, x, z, skip} (view x mm, absolute z mm)" }
     },
     "required": ["viewId", "mode"]

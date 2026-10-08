@@ -87,6 +87,7 @@ Nguồn: ảnh mẫu của user (2026-10-07) + các quy tắc chung đã có ở
 - **BẮT BUỘC** (user, 2026-10-08): **mỗi chiếu nghỉ bị cắt có một dim cao độ tay vịn**, từ mặt chiếu nghỉ lên đỉnh tay vịn đi dọc mép chiếu nghỉ (lan can P02 → 1200). Không được bỏ im lặng: tool không bắt được tham chiếu → ghi Việc tồn và xin user một dim tay làm mẫu (`la5FromDimId`).
 - Làm: `stair_section_annotate {parts:["LA5"], la5Auto:true, la5RailingIds:[P02…], la5TargetMm:1200, la5LeftX, la5RightX}` (tự dò tham chiếu đỉnh tay vịn, chọn giá trị gần 1200 nhất và có vẽ). Giá trị lệch xa 1200 (vd. 1188, 1329) → kiểm bằng `rail_top_at`; không chắc thì không đặt, hỏi user.
 - Kiểm: `stair_section_info` báo `LA5: landing … missing (mandatory)` cho từng chiếu nghỉ thiếu.
+- **Tay vịn gắn tường P01 thấy rõ dọc chiếu nghỉ → thêm dim cao độ P01** (user, 2026-10-08): mỗi chiếu nghỉ bị cắt có đoạn P01 nằm ngang (gắn tường, nhìn thấy trên mặt cắt) có thêm một dim **mặt chiếu nghỉ → đỉnh tay vịn P01** (mẫu `900`), tham chiếu **Handrails** của P01 (không phải Top Rail), ngoài dim 1200 của P02. Đặt trên đoạn P01 thấy rõ, tách cột với dim 1200: chiếu nghỉ sát tường đối diện vế → cách dim 1200 khoảng 230–300 mm về phía tường; chiếu nghỉ phía kia → sát tường (cách mép tường HT ~500 mm). Có cả trên chiếu nghỉ đã có dim 1200.
 
 - Từ **mũi bậc / mặt chiếu nghỉ** lên **đỉnh tay vịn** (mẫu `900`, ở cuối vế, sát chiếu nghỉ).
 - Mẫu user 2026-10-08 (thang một nhánh, lan can trong 1200): **mỗi chiếu nghỉ một dim** từ mặt chiếu nghỉ lên đỉnh tay vịn trên cùng của lan can, đoạn chạy dọc mép chiếu nghỉ (vuông góc mặt cắt) → `1200`; dim đặt trên chiếu nghỉ, gần mép vế. Tay vịn ống nghiêng gắn tường không có đoạn ngang → không dim.
@@ -109,11 +110,11 @@ Nguồn: ảnh mẫu của user (2026-10-07) + các quy tắc chung đã có ở
 | # | Đối tượng | Số lượng | Vị trí (theo mẫu) |
 |---|---|---|---|
 | **LB1** | Vế thang — mẫu `From EL +2710 To EL +5250` / `169.4mm x 15R` | 1 tag / **vế bị cắt** (vế phía sau không tag, user 2026-10-08) | Khung chữ trong khoảng trống **dưới/cạnh vế**, **leader** ngắn vào vế. Mặt cắt ghi theo **cổ bậc (R)**; mặt bằng ghi theo bậc (T). |
-| **LB2** | Tay vịn / lan can — mẫu `P01` | 1 tag / **vế bị cắt** cho lan can nhìn thấy rõ (user 2026-10-08: "bổ sung đầy đủ" — mỗi vế cắt một tag, ở đầu dưới vế, đầu tag ngay trên tay vịn, leader đứng). Tay vịn bị lan can lớn hơn che gần hết (vd. P01 gắn tường sau P02) → không tag (user, 2026-10-08) | Leader tới tay vịn, đầu tag trong khoảng trống phía trên vế, không đè nét bậc. |
+| **LB2** | Tay vịn / lan can — mẫu `P01` | 1 tag / **vế bị cắt** cho lan can nhìn thấy rõ (user 2026-10-08: "bổ sung đầy đủ" — mỗi vế cắt một tag, ở đầu dưới vế, đầu tag ngay trên tay vịn, leader đứng). Tay vịn bị lan can lớn hơn che gần hết (vd. P01 gắn tường sau P02) → không tag (user, 2026-10-08). **P01 thấy rõ** (đoạn ngang gắn tường dọc chiếu nghỉ) → **tag P01** (user, 2026-10-08, mẫu: một tag trên mỗi chiếu nghỉ phía không có tag P02 gần đó) | Leader tới tay vịn, đầu tag trong khoảng trống phía trên vế, không đè nét bậc. P01: đầu tag cao hơn đỉnh tay vịn ~220–240 mm, **leader đứng** chạm đỉnh P01, x nằm giữa dim 900 và cột F../C.. |
 | **LB3** | Cao độ (Spot Elevation, ký hiệu tam giác) — mẫu `2710`, `5250`, `7960`, `0` | Mỗi mặt chiếu nghỉ / sàn nhìn thấy, **ở mỗi đầu** có chiếu nghỉ (mẫu: cả trái và phải) | Trên mặt hoàn thiện, gần mép chiếu nghỉ, không đè tag F/C. |
 | **LB4** | Hoàn thiện sàn — mẫu `F13` | 1 / mặt chiếu nghỉ hoặc sàn có LB3 | Phía trên mặt sàn, leader xuống mặt hoàn thiện, cạnh cao độ LB3. |
 | **LB5** | Hoàn thiện trần / đáy chiếu nghỉ — mẫu `C09` | 1 / đáy chiếu nghỉ nhìn thấy | Phía dưới chiếu nghỉ, leader lên đáy. Thẳng hàng đứng với LB4 của cùng chiếu nghỉ. |
-| **LB6** | Cửa đi, cửa sổ — mẫu `44`, `18` | đúng 1 / cửa nhìn thấy | Theo `drafting-opening-tags.md` (T1–T8). |
+| **LB6** | Cửa đi, cửa sổ — mẫu `44`, `18` | đúng 1 / cửa nhìn thấy, **kể cả cửa nằm trong tường bị cắt** (user, 2026-10-08: tool chỉ thấy cửa nhìn chính diện, bỏ sót cửa trong tường cắt) | Theo `drafting-opening-tags.md` (T1–T8), **luôn có leader** trên mặt cắt thang (user, 2026-10-08): cửa nhìn chính diện → đầu tag trên đỉnh cửa ~190 mm, leader đứng vào trong cửa ~130 mm; cửa trong tường cắt → đầu tag **ngoài tường**, leader **ngang** vào cửa ở khoảng giữa chiều cao cửa. |
 
 - Mỗi chủ thể **đúng một** tag; tag trùng → xoá bớt.
 - Tag không đè dim, số bậc, tag khác, nét bậc.
@@ -167,13 +168,14 @@ Mặt cắt dọc thang bộ, 1:50, bốn vế từ LEVEL 0 lên tới chiếu n
   | LA2 cao độ tầng + ký hiệu cao độ cắt | view |
   | LA3 chiều dài vế (công thức T = R − 1) | vế bị cắt |
   | LA4 thông thuỷ dưới chiếu nghỉ / sàn (kể cả chiếu nghỉ phía sau, sàn mái) | chiếu nghỉ + sàn, mỗi phía |
-  | **LA5 cao độ tay vịn** | **chiếu nghỉ bị cắt** |
+  | **LA5 cao độ tay vịn** (P02 1200 + P01 900 khi P01 thấy rõ) | **chiếu nghỉ bị cắt** |
   | LA6 tường / trục | view |
   | LB1 tag vế | vế bị cắt |
   | LB2 tag tay vịn P02 (đầu dưới vế, leader đứng) | vế bị cắt |
+  | LB2 tag P01 thấy rõ (leader đứng) | chiếu nghỉ có P01 thấy rõ |
   | LB3 cao độ | chiếu nghỉ / sàn |
   | LB4 F.., LB5 C.. (chấm đúng mặt) | chiếu nghỉ / sàn |
-  | LB6 cửa | cửa |
+  | LB6 cửa, có leader (cả cửa trong tường cắt) | cửa |
   | LC số bậc | vế bị cắt |
 - Xuất ảnh sheet: mỗi vế một tag; công thức đúng R/T; số bậc liên tục và khớp mặt bằng; F/C/cao độ đủ ở mọi chiếu nghỉ.
 
@@ -192,3 +194,4 @@ Mặt cắt dọc thang bộ, 1:50, bốn vế từ LEVEL 0 lên tới chiếu n
 - 2026-10-08: dim cũ dùng Replace with text, đoạn 0 mm hoặc bám sai mặt (vế đo cả bậc trên cùng) → xoá bằng `dims_edit` (có log) và dựng lại bằng tool, không sửa chắp vá. Ô F../C.. thiếu ở chiếu nghỉ trên cùng: chép từ chiếu nghỉ cùng phía (`annot_copy_in_view`) hoặc `finish_mark_place` khi cần đổi chiều dài leader. Room tag đè tag vế → dời room tag (chỉ vị trí).
 - 2026-10-08 (user: "point của tag sàn, trần chỉ sai vị trí"): **chấm đầu leader** của F.. phải nằm đúng **mặt trên** chiếu nghỉ / sàn, của C.. đúng **đáy** chiếu nghỉ / sàn; leader thứ hai (ngang) của C.. chạm **đáy nghiêng của vế** ở đúng độ cao đầu ô. Ô chép từ tầng khác thường lệch 10–115 mm → luôn chạy `finish_marks_snap` (survey) sau khi đặt/chép.
 - 2026-10-08 (user: "điều chỉnh lại tag tay vịn cho đúng"): mỗi **vế bị cắt** một tag P02 ở **đầu dưới vế** (x = mũi bậc đầu − 30), leader **thẳng đứng** chạm **đỉnh tay vịn** (`rail_top_at`), đầu tag cao hơn 333–450 mm (tránh đường dim); bỏ tag P01 khi P01 bị P02 che; không tag giữa vế với leader gãy.
+- 2026-10-08 (user bổ sung tay trên mặt cắt dọc thang một nhánh, chiếu nghỉ có tay vịn gắn tường P01 thấy rõ): (1) thêm **tag P01** (đầu tag trên đỉnh P01 ~230 mm, leader đứng) ở chiếu nghỉ không có tag P02 gần đó, và **dim 900** mặt chiếu nghỉ → đỉnh tay vịn P01 (tham chiếu Handrails) ở **mọi** chiếu nghỉ bị cắt, cạnh dim 1200 của P02; (2) **tag cửa trên mặt cắt luôn có leader**: cửa nhìn chính diện → leader đứng vào cửa; cửa nằm trong tường bị cắt (tool `elevation_opening_tags` không thấy) → tag ngoài tường, leader ngang vào cửa ở giữa chiều cao. Trước khi báo xong: liệt kê cửa của các tường bị cắt (room/level của lõi) và kiểm từng cửa có tag.
