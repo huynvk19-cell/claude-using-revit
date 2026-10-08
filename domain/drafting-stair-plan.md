@@ -63,6 +63,12 @@ Mặt bằng tầng điển hình thường thấy **3 vế thang**. Đi theo ch
 - **Mép tường hoàn thiện** = mặt tường **gần lòng thang nhất**, đã gồm lớp hoàn thiện (lớp trát, ốp). Nếu hoàn thiện vẽ bằng tường riêng thì lấy mặt của tường hoàn thiện đó.
 - **Mép trong tay vịn** = mép tay vịn quay về **phía lòng vế thang**.
 
+### Lỗ trống cạnh vế thang: ký hiệu X (user, 2026-10-07)
+
+- Cạnh vế thang là **lỗ trống** (giếng thang giữa hai vế, khe hở thông xuống tầng dưới) → vẽ **chữ X** (hai đường chéo, nét `<Overhead>` như dự án đang dùng) **khít đúng 4 góc lỗ**: mép trong lan can / mép vế / mép chiếu nghỉ bao quanh lỗ, không lấn ra chiếu nghỉ, không hụt.
+- Cạnh vế là **tường đặc** hoặc **sàn** (vd. vế đầu ở tầng thấp nhất, bên cạnh là sàn) → **không** vẽ X.
+- X có sẵn sai vị trí → sửa đầu mút cho khít lỗ (`detail_lines_set`), không vẽ thêm bộ thứ hai. Không đặt đầu tag lên nét X (dời tag ra chiếu nghỉ, leader vuông góc tới lan can).
+
 ### Mép giới hạn thông thuỷ (user, 2026-10-07) — dùng cho mọi kích thước thông thuỷ
 
 Mỗi đầu của một kích thước thông thuỷ lấy theo thứ tự ưu tiên:
@@ -226,6 +232,7 @@ Chỗ mẫu khác với quy tắc viết → **làm theo quy tắc**:
 
 **ĐỦ**
 - `stair_plan_audit` lại: mọi mục SA1–SD đều `OK` (hoặc `OK (split)` khi đoạn được chia nhỏ trên cùng một đường dim, vd. có trục chen giữa). Mục còn `missing` → làm, hoặc hỏi user / ghi Việc tồn kèm lý do.
+- Lỗ trống cạnh vế (giếng) có chữ X khít 4 góc lỗ; cạnh là tường đặc / sàn thì không có X.
 - Danh mục phải có trên view: SA1 (2 đầu vế, `CLEAR` trên bề rộng từng vế, + tổng), SA2 (mỗi dải: công thức + chiếu nghỉ + tổng), SA3 (mỗi chiếu nghỉ / chiếu tới), SA4 (tường → trục, cửa), SB1 (mỗi vế), SB2 (mỗi lan can), SB3 (mỗi chiếu nghỉ + chiếu tới + sàn ngoài cửa nếu thấy), SB4 (mỗi cửa thấy), SB5 (mỗi chiếu nghỉ / chiếu tới), **SB6 (hoàn thiện tường)**, C (số bậc), SD (path).
 
 **ĐÚNG**
@@ -243,3 +250,4 @@ Chỗ mẫu khác với quy tắc viết → **làm theo quy tắc**:
 - 2026-10-07: chạy thật trên view lõi thang 1:50. User chốt: (1) thông thuỷ ưu tiên mép lan can → mép bậc/chiếu nghỉ → mép tường hoàn thiện; (2) bậc trên cùng ngang cao độ chiếu nghỉ không tính (16R → 15T); (3) SB6 bắt buộc, không được bỏ; (4) mọi bản vẽ phải ĐỦ – ĐÚNG – ĐẸP.
 - 2026-10-07: V1 thường thuộc **thang tầng dưới** và có thể nằm **dưới View Depth** (vd. đỉnh vế = cao độ sàn = View Depth) nhưng Revit vẫn vẽ (thang nào được view thu thập thì vẽ đủ các bộ phận). Vế/chiếu nghỉ thấy được = không bị vế/chiếu nghỉ cao hơn che; vế dưới vế cắt = V1. `stair_plan_audit` / `stair_plan_annotate` đã theo quy tắc này (trước đó bỏ sót V1 và cao độ chiếu nghỉ — user nhắc). Mỗi mặt bằng tầng điển hình phải có **3 tag vế** và **cao độ cho mọi chiếu nghỉ / chiếu tới nhìn thấy**.
 - 2026-10-07: SA3 — "đầu mút tay vịn giữa" là **đầu tay vịn nhìn thấy trên bản vẽ** (đầu bo tròn), không phải cạnh đầu tiên tìm được trên Top Rail, cũng không cố định "cổ bậc ± 80" (trên một mặt bằng: một chiếu nghỉ −80, chiếu nghỉ kia +120 so với cổ bậc; user bác hai giá trị đo tới cạnh trong tay vịn). Cách làm: `dims_rail_refs mode probe` liệt kê các cạnh, xuất ảnh view độ phân giải cao, cắt vùng chiếu nghỉ, chọn cạnh trùng đầu bo tròn của tay vịn; giá trị audit (`Clear`) chỉ để tham khảo.
+- 2026-10-07: chữ X ở lỗ trống cạnh vế (giếng thang): có lỗ → X khít đúng 4 góc lỗ (mép trong khung lan can giữa, giữa hai chiếu nghỉ); tường đặc / sàn → không X (user). Gặp X vẽ tay lệch (lấn chiếu nghỉ, hụt đầu kia) → chỉnh đầu mút bằng `detail_lines_set`.

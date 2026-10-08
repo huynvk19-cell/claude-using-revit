@@ -2,7 +2,7 @@
 name: drafting-dimensions
 description: "Chuẩn dim: type dim, dim cao độ (level); trỏ sang chuẩn dim trục (drafting-grid-dims) và dim cửa (drafting-opening-dims). Dimension standards."
 metadata:
-  updated: "2026-10-06"
+  updated: "2026-10-08"
   related: ["drafting-work-rules", "drafting-grid-dims", "drafting-tools", "drafting-api-pitfalls"]
 ---
 
@@ -14,6 +14,13 @@ metadata:
 - Khi user duyệt ("trở về màu dim chính thức"): đổi sang **type chính thức** bằng `swap_dim_type`.
 - Sau khi duyệt xong: xoá các type, tham số, schedule dùng để kiểm tra.
 - Tra id của type ngay trong lượt làm việc. Không ghi cứng id.
+
+## 1b. Chữ trên dim — KHÔNG BAO GIỜ "Replace with text" (user, 2026-10-08)
+
+- Giá trị dim luôn là **số đo sống**. Chữ thêm (công thức, CLEAR, EQUAL…) đặt vào **Prefix / Suffix / Above / Below** của đoạn dim (`dims_text`).
+- Cấm `Replace with text` (ValueOverride), cấm text note đè lên dim, cấm "EQ" thay số.
+- Dim có sẵn đang Replace with text → báo user (Cần xem), đề xuất xoá override + đặt prefix; chỉ sửa khi user đồng ý (dim của người khác).
+- Kiểm: `view_dims_snapshot` (cột `Override`), `stair_section_info` (báo `Replace with text`).
 
 ## 2. Dim trục (Grid dims)
 

@@ -22,7 +22,7 @@
 // ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
 // Read-only: every linear dimension of ONE view in the view frame (mm Right / Up from View.Origin, as
 //    stair_plan_audit): id, type, measured direction, line position, witness positions, segment values with prefix /
-//    suffix / below, references (element + category). outPath writes the JSON. Use to learn how the user adjusted
+//    suffix / above / below / ValueOverride (Replace with text), references (element + category). outPath writes the JSON. Use to learn how the user adjusted
 //    dims (snapshot before / after).
 using System;
 using System.Collections.Generic;
@@ -52,12 +52,12 @@ public static class ViewDimsSnapshot
             {
                 var ss = d.Segments.Cast<DimensionSegment>().ToList();
                 wit.Add(along(ss[0].Origin - l.Direction * ((ss[0].Value ?? 0) / 2)));
-                foreach (var s in ss) { wit.Add(along(s.Origin + l.Direction * ((s.Value ?? 0) / 2))); segs.Add(new { Value = Math.Round((s.Value ?? 0) * MM), s.Prefix, s.Suffix, s.Below }); }
+                foreach (var s in ss) { wit.Add(along(s.Origin + l.Direction * ((s.Value ?? 0) / 2))); segs.Add(new { Value = Math.Round((s.Value ?? 0) * MM), s.Prefix, s.Suffix, s.Above, s.Below, Override = s.ValueOverride }); }
             }
             else
             {
                 wit.Add(along(d.Origin - l.Direction * ((d.Value ?? 0) / 2))); wit.Add(along(d.Origin + l.Direction * ((d.Value ?? 0) / 2)));
-                segs.Add(new { Value = Math.Round((d.Value ?? 0) * MM), d.Prefix, d.Suffix, d.Below });
+                segs.Add(new { Value = Math.Round((d.Value ?? 0) * MM), d.Prefix, d.Suffix, d.Above, d.Below, Override = d.ValueOverride });
             }
             var refs = new List<string>();
             foreach (Reference r in d.References) { var e = doc.GetElement(r.ElementId); refs.Add((e?.Category?.Name ?? "?") + " " + r.ElementId.IntegerValue); }

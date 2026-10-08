@@ -2,7 +2,7 @@
 name: drafting-work-rules
 description: "Quy tắc làm việc khi Claude triển khai bản vẽ Revit như một kiến trúc sư triển khai (drafting architect): giới hạn quyền, nhịp làm việc, báo cáo. Hard rules and working loop."
 metadata:
-  updated: "2026-10-05"
+  updated: "2026-10-08"
   related: ["drafting-dimensions", "drafting-annotation", "drafting-views-sheets", "drafting-tools", "drafting-api-pitfalls"]
 ---
 
@@ -22,6 +22,7 @@ Các giá trị riêng của từng dự án (dim type, model cấm chạm, ti�
 | R6 | **Gặp "dừng" / "tạm dừng" → dừng ngay** | Không chạy thêm lệnh nào. Báo đang dừng ở đâu. |
 | R7 | **Ẩn bằng View Template, không dùng Hide in View** | Hide in View chỉ khi không còn cách khác, và phải nói rõ. |
 | R8 | **Không bịa số liệu** | Mọi id, số đo, tên trong báo cáo phải lấy từ kết quả tool của lượt hiện tại. |
+| R9 | **Không dùng "Replace with text" trên dim** | Giá trị dim luôn sống; chữ thêm vào Prefix / Suffix / Above / Below (`dims_text`). User, 2026-10-08. Chi tiết: `drafting-dimensions.md` §1b. |
 
 Việc cần sửa model (vd. room không có tên → tag "?") → ghi vào **việc tồn** để user tự làm.
 
