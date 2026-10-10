@@ -25,7 +25,7 @@ Do **not** read the whole `drafting-domain/` folder or every skill. Pick the tas
 | Door/window tags (elevation, section) | `drafting-opening-tags` | `drafting-opening-tags.md` |
 | Stair core **plan** | `drafting-stair-plan` | `drafting-stair-plan.md` |
 | Stair **section along the flights** (parallel to the stair path) | `drafting-stair-section-parallel` | `drafting-stair-section-parallel.md` |
-| Stair section **across** the flights | not written yet: ask the user for the rules | — |
+| Stair section **across** the flights (not parallel: flights seen end-on) | `drafting-stair-section-cross` | `drafting-stair-section-cross.md` |
 | Room tags, view titles | `drafting-tags-titles` | `drafting-annotation.md` |
 | Viewports, crops, templates, links | `drafting-views-sheets` | `drafting-views-sheets.md` |
 | Checking by image | `drafting-visual-check` | — |

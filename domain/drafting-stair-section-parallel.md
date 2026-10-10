@@ -11,7 +11,7 @@ metadata:
 Áp dụng cho **mặt cắt chi tiết thang bộ cắt dọc theo vế thang** (đường cắt song song stair path; view tên thường có STAIRCASE … SECTION, tỉ lệ 1:50).
 Không áp dụng cho:
 - **mặt bằng** lõi thang: `drafting-stair-plan`;
-- **mặt cắt ngang vế** (đường cắt vuông góc stair path): chủ đề riêng, chưa viết.
+- **mặt cắt ngang vế** (đường cắt không song song stair path): `drafting-stair-section-cross` (mã XA–XC).
 
 Tool: `stair_section_info` (read-only), `level_dims_add` (cao độ tầng), `dims_text` (công thức, chữ dưới), `annotation_overlaps`. Skill: `drafting-stair-section-parallel`.
 
