@@ -1,8 +1,8 @@
 ---
 name: drafting-views-sheets
-description: "Chuẩn view/sheet: viewport type, crop và scope box, dependent view, đầu trục 2D, view template, hiển thị link. Views, sheets, crops, templates, links."
+description: "Chuẩn view/sheet: viewport type, crop và scope box, dependent view, đầu trục 2D, view template, hiển thị link, danh mục bản vẽ + print set. Views, sheets, crops, templates, links, drawing list, print set."
 metadata:
-  updated: "2026-10-05"
+  updated: "2026-10-10"
   related: ["drafting-work-rules", "drafting-annotation", "drafting-tools", "drafting-api-pitfalls"]
 ---
 
@@ -56,3 +56,13 @@ Thao tác:
 - Annotation Categories = `<Custom>`, bỏ tick "Show annotation categories in this view".
 - Chỉ làm bằng cách điều khiển UI, và chỉ khi user yêu cầu.
 - Xem link nào đang hiện trong template: `template_link_visibility`.
+
+## 5. Danh mục bản vẽ và print set (Drawing list, print set)
+
+Khi thêm, đổi tên hoặc đổi số một sheet (user, 2026-10-10):
+1. Kiểm sheet có trong schedule danh mục bản vẽ (tên schedule ở profile; sheet phải có Appears In Sheet List = Yes).
+2. So print set của dự án với schedule: `print_set_info {setName, scheduleName}`.
+3. Thiếu / thừa sheet → `print_set_from_schedule {mode:"apply", scheduleName, setName, replace:true}`.
+4. Ghi vào log và báo user: số sheet trước / sau, sheet được thêm / bỏ.
+
+Tên print set và tên schedule lấy từ `drafting-profile.md`. Không tự đổi tên print set nếu user chưa yêu cầu.

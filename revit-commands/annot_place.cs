@@ -39,7 +39,9 @@
 //    leader end on the element, optional; leaders are kept orthogonal: if the end is not straight above/beside the
 //    head an elbow is added, elbowFirst V (default: vertical from the head, then horizontal) or H, or explicit
 //    elbowRight / elbowUp)} | {kind:'spot', elementId (floor / landing / run: its highest horizontal face), typeName
-//    (spot elevation type), right, up (point on the face)}. Types must already exist in the project (never created).
+//    (spot elevation type), right, up (point on the face)} | {kind:'roomtag', elementId (room, any level seen in the
+//    view), typeName (room tag type), right, up, leader, endRight, endUp} | {kind:'stairpath', elementId (stairs),
+//    typeName (stair path type)}. Types must already exist in the project (never created).
 //    mode preview (rolled back) | apply (logPath) | undo (logPath: deletes what was created).
 using System;
 using System.Collections.Generic;
@@ -103,7 +105,8 @@ public static class AnnotPlace
                 string kind = ((string)it["kind"] ?? "tag").ToLower(), typeName = (string)it["typeName"];
                 var e = doc.GetElement(new ElementId((int)it["elementId"]));
                 if (e == null) { errors.Add(i + ": element " + it["elementId"] + " not found"); continue; }
-                double r = (double)it["right"], u = (double)it["up"];
+                double r = (double?)it["right"] ?? 0, u = (double?)it["up"] ?? 0;
+                var sub = new SubTransaction(doc); sub.Start(); int before = created.Count;
                 try
                 {
                     if (kind == "spot")
@@ -138,6 +141,34 @@ public static class AnnotPlace
                         created.Add(sd.Id.IntegerValue);
                         done.Add(new { Item = i, Kind = "spot", Id = sd.Id.IntegerValue, On = e.Id.IntegerValue, Via = via, ElevationMm = Math.Round(topZ * MM), Type = typeName });
                     }
+                    else if (kind == "roomtag")
+                    {
+                        var room = e as Autodesk.Revit.DB.Architecture.Room;
+                        if (room == null) { errors.Add(i + ": " + e.Id.IntegerValue + " is not a room"); continue; }
+                        var rtt = new FilteredElementCollector(doc).OfClass(typeof(FamilySymbol)).Cast<FamilySymbol>()
+                            .FirstOrDefault(x => x.Name == typeName && x.Category != null && x.Category.Id.IntegerValue == (int)BuiltInCategory.OST_RoomTags);
+                        if (rtt == null) { errors.Add(i + ": no room tag type '" + typeName + "'"); continue; }
+                        var head = P(r, u, z0);
+                        bool leader = it.Value<bool?>("leader") ?? false;
+                        // created inside the room (leader end when given), then the head is moved
+                        var at = leader && it["endRight"] != null ? P((double)it["endRight"], (double)it["endUp"], z0) : head;
+                        var rt = doc.Create.NewRoomTag(new LinkElementId(room.Id), new UV(at.X, at.Y), v.Id);
+                        if (rt == null) { errors.Add(i + ": room tag not created for " + e.Id.IntegerValue); continue; }
+                        rt.ChangeTypeId(rtt.Id);
+                        rt.HasLeader = leader;
+                        if (leader && it["endRight"] != null) rt.LeaderEnd = P((double)it["endRight"], (double)it["endUp"], z0);
+                        rt.TagHeadPosition = head;
+                        created.Add(rt.Id.IntegerValue);
+                        done.Add(new { Item = i, Kind = "roomtag", Id = rt.Id.IntegerValue, On = e.Id.IntegerValue, Text = room.Number + " " + room.get_Parameter(BuiltInParameter.ROOM_NAME).AsString(), TagText = rt.TagText, Type = typeName });
+                    }
+                    else if (kind == "stairpath")
+                    {
+                        var spt = new FilteredElementCollector(doc).OfClass(typeof(Autodesk.Revit.DB.Architecture.StairsPathType)).FirstOrDefault(x => x.Name == typeName);
+                        if (spt == null) { errors.Add(i + ": no stair path type '" + typeName + "'"); continue; }
+                        var sp = Autodesk.Revit.DB.Architecture.StairsPath.Create(doc, new LinkElementId(e.Id), spt.Id, v.Id);
+                        created.Add(sp.Id.IntegerValue);
+                        done.Add(new { Item = i, Kind = "stairpath", Id = sp.Id.IntegerValue, On = e.Id.IntegerValue, Type = typeName });
+                    }
                     else
                     {
                         var catId = e.Category.Id.IntegerValue;
@@ -170,8 +201,15 @@ public static class AnnotPlace
                         created.Add(tg.Id.IntegerValue);
                         done.Add(new { Item = i, Kind = "tag", Id = tg.Id.IntegerValue, On = e.Id.IntegerValue, Text = tg.TagText, Type = typeName });
                     }
+                    sub.Commit();
                 }
-                catch (Exception ex) { errors.Add(i + ": " + ex.Message); }
+                catch (Exception ex)
+                {
+                    // a failed item leaves nothing behind (no orphan tag / spot)
+                    if (created.Count > before) created.RemoveRange(before, created.Count - before);
+                    errors.Add(i + ": " + ex.Message);
+                }
+                finally { if (sub.HasStarted() && !sub.HasEnded()) sub.RollBack(); sub.Dispose(); }
             }
             if (mode == "apply") { t.Commit(); File.WriteAllText(logPath, JsonConvert.SerializeObject(created)); }
             else t.RollBack();

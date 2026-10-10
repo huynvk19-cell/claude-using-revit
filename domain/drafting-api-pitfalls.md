@@ -2,7 +2,7 @@
 name: drafting-api-pitfalls
 description: "Các bẫy Revit API (2023) đã gặp khi tự động hoá triển khai bản vẽ, kèm cách tránh. Revit API pitfalls for drafting automation."
 metadata:
-  updated: "2026-10-06"
+  updated: "2026-10-10"
   related: ["drafting-tools", "drafting-dimensions", "drafting-views-sheets"]
 ---
 
@@ -63,3 +63,7 @@ metadata:
 - 2026-10-07: số bậc (nhất là số sát chiếu nghỉ / đầu vế) trông **bị che một phần trên ảnh xuất** (`export_sheet_images`): đó là lỗi khi xuất ảnh, không phải lỗi bản vẽ (user). **Không** dời dim, chữ hay đổi Justify để "chữa".
 - 2026-10-08: tham số **mảng** không khai báo trong header `mcp-tool` (vd. `la5RailingIds`) được MCP gửi dưới dạng chuỗi → lệnh lỗi `InvalidCastException … JValue … JArray`. Tham số số đơn vẫn chạy. Cách sửa: khai báo mọi tham số mảng trong `inputSchema` của lệnh (header ngắn, mô tả ≤ 80 ký tự).
 - 2026-10-08: hai phiên Claude cùng mở → phiên sau bị Revit trả **HTTP 409** (khoá một kết nối ở cổng 8964). Tìm tiến trình `node … MCP-Server` đang giữ kết nối (`Get-NetTCPConnection -RemotePort 8964 -State Established`), hỏi user rồi mới tắt.
+- 2026-10-10: `NewRoomTag` báo "point is located outside of the spatial element" khi điểm tạo nằm ngoài room → tạo tại một điểm trong room (đầu leader) rồi mới dời `TagHeadPosition`. Room nhiều tầng (vd. lõi thang đặt ở tầng trệt, Upper Limit lên mái) vẫn tag được trên mặt bằng tầng trên.
+- 2026-10-10: room tag **có leader** của room hẹp (shaft) có thể hiện "?" sau khi commit dù `TagText` trong transaction vẫn đúng → kiểm bằng `room_tags_broken` sau khi apply; nếu "?" thì đặt tag trong room, không leader.
+- 2026-10-10: try/catch từng mục trong một transaction giữ lại phần tử đã tạo trước khi lỗi (tag mồ côi) → mỗi mục một `SubTransaction`, lỗi thì rollback (`annot_place` đã làm).
+- 2026-10-10: `PrintManager.ViewSheetSetting` ném lỗi "only available when user choose Select of Print Range" → trong transaction đặt `PrintRange = Select` trước khi lấy `ViewSheetSetting` (đổi tên / lưu print set).

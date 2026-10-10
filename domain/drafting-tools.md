@@ -90,7 +90,8 @@ metadata:
 | `stair_plan_annotate` | Lõi thang bộ (1V): stair path Fixed Up Direction, tắt chữ UP/DOWN (SD); số bậc từng vế, V1 phía đối diện V3 (C, `numberSide`); tag vế thang ngoài tường bên, leader vào phần nhìn thấy (SB1, `runTagPlace`). preview / apply / undo. Truyền `pathTypeName` / `runTagTypeName` theo bản vẽ cùng sheet. |
 | `stair_numbers_match` | Số bậc (1V): chép Display Rule, Number Size, Justify, Orientation… từ một số bậc mẫu của dự án (`sourceId`) và đặt Reference từng vế (Left/Right Quarter…). preview / apply / undo. |
 | `dims_at_positions` | Dim (1V) đặt theo toạ độ khung view (như `stair_plan_audit`): mỗi vị trí phải có tham chiếu thật (mặt/nét tường, lan can, vế thang – fallback mặt 3D, sàn, cửa, cột, trục); `{mm, id}` ép đúng phần tử; không tìm thấy → báo các tham chiếu gần nhất. `typeName` bắt buộc. `src:"3d"|"view"` theo từng điểm, `use3D`, `refDims` (dùng lại tham chiếu của dim vẽ tay). Bỏ nét thuộc subcategory bị ẩn. preview / apply / undo. **Sau khi tạo kiểm tra dim có hiện không** (`view_elem_boxes`: Box ≠ null). |
-| `annot_place` | Tag (có/không leader, đầu leader tự do) và cao độ (spot, trên mặt plan của phần tử chứa điểm, vd. Stairs) đặt theo toạ độ khung view; type phải có sẵn. preview / apply / undo. |
+| `annot_place` | Tag (có/không leader, đầu leader tự do), cao độ (spot, trên mặt plan của phần tử chứa điểm, vd. Stairs), room tag (`kind:"roomtag"`, cả room tầng khác thấy trong view; trả `TagText` để thấy "?") và stair path (`kind:"stairpath"`) đặt theo toạ độ khung view; type phải có sẵn. Mục lỗi không để lại phần tử nào. preview / apply / undo. |
+| `stair_parts_info` | (read-only) Vế và chiếu nghỉ của thang: hộp mặt bằng (mm), cao độ, các stair path có sẵn và view chứa chúng. Dùng để chọn điểm đặt cao độ / path trên mặt bằng tổng. |
 | `finish_mark_place` | Ô mã hoàn thiện (Generic Annotation, vd. `F..` / `W..`): chép type của một ô có sẵn, đặt mã vào tham số chữ, leader vuông góc tới mặt tường. preview / apply / undo. |
 | `detail_lines_set` | Dời hai đầu mút của detail line có sẵn (toạ độ khung view), giữ kiểu nét; vd. chữ X lỗ trống cho khít lỗ. preview / apply / undo. |
 | `tag_reposition` | Đặt lại tag có sẵn: đầu tag, đầu leader tự do, điểm gấp vuông góc (V / H). preview / apply / undo. |
@@ -109,6 +110,9 @@ metadata:
 | Lệnh | Việc |
 |---|---|
 | `set_viewport_type` | Đổi viewport type (preview / apply / undo). |
+| `print_set_info` | (RO) Các sheet trong một print set (View/Sheet Set), so với schedule danh mục bản vẽ: `MissingInSet`, `OnlyInSet`. |
+| `print_set_from_schedule` | Tạo / thay (`replace:true`) print set bằng đúng các sheet mà schedule danh mục bản vẽ liệt kê. preview / apply. |
+| `print_set_rename` | Đổi tên print set (id giữ nguyên). preview / apply. |
 | `crop_side_to_grids` | Kéo một cạnh crop tới sát trục ngoài cùng. |
 | `align_grid_ends` | Căn đầu trục 2D (`compact`). |
 | `grid_bubble_elbow` | Elbow cho bubble (hay lỗi → dùng so le đầu trục). |

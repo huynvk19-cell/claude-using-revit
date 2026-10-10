@@ -1,6 +1,6 @@
 ---
 name: drafting-views-sheets
-description: "Viewports, viewport types, crops/scope boxes, dependent views, 2D grid/level ends, view templates and link display on sheets via Revit MCP. Use for viewport, đổi type viewport, crop view, scope box, đầu trục, kéo trục, bubble chồng, view template, ẩn link, V/G."
+description: "Viewports, viewport types, crops/scope boxes, dependent views, 2D grid/level ends, view templates, link display, and keeping the print set in step with the drawing list via Revit MCP. Use for viewport, đổi type viewport, crop view, scope box, đầu trục, kéo trục, bubble chồng, view template, ẩn link, V/G, drawing list, danh mục bản vẽ, print set, sheet mới."
 ---
 
 # Views and sheets
@@ -24,3 +24,7 @@ Standards: `~/.claude/drafting-domain/drafting-views-sheets.md`.
    - Preview with `view_image_trial`.
 6. **Link display in Revit 2023:** there is no API. Use UI automation, and only when the user asks.
 7. **Afterwards:** re-place viewport titles on the affected sheets (`drafting-tags-titles`).
+8. **Sheet added, renamed or renumbered:** keep the drawing list and the print set in step (standard §5).
+   - Check the sheet is in the drawing-list schedule named in the profile.
+   - `print_set_info {setName, scheduleName}`; anything missing → `print_set_from_schedule {mode:"apply", replace:true}`.
+   - Log it and report sheets before / after.
