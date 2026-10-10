@@ -11,7 +11,7 @@ metadata:
 Áp dụng cho **mặt bằng chi tiết lõi thang bộ** (view tên thường có STAIRCASE / STAIR CORE, tỉ lệ 1:50 hoặc 1:25).
 Không áp dụng cho:
 - key plan thang thoát hiểm (sơ đồ chỉ dẫn);
-- **mặt cắt thang**: chuẩn riêng. Cắt dọc vế (song song stair path) → `drafting-stair-section-parallel` (mã LA–LC); cắt ngang vế → chưa viết. Không dùng lại SA–SD.
+- **mặt cắt thang**: chuẩn riêng. Cắt dọc vế (song song stair path) → `drafting-stair-section-parallel` (mã LA–LC); cắt ngang vế → `drafting-stair-section-cross` (mã XA–XC). Không dùng lại SA–SD.
 
 Tool: `stair_plan_audit` (read-only), `stair_plan_annotate` (path, số bậc, tag vế), `dims_text` (CLEAR, công thức). Skill: `drafting-stair-plan`.
 

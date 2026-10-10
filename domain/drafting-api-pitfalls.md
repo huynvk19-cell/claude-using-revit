@@ -61,3 +61,5 @@ metadata:
 - 2026-10-07: gọi song song nhiều lệnh MCP vào Revit → các lệnh sau timeout. Lệnh ghi (open view, apply) chạy tuần tự.
 - 2026-10-07: tham số số bậc qua `modify_element_parameter` (số nguyên): **Display Rule** 1 = Odd, 2 = Even; **Justify** 0 = Front, 1 = Center, 2 = Back. Chữ "Odd"/"Even" bị từ chối.
 - 2026-10-07: số bậc (nhất là số sát chiếu nghỉ / đầu vế) trông **bị che một phần trên ảnh xuất** (`export_sheet_images`): đó là lỗi khi xuất ảnh, không phải lỗi bản vẽ (user). **Không** dời dim, chữ hay đổi Justify để "chữa".
+- 2026-10-08: tham số **mảng** không khai báo trong header `mcp-tool` (vd. `la5RailingIds`) được MCP gửi dưới dạng chuỗi → lệnh lỗi `InvalidCastException … JValue … JArray`. Tham số số đơn vẫn chạy. Cách sửa: khai báo mọi tham số mảng trong `inputSchema` của lệnh (header ngắn, mô tả ≤ 80 ký tự).
+- 2026-10-08: hai phiên Claude cùng mở → phiên sau bị Revit trả **HTTP 409** (khoá một kết nối ở cổng 8964). Tìm tiến trình `node … MCP-Server` đang giữ kết nối (`Get-NetTCPConnection -RemotePort 8964 -State Established`), hỏi user rồi mới tắt.
