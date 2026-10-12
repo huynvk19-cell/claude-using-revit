@@ -49,7 +49,7 @@ Nguồn: ảnh mẫu của user (2026-10-07) + các quy tắc chung đã có ở
 | **Ngoài tường bên trái** (mẫu) | LA2: chuỗi cao độ tầng (level → level) |
 | **Trong lòng thang, sát tường hai bên** | LA4: chiều cao thông thuỷ dưới chiếu nghỉ / vế phía trên |
 | **Trong lòng thang, ngang giữa từng vế** | LA3: chuỗi chiều dài vế (công thức T) |
-| **Cuối vế, chỗ lan can** | LA5: chiều cao tay vịn (một chỗ đại diện) |
+| **Trên mỗi chiếu nghỉ bị cắt, gần mép vế** | LA5: cao độ tay vịn (P02 1200; thêm P01 900 khi P01 thấy rõ) — **bắt buộc mỗi chiếu nghỉ**, không phải một chỗ đại diện |
 | **Dưới mặt cắt, ngoài sàn** | LA6: trục → mép tường → … → trục; tổng |
 
 - LA1 và LA2 ở **hai phía khác nhau** (mẫu: LA1 phải, LA2 trái). Không dim cùng một chuỗi ở hai phía.
@@ -85,11 +85,10 @@ Nguồn: ảnh mẫu của user (2026-10-07) + các quy tắc chung đã có ở
 
 ### LA5 — Chiều cao tay vịn (đứng)
 - **BẮT BUỘC** (user, 2026-10-08): **mỗi chiếu nghỉ bị cắt có một dim cao độ tay vịn**, từ mặt chiếu nghỉ lên đỉnh tay vịn đi dọc mép chiếu nghỉ (lan can P02 → 1200). Không được bỏ im lặng: tool không bắt được tham chiếu → ghi Việc tồn và xin user một dim tay làm mẫu (`la5FromDimId`).
-- Làm: `stair_section_annotate {parts:["LA5"], la5Auto:true, la5RailingIds:[P02…], la5TargetMm:1200, la5LeftX, la5RightX}` (tự dò tham chiếu đỉnh tay vịn, chọn giá trị gần 1200 nhất và có vẽ). Giá trị lệch xa 1200 (vd. 1188, 1329) → kiểm bằng `rail_top_at`; không chắc thì không đặt, hỏi user.
+- Làm: `stair_section_annotate {parts:["LA5"], la5RailingIds:[P02…], la5TargetMm:1200, la5LeftX, la5RightX}` (LA5 nằm trong `parts` mặc định, `la5Auto` mặc định bật; chiếu nghỉ đã có dim tay vịn → bỏ qua) (tự dò tham chiếu đỉnh tay vịn, chọn giá trị gần 1200 nhất và có vẽ). Giá trị lệch xa 1200 (vd. 1188, 1329) → kiểm bằng `rail_top_at`; không chắc thì không đặt, hỏi user.
 - Kiểm: `stair_section_info` báo `LA5: landing … missing (mandatory)` cho từng chiếu nghỉ thiếu.
 - **Tay vịn gắn tường P01 thấy rõ dọc chiếu nghỉ → thêm dim cao độ P01** (user, 2026-10-08): mỗi chiếu nghỉ bị cắt có đoạn P01 nằm ngang (gắn tường, nhìn thấy trên mặt cắt) có thêm một dim **mặt chiếu nghỉ → đỉnh tay vịn P01** (mẫu `900`), tham chiếu **Handrails** của P01 (không phải Top Rail), ngoài dim 1200 của P02. Đặt trên đoạn P01 thấy rõ, tách cột với dim 1200: chiếu nghỉ sát tường đối diện vế → cách dim 1200 khoảng 230–300 mm về phía tường; chiếu nghỉ phía kia → sát tường (cách mép tường HT ~500 mm). Có cả trên chiếu nghỉ đã có dim 1200.
 
-- Từ **mũi bậc / mặt chiếu nghỉ** lên **đỉnh tay vịn** (mẫu `900`, ở cuối vế, sát chiếu nghỉ).
 - Mẫu user 2026-10-08 (thang một nhánh, lan can trong 1200): **mỗi chiếu nghỉ một dim** từ mặt chiếu nghỉ lên đỉnh tay vịn trên cùng của lan can, đoạn chạy dọc mép chiếu nghỉ (vuông góc mặt cắt) → `1200`; dim đặt trên chiếu nghỉ, gần mép vế. Tay vịn ống nghiêng gắn tường không có đoạn ngang → không dim.
 - ~~Tối thiểu một dim đại diện mỗi mặt cắt~~ (bỏ, 2026-10-08): thay bằng quy tắc bắt buộc mỗi chiếu nghỉ ở trên. Chiều cao lan can chiếu nghỉ khác tay vịn vế → thêm một dim cho lan can chiếu nghỉ.
 
@@ -140,7 +139,7 @@ Mặt cắt dọc thang bộ, 1:50, bốn vế từ LEVEL 0 lên tới chiếu n
 | LA2 (trái) | `1500 \| 5000 \| 4000` |
 | LA3 | `… \| 280mm x 15T = 4200 (EQUAL TREADS) \| …`, một chuỗi mỗi vế |
 | LA4 | `2495`, `2325`, `2495` hai bên |
-| LA5 | `900` |
+| LA5 | `900` (ảnh mẫu; quy tắc hiện hành: mỗi chiếu nghỉ bị cắt — xem LA5) |
 | LB1 | `From EL +0 To EL +2710 / 169.4mm x 16R` … `From EL +7960 To EL +10500 / 169.4mm x 15R` |
 | LB2–LB6 | `P01` · `2710`, `5250`, `7960` · `F13` · `C09` · cửa `44`, `18` |
 | LC | 1, 3, 5 … 51 |
@@ -153,7 +152,7 @@ Mặt cắt dọc thang bộ, 1:50, bốn vế từ LEVEL 0 lên tới chiếu n
 | LA6 | dưới: `160 \| 6930 \| 770 \| 160` (mép ngoài tường → mép HT → trục → mép HT → mép ngoài) + tổng `8020`; **trên đỉnh** mặt cắt thêm một chuỗi `1915 \| 5175 \| 930` + `8020` vì tường tầng trên khác tường tầng dưới. |
 | LA2 | không chỉ level → level: chuỗi đi qua **ký hiệu cao độ cắt của các mặt bằng chi tiết thang** (Generic Annotation tam giác đánh số 1…7, nét đứt ngang lõi, đặt ở level + 1500 …) → `1500 \| 5000 \| 4000 \| 1500 \| 4000 \| 2800 …`; tổng toàn chiều cao ở cả hai phía. |
 | LA4 | một cột đứng mỗi bên (cùng toạ độ ngang cho mọi tầng), mặt chiếu nghỉ → đáy chiếu nghỉ / đáy vế ngay trên. |
-| LA5 | `900` ở đầu trên **mỗi vế bị cắt** (không chỉ một dim đại diện). |
+| LA5 | `900` ở đầu trên **mỗi vế bị cắt** (không chỉ một dim đại diện) → nay chốt: **mỗi chiếu nghỉ bị cắt** (mục LA5). |
 | LB4 / LB5 | `F13` / `C09` là **Generic Annotation** (ô chữ, cùng family với tag hoàn thiện tường), không phải IndependentTag. |
 
 ## Kiểm tra sau khi làm
@@ -195,3 +194,4 @@ Mặt cắt dọc thang bộ, 1:50, bốn vế từ LEVEL 0 lên tới chiếu n
 - 2026-10-08 (user: "point của tag sàn, trần chỉ sai vị trí"): **chấm đầu leader** của F.. phải nằm đúng **mặt trên** chiếu nghỉ / sàn, của C.. đúng **đáy** chiếu nghỉ / sàn; leader thứ hai (ngang) của C.. chạm **đáy nghiêng của vế** ở đúng độ cao đầu ô. Ô chép từ tầng khác thường lệch 10–115 mm → luôn chạy `finish_marks_snap` (survey) sau khi đặt/chép.
 - 2026-10-08 (user: "điều chỉnh lại tag tay vịn cho đúng"): mỗi **vế bị cắt** một tag P02 ở **đầu dưới vế** (x = mũi bậc đầu − 30), leader **thẳng đứng** chạm **đỉnh tay vịn** (`rail_top_at`), đầu tag cao hơn 333–450 mm (tránh đường dim); bỏ tag P01 khi P01 bị P02 che; không tag giữa vế với leader gãy.
 - 2026-10-08 (user bổ sung tay trên mặt cắt dọc thang một nhánh, chiếu nghỉ có tay vịn gắn tường P01 thấy rõ): (1) thêm **tag P01** (đầu tag trên đỉnh P01 ~230 mm, leader đứng) ở chiếu nghỉ không có tag P02 gần đó, và **dim 900** mặt chiếu nghỉ → đỉnh tay vịn P01 (tham chiếu Handrails) ở **mọi** chiếu nghỉ bị cắt, cạnh dim 1200 của P02; (2) **tag cửa trên mặt cắt luôn có leader**: cửa nhìn chính diện → leader đứng vào cửa; cửa nằm trong tường bị cắt (tool `elevation_opening_tags` không thấy) → tag ngoài tường, leader ngang vào cửa ở giữa chiều cao. Trước khi báo xong: liệt kê cửa của các tường bị cắt (room/level của lõi) và kiểm từng cửa có tag.
+- 2026-10-12 (user: "đã yêu cầu luôn có chiều cao lan can tay vịn nhưng vẫn làm thiếu"): nguyên nhân — `stair_section_annotate` mặc định **không chạy LA5** (không có trong `parts` mặc định, header không nhắc LA5, cần `la5Auto:true` mới chạy, thiếu thì im lặng), lệnh mẫu trong skill bỏ `LA5`, bảng bố trí còn ghi "một chỗ đại diện". Đã sửa: LA5 trong `parts` mặc định, `la5Auto` mặc định bật, bỏ qua chiếu nghỉ đã có dim; `stair_section_info` liệt kê mọi dim tay vịn của từng chiếu nghỉ và nhắc dim P01 900.

@@ -34,14 +34,16 @@ Stop and ask when: no host stairs (link); `LC:` model mismatch; no run tag type 
 ```
 stair_section_annotate {viewId, mode:"preview", dimTypeName:<check type>, la1LineMm,
   runTagTypes:[{fromMm, type}], spotTypeName, numberSourceId:<a finished NumberSystem>,
-  parts:["LA1","LA3","LA4","LB1","LB3","LC"], items:[{part, flight|landing, x, z}]}
+  la5TargetMm:1200, la5RailingIds:[<P02…>], la5LeftX, la5RightX,
+  parts:["LA1","LA3","LA4","LA5","LB1","LB3","LC"], items:[{part, flight|landing, x, z}]}
 ```
+**Never drop `LA5` from `parts`.** Without `parts` the tool runs all of them, LA5 included (`la5Auto` is on unless `la5FromDimId` is given); landings that already have a rail dim are skipped.
 Read `Done` (texts, values, positions) → same with `mode:"apply", logPath` → `view_elem_boxes` on the new ids (Box ≠ null) → export the view image. Undo: `mode:"undo", logPath`.
 
 - References are taken on the **Stairs** element (run / landing 3D faces are hidden: dims on them are created but not drawn); level plane where no landing.
 - Formula text on riser numbers or on the flight → `dims_text_move` (alongMm) into the free space under the flight, clear of the witness lines.
 - Layout that worked (1:50): LA3 line at 30 % of the flight height, run tag head at 8 % with a horizontal leader to the soffit; LA1 300 mm inside an existing overall dim; spots on the landing away from the F.. box.
-- **LA5 is MANDATORY on every cut landing** (user, 2026-10-08): landing top → top of the rail along the landing edge (P02 → 1200). `la5Auto:true, la5RailingIds, la5TargetMm:1200, la5LeftX, la5RightX` finds the rail reference without a sample; values far from the nominal height → check with `rail_top_at`, do not place when unsure, ask the user for one hand dim (`la5FromDimId`). `stair_section_info` lists every landing without it — never report a section done while one is missing. Rails often have no straight line in the API geometry: ask the user for ONE hand dim, then `parts:["LA5"], la5FromDimId:<that dim>, la5IndexFrom, la5IndexTo, items:[{part:"LA5", landing, x}]` reuses its rail reference with other indices until the value matches and the dim is drawn. Landings listed with `x` only; `skip:true` for the ones the user dimmed.
+- **LA5 is MANDATORY on every cut landing** (user, 2026-10-08): landing top → top of the rail along the landing edge (P02 → 1200). `la5RailingIds, la5TargetMm:1200, la5LeftX, la5RightX` (auto by default) finds the rail reference without a sample; an `Errors` line `LA5 …` = that landing has no dim yet → fix it now, do not move on; values far from the nominal height → check with `rail_top_at`, do not place when unsure, ask the user for one hand dim (`la5FromDimId`). `stair_section_info` lists every landing without it — never report a section done while one is missing. Rails often have no straight line in the API geometry: ask the user for ONE hand dim, then `parts:["LA5"], la5FromDimId:<that dim>, la5IndexFrom, la5IndexTo, items:[{part:"LA5", landing, x}]` reuses its rail reference with other indices until the value matches and the dim is drawn. Landings listed with `x` only; `skip:true` for the ones the user dimmed.
 - **Wall handrail P01 seen along a landing** (a horizontal run on the wall, not hidden by P02): add a second rail dim on every cut landing, landing top → top of the P01 **handrail** (`900`), next to the 1200 dim (230–300 mm toward the wall, or ~500 mm from the wall finish on the other side). `la5Auto` only reads top rails: take the P01 handrail reference from a hand dim (`la5FromDimId`, `la5TargetMm:900`) or ask for one.
 - **LB2** railing tags (skip a rail hidden behind a bigger one, e.g. a wall handrail behind the 1200 railing): `annot_place` (kind tag, the railing tag type used in the project, orthogonal leader); view-frame `up` = elevation + the frame offset of the view (a level's witness in `view_dims_snapshot`). A P01 seen along a landing gets its own tag (head ~230 mm above the rail, vertical leader), on the landings without a P02 tag nearby.
 - **LB1** tags and **LC** numbers only on **cut** flights (user, 2026-10-08). **LA3** counts T = R − 1 (top tread level with the landing belongs to the landing segment), as the plan.
@@ -55,7 +57,7 @@ The manual reference notes below stay for cases the tool does not cover:
    | LA1 rise chain | top faces of the landings / floors (`HostObjectUtils.GetTopFaces` for floors; landing geometry with `Options{ComputeReferences=true, View=v}`), or the level when the finish floor sits on it |
    | LA3 going chain | wall finish faces, first / last riser faces of the cut flight (vertical planar faces normal to the view's right direction) |
    | LA4 clear height | landing top face → soffit face of the landing / flight above |
-   | LA5 handrail | nosing line or landing top → top face of the handrail (`railing.TopRail` / `GetHandRails()` geometry) |
+   | LA5 handrail | landing top → top of the rail along the landing edge (`railing.TopRail` symbol reference; P01: `GetHandRails()`), one per cut landing |
    | LA6 | `new Reference(grid)`, wall side faces, door `FamilyInstanceReferenceType.Left / Right` |
    Placement per the standard's table: LA1 outside one wall, LA2 outside the other, LA3 at mid-height of each cut flight, LA4 inside the core next to the walls, LA6 below the section.
 3. **Text**: set the formulas with `dims_text`:
@@ -75,10 +77,10 @@ The manual reference notes below stay for cases the tool does not cover:
 
 ## 4. Verify and report
 
-1. `stair_section_info` again → every `Dims` row `OK`, no `Issues` left except those the user accepted.
+1. `stair_section_info` again → every `Dims` row `OK` (**LA5: one row per cut landing**), no `Issues` left except those the user accepted. A `Notes` line `LA5: landing … one rail dim` → if a wall handrail P01 is seen along that landing, add its 900 dim.
 2. `annotation_overlaps {viewId}`.
 3. Export the sheet image and compare with the standard's sample (`drafting-visual-check`).
-4. Report per `drafting-session`: exact view name; table per flight (tag, rise dim, going dim, numbers); **Cần xem** (unreadable sample values, LA4 CLEAR yes/no); **Việc tồn**.
+4. Report per `drafting-session`: exact view name; table per flight (tag, rise dim, going dim, numbers); table per cut landing (LA5 values: 1200, + 900 where P01 is seen); **Cần xem** (unreadable sample values, LA4 CLEAR yes/no); **Việc tồn**.
 
 ## Never
 
@@ -87,4 +89,5 @@ The manual reference notes below stay for cases the tool does not cover:
 - Add a stair path to a section.
 - Put LA1 and LA2 on the same side, or dim one chain on both sides.
 - Number the risers of a flight seen beyond.
+- Report a section done while a cut landing has no LA5 rail-height dim.
 - Edit stairs, railings, floors or walls (R1).

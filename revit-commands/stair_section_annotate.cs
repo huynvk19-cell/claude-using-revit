@@ -1,13 +1,13 @@
 /* mcp-tool
 {
-  "description": "ONE stair section along the flights: LA1 rise chain, LA3 going chains, LA4 clear heights, LB1 run tags, LB3 landing spots, LC riser numbers. preview | apply | undo.",
+  "description": "ONE stair section along the flights: LA1 rise chain, LA3 going chains, LA4 clear heights, LA5 rail heights, LB1 run tags, LB3 landing spots, LC riser numbers. preview | apply | undo.",
   "inputSchema": {
     "type": "object",
     "properties": {
       "viewId": { "type": "number" },
       "mode": { "type": "string", "enum": ["preview", "apply", "undo"] },
       "logPath": { "type": "string" },
-      "parts": { "type": "array", "items": { "type": "string" }, "description": "LA1 LA3 LA4 LB1 LB3 LC (default all)" },
+      "parts": { "type": "array", "items": { "type": "string" }, "description": "LA1 LA3 LA4 LA5 LB1 LB3 LC (default all)" },
       "dimTypeName": { "type": "string" },
       "la1Side": { "type": "string", "enum": ["left", "right"], "description": "default right" },
       "la1LineMm": { "type": "number", "description": "view x of the LA1 dim line (default outer wall face + 800)" },
@@ -18,7 +18,7 @@
       "spotTypeName": { "type": "string" },
       "numberSourceId": { "type": "number", "description": "a NumberSystem whose settings are copied" },
       "excludeStairIds": { "type": "array", "items": { "type": "number" }, "description": "stairs seen in the view but not part of this core" },
-      "la5Auto": { "type": "boolean", "description": "LA5 without a sample dim: rail refs found from the top rails" },
+      "la5Auto": { "type": "boolean", "description": "LA5 without a sample dim (default true): rail refs from the top rails" },
       "la5LeftX": { "type": "number" }, "la5RightX": { "type": "number" },
       "la5RailingIds": { "type": "array", "items": { "type": "number" }, "description": "LA5 auto: only these railings" },
       "la5TargetMm": { "type": "number", "description": "LA5: nominal rail height (1200 / 900), nearest wins" },
@@ -42,6 +42,9 @@
 //       'depth x T = ' + below '(EQUAL TREADS)'; line at mid-height of the flight.
 //  LA4  per landing (cut or seen beyond) and floor slab at the side column: top -> soffit of the next slab above on the
 //       same side; vertical columns la4InsetMm inside the inner wall faces.
+//  LA5  (mandatory) per cut landing: landing top -> top of the rail along the landing edge, nearest la5TargetMm;
+//       la5FromDimId reuses the rail reference of a hand dim, else la5Auto (default) reads the top rails. Landings
+//       that already have a rail dim (within 50 of la5TargetMm or the hand dim value, else any rail dim) are skipped.
 //  LB1  run tag under each cut flight (tagFlights 'all': also the flights beyond), head beside the soffit, one
 //       horizontal leader to the soffit; tag type from runTagTypes by the flight base elevation.
 //  LB3  spot elevation on each cut landing top without a spot yet, near the flight end.
@@ -119,7 +122,7 @@ public static class StairSectionAnnotate
         V = doc.GetElement(new ElementId(args.Value<int>("viewId"))) as View;
         if (V == null || V.ViewType != ViewType.Section) return new { Error = "viewId must be a section view" };
         O = V.Origin; Rg = V.RightDirection; Vd = V.ViewDirection;
-        var parts = args["parts"] != null ? ((JArray)args["parts"]).Select(x => ((string)x).ToUpper()).ToList() : new List<string> { "LA1", "LA3", "LA4", "LB1", "LB3", "LC" };
+        var parts = args["parts"] != null ? ((JArray)args["parts"]).Select(x => ((string)x).ToUpper()).ToList() : new List<string> { "LA1", "LA3", "LA4", "LA5", "LB1", "LB3", "LC" };
         var errors = new List<string>(); var done = new List<object>(); var created = new List<int>();
 
         // ---- flights and landings (as stair_section_info)
@@ -352,7 +355,7 @@ public static class StairSectionAnnotate
             //      hand dim (la5FromDimId: value to match) or, without one, from the top rails of la5RailingIds / every railing in
             //      the view (la5Auto: the highest value within la5MinMm..la5MaxMm that is drawn). Landings: items {part:'LA5',
             //      landing, x} (x of the dim line), else every cut landing at la5LeftX / la5RightX.
-            if (parts.Contains("LA5") && (args["la5FromDimId"] != null || (bool?)args["la5Auto"] == true))
+            if (parts.Contains("LA5") && (args["la5FromDimId"] != null || (bool?)args["la5Auto"] != false))   // auto unless la5Auto:false
             {
                 var heads = new List<string>(); double want = double.NaN;
                 double vMin = (double?)args["la5MinMm"] ?? 850, vMax = (double?)args["la5MaxMm"] ?? 1400; double? target = (double?)args["la5TargetMm"];   // nominal rail height (e.g. 1200): nearest wins
@@ -378,9 +381,20 @@ public static class StairSectionAnnotate
                 if (heads.Count == 0) errors.Add("LA5: no rail reference head (no sample dim / no top rail with a symbol instance)");
                 int n0 = args["la5IndexFrom"] != null ? (int)args["la5IndexFrom"] : 1, n1 = args["la5IndexTo"] != null ? (int)args["la5IndexTo"] : 1500;
                 double inset = 300, cx5 = wl != null && wr != null ? (wl.X0 + wr.X0) / 2 : 0;
+                double? tgt5 = target ?? (double.IsNaN(want) ? (double?)null : want);   // existing dim of this height = done
+                var railCats5 = new HashSet<int> { (int)BuiltInCategory.OST_RailingTopRail, (int)BuiltInCategory.OST_RailingHandRail, (int)BuiltInCategory.OST_StairsRailing };
+                var railDims5 = new List<Tuple<int, double, double, double>>();   // existing rail dims: id, lower z mm, x mm, value mm
+                foreach (var d in new FilteredElementCollector(doc, V.Id).OfClass(typeof(Dimension)).Cast<Dimension>())
+                {
+                    if (d is SpotDimension || d.NumberOfSegments > 1 || d.Value == null || !(d.Curve is Line ln5) || Math.Abs(ln5.Direction.DotProduct(XYZ.BasisZ)) < 0.999) continue;
+                    bool rail = false; foreach (Reference r in d.References) { var e = doc.GetElement(r.ElementId); if (e?.Category != null && railCats5.Contains(e.Category.Id.IntegerValue)) rail = true; }
+                    if (rail) railDims5.Add(Tuple.Create(d.Id.IntegerValue, (d.Origin.Z - ElOff - d.Value.Value / 2) * MM, VX(d.Origin), d.Value.Value * MM));
+                }
                 foreach (var l in lds.Where(x => x.Cut))
                 {
                     var o5 = Ov("LA5", Num(l.Z)); if (o5 != null && (bool?)o5["skip"] == true) continue;
+                    var had = railDims5.FirstOrDefault(r => Math.Abs(r.Item2 - l.Z) < 10 && r.Item3 > l.X0 - 400 && r.Item3 < l.X1 + 400 && (tgt5 == null || Math.Abs(r.Item4 - tgt5.Value) < 50));
+                    if (had != null) { done.Add(new { Part = "LA5", Landing = Num(l.Z), Skipped = "has rail dim " + had.Item1 + " (" + Math.Round(had.Item4) + ")" }); continue; }
                     double x;
                     if (o5 != null && o5["x"] != null) x = (double)o5["x"];
                     else if ((l.X0 + l.X1) / 2 < cx5 && args["la5LeftX"] != null) x = (double)args["la5LeftX"];

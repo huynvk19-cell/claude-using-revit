@@ -159,9 +159,11 @@ public static class StairSectionInfo
         }
         foreach (var cl in cutLand.OrderBy(c => c.Item1))
         {
-            var hit = railDims.FirstOrDefault(r => Math.Abs(r.Item2 - cl.Item1) * MM < 10 && r.Item3 > cl.Item2 - 400 && r.Item3 < cl.Item3 + 400);
-            dimCheck.Add(new { Landing = Num(cl.Item4), Rule = "LA5", Text = "rail height", Status = hit == null ? "missing" : "OK " + Math.Round(hit.Item4), DimId = hit?.Item1 });
+            var hits = railDims.Where(r => Math.Abs(r.Item2 - cl.Item1) * MM < 10 && r.Item3 > cl.Item2 - 400 && r.Item3 < cl.Item3 + 400).ToList();
+            var hit = hits.FirstOrDefault();
+            dimCheck.Add(new { Landing = Num(cl.Item4), Rule = "LA5", Text = "rail height", Status = hit == null ? "missing" : "OK " + string.Join(" + ", hits.Select(r => Math.Round(r.Item4))), DimId = hit?.Item1, DimIds = hits.Select(r => r.Item1).ToList() });
             if (hit == null) issues.Add("LA5: landing " + Num(cl.Item4) + ": rail height dim missing (mandatory)");
+            else if (hits.Count == 1) notes.Add("LA5: landing " + Num(cl.Item4) + ": one rail dim (" + Math.Round(hit.Item4) + "); a wall handrail seen along this landing needs its own dim (900)");
         }
 
         // tags and numbers per flight
