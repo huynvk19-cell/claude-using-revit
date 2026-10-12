@@ -16,6 +16,7 @@ metadata:
 
 **Cách gọi**
 - Gọi trực tiếp tool `<tên>`, hoặc qua `run_dynamic_command {name, args}`.
+- Claude Code hoãn nạp tool MCP (tool search): đầu việc nạp mọi lệnh ở dòng **Tools** của skill trong **một** lần ToolSearch (`select:` + tên đầy đủ `mcp__<server>__<tên>`).
 - Khi không chắc tham số: đọc header của file (`/* mcp-tool */`) và comment `// ---- Details` ngay dưới nó (giải thích đầy đủ).
 - Ký hiệu: RO = read-only; **1V** = mỗi lần gọi chỉ một view.
 

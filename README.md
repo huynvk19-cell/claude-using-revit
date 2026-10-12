@@ -10,8 +10,9 @@ Skills and domain standards that let Claude Code, via Revit MCP, do drawing prod
 |---|---|---|
 | `skills/` | Quy trình từng bước, ngắn, mỗi skill một chủ đề | English |
 | `domain/` | Quy chuẩn bản vẽ: con số, vị trí, ngoại lệ, bẫy API | Tiếng Việt + thuật ngữ Revit |
+| `agents/` | Subagent `drafting-visual-checker`: đọc ảnh kiểm tra, chỉ trả lời bằng chữ (ảnh không ở lại trong hội thoại chính) | English |
 | `templates/drafting-profile.md` | Giá trị riêng của từng dự án (dim type, model cấm chạm, view loại trừ…) | Tiếng Việt |
-| `revit-commands/` | 81 lệnh động (dynamic commands) C# cho Revit MCP: dim, tag, title, viewport, crop, lõi thang, dim bám tay vịn, filled region cột theo kết cấu, mặt cắt dọc thang (dim, tag, số bậc, cao độ tay vịn, ô hoàn thiện), kiểm tra mặt cắt ngang thang, kiểm tra chồng lắp… Không chứa giá trị riêng dự án | C# |
+| `revit-commands/` | 85 lệnh động (dynamic commands) C# cho Revit MCP: dim, tag, title, viewport, crop, lõi thang, dim bám tay vịn, filled region cột theo kết cấu, mặt cắt dọc thang (dim, tag, số bậc, cao độ tay vịn, ô hoàn thiện), kiểm tra mặt cắt ngang thang, kiểm tra chồng lắp… Không chứa giá trị riêng dự án | C# |
 | `tools/crop.ps1` | Cắt vùng ảnh sheet để kiểm tra | PowerShell |
 | `tools/work-status/` | Cửa sổ "Đang xử lý" luôn nổi trên màn hình (tuỳ chọn) | PowerShell |
 
@@ -69,6 +70,7 @@ powershell -ExecutionPolicy Bypass -File install.ps1 -CommandsDir "<đường d�
 
 Lệnh trên copy:
 - `skills/*` vào `~/.claude/skills/`
+- `agents/*.md` vào `~/.claude/agents/`
 - `domain/`, `templates/`, `tools/` vào `~/.claude/drafting-domain/`
 - `revit-commands/*.cs` vào thư mục dynamic-commands của Revit MCP (nếu có `-CommandsDir` hoặc biến môi trường `REVIT_MCP_COMMANDS`)
 - `-WorkStatus`: script cửa sổ trạng thái vào `%USERPROFILE%\Tools\WorkStatus`
@@ -79,16 +81,21 @@ Mỗi dự án cần một file `drafting-profile.md`: copy từ `templates/` v�
 
 ## Tiết kiệm token (Token use)
 
-Mỗi bước Claude gọi tool, **toàn bộ danh sách tool** được gửi lại cho model. Danh sách càng dài, mỗi bước càng tốn.
+Mỗi bước Claude gọi tool, toàn bộ phần đầu phiên (danh sách tool, mô tả skill, CLAUDE.md) và hội thoại được gửi lại cho model. Phần cố định càng dài, mỗi bước càng tốn; hội thoại càng dài (kết quả lệnh, ảnh), mỗi bước sau càng tốn.
 
-| Phần | Trước | Sau | Cách |
+| Phần | Tốn (mỗi bước) | Cách giảm | Trạng thái |
 |---|---|---|---|
-| 72 lệnh của repo này (header `mcp-tool`) | ~16.1k token (64.3k ký tự JSON) | ~9.9k token (39.7k ký tự) | **B (đã làm)**: mô tả trong header còn 1–2 dòng, mô tả tham số ≤ 80 ký tự; giải thích đầy đủ chuyển xuống comment `// ---- Details` ngay dưới header (MCP không gửi phần này) |
-| Tool có sẵn của Revit MCP (profile `full`, 192 tool) | ~36.6k token | ~2.7k token (26 tool) | **A (cần làm trên máy)**: profile `drafting` |
+| Tool có sẵn của Revit MCP (profile `full`, 192 tool) | ~36.6k token nếu nạp sẵn; chỉ tên (~1.5k) khi tool search bật | **A**: profile `drafting` (26 tool) | cần làm trên máy |
+| 85 lệnh của repo (header `mcp-tool`) | ~11.8k token nếu nạp sẵn; chỉ tên (~0.8k) khi tool search bật; mỗi lệnh đã nạp ~140 token | **B**: header ngắn, giải thích ở `// ---- Details` | đã làm |
+| Tool search của Claude Code | — | **C**: giữ bật (mặc định), kiểm tra bằng `/context` | kiểm tra trên máy |
+| Nạp lệnh từng cái một (mỗi lần một lượt) | 1 lượt / lệnh | **D**: dòng **Tools** trong mỗi skill → nạp hết trong 1 lần ToolSearch | đã làm |
+| Mô tả skill (gửi mỗi request) | 6.8k → 5.3k ký tự | mô tả ngắn, luật nằm trong thân skill | đã làm |
+| Ảnh kiểm tra (mỗi ảnh ~1.5–2k token, ở lại trong hội thoại) | theo số ảnh | **E**: subagent `drafting-visual-checker` (Sonnet) đọc ảnh, chỉ trả chữ | đã làm |
+| Kết quả lệnh | theo lệnh | **F**: mặc định ngắn (số lượng + lỗi), chi tiết sau cờ `verbose`/`detail` | luật cho lệnh mới (`CLAUDE.md`) |
 
 ### A — Profile `drafting` cho Revit MCP
 
-Revit MCP chọn nhóm tool có sẵn theo biến môi trường `MCP_PROFILE` (`full` mặc định, `architect`, `mep`, `structural`, `fire-safety`). Bộ skill drafting chỉ cần nhóm cơ bản (`get_active_view`…) và các lệnh động.
+Revit MCP chọn nhóm tool có sẵn theo biến môi trường `MCP_PROFILE` (`full` mặc định, `architect`, `mep`, `structural`, `fire-safety`). Bộ skill drafting chỉ cần nhóm cơ bản (`get_active_view`…) và các lệnh động. Khi tool search bật, profile vẫn có lợi: danh sách tên ngắn hơn, ToolSearch ít trả nhầm tool không liên quan.
 
 1. Áp patch `tools/revit-mcp/drafting-profile.patch` vào thư mục Revit MCP (thêm profile `drafting: [baseTools]` trong `MCP-Server/src/tools/index.ts`), rồi build lại: `cd MCP-Server && npm run build`.
 2. Thêm `MCP_PROFILE` vào cấu hình MCP của Claude:
@@ -100,6 +107,28 @@ Revit MCP chọn nhóm tool có sẵn theo biến môi trường `MCP_PROFILE` (
    - Đặt `drafting` mà **chưa** áp patch → Revit MCP tự quay về `full` (không hỏng, chỉ không tiết kiệm).
 4. Việc cần tool khác (MEP, room, tạo view…) → đổi lại `MCP_PROFILE` = `architect` hoặc `full`.
 
+### C — Tool search (Claude Code)
+
+Claude Code bản mới **mặc định** hoãn nạp tool MCP: đầu phiên chỉ gửi tên tool, schema chỉ nạp khi Claude tìm (ToolSearch). Nó tự tắt (nạp sẵn mọi tool, ~48k token mỗi bước) khi:
+- `ANTHROPIC_BASE_URL` trỏ tới proxy không phải của Anthropic → đặt `"ENABLE_TOOL_SEARCH": "true"` trong `env` của `~/.claude/settings.json` (chỉ khi proxy hỗ trợ `tool_reference`);
+- có `ENABLE_TOOL_SEARCH=false` hoặc `CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS`;
+- model cũ hơn thế hệ 4.5.
+
+Kiểm tra: gõ `/context` trong phiên có Revit MCP. Tool MCP phải hiện là deferred (hoãn), không chiếm hàng chục nghìn token. Nếu cấu hình `revit-mcp` có `"alwaysLoad": true` thì bỏ đi. Cập nhật Claude Code (`claude update`) nếu bản cũ.
+
+Dự phòng khi không bật được tool search: cho Revit MCP chỉ đăng ký một tool `run_dynamic_command {name, args}` thay vì mỗi lệnh một tool (sửa trong bản Revit MCP riêng của bạn); Claude tra tham số trong `drafting-tools.md` và header `.cs`.
+
+### Cách làm việc ít token
+
+- **Model**: việc đã có skill (chạy lại quy trình quen) → `/model sonnet`; chủ đề mới, viết lệnh C# mới → Opus.
+- **Một chủ đề một phiên**: đổi chủ đề → `/clear`. Trạng thái nằm ở `TASKS.md`, `log/`, `drafting-profile.md`, không cần kéo hội thoại dài rồi `/compact`.
+- **Lệnh một phát**: mỗi chủ đề nên có một lệnh làm cả khảo sát → áp dụng → kiểm tra (như `stair_plan_annotate`, `grid_dims_band`), mỗi view chỉ còn vài lần gọi: preview, apply, kiểm tra.
+- **Chạy hàng loạt không cần ngồi canh** (máy có Revit đang mở, từng phiên một vì Revit API chỉ chạy một luồng):
+  ```powershell
+  claude -p "Dùng skill drafting-grid-dims cho các view <danh sách>. Ghi log, báo cáo Việc tồn." --model sonnet --allowedTools "mcp__revit-mcp" "Read" "Edit" "Write" "Grep" "Glob" "Agent"
+  ```
+  `mcp__revit-mcp` cho phép mọi tool của server `revit-mcp` (đổi theo tên server trong cấu hình của bạn). Sáng hôm sau xem log và ảnh.
+
 ## Cập nhật bài học (Keeping it alive)
 
 Mỗi lần user sửa lại kết quả của Claude, ghi bài học thành **một dòng có ngày**:
@@ -108,5 +137,7 @@ Mỗi lần user sửa lại kết quả của Claude, ghi bài học thành **m
 |---|---|
 | Đúng cho mọi dự án | file `domain/` tương ứng → commit lên repo này |
 | Chỉ đúng cho dự án đang làm | `drafting-profile.md` của dự án đó (không đưa lên repo) |
+
+Bài học đã được một lệnh tự bảo đảm, hoặc đã gộp vào một quy tắc của chuẩn → xoá dòng bài học đó (chuẩn càng ngắn, mỗi việc càng ít token).
 
 Không đưa tên khách hàng, tên model, số sheet hay đường dẫn máy vào repo này.

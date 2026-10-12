@@ -5,9 +5,12 @@ description: "Verify Revit drawing changes visually: export sheets to PNG, crop 
 
 # Visual check
 
+**Tools** (load all in one ToolSearch call): `annotation_overlaps`, `export_sheet_images`, `highlight_elements`.
+
 1. **Export:** `export_sheet_images {sheetNumbers:[...], folder:<temp>\<topic>, pixelWidth:8000}`.
-2. **Read the full sheet once** (it displays at about 2000 px).
-3. **Crop the areas of interest:**
+2. **Hand the images to the `drafting-visual-checker` subagent** (Agent tool): give it the PNG paths, what changed and the topic's checklist (step 5). It reads and crops the images and replies with a short fault list, so the images never enter the main conversation. Read an image yourself only to confirm one fault it reports, cropped to that spot.
+   - Without the subagent (not installed): read the full sheet once (it displays at about 2000 px), then crop as in step 3.
+3. **Crop the areas of interest** (the subagent does this itself):
    ```
    ~/.claude/drafting-domain/tools/crop.ps1 -In <png> -Out <png> -Cx 0.5 -Cy 0.5 -W 0.3 -H 0.15
    ```
@@ -22,5 +25,5 @@ description: "Verify Revit drawing changes visually: export sheets to PNG, crop 
    - duplicates of existing dims;
    - titles that are off-centre or overlapping;
    - grid bubbles that overlap.
-6. **Fix, re-export only the affected sheet, and look again.**
+6. **Fix, re-export only the affected sheet or view, and check again** (subagent again).
 7. **Report what you could not fix** under "Cần xem".

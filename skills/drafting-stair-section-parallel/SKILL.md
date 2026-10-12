@@ -1,9 +1,11 @@
 ---
 name: drafting-stair-section-parallel
-description: "Detail a stair SECTION cut parallel to the stair path (longitudinal section along the flights, NOT a plan, NOT a cross-section) via Revit MCP, rules LA–LC: flight-height dims '169.4mm x 16R = 2710 (EQUAL RISERS)', level-to-level dims, flight-going dims '280mm x 15T = 4200 (EQUAL TREADS)', clear height under landings, handrail height, wall/door chains to grids; run tags 'From EL … To EL … / 169.4mm x 16R', railing tags, spot elevations on every landing, floor finish (F..) and landing soffit (C..) tags, door tags; riser numbers continuous over the stair, from the model. Use for mặt cắt thang, mặt cắt dọc thang, mặt cắt cầu thang, chi tiết mặt cắt thang, dim chiều cao vế, EQUAL RISERS, cổ bậc, tag vế trên mặt cắt, staircase section, stair section."
+description: "Detail a stair SECTION cut parallel to the stair path (longitudinal, along the flights; NOT a plan, NOT a cross-section) via Revit MCP, rules LA–LC: flight heights (EQUAL RISERS), levels, flight goings, clear height under landings, handrail height; run, railing, F../C.. tags, spot elevations; riser numbers. Use for mặt cắt thang, mặt cắt dọc thang, mặt cắt cầu thang, dim chiều cao vế, cổ bậc, tag vế trên mặt cắt, stair section."
 ---
 
 # Stair section parallel to the stair path (LA–LC)
+
+**Tools** (load all in one ToolSearch call): `annot_place`, `annotation_overlaps`, `dims_text`, `dims_text_move`, `elevation_opening_tags`, `level_dims_add`, `rail_top_at`, `stair_section_annotate`, `stair_section_info`, `view_dims_snapshot`, `view_elem_boxes`.
 
 **Section views cut along the flights only.** Plans → `drafting-stair-plan`. A section cut across the flights (flights seen end-on) → `drafting-stair-section-cross`.
 

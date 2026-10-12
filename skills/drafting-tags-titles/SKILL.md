@@ -5,6 +5,8 @@ description: "Room tags (outside room, showing ?), and viewport titles on sheets
 
 # Tags and titles
 
+**Tools** (load all in one ToolSearch call): `room_tags_broken`, `room_tags_outside`, `viewport_title_audit`, `viewport_titles_place`.
+
 Standards: `~/.claude/drafting-domain/drafting-annotation.md`.
 
 ## Door/window tags
