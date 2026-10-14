@@ -5,6 +5,8 @@ description: "Ground rules + start/end routine for any Revit drafting work throu
 
 # Drafting session
 
+**Tools** (load all in one ToolSearch call): `annotation_overlaps`, `dims_text`, `export_sheet_images`, `hello_revit`, `ui_view_focus`, `view_elem_boxes`.
+
 Read first (only these two):
 - `~/.claude/drafting-domain/drafting-work-rules.md` (Vietnamese).
 - The project's `drafting-profile.md`, found in the project root or its `domain/`.
@@ -34,6 +36,7 @@ Do **not** read the whole `drafting-domain/` folder or every skill. Pick the tas
 - `drafting-tools.md` and `drafting-api-pitfalls.md` are look-up lists: search them for the one command or symptom you need (`grep`). Do not read them whole.
 - The `related` list in a standard's header is for maintainers. Do not open those files because of it.
 - A command's parameters: read the header comment of that one `.cs` file only when unsure.
+- Revit MCP tools are deferred (tool search). Load the commands on the chosen skills' **Tools** lines in **one** ToolSearch call (`select:` + the full names, e.g. `mcp__<server>__dims_text`), not one search per command.
 
 ## Hard rules (recite before acting)
 
@@ -57,6 +60,8 @@ Do **not** read the whole `drafting-domain/` folder or every skill. Pick the tas
 - New dims use the profile's **check** dim type.
 - After each view: export an image **of the view** (`export_sheet_images {sheetNumbers:[], viewIds:[id]}`) and check it (`drafting-visual-check`). No computer-use screenshots unless the user asks.
 - Give the user a one-line progress update when they have not heard from you for a while.
+- Spend few tokens: one view per batch of calls; prefer a topic's one-shot command (`*_annotate`, `*_band`) over many small calls; ask for `verbose`/`detail` output only when the short result does not answer; search long files (logs, catalogs) with `grep`, never read them whole.
+- Images: hand the image reading to the `drafting-visual-checker` subagent (see `drafting-visual-check`); keep only its text findings.
 
 ## Done = ĐỦ – ĐÚNG – ĐẸP (`drafting-work-rules.md` §2b)
 

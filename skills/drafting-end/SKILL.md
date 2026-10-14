@@ -5,6 +5,8 @@ description: "End a Revit drafting work session: make sure nothing is still runn
 
 # End work (kết thúc làm việc)
 
+**Tools** (load all in one ToolSearch call): `ui_view_focus`, `work_status`.
+
 No model change. Do **not** sync unless the user asks in this turn.
 
 ## Steps

@@ -1,9 +1,11 @@
 ---
 name: drafting-stair-plan
-description: "Detail a stair core PLAN view (floor plan only, NOT a stair section) via Revit MCP, rules SA1–SD: clear widths bounded by the railing edge, else the step / landing edge, else the finish wall (suffix CLEAR only on the clear width of a run; landings and overalls as chains closed on the wall, no CLEAR), run-length dims with the formula 280mm x 14T = 3920 (EQUAL TREADS), the top tread at landing level not counted, plus the landing to the wall, wall/door/window chains to the grids in an outer layer; run tags outside the side walls with leaders on the 3 seen runs (V1 half beyond the cut, V2 full, V3 half before the cut), railings (P01/P02), spot elevations (landings, floor outside the stair door), doors/windows, landing and wall finishes (F.., W.. mandatory); tread counts per run from the model, riser numbers continuous over the whole stair; stair path with an arrow only (no UP/DOWN). Use for mặt bằng thang, mặt bằng lõi thang, mặt bằng thang bộ, dim thang trên mặt bằng, thông thuỷ vế thang, CLEAR, chiếu nghỉ trên mặt bằng, vế thang, đếm bậc, đánh số bậc, tag vế thang, tay vịn, stair path, mũi tên thang, stair core plan, staircase plan. Not for mặt cắt thang / stair sections."
+description: "Detail a stair core PLAN view (plan only, NOT a stair section) via Revit MCP, rules SA1–SD: clear widths, run-length dims with formula (EQUAL TREADS), landings, wall/door chains to grids; run, railing, finish tags, spot elevations; tread counts and riser numbers; stair path arrow. Use for mặt bằng thang, mặt bằng lõi thang, thông thuỷ vế thang, CLEAR, chiếu nghỉ, vế thang, đếm bậc, đánh số bậc, tag vế, tay vịn, stair path, stair core plan. Not for mặt cắt thang."
 ---
 
 # Stair core plan (SA1–SD)
+
+**Tools** (load all in one ToolSearch call): `annot_place`, `annotation_overlaps`, `dim_stable_refs`, `dims_at_positions`, `dims_copy_refs`, `dims_edit`, `dims_rail_refs`, `dims_text`, `dims_text_move`, `export_sheet_images`, `number_systems_copy`, `stair_plan_annotate`, `stair_plan_audit`, `tag_leaders_info`, `view_elem_boxes`, `view_range_info`.
 
 **Plan views only.** Stair sections are a different job: along the flights → `drafting-stair-section-parallel`; across the flights → `drafting-stair-section-cross`. If the view is a section or elevation, stop and say so.
 

@@ -5,6 +5,8 @@ description: "Add or fix dimensions on Revit drawings via Revit MCP: level dims 
 
 # Dimensions
 
+**Tools** (load all in one ToolSearch call): `grid_dims_add`, `grid_dims_band`, `grid_dims_layout`, `level_dims_add`, `swap_dim_type`.
+
 Standards and tools:
 - `~/.claude/drafting-domain/drafting-dimensions.md`
 - `~/.claude/drafting-domain/drafting-tools.md`: search it for the command you need, do not read it whole

@@ -5,6 +5,8 @@ description: "Start a Revit drafting work session: re-anchor on the open model, 
 
 # Start work (bắt đầu việc)
 
+**Tools** (load all in one ToolSearch call): `export_sheet_images`, `hello_revit`, `sheet_browser_names`, `sheet_views_ids`, `ui_view_focus`, `work_status`.
+
 No model change. Load `drafting-session` first if it is not loaded yet.
 
 ## Steps

@@ -5,6 +5,8 @@ description: "Dimension every visible window and door (incl. roll-up doors) on e
 
 # Opening dims (elevations / sections)
 
+**Tools** (load all in one ToolSearch call): `annotation_overlaps`, `dims_declutter`, `dims_edit`, `highlight_elements`, `opening_dims_each`.
+
 Standard: `~/.claude/drafting-domain/drafting-opening-dims.md`. Rules Q1–Q5 decide every case. Read it first.
 
 Project values (check dim type, roll-up family name) come from the project `drafting-profile.md`. The tools have no project defaults: a missing type name returns an error.

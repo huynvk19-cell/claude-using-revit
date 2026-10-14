@@ -1,6 +1,6 @@
 # claude-using-revit — notes for Claude
 
-This repo holds drafting **skills** (`skills/`, English), **standards** (`domain/`, Vietnamese) and Revit MCP **commands** (`revit-commands/`, C#). Installed copies live in `~/.claude/skills/` and `~/.claude/drafting-domain/`.
+This repo holds drafting **skills** (`skills/`, English), **subagents** (`agents/`), **standards** (`domain/`, Vietnamese) and Revit MCP **commands** (`revit-commands/`, C#). Installed copies live in `~/.claude/skills/`, `~/.claude/agents/` and `~/.claude/drafting-domain/`.
 
 ## Read only what the task needs
 
@@ -17,3 +17,6 @@ This repo holds drafting **skills** (`skills/`, English), **standards** (`domain
 - No client names, model names, sheet numbers or machine paths in the repo (README, "Keeping it alive").
 - Commands take project values as arguments (from `drafting-profile.md`), never hard-coded.
 - Command headers stay short (they are sent to the model on every request): `description` in 1–2 lines, parameter descriptions ≤ 80 characters. Long explanations go in the `// ---- Details` comment below the header.
+- Command results stay short by default: counts + only the problems / changed ids (aim ≤ 1.5k characters). Full lists go behind a `verbose` (or `detail`) flag or into the `logPath` file.
+- Each skill has a `**Tools**` line listing the commands it uses (loaded in one ToolSearch call). When a skill starts or stops using a command, update that line.
+- Skill `description`s are sent on every request: what it does + trigger words, ≤ ~500 characters. Rules go in the body.

@@ -1,9 +1,11 @@
 ---
 name: drafting-stair-section-cross
-description: "Detail a stair SECTION cut ACROSS the flights (not parallel to the stair path: the flights are seen end-on; NOT a plan, NOT a longitudinal section) via Revit MCP, rules XA–XC: flight-band height chain '169.4mm x 16R = 2710 (EQUAL RISERS)' + overall, level chain through the plan-cut marks, one continuous clear-height | landing-thickness chain (2495 | 215 | 2325 …), width chain wall → handrail → handrail → wall per stair block (70 | 1745 | 70 | 320 …), wall-to-wall below; run tags on every seen flight (vertical text outside the wall of its half, horizontal leader), handrail tags, spot elevations, floor finish (F..) and soffit (C..) marks; riser numbers 'Start and End' only on flights rising away from the viewer. Use for mặt cắt ngang thang, mặt cắt thang không song song, cắt ngang vế thang, mặt cắt B-B thang, section no parallel, stair cross-section."
+description: "Detail a stair SECTION cut ACROSS the flights (flights seen end-on; NOT a plan, NOT a longitudinal section) via Revit MCP, rules XA–XC: flight-band heights (EQUAL RISERS), levels, clear-height | landing chain, widths to handrails and walls; run, handrail, F../C.. tags, spot elevations; riser numbers Start and End. Use for mặt cắt ngang thang, mặt cắt thang không song song, cắt ngang vế thang, stair cross-section."
 ---
 
 # Stair section across the flights (XA–XC)
+
+**Tools** (load all in one ToolSearch call): `annot_copy_in_view`, `annot_place`, `annotation_overlaps`, `dims_copy_refs`, `dims_edit`, `dims_text`, `elevation_opening_tags`, `finish_mark_place`, `finish_marks_snap`, `level_dims_add`, `stair_numbers_match`, `stair_xsection_info`, `tags_retype`, `view_dims_snapshot`, `view_elem_boxes`.
 
 **Section views whose cut is NOT parallel to the stair path** (flights seen end-on). Along the flights → `drafting-stair-section-parallel`; plans → `drafting-stair-plan`.
 

@@ -5,6 +5,8 @@ description: "Tag every visible window and door (incl. roll-up doors) on elevati
 
 # Opening tags (elevations / sections)
 
+**Tools** (load all in one ToolSearch call): `annotation_overlaps`, `door_window_tag_check`, `elevation_opening_tags`, `tag_align`.
+
 Standard: `~/.claude/drafting-domain/drafting-opening-tags.md`. Rules T1–T8 decide every case. Read it first.
 
 ## Steps — ONE view per call (`viewIds:[one id]`, `maxSeconds` set)
