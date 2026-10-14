@@ -10,7 +10,9 @@ description: "Giá trị riêng của dự án cho bộ skill drafting. Copy fil
 | Phiên bản Revit | 2023 |
 | Model **không được chạm** | `<tên model>` |
 | Dim type chính thức | `<vd. 2.0mm Arial Narrow>` |
-| Dim type kiểm tra (màu, dùng khi review) | `<vd. 2.0mm Arial Narrow - check>`. Tên trung tính, không chứa "Claude"/"AI". |
+| Hậu tố type đánh dấu (mọi phần tử tạo mới, `mark_types`) | `<vd.  - check>` (có dấu cách đầu). Trung tính, không chứa "Claude"/"AI". Type đánh dấu = `<type chính thức><hậu tố>` |
+| Dim type kiểm tra | = dim type chính thức + hậu tố, vd. `2.0mm Arial Narrow - check` |
+| Màu type đánh dấu (dim, text) | `<vd. [0,0,255]>` |
 | Tiền tố số sheet | `<vd. DRW-XXX-A>` |
 | Thư mục log / review | `log/YYYY-MM.md`, `review/<ngày>_<mã>/` |
 | Family cửa cuốn (lấy kích thước danh nghĩa) | `ROLL UP` |

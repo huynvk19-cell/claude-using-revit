@@ -20,7 +20,7 @@ Read first:
    - annotation → do it;
    - model change → list it for the user;
    - locked by a scope box or needs the UI by hand → list it as manual.
-3. **Execute one task at a time**, in order:
+3. **Execute task by task**, in order. Tasks of the same topic on views of the same kind run together as one batch (up to 10 views, `drafting-session`):
    - Load the matching skill: `drafting-dims`, `drafting-tags-titles` or `drafting-views-sheets`.
    - Log to `review/<date>_<code>/Txx-<what>.json`.
    - Skip tasks the user says are done. Never redo them.
@@ -29,5 +29,5 @@ Read first:
 6. **Finish:**
    - Write a log entry.
    - Report a table: task → sheet/view → result.
-   - List leftovers: manual work, model-side work, and dims still in the check type.
+   - List leftovers: manual work, model-side work, and elements still in mark types (`mark_types list`).
    - Name the sheets that changed (the user reviews the combined PDF).

@@ -5,7 +5,7 @@ description: "Add or fix dimensions on Revit drawings via Revit MCP: level dims 
 
 # Dimensions
 
-**Tools** (load all in one ToolSearch call): `grid_dims_add`, `grid_dims_band`, `grid_dims_layout`, `level_dims_add`, `swap_dim_type`.
+**Tools** (load all in one ToolSearch call): `grid_dims_add`, `grid_dims_band`, `grid_dims_layout`, `level_dims_add`, `mark_types`.
 
 Standards and tools:
 - `~/.claude/drafting-domain/drafting-dimensions.md`
@@ -23,4 +23,4 @@ Use the `drafting-grid-dims` skill (rules G1–G4, tool `grid_dims_band`). The o
 
 ## Type
 
-Work in the profile's check type. Swap to the official type with `swap_dim_type` only after the user approves.
+Work in the check type (the official dim type + the profile mark suffix; `mark_types {action:"ensure"}` creates it). Back to the official type only after the user approves: `mark_types {action:"restore", suffix, mode:"preview"}` → `apply`, or the user does Select All Instances by hand.

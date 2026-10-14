@@ -126,7 +126,7 @@ Thứ tự từ ngoài vào trong (số đo là mm trên giấy):
 | `extraIds` | — | coi các dim chỉ định là dim thừa (vd. chain chung của hai view con có crop khác nhau) |
 | `compact` | false | kết quả gọn (hành động + trạng thái sau) khi chạy hàng loạt |
 
-Dim mới dùng **type kiểm tra** trong profile. Đổi sang type chính thức bằng `swap_dim_type` sau khi user duyệt.
+Dim mới dùng **type kiểm tra** (type đánh dấu của dim type chính thức, `drafting-work-rules.md` §2c). Trả về type chính thức bằng `mark_types {action:"restore"}` (hoặc Select All Instances) sau khi user duyệt.
 
 ## Bài học (ghi thêm một dòng, kèm ngày)
 

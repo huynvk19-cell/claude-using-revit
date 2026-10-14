@@ -12,7 +12,7 @@ Skills and domain standards that let Claude Code, via Revit MCP, do drawing prod
 | `domain/` | Quy chuẩn bản vẽ: con số, vị trí, ngoại lệ, bẫy API | Tiếng Việt + thuật ngữ Revit |
 | `agents/` | Subagent `drafting-visual-checker`: đọc ảnh kiểm tra, chỉ trả lời bằng chữ (ảnh không ở lại trong hội thoại chính) | English |
 | `templates/drafting-profile.md` | Giá trị riêng của từng dự án (dim type, model cấm chạm, view loại trừ…) | Tiếng Việt |
-| `revit-commands/` | 85 lệnh động (dynamic commands) C# cho Revit MCP: dim, tag, title, viewport, crop, lõi thang, dim bám tay vịn, filled region cột theo kết cấu, mặt cắt dọc thang (dim, tag, số bậc, cao độ tay vịn, ô hoàn thiện), kiểm tra mặt cắt ngang thang, kiểm tra chồng lắp… Không chứa giá trị riêng dự án | C# |
+| `revit-commands/` | 84 lệnh động (dynamic commands) C# cho Revit MCP: dim, tag, title, viewport, crop, lõi thang, dim bám tay vịn, filled region cột theo kết cấu, mặt cắt dọc thang (dim, tag, số bậc, cao độ tay vịn, ô hoàn thiện), kiểm tra mặt cắt ngang thang, kiểm tra chồng lắp… Không chứa giá trị riêng dự án | C# |
 | `tools/crop.ps1` | Cắt vùng ảnh sheet để kiểm tra | PowerShell |
 | `tools/work-status/` | Cửa sổ "Đang xử lý" luôn nổi trên màn hình (tuỳ chọn) | PowerShell |
 
@@ -20,7 +20,7 @@ Skills and domain standards that let Claude Code, via Revit MCP, do drawing prod
 
 | Skill | Dùng khi |
 |---|---|
-| `drafting-session` | Mở đầu mọi phiên vẽ, và khi "tiếp tục". Gồm luật cứng, **bảng chọn skill + domain theo việc** (chỉ đọc đúng file cần), phần mở đầu và phần kết thúc lượt. |
+| `drafting-session` | Mở đầu mọi phiên vẽ, và khi "tiếp tục". Gồm luật cứng, **làm theo đợt ≤10 view cùng loại**, **type đánh dấu** cho mọi phần tử tạo mới, **bảng chọn skill + domain theo việc** (chỉ đọc đúng file cần), phần mở đầu và phần kết thúc lượt. |
 | `drafting-start` | **Bắt đầu việc**: mở các view đang làm (zoom theo crop), ẩn Properties + Project Browser, bật cửa sổ trạng thái |
 | `drafting-end` | **Kết thúc làm việc**: ghi log, bật lại Properties + Project Browser như lúc đầu, đóng cửa sổ trạng thái, báo cáo |
 | `drafting-review-round` | Xử lý một đợt comment (PDF + danh sách task) |
@@ -39,7 +39,7 @@ Skills and domain standards that let Claude Code, via Revit MCP, do drawing prod
 
 | File | Nội dung |
 |---|---|
-| `drafting-work-rules.md` | Luật cứng, nhịp làm việc, cách báo cáo |
+| `drafting-work-rules.md` | Luật cứng, nhịp làm việc, làm theo đợt + type đánh dấu (§2c), cách báo cáo |
 | `drafting-grid-dims.md` | 4 quy tắc dim trục (G1–G4): nhóm trục, 1 chain + 1 overall, dải giữa crop và bubble, annotation crop |
 | `drafting-stair-section-parallel.md` | Mặt cắt dọc thang bộ: vế F1…, công thức R/T, lớp dim, tag, số bậc (LA–LC) |
 | `drafting-stair-section-cross.md` | Mặt cắt ngang thang bộ: dải vế, hướng vế (away / toward), lớp dim, chuỗi thông thuỷ liên tục, tag, số bậc Start and End (XA–XC) |
@@ -79,6 +79,13 @@ Lệnh trên copy:
 
 Mỗi dự án cần một file `drafting-profile.md`: copy từ `templates/` vào thư mục gốc dự án rồi điền.
 
+## Làm theo đợt và type đánh dấu (Batches, mark types)
+
+- **Đợt**: Claude không làm xong từng view rồi báo, mà gom tối đa **10 view cùng loại** (cùng ViewType: mặt bằng với mặt bằng, mặt cắt với mặt cắt…, cùng chủ đề) và chạy từng bước cho cả đợt, cuối đợt báo một lần. Mặt đứng / mặt cắt: lệnh vẫn gọi mỗi lần một view (chống treo Revit), nhưng chạy liền cả đợt.
+- **Type đánh dấu**: mọi phần tử Claude tạo mới (dim, spot, tag, room tag, stair path, filled region, text…) mang type `<type chính thức><hậu tố>`, hậu tố đặt trong `drafting-profile.md` (vd. ` - check`). Lệnh `mark_types`: `snapshot` đầu đợt → `mark` cuối đợt → `list` → `restore`.
+- **Trả về chính thức** (khi đã duyệt): chọn một phần tử → Select All Instances → In Entire Project → đổi sang type chính thức; hoặc `mark_types {action:"restore"}` làm cho mọi type đánh dấu một lần.
+- Không đánh dấu được: detail line (chỉ có line style) và chỉnh sửa trên phần tử có sẵn (dời tag, đầu trục 2D, crop): xem log `apply`.
+
 ## Tiết kiệm token (Token use)
 
 Mỗi bước Claude gọi tool, toàn bộ phần đầu phiên (danh sách tool, mô tả skill, CLAUDE.md) và hội thoại được gửi lại cho model. Phần cố định càng dài, mỗi bước càng tốn; hội thoại càng dài (kết quả lệnh, ảnh), mỗi bước sau càng tốn.
@@ -86,7 +93,7 @@ Mỗi bước Claude gọi tool, toàn bộ phần đầu phiên (danh sách too
 | Phần | Tốn (mỗi bước) | Cách giảm | Trạng thái |
 |---|---|---|---|
 | Tool có sẵn của Revit MCP (profile `full`, 192 tool) | ~36.6k token nếu nạp sẵn; chỉ tên (~1.5k) khi tool search bật | **A**: profile `drafting` (26 tool) | cần làm trên máy |
-| 85 lệnh của repo (header `mcp-tool`) | ~11.8k token nếu nạp sẵn; chỉ tên (~0.8k) khi tool search bật; mỗi lệnh đã nạp ~140 token | **B**: header ngắn, giải thích ở `// ---- Details` | đã làm |
+| 84 lệnh của repo (header `mcp-tool`) | ~11.8k token nếu nạp sẵn; chỉ tên (~0.8k) khi tool search bật; mỗi lệnh đã nạp ~140 token | **B**: header ngắn, giải thích ở `// ---- Details` | đã làm |
 | Tool search của Claude Code | — | **C**: giữ bật (mặc định), kiểm tra bằng `/context` | kiểm tra trên máy |
 | Nạp lệnh từng cái một (mỗi lần một lượt) | 1 lượt / lệnh | **D**: dòng **Tools** trong mỗi skill → nạp hết trong 1 lần ToolSearch | đã làm |
 | Mô tả skill (gửi mỗi request) | 6.8k → 5.3k ký tự | mô tả ngắn, luật nằm trong thân skill | đã làm |

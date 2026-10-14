@@ -15,6 +15,6 @@ Input from the caller: the PNG path(s), the topic standard's checklist (or the l
    (Cx/Cy centre, W/H size, fractions of the image; output 1600 px.)
 3. Look for: text on text; dims crossing tags; chains outside the building or above the roof; long bridging segments; dims/tags on openings not visible; duplicate dims; titles off-centre or overlapping; grid bubbles overlapping; items clipped by the crop; anything the caller's checklist names.
 
-Reply in at most 15 lines, text only, no images:
+Reply in at most 15 lines (25 for a batch of views), text only, no images:
 - `OK` if nothing is wrong, else one line per fault: `<image> | <where: fraction x,y or grid/level> | <fault> | <element text if readable>`.
 - End with `Không chắc:` and the spots you could not read clearly.

@@ -5,7 +5,7 @@ description: "Start a Revit drafting work session: re-anchor on the open model, 
 
 # Start work (bắt đầu việc)
 
-**Tools** (load all in one ToolSearch call): `export_sheet_images`, `hello_revit`, `sheet_browser_names`, `sheet_views_ids`, `ui_view_focus`, `work_status`.
+**Tools** (load all in one ToolSearch call): `export_sheet_images`, `hello_revit`, `mark_types`, `sheet_browser_names`, `sheet_views_ids`, `ui_view_focus`, `work_status`.
 
 No model change. Load `drafting-session` first if it is not loaded yet.
 
@@ -17,28 +17,34 @@ No model change. Load `drafting-session` first if it is not loaded yet.
    2. the current round's `TASKS.md` (`review/<date>_<code>/`);
    3. the views in the latest entry of `log/YYYY-MM.md`.
 
-   Resolve the names to ids with `sheet_browser_names` / `sheet_views_ids`. Unclear or more than ~8 views → show the list and ask which ones.
+   Resolve the names to ids with `sheet_browser_names` / `sheet_views_ids`. Unclear → show the list and ask which ones.
+   Group them into **batches of up to 10 views of the same ViewType** (and the same topic); the first batch is worked now.
 3. **Hide the panes**:
    ```
    ui_view_focus {action:"panes", panes:"hide"}
    ```
    Note what it reports as `was shown / was hidden` for each pane in the session log entry (`UI: Properties was …, Project Browser was …`). `drafting-end` restores exactly that.
    Known bug (2026-10-06/07): `panes` can report "was hidden" while both panes are on screen. If the user says they still see them, use `toggle` once per pane (`which:"properties"`, then `which:"browser"`) and log that.
-4. **Open the views**, the one to work on first opened last (it stays active):
+4. **Open the batch views**, the one to work on first opened last (it stays active):
    ```
    ui_view_focus {action:"open", viewId}
    ```
    Reply `view window not open yet: call again` → call it once more for that view (the zoom needs the window).
    `Switched:false` while the user sees a sheet = that sheet has the view's viewport **activated**: every view request lands on the sheet. Ask the user to deactivate it (double-click outside the viewport), then open again.
    Checking by image during the work: export the **view** (`export_sheet_images {sheetNumbers:[], viewIds:[id]}`), not the sheet: a sheet export leaves the sheet in front and the user loses the view.
-5. **Status window** (if the project uses it): `work_status {action:"show", title:<task>, message:"Bắt đầu"}`.
+5. **Snapshot** the batch for the mark types (`drafting-work-rules.md` §2c), before any change:
+   ```
+   mark_types {action:"snapshot", viewIds:[batch], statePath:<review>/batch-<n>-snapshot.json}
+   ```
+   `MixedKinds` not empty → the batch mixes view kinds: split it.
+6. **Status window** (if the project uses it): `work_status {action:"show", title:<task>, message:"Bắt đầu"}`.
 
 ## Report
 
-One short table: view (exact Project Browser name) → sheet → opened. Then one line: panes hidden.
+One short table per batch: view (exact Project Browser name) → ViewType → sheet → opened. Then one line: panes hidden, snapshot file.
 
 ## Never
 
 - Close or rearrange the user's own view windows.
 - Use `toggle` for the panes (it flips blindly) unless `panes` misreports (above).
-- Change anything in the model.
+- Change anything in the model (the snapshot only reads).

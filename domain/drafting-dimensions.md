@@ -10,8 +10,8 @@ metadata:
 
 ## 1. Type dim
 
-- Khi review: dùng **type kiểm tra** (có màu, theo profile).
-- Khi user duyệt ("trở về màu dim chính thức"): đổi sang **type chính thức** bằng `swap_dim_type`.
+- Khi review: dùng **type kiểm tra** = type đánh dấu của dim type chính thức (`<tên chính thức><hậu tố>`, có màu; `drafting-work-rules.md` §2c). Tạo bằng `mark_types {action:"ensure"}`.
+- Khi user duyệt ("trở về màu dim chính thức"): Select All Instances → type chính thức, hoặc `mark_types {action:"restore"}`.
 - Sau khi duyệt xong: xoá các type, tham số, schedule dùng để kiểm tra.
 - Tra id của type ngay trong lượt làm việc. Không ghi cứng id.
 

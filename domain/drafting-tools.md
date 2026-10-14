@@ -2,7 +2,7 @@
 name: drafting-tools
 description: "Danh mục lệnh động (dynamic commands) Revit MCP dùng cho triển khai bản vẽ, theo chủ đề, kèm tham số chính. Drafting tool catalog."
 metadata:
-  updated: "2026-10-06"
+  updated: "2026-10-14"
   related: ["drafting-work-rules", "drafting-dimensions", "drafting-annotation", "drafting-views-sheets"]
 ---
 
@@ -28,6 +28,7 @@ metadata:
 | `work_status` | Cửa sổ "Đang xử lý": show / update / close. |
 | `export_sheet_images` | Xuất PNG sheet `{sheetNumbers, folder, pixelWidth}`. |
 | `view_region_image` | Xuất PNG một vùng của view. |
+| `mark_types` | Type đánh dấu (R10): `snapshot` đợt ≤10 view → `mark` phần tử mới sang `<type><hậu tố>` (preview / apply) → `list` → `restore` về chính thức (preview / apply, `deleteEmpty`). `ensure` tạo trước type kiểm tra của dim. |
 
 ## Tra cứu (RO)
 
@@ -82,7 +83,6 @@ metadata:
 | `dims_edit` | Xoá / gộp (merge) / đổi type (retype) dim, có log. |
 | `dims_text` | Prefix / Suffix / Above / Below của từng đoạn dim (giữ giá trị đo, không Replace with text): vd. ` CLEAR`, `280mm x 14T = `. Chọn đoạn theo `segmentIndex` hoặc `valueMm`; preview / apply / undo. |
 | `dim_restore` | Dựng lại dim từ stable reference đã log. |
-| `dim_type_check_copy` / `swap_dim_type` | Tạo type kiểm tra / đổi type hàng loạt. |
 
 ## Tag và title
 
