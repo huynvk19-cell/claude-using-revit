@@ -1,10 +1,12 @@
 # 02 · XA1 Band heights (dim chiều cao từng dải)
 
-**Skill** `drafting-stair-section-cross` · **Standard** `drafting-stair-section-cross.md` XA1 · **Tools** `dims_copy_refs`, `dims_edit`, `dims_text`, `view_elem_boxes`, `stair_xsection_info`
+**Skill** `drafting-stair-section-cross` · **Standard** `drafting-stair-section-cross.md` XA1 · **Tools** `stair_xsection_annotate`, `dims_copy_refs`, `dims_edit`, `dims_text`, `view_elem_boxes`, `stair_xsection_info`
 **Applies to** every section across the flights of the job, one view per call (`timeoutSeconds`).
 **Read first** (once per job): `_dims-common.md`
 
 ## Do
+
+**Command**: `stair_xsection_annotate {parts:["XA1"], xa1Side}` builds the chain (foot → each band boundary → top band → roof) with the formulas, plus the overall; it skips when every band already has its segment.
 
 - Outside one wall (sample: right): finish top of the lowest floor → top of the landing / floor at each end of a band → … → top landing. **One segment per band** = R × riser height.
 - Text: prefix `169.4mm x 16R = `, below `(EQUAL RISERS)` (from `RiseText`), value live. The segment from the top landing to the roof (not a flight) carries no formula.

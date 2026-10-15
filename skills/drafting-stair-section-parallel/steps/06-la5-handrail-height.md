@@ -15,7 +15,7 @@ stair_section_annotate {viewId, mode:"preview", parts:["LA5"], la5RailingIds:[<P
 - `la5Auto` (on unless `la5FromDimId` is given) finds the top-rail reference without a sample; landings with a rail dim are skipped.
 - An `Errors` line `LA5 …` = that landing has no dim yet: fix it now, do not move on.
 - Value far from the round height (e.g. 1188, 1329) → check with `rail_top_at`, pick another edge; unsure → do not place, ask the user for ONE hand dim, then `parts:["LA5"], la5FromDimId:<that dim>, la5IndexFrom, la5IndexTo, items:[{part:"LA5", landing, x}]` reuses its rail reference until the value matches and the dim is drawn (`skip:true` for the landings the user dimmed).
-- **Wall handrail P01 seen along a landing** (horizontal on the wall, not hidden by P02): a second dim, landing top → top of the P01 handrail (`900`), 230–300 mm from the 1200 dim toward the wall (or ~500 mm from the wall finish on the other side). `la5Auto` reads top rails only: take the P01 handrail reference from a hand dim (`la5FromDimId`, `la5TargetMm:900`).
+- **Wall handrail P01 seen along a landing** (horizontal on the wall, not hidden by P02): a second dim, landing top → top of the P01 handrail (`900`). Add `la5HandTargetMm:900` to the same call: it reads the **Handrails** (not only the top rails) and places it 260 mm from the 1200 dim toward the nearer wall (`items:[{part:"LA5H", landing, x}]` to move it). A handrail it cannot reach (`Errors` `LA5H …`) → a hand dim on P01 and `la5FromDimId`, `la5TargetMm:900`.
 
 ## Done when
 

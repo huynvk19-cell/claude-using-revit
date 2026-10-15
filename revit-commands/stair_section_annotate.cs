@@ -1,13 +1,13 @@
 /* mcp-tool
 {
-  "description": "ONE stair section along the flights: LA1 rise chain, LA3 going chains, LA4 clear heights, LA5 rail heights, LB1 run tags, LB3 landing spots, LC riser numbers. preview | apply | undo.",
+  "description": "ONE stair section along the flights: LA1 rise chain, LA3 goings, LA4 clear heights, LA5 handrail heights, LA6 walls/doors to grids, LB1 run tags, LB3 spots, LC numbers. preview | apply | undo.",
   "inputSchema": {
     "type": "object",
     "properties": {
       "viewId": { "type": "number" },
       "mode": { "type": "string", "enum": ["preview", "apply", "undo"] },
       "logPath": { "type": "string" },
-      "parts": { "type": "array", "items": { "type": "string" }, "description": "LA1 LA3 LA4 LA5 LB1 LB3 LC (default all)" },
+      "parts": { "type": "array", "items": { "type": "string" }, "description": "LA1 LA3 LA4 LA5 LA6 LB1 LB3 LC (default all)" },
       "dimTypeName": { "type": "string" },
       "la1Side": { "type": "string", "enum": ["left", "right"], "description": "default right" },
       "la1LineMm": { "type": "number", "description": "view x of the LA1 dim line (default outer wall face + 800)" },
@@ -23,6 +23,9 @@
       "la5RailingIds": { "type": "array", "items": { "type": "number" }, "description": "LA5 auto: only these railings" },
       "la5TargetMm": { "type": "number", "description": "LA5: nominal rail height (1200 / 900), nearest wins" },
       "la5FromDimId": { "type": "number", "description": "LA5: a hand dim whose rail reference is reused" },
+      "la5HandTargetMm": { "type": "number", "description": "LA5: also the wall handrail (P01) at this height, e.g. 900" },
+      "la6LineMm": { "type": "number", "description": "LA6: elevation mm of the chain below the section (default lowest floor - 1000)" },
+      "la6Top": { "type": "boolean", "description": "LA6: also a chain on top when the upper walls differ (default true)" },
       "items": { "type": "array", "items": { "type": "object" }, "description": "overrides: {part, flight|landing, x, z, skip} (view x mm, absolute z mm)" }
     },
     "required": ["viewId", "mode"]
@@ -45,6 +48,13 @@
 //  LA5  (mandatory) per cut landing: landing top -> top of the rail along the landing edge, nearest la5TargetMm;
 //       la5FromDimId reuses the rail reference of a hand dim, else la5Auto (default) reads the top rails. Landings
 //       that already have a rail dim (within 50 of la5TargetMm or the hand dim value, else any rail dim) are skipped.
+//  LA5 hand (la5HandTargetMm, e.g. 900): a second dim per cut landing, landing top -> top of the wall handrail (P01),
+//       references from the Handrails' symbol geometry (la5Auto reads only top rails); 260 mm from the main LA5 dim
+//       toward the nearer wall, or items {part:'LA5H', landing, x}. Landings with a rail dim within 50 of it are skipped.
+//  LA6  below the section (la6LineMm): grid -> both faces of each core wall -> door edges (doors facing the view, lowest
+//       storey) -> grid, + the overall one line further out; la6Top (default true): the same chain above the section
+//       when the upper storey's walls differ by more than 5 mm. Host grids only; skipped when a horizontal chain with
+//       grid references already sits below the lowest floor.
 //  LB1  run tag under each cut flight (tagFlights 'all': also the flights beyond), head beside the soffit, one
 //       horizontal leader to the soffit; tag type from runTagTypes by the flight base elevation.
 //  LB3  spot elevation on each cut landing top without a spot yet, near the flight end.
@@ -122,7 +132,7 @@ public static class StairSectionAnnotate
         V = doc.GetElement(new ElementId(args.Value<int>("viewId"))) as View;
         if (V == null || V.ViewType != ViewType.Section) return new { Error = "viewId must be a section view" };
         O = V.Origin; Rg = V.RightDirection; Vd = V.ViewDirection;
-        var parts = args["parts"] != null ? ((JArray)args["parts"]).Select(x => ((string)x).ToUpper()).ToList() : new List<string> { "LA1", "LA3", "LA4", "LA5", "LB1", "LB3", "LC" };
+        var parts = args["parts"] != null ? ((JArray)args["parts"]).Select(x => ((string)x).ToUpper()).ToList() : new List<string> { "LA1", "LA3", "LA4", "LA5", "LA6", "LB1", "LB3", "LC" };
         var errors = new List<string>(); var done = new List<object>(); var created = new List<int>();
 
         // ---- flights and landings (as stair_section_info)
@@ -390,20 +400,29 @@ public static class StairSectionAnnotate
                     bool rail = false; foreach (Reference r in d.References) { var e = doc.GetElement(r.ElementId); if (e?.Category != null && railCats5.Contains(e.Category.Id.IntegerValue)) rail = true; }
                     if (rail) railDims5.Add(Tuple.Create(d.Id.IntegerValue, (d.Origin.Z - ElOff - d.Value.Value / 2) * MM, VX(d.Origin), d.Value.Value * MM));
                 }
+                // x of the main LA5 dim on a landing (null = not this landing in sample mode)
+                Func<Ld, double?> xMain = l =>
+                {
+                    var o = Ov("LA5", Num(l.Z));
+                    if (o != null && o["x"] != null) return (double)o["x"];
+                    if ((l.X0 + l.X1) / 2 < cx5 && args["la5LeftX"] != null) return (double)args["la5LeftX"];
+                    if ((l.X0 + l.X1) / 2 >= cx5 && args["la5RightX"] != null) return (double)args["la5RightX"];
+                    if (args["la5FromDimId"] != null) return null;   // sample mode: only the landings listed
+                    return (l.X0 + l.X1) / 2 < cx5 ? l.X1 - inset : l.X0 + inset;
+                };
+                // one LA5 pass: per cut landing, the rail reference (head + n) giving a drawn dim nearest the target
+                Action<string, List<string>, double, double?, double, double, Func<Ld, double?>> la5Pass = (tag, hds, wantV, tgtV, lo, hi, xFor) =>
+                {
                 foreach (var l in lds.Where(x => x.Cut))
                 {
-                    var o5 = Ov("LA5", Num(l.Z)); if (o5 != null && (bool?)o5["skip"] == true) continue;
-                    var had = railDims5.FirstOrDefault(r => Math.Abs(r.Item2 - l.Z) < 10 && r.Item3 > l.X0 - 400 && r.Item3 < l.X1 + 400 && (tgt5 == null || Math.Abs(r.Item4 - tgt5.Value) < 50));
-                    if (had != null) { done.Add(new { Part = "LA5", Landing = Num(l.Z), Skipped = "has rail dim " + had.Item1 + " (" + Math.Round(had.Item4) + ")" }); continue; }
-                    double x;
-                    if (o5 != null && o5["x"] != null) x = (double)o5["x"];
-                    else if ((l.X0 + l.X1) / 2 < cx5 && args["la5LeftX"] != null) x = (double)args["la5LeftX"];
-                    else if ((l.X0 + l.X1) / 2 >= cx5 && args["la5RightX"] != null) x = (double)args["la5RightX"];
-                    else if (args["la5FromDimId"] != null) continue;   // sample mode: only the landings listed
-                    else x = (l.X0 + l.X1) / 2 < cx5 ? l.X1 - inset : l.X0 + inset;
-                    var r0 = RefAt(l.Z, x); if (r0 == null) { errors.Add("LA5 " + Num(l.Z) + ": no landing reference"); continue; }
+                    var o5 = Ov(tag, Num(l.Z)); if (o5 != null && (bool?)o5["skip"] == true) continue;
+                    double? tgtL = tgtV ?? (double.IsNaN(wantV) ? (double?)null : wantV);
+                    var had = railDims5.FirstOrDefault(r => Math.Abs(r.Item2 - l.Z) < 10 && r.Item3 > l.X0 - 400 && r.Item3 < l.X1 + 400 && (tgtL == null || Math.Abs(r.Item4 - tgtL.Value) < 50));
+                    if (had != null) { done.Add(new { Part = tag, Landing = Num(l.Z), Skipped = "has rail dim " + had.Item1 + " (" + Math.Round(had.Item4) + ")" }); continue; }
+                    double? xq = xFor(l); if (xq == null) continue; double x = xq.Value;
+                    var r0 = RefAt(l.Z, x); if (r0 == null) { errors.Add(tag + " " + Num(l.Z) + ": no landing reference"); continue; }
                     string bestRef = null; double bestVal = double.NaN;
-                    foreach (var head in heads)
+                    foreach (var head in hds)
                         for (int n = n0; n <= n1; n++)
                         {
                             Reference rr; try { rr = Reference.ParseFromStableRepresentation(doc, head + n); } catch { continue; }
@@ -420,18 +439,130 @@ public static class StairSectionAnnotate
                                 catch { }
                                 sub.RollBack();
                                 if (double.IsNaN(val)) continue;
-                                bool fits = !double.IsNaN(want) ? Math.Abs(val - want) < 2 : val >= vMin && val <= vMax;
-                                bool better = double.IsNaN(bestVal) || (target != null ? Math.Abs(val - target.Value) < Math.Abs(bestVal - target.Value) : val > bestVal);
-                                if (fits && double.IsNaN(want) && better) { bestVal = val; bestRef = head + n; }
-                                if (fits && !double.IsNaN(want)) { bestVal = val; bestRef = head + n; break; }
+                                bool fits = !double.IsNaN(wantV) ? Math.Abs(val - wantV) < 2 : val >= lo && val <= hi;
+                                bool better = double.IsNaN(bestVal) || (tgtV != null ? Math.Abs(val - tgtV.Value) < Math.Abs(bestVal - tgtV.Value) : val > bestVal);
+                                if (fits && double.IsNaN(wantV) && better) { bestVal = val; bestRef = head + n; }
+                                if (fits && !double.IsNaN(wantV)) { bestVal = val; bestRef = head + n; break; }
                             }
                         }
-                    if (bestRef == null) { errors.Add("LA5 " + Num(l.Z) + ": no rail line " + (!double.IsNaN(want) ? "reads " + Math.Round(want) : "between " + vMin + " and " + vMax) + " above this landing"); continue; }
+                    if (bestRef == null) { errors.Add(tag + " " + Num(l.Z) + ": no rail line " + (!double.IsNaN(wantV) ? "reads " + Math.Round(wantV) : "between " + lo + " and " + hi) + " above this landing"); continue; }
                     var raF = new ReferenceArray(); raF.Append(r0.Item1); raF.Append(Reference.ParseFromStableRepresentation(doc, bestRef));
                     var dF = doc.Create.NewDimension(V, Line.CreateBound(PV(x, l.Z), PV(x, l.Z + bestVal)), raF, dimType);
                     created.Add(dF.Id.IntegerValue);
-                    done.Add(new { Part = "LA5", Landing = Num(l.Z), Id = dF.Id.IntegerValue, Value = Math.Round((dF.Value ?? 0) * MM), X = Math.Round(x), Ref = bestRef.Substring(bestRef.LastIndexOf(':') + 1) });
+                    railDims5.Add(Tuple.Create(dF.Id.IntegerValue, l.Z, x, bestVal));
+                    done.Add(new { Part = tag, Landing = Num(l.Z), Id = dF.Id.IntegerValue, Value = Math.Round((dF.Value ?? 0) * MM), X = Math.Round(x), Ref = bestRef.Substring(bestRef.LastIndexOf(':') + 1) });
                 }
+                };
+                la5Pass("LA5", heads, want, target, vMin, vMax, xMain);
+
+                // wall handrail (P01) seen along the landing: its own dim, from the Handrails' symbol references
+                if (args["la5HandTargetMm"] != null)
+                {
+                    double hT = (double)args["la5HandTargetMm"];
+                    var hHeads = new List<string>();
+                    var hRailIds = args["la5RailingIds"] != null ? ((JArray)args["la5RailingIds"]).Select(x => new ElementId((int)x)).ToList()
+                        : new FilteredElementCollector(doc, V.Id).OfClass(typeof(Railing)).ToElementIds().ToList();
+                    foreach (var rid in hRailIds)
+                    {
+                        var rl = doc.GetElement(rid) as Railing; if (rl == null) continue;
+                        IList<ElementId> hrs; try { hrs = rl.GetHandRails(); } catch { continue; }
+                        foreach (var hid in hrs)
+                        {
+                            var hr = doc.GetElement(hid); if (hr == null) continue;
+                            foreach (var g in hr.get_Geometry(new Options { ComputeReferences = true, View = V }) ?? Enumerable.Empty<GeometryObject>())
+                                if (g is GeometryInstance gi && gi.Symbol != null) hHeads.Add(hr.UniqueId + ":1:INSTANCE:" + gi.Symbol.UniqueId + ":");
+                        }
+                    }
+                    hHeads = hHeads.Distinct().ToList();
+                    if (hHeads.Count == 0) errors.Add("LA5H: no handrail with a symbol instance (pass la5FromDimId of a hand dim on P01 instead)");
+                    else
+                        la5Pass("LA5H", hHeads, double.NaN, hT, hT - 150, hT + 150, l =>
+                        {
+                            var o = Ov("LA5H", Num(l.Z)); if (o != null && o["x"] != null) return (double)o["x"];
+                            double? xm = xMain(l); if (xm == null) return null;
+                            double toL = wl != null ? Math.Abs(xm.Value - wl.X0) : 1e9, toR = wr != null ? Math.Abs(xm.Value - wr.X0) : 1e9;
+                            return xm.Value + (toL < toR ? -260 : 260);   // beside the main dim, toward the nearer wall
+                        });
+                }
+            }
+
+            // ---- LA6 below the section: grid -> faces of the core walls -> door edges -> grid, + overall; same on top
+            //      when the upper walls differ
+            if (parts.Contains("LA6"))
+            {
+                double gap = 7 * V.Scale;   // 7 paper mm between dim lines
+                var grids = new List<Tuple<double, Reference, string>>();
+                foreach (var g in new FilteredElementCollector(doc, V.Id).OfClass(typeof(Grid)).Cast<Grid>())
+                {
+                    Curve c = null; try { c = g.GetCurvesInView(DatumExtentType.ViewSpecific, V).FirstOrDefault(); } catch { }
+                    var ln = c as Line; if (ln == null || Math.Abs(ln.Direction.Z) < 0.999) continue;
+                    grids.Add(Tuple.Create(VX(ln.Origin), new Reference(g), "grid " + g.Name));
+                }
+                // existing chain below the lowest floor with a grid reference = done
+                bool hasLa6 = new FilteredElementCollector(doc, V.Id).OfClass(typeof(Dimension)).Cast<Dimension>().Any(d =>
+                {
+                    if (d is SpotDimension || !(d.Curve is Line l6) || Math.Abs(l6.Direction.DotProduct(Rg)) < 0.999 || ZE(l6.Origin) > zBot) return false;
+                    foreach (Reference r in d.References) if (doc.GetElement(r.ElementId) is Grid) return true;
+                    return false;
+                });
+                Func<double, List<Tuple<double, Reference, string>>> chainAt = zRef =>
+                {
+                    var res = new List<Tuple<double, Reference, string>>();
+                    var wf = new FilteredElementCollector(doc, V.Id).OfClass(typeof(Wall)).Cast<Wall>().SelectMany(w => Faces(w))
+                        .Where(f => Math.Abs(f.N.DotProduct(Rg)) > 0.999 && f.D0 <= 1 && f.D1 >= -1 && f.Z0 <= zRef && f.Z1 >= zRef && f.X1 > sx0 - 1500 && f.X0 < sx1 + 1500).ToList();
+                    // the core walls: the nearest wall left of the stair and right of it, both faces
+                    var lw = wf.Where(f => f.X1 <= sx0 + 5).OrderByDescending(f => f.X0).FirstOrDefault();
+                    var rw = wf.Where(f => f.X0 >= sx1 - 5).OrderBy(f => f.X0).FirstOrDefault();
+                    foreach (var w in new[] { lw, rw }.Where(w => w != null))
+                        foreach (var f in wf.Where(f => f.Id == w.Id)) res.Add(Tuple.Create(f.X0, f.P.Reference, "wall " + f.Id));
+                    // doors facing the view in this storey, between the core walls
+                    foreach (var dr in new FilteredElementCollector(doc, V.Id).OfCategory(BuiltInCategory.OST_Doors).WhereElementIsNotElementType().OfType<FamilyInstance>())
+                    {
+                        var bb = dr.get_BoundingBox(null); if (bb == null || ZE(bb.Min) > zRef || ZE(bb.Max) < zRef) continue;
+                        var hw = dr.Host as Wall; var hl = hw?.Location as LocationCurve; var hd = (hl?.Curve as Line)?.Direction;
+                        if (hd == null || Math.Abs(hd.DotProduct(Rg)) < 0.999) continue;   // only doors in walls parallel to the section plane
+                        foreach (var rt in new[] { FamilyInstanceReferenceType.Left, FamilyInstanceReferenceType.Right })
+                        {
+                            var rs = dr.GetReferences(rt); if (rs.Count == 0) continue;
+                            double dx = rt == FamilyInstanceReferenceType.Left ? Math.Min(VX(bb.Min), VX(bb.Max)) : Math.Max(VX(bb.Min), VX(bb.Max));
+                            if (lw != null && rw != null && (dx < lw.X0 || dx > rw.X0 + (rw.X1 - rw.X0))) continue;
+                            res.Add(Tuple.Create(dx, rs[0], "door " + dr.Id.IntegerValue));
+                        }
+                    }
+                    if (res.Count == 0) return res;
+                    double a0 = res.Min(q => q.Item1), a1 = res.Max(q => q.Item1);
+                    var gl = grids.Where(q => q.Item1 < a0 - 1).OrderByDescending(q => q.Item1).FirstOrDefault(); if (gl != null) res.Add(gl);
+                    var gr = grids.Where(q => q.Item1 > a1 + 1).OrderBy(q => q.Item1).FirstOrDefault(); if (gr != null) res.Add(gr);
+                    foreach (var g in grids.Where(q => q.Item1 > a0 && q.Item1 < a1)) res.Add(g);
+                    return res.OrderBy(q => q.Item1).GroupBy(q => Math.Round(q.Item1)).Select(q => q.First()).ToList();
+                };
+                Action<string, double, List<Tuple<double, Reference, string>>, double> place = (name, zLine, ch, outward) =>
+                {
+                    if (ch.Count < 2) { errors.Add(name + ": fewer than two references"); return; }
+                    var ra = new ReferenceArray(); foreach (var q in ch) ra.Append(q.Item2);
+                    var d = doc.Create.NewDimension(V, Line.CreateBound(PV(ch.First().Item1, zLine), PV(ch.Last().Item1, zLine)), ra, dimType);
+                    created.Add(d.Id.IntegerValue);
+                    var ra2 = new ReferenceArray(); ra2.Append(ch.First().Item2); ra2.Append(ch.Last().Item2);
+                    var d2 = doc.Create.NewDimension(V, Line.CreateBound(PV(ch.First().Item1, zLine + outward * gap), PV(ch.Last().Item1, zLine + outward * gap)), ra2, dimType);
+                    created.Add(d2.Id.IntegerValue);
+                    var vals = d.NumberOfSegments > 1 ? d.Segments.Cast<DimensionSegment>().Select(sg => Math.Round((sg.Value ?? 0) * MM).ToString()).ToList() : new List<string> { Math.Round((d.Value ?? 0) * MM).ToString() };
+                    done.Add(new { Part = name, Id = d.Id.IntegerValue, OverallId = d2.Id.IntegerValue, Z = Math.Round(zLine), Values = string.Join(" | ", vals) + "  (overall " + Math.Round((d2.Value ?? 0) * MM) + ")", Refs = ch.Select(q => q.Item3).ToList() });
+                };
+                if (hasLa6) done.Add(new { Part = "LA6", Skipped = "a chain with grid references already sits below the lowest floor" });
+                else
+                    try
+                    {
+                        var bot = chainAt(zBot + 1000);
+                        place("LA6", args["la6LineMm"] != null ? (double)args["la6LineMm"] : zBot - 1000, bot, -1);
+                        if ((bool?)args["la6Top"] != false)
+                        {
+                            var top = chainAt(zTop - 1000);
+                            bool differ = top.Count != bot.Count || top.Zip(bot, (a, b) => Math.Abs(a.Item1 - b.Item1)).Any(dx => dx > 5);
+                            if (differ) place("LA6 top", zTop + 1000, top, 1);
+                        }
+                        if (grids.Count == 0) errors.Add("LA6: no host grid seen: the chain stops at the wall faces");
+                    }
+                    catch (Exception e) { errors.Add("LA6: " + e.Message); }
             }
 
             // ---- LB1 run tags

@@ -182,6 +182,8 @@ Mặt cắt dọc thang bộ, 1:50, bốn vế từ LEVEL 0 lên tới chiếu n
 
 ## Bài học (ghi thêm một dòng, kèm ngày)
 
+- 2026-10-15: `stair_section_annotate` thêm `LA6` (chuỗi trục → tường → cửa → trục + tổng dưới mặt cắt, trên đỉnh khi tường tầng trên khác) và `la5HandTargetMm` (dim P01 900 từ Handrails, không cần dim tay mẫu). Chưa chạy trên model thật.
+
 - 2026-10-15: user chốt LA5 / XA6 là chiều cao **tay vịn** (mặt sàn / chiếu nghỉ → đỉnh tay vịn), số chẵn 900–1200: sát tường 900, cạnh lỗ mở 1200.
 
 - 2026-10-07: chuẩn lập từ ảnh mẫu của user + chuẩn mặt bằng. `stair_section_info` đã biên dịch với RevitAPI 2023, **chưa chạy trên model thật**.
