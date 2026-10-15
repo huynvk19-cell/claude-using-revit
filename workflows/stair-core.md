@@ -29,7 +29,7 @@ Every dim step: fix the text of existing dims of that item first (`dims_text`, p
 | A10 | SB5 floor finish `F..` | finish mark (§5) | one per landing and floor landing, next to its spot; code from the room / legend / finished views, unknown → asked | **never** (mandatory) |
 | A11 | SB6 wall finish `W..` | finish mark (§5) | at least one per wall finish kind seen; code from the room / legend / finished views, unknown → asked | **never** (mandatory) |
 | A12 | SB4 doors, windows | `annot_place` (§5) | exactly one tag per drawn opening, off the SA4 dims and the swing | the view draws no door or window |
-| A13 | Open gap between flights (thông tầng) | `detail_lines_set` for an existing X; no command creates one yet → manual (§5) | a gap open to the floors below (well between two flights, used for fire-fighting pipes) carries the X in `<Overhead>` dashed lines, fitting its 4 corners; no tag head on it | the side of the flight is a solid wall or a floor |
+| A13 | Open gap between flights (thông tầng) | `stair_gap_x` preview → apply (§5) | a gap open to the floors below (well between two flights, used for fire-fighting pipes) carries the X in `<Overhead>` dashed lines, fitting its 4 corners; no tag head on it | the side of the flight is a solid wall or a floor |
 | A14 | Tidy | `annotation_overlaps`, `dims_text_move`, `tag_leaders_info` | overlaps = 0; short texts apart; no diagonal leader (shape `D`) | — |
 | A15 | Recheck | `stair_plan_audit` again (§6) | no `missing`, no `Issues` except those the user accepted; ĐỦ – ĐÚNG – ĐẸP | — |
 
@@ -45,7 +45,7 @@ One view per call, with `timeoutSeconds`.
 | B3 | LA2 levels | `level_dims_add` (§2) | level chain through the plan-cut markers + overall, on the side opposite LA1 | the view already has the level chain |
 | B4 | LA3 flight goings | `parts:["LA3"]` (§2) | one chain per cut flight `landing \| 280mm x 15T = … (EQUAL TREADS) \| landing`; overall wall to wall once | — |
 | B5 | LA4 clear height under landings | `parts:["LA4"]` (§2) | one column per side, landing top → soffit above, every landing | — |
-| B6 | LA5 handrail height | `parts:["LA5"]` (§2) | `info` shows a rail dim on **every cut landing** (1200), + 900 where P01 is seen along the landing | **never** (mandatory) |
+| B6 | LA5 handrail height | `parts:["LA5"]`, `rail_top_at` (§2) | **every cut landing**: finish top → top of handrail, round value — 1200 at an opening (P02), + 900 where the wall handrail P01 is seen | **never** (mandatory) |
 | B7 | LA6 walls, doors → grids | manual references (§2 table) | chain + overall below the section; a second one on top when the upper walls differ | — |
 | B8 | LC riser numbers | `parts:["LC"]` (§2) | cut flights only; continuous; same number as the plan at the same riser | — |
 | B9 | LB2 railing tags | `annot_place` (§2) | one per cut flight for the seen railing; `P01` on landings where it is seen; hidden rails untagged | — |
@@ -69,10 +69,10 @@ One view per call, with `timeoutSeconds`.
 | C4 | XA3 widths to handrails | as C2 (§2) | one chain per stair block, walls → handrails → runs | — |
 | C5 | XA4 clear height \| landing thickness | as C2 (§2) | one continuous chain in the `away` half = `ClearHeights.Expected` | — |
 | C6 | XA5 wall to wall | as C2 (§2) | chain + overall, bottom (and top when the walls differ) | — |
-| C7 | XA6 handrail height | as C2 | per the standard once the user has decided | the standard still says "chờ user chốt": mark `!`, ask once |
+| C7 | XA6 handrail height | as C2, `rail_top_at` (§2) | every cut landing / floor: finish top → top of each handrail seen, round value — 900 on a wall, 1200 at an opening | **never** (mandatory) |
 | C8 | XC riser numbers | NumberSystem + `stair_numbers_match` (§3) | `away` flights only, Start and End; none on `toward` flights; matches the plan | — |
 | C9 | XB2 handrail tags | `annot_place` (§3) | `P01` per seen handrail per band, `P02` on the balustrade, horizontal leaders | — |
-| C10 | XB3 spot elevations | `annot_place` kind spot (§3) | every cut landing / floor top (until the user decides otherwise) | — |
+| C10 | XB3 spot elevations | `annot_place` kind spot (§3) | every cut landing / floor top (as LB3) | — |
 | C11 | XB4 floor finish `F..` | `annot_copy_in_view` / `finish_mark_place`, `finish_marks_snap` (§3) | one per cut landing / floor top, dot on the top | — |
 | C12 | XB5 soffit finish `C..` | as C11 | one per cut landing soffit, same column as its `F..`, dot on the soffit | — |
 | C13 | XB6 doors | as B13 | one tag per door, always with a leader | the section shows no door |

@@ -13,7 +13,7 @@ Không áp dụng cho:
 - key plan thang thoát hiểm (sơ đồ chỉ dẫn);
 - **mặt cắt thang**: chuẩn riêng. Cắt dọc vế (song song stair path) → `drafting-stair-section-parallel` (mã LA–LC); cắt ngang vế → `drafting-stair-section-cross` (mã XA–XC). Không dùng lại SA–SD.
 
-Tool: `stair_plan_audit` (read-only), `stair_plan_annotate` (path, số bậc, tag vế), `dims_text` (CLEAR, công thức). Skill: `drafting-stair-plan`.
+Tool: `stair_plan_audit` (read-only), `stair_plan_annotate` (path, số bậc, tag vế), `stair_gap_x` (X lỗ thông tầng), `dims_text` (CLEAR, công thức). Skill: `drafting-stair-plan`.
 
 Quy tắc từ user (2026-10-06): **A** dim, **B** tag, **C** đếm bậc, **D** stair path. Mã quy tắc ghi kèm chữ **S** (SA1, SB3…) để không trùng với Q, T, G của các chuẩn khác.
 
@@ -67,7 +67,7 @@ Mặt bằng tầng điển hình thường thấy **3 vế thang**. Đi theo ch
 
 - Cạnh vế thang là **lỗ trống** (giếng thang giữa hai vế, khe hở thông xuống tầng dưới — thường để đi **ống nước chữa cháy**; user, 2026-10-15) → thể hiện **thông tầng** bằng nét đứt: vẽ **chữ X** (hai đường chéo, nét `<Overhead>` như dự án đang dùng) **khít đúng 4 góc lỗ**: mép trong lan can / mép vế / mép chiếu nghỉ bao quanh lỗ, không lấn ra chiếu nghỉ, không hụt.
 - Cạnh vế là **tường đặc** hoặc **sàn** (vd. vế đầu ở tầng thấp nhất, bên cạnh là sàn) → **không** vẽ X.
-- X có sẵn sai vị trí → sửa đầu mút cho khít lỗ (`detail_lines_set`), không vẽ thêm bộ thứ hai. Không đặt đầu tag lên nét X (dời tag ra chiếu nghỉ, leader vuông góc tới lan can).
+- Vẽ / chỉnh bằng `stair_gap_x` (thiếu → vẽ, X có sẵn lệch → chỉnh đầu mút, không vẽ thêm bộ thứ hai); chỉnh tay một nét: `detail_lines_set`. Không đặt đầu tag lên nét X (dời tag ra chiếu nghỉ, leader vuông góc tới lan can).
 
 ### Mép giới hạn thông thuỷ (user, 2026-10-07) — dùng cho mọi kích thước thông thuỷ
 

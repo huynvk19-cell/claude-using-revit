@@ -5,7 +5,7 @@ description: "Detail a stair core PLAN view (plan only, NOT a stair section) via
 
 # Stair core plan (SA1–SD)
 
-**Tools** (load all in one ToolSearch call): `annot_place`, `annotation_overlaps`, `dim_stable_refs`, `dims_at_positions`, `dims_copy_refs`, `dims_edit`, `dims_rail_refs`, `detail_lines_set`, `dims_text`, `dims_text_move`, `export_sheet_images`, `number_systems_copy`, `stair_plan_annotate`, `stair_plan_audit`, `tag_leaders_info`, `view_elem_boxes`, `view_range_info`.
+**Tools** (load all in one ToolSearch call): `annot_place`, `annotation_overlaps`, `detail_lines_set`, `dim_stable_refs`, `dims_at_positions`, `dims_copy_refs`, `dims_edit`, `dims_rail_refs`, `dims_text`, `dims_text_move`, `export_sheet_images`, `number_systems_copy`, `stair_gap_x`, `stair_plan_annotate`, `stair_plan_audit`, `tag_leaders_info`, `view_elem_boxes`, `view_range_info`.
 
 **Plan views only.** Stair sections are a different job: along the flights → `drafting-stair-section-parallel`; across the flights → `drafting-stair-section-cross`. If the view is a section or elevation, stop and say so.
 
@@ -136,7 +136,7 @@ Then set the text with `dims_text`: `CLEAR` suffix **only on the clear width of 
 - SB3 spot elevation: `doc.Create.NewSpotElevation(view, topFaceRef, …)` on the mid landing, on the floor landing inside the core, and — when the plan cuts the stair door — on the floor just outside the door, **even at the same level** (it tells inside from outside on the escape route; link floor → link reference). Not on the door swing or the arrow.
 - SB4 doors/windows: exactly one tag each, close, off the dims.
 - **SB5 floor finish is mandatory** (`F13` in the sample) on the mid landing and the floor landing, next to their spot elevation; code as SB6, unknown → ask, never skip.
-- **Open gap between flights** (well open to the floors below, often for fire-fighting pipes): an X in `<Overhead>` dashed lines fitting the 4 corners of the gap (standard §0 "Lỗ trống cạnh vế thang"). Existing X off → `detail_lines_set`. Missing → no command draws it yet: list it as manual. Side is a solid wall or a floor → no X.
+- **Open gap between flights** (well open to the floors below, often for fire-fighting pipes): an X in `<Overhead>` dashed lines fitting the 4 corners of the gap (standard §0 "Lỗ trống cạnh vế thang"). `stair_gap_x {viewId, mode:"preview"}` → read `Gaps` (corners, size, bound by, skipped: wall / floor) → `apply` with `logPath`; it draws the missing diagonals and refits an existing X; `undo` with the log. A gap it misses → pass `rect`. Side is a solid wall or a floor → no X (the command skips it). Tag heads it lists in `Warnings` → move them off the X.
 - **SB6 wall finish is mandatory** (`W..`, one per wall finish kind seen, usually one per wall face): the mark the project already uses (often a Generic Annotation box, listed by the audit as `FinishMarks`). Code from the room's Wall Finish parameter, the finish legend, or the finished views of the same core; unknown → ask, never skip. Leader to the nearest wall face; heads may gather in a free inside corner of the core.
 
 ## 6. Verify and report

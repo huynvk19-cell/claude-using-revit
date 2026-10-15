@@ -84,6 +84,8 @@ Nguồn: ảnh mẫu của user (2026-10-07) + các quy tắc chung đã có ở
 - Mẫu **không** ghi `CLEAR`. Mặc định theo mẫu; nếu user muốn đồng bộ với mặt bằng (mọi kích thước thông thuỷ có `CLEAR`) → ghi vào profile.
 
 ### LA5 — Chiều cao tay vịn (đứng)
+- **Dim này là chiều cao TAY VỊN** (user, 2026-10-15): từ **mặt hoàn thiện sàn / chiếu nghỉ** lên **đỉnh tay vịn**, không phải chiều cao khung lan can.
+- **Giá trị là số chẵn**, thường 900–1200: tay vịn **sát tường** thường **900**; lan can / tay vịn **cạnh lỗ mở** (giếng thang, mép chiếu nghỉ hở, thông tầng) thường **1200** cho an toàn. Giá trị lẻ (vd. 1188, 1329) = tham chiếu sai cạnh hoặc model lệch → kiểm bằng `rail_top_at`, chọn lại cạnh; vẫn lẻ → ghi Cần xem (không sửa model, không Replace with text).
 - **BẮT BUỘC** (user, 2026-10-08): **mỗi chiếu nghỉ bị cắt có một dim cao độ tay vịn**, từ mặt chiếu nghỉ lên đỉnh tay vịn đi dọc mép chiếu nghỉ (lan can P02 → 1200). Không được bỏ im lặng: tool không bắt được tham chiếu → ghi Việc tồn và xin user một dim tay làm mẫu (`la5FromDimId`).
 - Làm: `stair_section_annotate {parts:["LA5"], la5RailingIds:[P02…], la5TargetMm:1200, la5LeftX, la5RightX}` (LA5 nằm trong `parts` mặc định, `la5Auto` mặc định bật; chiếu nghỉ đã có dim tay vịn → bỏ qua) (tự dò tham chiếu đỉnh tay vịn, chọn giá trị gần 1200 nhất và có vẽ). Giá trị lệch xa 1200 (vd. 1188, 1329) → kiểm bằng `rail_top_at`; không chắc thì không đặt, hỏi user.
 - Kiểm: `stair_section_info` báo `LA5: landing … missing (mandatory)` cho từng chiếu nghỉ thiếu.
@@ -180,8 +182,10 @@ Mặt cắt dọc thang bộ, 1:50, bốn vế từ LEVEL 0 lên tới chiếu n
 
 ## Bài học (ghi thêm một dòng, kèm ngày)
 
+- 2026-10-15: user chốt LA5 / XA6 là chiều cao **tay vịn** (mặt sàn / chiếu nghỉ → đỉnh tay vịn), số chẵn 900–1200: sát tường 900, cạnh lỗ mở 1200.
+
 - 2026-10-07: chuẩn lập từ ảnh mẫu của user + chuẩn mặt bằng. `stair_section_info` đã biên dịch với RevitAPI 2023, **chưa chạy trên model thật**.
-- 2026-10-08: chạy thật trên view gốc của mẫu. **Thang kéo (scissor)**: hai thang lồng nhau, vế bị cắt xen kẽ thuộc thang A rồi thang B; vế phía sau là vế "song sinh" cùng cao độ. Mẫu chỉ tag + đánh số **vế bị cắt**; vế phía sau không tag (LB1 đang ghi "cả vế phía sau" → chờ user chốt). Số bậc liên tục **theo cao độ** qua cả hai thang (F1 thang A 1–16, F4 thang B 17–31…).
+- 2026-10-08: chạy thật trên view gốc của mẫu. **Thang kéo (scissor)**: hai thang lồng nhau, vế bị cắt xen kẽ thuộc thang A rồi thang B; vế phía sau là vế "song sinh" cùng cao độ. Mẫu chỉ tag + đánh số **vế bị cắt**; vế phía sau không tag (đã chốt ở LB1). Số bậc liên tục **theo cao độ** qua cả hai thang (F1 thang A 1–16, F4 thang B 17–31…).
 - 2026-10-08: view mẫu dùng **Replace with text** cho công thức (`169.4mm x 16R = 2710`) → giá trị không sống. Không bắt chước: dùng prefix + below (`dims_text`). `stair_section_info` nay báo `Replace with text '…' (value not live)`; `view_dims_snapshot` nay trả cả `Above` và `Override`.
 - 2026-10-08: lần chạy thật đầu tiên bằng `stair_section_annotate` (thang một nhánh, 6 vế, 3 vế cắt): dim/cao độ bám mặt 3D của **StairsRun / StairsLanding** được tạo nhưng **không vẽ** (Box null) → tham chiếu mặt của phần tử **Stairs**, như dim tay của dự án. Chữ công thức LA3 đặt giữa vế đè số bậc → hạ chuỗi LA3 xuống 30 % chiều cao vế, tag vế 8 %, dời chữ công thức sang vùng trống dưới vế (`dims_text_move`). Tay vịn gắn tường dạng ống nghiêng không có đoạn ngang → không có tham chiếu cho LA5 bằng API.
 - 2026-10-08: lỗi hay gặp khi dim tay (thấy trên mẫu): một đoạn gộp hai vế (vế cắt + vế ngắn phía sau, vd. 15R + 6R = 3700) mà prefix ghi 15R; đoạn gộp vế + chiếu nghỉ (`5950` = 4200 + 1750) mang prefix `280mm x 15T =`; prefix thiếu dấu `=`; chuỗi có điểm gióng rác ngoài crop (đoạn `0`, đoạn hàng chục mét). Kiểm bằng `view_dims_snapshot` trước khi coi view mẫu là chuẩn.

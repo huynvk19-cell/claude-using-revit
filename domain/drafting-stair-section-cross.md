@@ -93,8 +93,9 @@ Nguồn: view mẫu của user (2026-10-08, lõi thang kéo hai thang lồng nha
 
 ### XA6 — Cao độ tay vịn
 
-- Mẫu mặt cắt ngang **không có**; chiều cao tay vịn đã dim ở mặt cắt dọc (LA5 bắt buộc).
-- **Chờ user chốt** có cần trên mặt cắt ngang không. Tới khi chốt: không làm, ghi Cần xem.
+- **Dim này là chiều cao TAY VỊN** (user, 2026-10-15): từ **mặt hoàn thiện sàn / chiếu nghỉ** lên **đỉnh tay vịn**, không phải chiều cao khung lan can.
+- **Giá trị là số chẵn**, thường 900–1200: tay vịn **sát tường** thường **900**; lan can / tay vịn **cạnh lỗ mở** (giếng thang, mép chiếu nghỉ hở, thông tầng) thường **1200** cho an toàn. Giá trị lẻ (vd. 1188, 1329) = tham chiếu sai cạnh hoặc model lệch → kiểm bằng `rail_top_at`, chọn lại cạnh; vẫn lẻ → ghi Cần xem (không sửa model, không Replace with text).
+- **Bắt buộc** (user, 2026-10-15): mỗi chiếu nghỉ / sàn **bị cắt** có tay vịn nhìn thấy → một dim cho mỗi tay vịn thấy rõ ở đó (tay vịn tường 900, lan can cạnh lỗ mở 1200), đặt sát tay vịn, không đè chuỗi XA4. Tay vịn bị lan can lớn hơn che → không dim (như XB2).
 
 ### Quy định chung cho dim
 
@@ -109,7 +110,7 @@ Nguồn: view mẫu của user (2026-10-08, lõi thang kéo hai thang lồng nha
 |---|---|---|---|
 | **XB1** | Vế thang — `169.4mm x 16R` / `From EL +0 To EL +2710` | **1 tag / vế nhìn thấy, cả hai nửa** (`away` và `toward`) | Khung chữ **xoay đứng**, đặt **ngoài tường của nửa chứa vế** (vế nửa trái → ngoài tường trái, nửa phải → ngoài tường phải), ngang giữa dải; **leader ngang** từ khung vào giữa vế. Chữ cao độ phải đúng From/To EL của vế (sai → type sai khối tầng, `tags_retype`). |
 | **XB2** | Tay vịn / lan can — `P01`, `P02` | Mỗi tay vịn **thấy rõ** ở mỗi dải (tay vịn gắn tường biên, tay vịn hai mặt tường giữa); lan can `P02` ở tầng trên cùng | Đầu tag trong lòng thang cạnh tay vịn, **leader ngang** ngắn, chấm chạm tay vịn. Tay vịn bị lan can lớn hơn che → không tag (như LB2). |
-| **XB3** | Cao độ (Spot Elevation) | Mỗi mặt chiếu nghỉ / sàn **bị cắt** (mặc định theo mặt cắt dọc LB3); **chờ user chốt** — mẫu chỉ có ở sàn tầng, chiếu nghỉ trên cùng và mái | Trên mặt hoàn thiện, ở phần chiếu nghỉ bị cắt, không đè ô F../C... |
+| **XB3** | Cao độ (Spot Elevation) | Mỗi mặt chiếu nghỉ / sàn **bị cắt** (như mặt cắt dọc LB3; user, 2026-10-15) | Trên mặt hoàn thiện, ở phần chiếu nghỉ bị cắt, không đè ô F../C... |
 | **XB4** | Hoàn thiện sàn `F13` | 1 / mặt chiếu nghỉ hoặc sàn bị cắt; thêm ở mặt chiếu nghỉ thấy được của nửa kia khi mặt đó lộ ra (mẫu) | Phía trên mặt sàn, leader đứng xuống, **chấm đúng mặt trên**; cột giữa nửa `toward` (mẫu). |
 | **XB5** | Hoàn thiện trần / đáy chiếu nghỉ `C09` | 1 / đáy chiếu nghỉ bị cắt; đáy sàn mái (mẫu: hai ô) | Dưới đáy, leader đứng lên, **chấm đúng đáy**, **cùng cột** với XB4 của chiếu nghỉ đó. |
 | **XB6** | Cửa | như LB6 (`drafting-opening-tags.md`, luôn có leader) | — |
@@ -159,12 +160,15 @@ Lỗi thấy trên mẫu (không bắt chước): công thức XA1 dùng Replace
   | XA5 tường → tường (+ trục) | view |
   | XB1 tag vế | vế nhìn thấy (cả hai nửa) |
   | XB2 tag tay vịn / lan can | tay vịn thấy rõ mỗi dải |
-  | XB3 cao độ | chiếu nghỉ / sàn bị cắt (chờ chốt) |
+  | XA6 chiều cao tay vịn (900 tường / 1200 lỗ mở) | chiếu nghỉ / sàn bị cắt, mỗi tay vịn thấy rõ |
+  | XB3 cao độ | chiếu nghỉ / sàn bị cắt |
   | XB4 F.., XB5 C.. (chấm đúng mặt) | chiếu nghỉ / sàn bị cắt |
   | XB6 cửa có leader | cửa |
   | XC số bậc Start and End | vế `away` |
 
 ## Bài học (ghi thêm một dòng, kèm ngày)
+
+- 2026-10-15: bỏ hai chỗ "chờ user chốt": XA6 bắt buộc (chiều cao tay vịn, số chẵn, tường 900 / lỗ mở 1200); XB3 theo LB3 (mỗi mặt chiếu nghỉ / sàn bị cắt).
 
 - 2026-10-08: chuẩn lập từ view mẫu mặt cắt ngang của user + chuẩn mặt cắt dọc. `stair_xsection_info` chạy thật trên view mẫu: XA4 mong đợi khớp 20/20 đoạn của chuỗi tay; nhận đúng mặt cắt dọc (trả lỗi, chuyển sang `stair_section_info`). Chưa có lệnh annotate riêng: dựng dim bằng `dims_at_positions` / dim tay mẫu, tag bằng `annot_place`.
 - 2026-10-08 (API): `Dimension.Origin` ném lỗi với dim nhiều đoạn → lấy vị trí từ `(Line)d.Curve`. Bounding box của StairsLanding trùm cả thang → độ dày chiếu nghỉ lấy từ hình học (mặt trên → mặt dưới thấp nhất; ngay dưới mặt trên có mặt 15 mm của lớp hoàn thiện). `SpotDimension.ValueString` rỗng → so cao độ bằng `Origin.Z`.
