@@ -14,7 +14,7 @@ Skill: `drafting-ceiling-plan`; mỗi mục dưới đây là một thẻ bướ
 
 | Thẻ | Mục | Quy tắc |
 |---|---|---|
-| 00 | Tag room | `drafting-annotation.md` §2 RT1–RT4: type do người dùng chọn (bổ sung → type room lân cận); không cắt tường, cạnh trần; gần giao điểm hai đường chéo; trong room nếu đủ chỗ, không thì ngoài room có leader. |
+| 00 | Tag room | `drafting-annotation.md` §2 RT1–RT5: type do người dùng chọn (bổ sung → type room lân cận); không cắt tường, cạnh trần; gần giao điểm hai đường chéo; trong room nếu đủ chỗ, không thì ngoài room có leader. |
 
 Dim trục: `drafting-grid-dims.md` (G1–G4), chạy trước trong quy trình `ceiling-plan`.
 

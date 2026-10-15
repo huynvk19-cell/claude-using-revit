@@ -7,7 +7,7 @@ description: "Develop reflected ceiling plans (khai triển mặt bằng trần)
 
 **Tools** (load all in one ToolSearch call): `annot_place`, `delete_element`, `export_sheet_images`, `mark_types`, `room_tags_broken`, `room_tags_missing`, `tag_leaders_info`, `ui_view_focus`.
 
-Standard: `~/.claude/drafting-domain/drafting-ceiling-plan.md` (Vietnamese); room tag rules RT1–RT4 in `drafting-annotation.md` §2.
+Standard: `~/.claude/drafting-domain/drafting-ceiling-plan.md` (Vietnamese); room tag rules RT1–RT5 in `drafting-annotation.md` §2.
 
 Load `drafting-session` first. Take these values from the project `drafting-profile.md`:
 - the room tag type, when the project fixes one → `typeName` (otherwise the user chooses, RT1);
