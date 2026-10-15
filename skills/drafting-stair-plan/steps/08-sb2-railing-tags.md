@@ -1,6 +1,6 @@
 # 08 · SB2 Railing tags (tag lan can P01 / P02)
 
-**Skill** `drafting-stair-plan` · **Standard** `drafting-stair-plan.md` SB2 · **Tools** `annot_place`, `tag_leaders_info`, `view_elem_boxes`
+**Skill** `drafting-stair-plan` · **Standard** `drafting-stair-plan.md` SB2 · **Tools** `annot_place`, `tag_leaders_info`, `view_elem_boxes`, `stair_plan_audit`
 **Applies to** every plan view of the job, one view per call.
 **Read first** (once per job): `_tags-common.md`
 
@@ -10,6 +10,8 @@
 - Head off the run lines (stair well, landing or beside the railing), short orthogonal leader to the railing.
 
 ## Done when
+
+Check: `stair_plan_audit {viewIds, rules:["SB2"]}` (`Tags.Railings`, SB2 issues).
 
 - One tag per railing (each wall handrail its own `P01`).
 - No head on the tread lines, even where the sample has them there.

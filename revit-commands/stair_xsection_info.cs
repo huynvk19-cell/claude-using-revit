@@ -7,7 +7,8 @@
       "viewId": { "type": "number", "description": "the stair cross-section view" },
       "excludeStairIds": { "type": "array", "items": { "type": "number" }, "description": "stairs seen but not part of this core" },
       "toleranceMm": { "type": "number", "description": "value tolerance when matching dims, default 1" },
-      "outPath": { "type": "string", "description": "write the full result as JSON here" }
+      "outPath": { "type": "string", "description": "write the full result as JSON here" },
+      "rules": { "type": "array", "items": { "type": "string" }, "description": "only these rules, e.g. [\"XA1\"] (one step card): short result, full in outPath" }
     },
     "required": [ "viewId" ]
   },
@@ -333,6 +334,42 @@ public static class StairXsectionInfo
         };
         var outPath = args.Value<string>("outPath");
         if (!string.IsNullOrEmpty(outPath)) File.WriteAllText(outPath, JsonConvert.SerializeObject(res, Formatting.Indented));
+        if (args["rules"] is JArray ra && ra.Count > 0)
+            return OnlyRules(JObject.FromObject(res), ra, "Dims", "Flights", new[] { "Label", "Id", "Half", "Facing", "TagText", "RunTags", "RiserNumbers", "FirstNumber", "FirstByElevation" },
+                new Dictionary<string, string[]> { ["XA4"] = new[] { "ClearHeights", "Slabs" }, ["XA6"] = new[] { "Slabs" }, ["XB3"] = new[] { "Slabs" }, ["XB4"] = new[] { "Slabs" }, ["XB5"] = new[] { "Slabs" } }, outPath);
         return res;
+    }
+
+    // rules: keep only the rows of the asked rules (one step card = one rule) + a count per rule; general notes / issues
+    // (no rule code) stay. The full result is still written to outPath.
+    static object OnlyRules(JObject full, JArray rulesArg, string rowsKey, string briefKey, string[] briefFields, Dictionary<string, string[]> sections, string outPath)
+    {
+        var rules = rulesArg.Select(x => ((string)x ?? "").Trim().ToUpper()).Where(x => x.Length > 0).ToList();
+        Func<string, bool> hit = code => code != null && rules.Any(r => code.ToUpper().StartsWith(r));
+        Func<string, bool> keepLine = s =>
+        {
+            var m = System.Text.RegularExpressions.Regex.Match(s ?? "", @"^([A-Z]{1,3}\d*)\s*:");
+            return !m.Success || hit(m.Groups[1].Value);
+        };
+        var o = new JObject { ["View"] = full["View"], ["ViewId"] = full["ViewId"], ["Rules"] = new JArray(rules) };
+        var rows = (full[rowsKey] as JArray ?? new JArray()).Where(r => hit((string)r["Rule"])).ToList();
+        var sum = new JObject();
+        foreach (var r in rules)
+        {
+            var mine = rows.Where(x => ((string)x["Rule"]).ToUpper().StartsWith(r)).ToList();
+            int ok = mine.Count(x => ((string)x["Status"] ?? "").StartsWith("OK"));
+            sum[r] = mine.Count == 0 ? "no dim rows (see the lists below)" : ok + " OK, " + (mine.Count - ok) + " to fix";
+        }
+        o["Summary"] = sum;
+        o[rowsKey] = new JArray(rows);
+        if (briefKey != null && full[briefKey] is JArray b)
+            o[briefKey] = new JArray(b.Select(x => new JObject(briefFields.Where(f => x[f] != null).Select(f => new JProperty(f, x[f])))));
+        foreach (var kv in sections)
+            if (rules.Any(r => kv.Key.StartsWith(r) || r.StartsWith(kv.Key)))
+                foreach (var path in kv.Value) { var t = full.SelectToken(path); if (t != null && o[path] == null) o[path] = t; }
+        o["Notes"] = new JArray((full["Notes"] as JArray ?? new JArray()).Where(x => keepLine((string)x)));
+        o["Issues"] = new JArray((full["Issues"] as JArray ?? new JArray()).Where(x => keepLine((string)x)));
+        o["Full"] = string.IsNullOrEmpty(outPath) ? "only these rules; pass outPath (or no rules) for the full result" : outPath;
+        return o;
     }
 }

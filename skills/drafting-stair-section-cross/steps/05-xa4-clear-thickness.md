@@ -12,6 +12,8 @@
 
 ## Done when
 
+Check: `stair_xsection_info {viewId, rules:["XA4"]}` (only XA4 rows, notes, issues).
+
 - Values = `ClearHeights.Expected` of `stair_xsection_info`, the chain complete on one half.
 
 ## Skip only if

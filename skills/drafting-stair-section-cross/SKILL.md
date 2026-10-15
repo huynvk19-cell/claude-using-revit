@@ -15,6 +15,8 @@ Load `drafting-session` first. From the project `drafting-profile.md` take the *
 
 Section views: **one view per call**, with `timeoutSeconds`.
 
+**Checking a card**: `stair_xsection_info {viewId, rules:["<the card's rule>"]}` (e.g. `["XA1"]`) returns only that rule's rows and a count per rule. The full result (no `rules`) is for the survey card, written to `outPath`.
+
 ## Step cards
 
 Each step is one file in `steps/` (next to this file). Open **only the card of the step you are on**; the `_…-common.md` notes once per job, before the first card that names them. In a workflow (`drafting-workflow`), each card runs on every cross-section before the next card.

@@ -1,6 +1,6 @@
 # 02 · XA1 Band heights (dim chiều cao từng dải)
 
-**Skill** `drafting-stair-section-cross` · **Standard** `drafting-stair-section-cross.md` XA1 · **Tools** `dims_copy_refs`, `dims_edit`, `dims_text`, `view_elem_boxes`
+**Skill** `drafting-stair-section-cross` · **Standard** `drafting-stair-section-cross.md` XA1 · **Tools** `dims_copy_refs`, `dims_edit`, `dims_text`, `view_elem_boxes`, `stair_xsection_info`
 **Applies to** every section across the flights of the job, one view per call (`timeoutSeconds`).
 **Read first** (once per job): `_dims-common.md`
 
@@ -12,6 +12,8 @@
 - Merged bands in one segment (sample: `3700` = 6R + 15R) → split: `dims_edit` with log, then rebuild.
 
 ## Done when
+
+Check: `stair_xsection_info {viewId, rules:["XA1"]}` (only XA1 rows, notes, issues).
 
 - `stair_xsection_info` XA1 rows `OK` for every band; no merged band, no 0 mm segment.
 - One overall outermost; every dim drawn (Box ≠ null).

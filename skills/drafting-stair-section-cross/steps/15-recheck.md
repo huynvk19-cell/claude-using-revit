@@ -5,7 +5,7 @@
 
 ## Do
 
-1. `stair_xsection_info` again.
+1. `stair_xsection_info {viewId, rules:["XA","XB","XC"]}`: the count per rule and only the rows / issues left.
 2. Export the **view** image and compare with the standard's sample (`drafting-visual-check`).
 3. Report per `drafting-session`: exact view name; table per band (rise dim, tags, numbers); **Cần xem** (numbering vs plan); **Việc tồn**.
 

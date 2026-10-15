@@ -1,6 +1,6 @@
 # 04 · XA3 Widths to handrails (bề rộng vế tới tay vịn)
 
-**Skill** `drafting-stair-section-cross` · **Standard** `drafting-stair-section-cross.md` XA3 · **Tools** `dims_copy_refs`, `view_elem_boxes`
+**Skill** `drafting-stair-section-cross` · **Standard** `drafting-stair-section-cross.md` XA3 · **Tools** `dims_copy_refs`, `view_elem_boxes`, `stair_xsection_info`
 **Applies to** every section across the flights of the job, one view per call (`timeoutSeconds`).
 **Read first** (once per job): `_dims-common.md`
 
@@ -12,6 +12,8 @@
 - References: wall faces, **Handrails**, Stairs edges; never a link.
 
 ## Done when
+
+Check: `stair_xsection_info {viewId, rules:["XA3"]}` (only XA3 rows, notes, issues).
 
 - One chain per stair block, every dim drawn.
 

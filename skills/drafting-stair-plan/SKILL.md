@@ -16,7 +16,10 @@ Load `drafting-session` first. From the project `drafting-profile.md` take:
 - stair core views (name filter) and whether tread numbers are shown (default: yes);
 - tag / path type overrides, if the profile names any. Otherwise the project's most-used type per category.
 
-Plan views only. **One view per call.** Tools have no project defaults.
+Plan views only. Tools have no project defaults.
+
+- **All plans of a step in one call**: `stair_plan_audit`, `stair_plan_annotate`, `stair_gap_x` take `viewIds` (logs and outPaths get `-<viewId>`; undo with the same `viewIds` + `logPath`). The other commands: one view per call.
+- **Checking a card**: `stair_plan_audit {viewIds, rules:[<the card's rule>]}` returns only that rule's rows and a count per rule (a few hundred tokens). The full result (no `rules`) is for the survey card, written to `outPath`.
 
 ## Step cards
 

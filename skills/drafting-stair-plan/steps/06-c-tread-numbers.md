@@ -1,12 +1,12 @@
 # 06 · C Tread numbers (đánh số bậc)
 
-**Skill** `drafting-stair-plan` · **Standard** `drafting-stair-plan.md` C · **Tools** `stair_plan_annotate`, `number_systems_copy`, `export_sheet_images`
-**Applies to** every plan view of the job, one view per call.
+**Skill** `drafting-stair-plan` · **Standard** `drafting-stair-plan.md` C · **Tools** `stair_plan_annotate`, `number_systems_copy`, `export_sheet_images`, `stair_plan_audit`
+**Applies to** every plan view of the job, all in one call (`viewIds`).
 
 ## Do
 
 ```
-stair_plan_annotate {viewId, mode:"preview", parts:["numbers"]}  → apply with logPath
+stair_plan_annotate {viewIds:[<all plans>], mode:"preview", parts:["numbers"]}  → apply with logPath
 ```
 
 - Numbers on each seen run without them (`numberSide`, default `left`). V1 gets the mirrored side, so the V1 and V3 columns never overlap in their shared lane.
@@ -14,6 +14,8 @@ stair_plan_annotate {viewId, mode:"preview", parts:["numbers"]}  → apply with 
 - **Numbering across stairs**: the start number is the Stairs parameter "Tread/Riser Start Number" (a model parameter: ask the user once for permission). Start = previous stair's start + its Actual Number of Risers, from the lowest stair of the core; list the whole chain (stairs id → base/top level → risers → start) in the profile.
 
 ## Done when
+
+Check: `stair_plan_audit {viewIds, rules:["C"]}` (`TreadNumbers`, C issues) + the image.
 
 - Every seen run numbered.
 - Numbers continue over the whole stair from the lowest riser of the building (sample: 1…15, 16…30, 31…45), every second one shown, odd numbers; each run starts at the previous run's last number + 1 (checked on the image).

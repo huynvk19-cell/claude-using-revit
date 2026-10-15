@@ -1,6 +1,6 @@
 # 06 · LA5 Handrail height (cao tay vịn) ★
 
-**Skill** `drafting-stair-section-parallel` · **Standard** `drafting-stair-section-parallel.md` LA5 · **Tools** `stair_section_annotate`, `rail_top_at`, `view_elem_boxes`
+**Skill** `drafting-stair-section-parallel` · **Standard** `drafting-stair-section-parallel.md` LA5 · **Tools** `stair_section_annotate`, `rail_top_at`, `view_elem_boxes`, `stair_section_info`
 **Applies to** every section along the flights of the job, one view per call (`timeoutSeconds`).
 **Read first** (once per job): `_annotate-common.md`
 
@@ -18,6 +18,8 @@ stair_section_annotate {viewId, mode:"preview", parts:["LA5"], la5RailingIds:[<P
 - **Wall handrail P01 seen along a landing** (horizontal on the wall, not hidden by P02): a second dim, landing top → top of the P01 handrail (`900`), 230–300 mm from the 1200 dim toward the wall (or ~500 mm from the wall finish on the other side). `la5Auto` reads top rails only: take the P01 handrail reference from a hand dim (`la5FromDimId`, `la5TargetMm:900`).
 
 ## Done when
+
+Check: `stair_section_info {viewId, rules:["LA5"]}` (only LA5 rows, notes, issues).
 
 - `stair_section_info`: one LA5 row per cut landing, all `OK`, no `LA5: landing … missing (mandatory)`.
 - A 900 dim on every landing where P01 is seen along it (`Notes` line `LA5: landing … one rail dim` checked).
