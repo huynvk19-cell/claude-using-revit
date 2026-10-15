@@ -40,6 +40,10 @@
         "type": "number",
         "description": "paper mm the body may sit beyond the room, default 30"
       },
+      "farLeaderMm": {
+        "type": "number",
+        "description": "nothing clear within maxLeaderMm: look this far out, default 100"
+      },
       "ignore": {
         "type": "array",
         "items": {
@@ -73,7 +77,11 @@
 //      and no other body placed in this run -> no leader;
 //    - otherwise outside: the body straight above / right / below / left of the anchor (shortest leader first), box
 //      clear of the same obstacles, inside the crop and not in another room's anchor; leader end = anchor, so the
-//      leader (it starts at the body centre) is one vertical / horizontal segment on the paper.
+//    leader (it starts at the body centre) is one vertical / horizontal segment on the paper. Nothing clear within
+//    maxLeaderMm -> the body may go farther out (up to farLeaderMm), the leader still ends at the anchor (user 2026-10-15).
+//    Rooms cut by the crop count when part of them is seen; when the diagonal point is not in the visible part, the
+//    anchor is the centre of the visible part (or the nearest point of the room inside it). A room seen in two sibling
+//    dependent views of one call is proposed once (first view).
 //    Tag type = typeName, else the most common type among the 3 nearest tagged rooms of the view (NeighbourType).
 //    Tag size: tagSizeMm, else the box of a placed tag of that type WITHOUT leader (its body).
 //    Items are ready for annot_place {mode:'preview'|'apply', viewId, items} (kind 'roomtag': right / up = body centre,
@@ -153,6 +161,8 @@ public static class RoomTagsMissing
         };
 
         var outViews = new List<object>();
+        var proposed = new Dictionary<int, HashSet<int>>(); // primary (or own) view id -> rooms proposed in this call
+        double farLeaderMm = Math.Max((double?)args["farLeaderMm"] ?? 100, maxLeaderMm);
         foreach (var vid in viewIds)
         {
             var v = doc.GetElement(new ElementId(vid)) as ViewPlan;
@@ -190,8 +200,6 @@ public static class RoomTagsMissing
             foreach (var r in pool)
             {
                 if (r.Area <= 0 || !(r.Location is LocationPoint lp)) { notPlaced++; continue; }
-                var lpF = F(lp.Point);
-                if (crop != null && (lpF[0] < crop.R0 || lpF[0] > crop.R1 || lpF[1] < crop.U0 || lpF[1] > crop.U1)) continue;
                 rooms.Add(r);
             }
 
@@ -283,15 +291,27 @@ public static class RoomTagsMissing
                 catch { }
                 if (bsegs.Count == 0) continue;
                 var rect = new Box(bsegs.Min(s => Math.Min(s.R1, s.R2)), bsegs.Min(s => Math.Min(s.U1, s.U2)), bsegs.Max(s => Math.Max(s.R1, s.R2)), bsegs.Max(s => Math.Max(s.U1, s.U2)));
+                if (crop != null && !rect.Hits(crop)) continue; // not seen in this view
+                // visible part of the room rectangle; the anchor is the diagonal point when it is seen, else the centre of the visible part
+                var vis = crop == null ? rect : new Box(Math.Max(rect.R0, crop.R0), Math.Max(rect.U0, crop.U0), Math.Min(rect.R1, crop.R1), Math.Min(rect.U1, crop.U1));
+                double ar = (rect.R0 + rect.R1) / 2, au = (rect.U0 + rect.U1) / 2;
+                bool diagSeen = ar > vis.R0 && ar < vis.R1 && au > vis.U0 && au < vis.U1;
+                if (!diagSeen) { ar = (vis.R0 + vis.R1) / 2; au = (vis.U0 + vis.U1) / 2; }
                 double z = (r.Level != null ? r.Level.ProjectElevation : 0) + r.BaseOffset + Math.Min(1000 / MM, Math.Max(r.UnboundedHeight, 0.1) / 2);
-                info[r.Id.IntegerValue] = new object[] { rect, new[] { (rect.R0 + rect.R1) / 2, (rect.U0 + rect.U1) / 2 }, ignore.Contains("boundary") ? new List<Seg>() : bsegs, z };
+                info[r.Id.IntegerValue] = new object[] { rect, new[] { ar, au }, ignore.Contains("boundary") ? new List<Seg>() : bsegs, z, vis, diagSeen };
             }
             Func<Room, double, double, bool> inRoom = (r, rr, uu) => { try { return r.IsPointInRoom(P(rr, uu, (double)info[r.Id.IntegerValue][3])); } catch { return false; } };
             // the room of the view containing a point (outside bodies must not sit on another room's anchor)
             var anchorsTaken = new List<double[]>();
 
+            rooms = rooms.Where(r => info.ContainsKey(r.Id.IntegerValue)).ToList();
             int taggedHere = rooms.Count(r => tagged.ContainsKey(r.Id.IntegerValue));
-            var todo = rooms.Where(r => !tagged.ContainsKey(r.Id.IntegerValue) && (only == null || only.Contains(r.Id.IntegerValue)) && info.ContainsKey(r.Id.IntegerValue)).ToList();
+            // one proposal per room across sibling dependent views of this call
+            int fam = primary != ElementId.InvalidElementId ? primary.IntegerValue : v.Id.IntegerValue;
+            if (!proposed.ContainsKey(fam)) proposed[fam] = new HashSet<int>();
+            int inSibling = rooms.Count(r => !tagged.ContainsKey(r.Id.IntegerValue) && proposed[fam].Contains(r.Id.IntegerValue));
+            var todo = rooms.Where(r => !tagged.ContainsKey(r.Id.IntegerValue) && !proposed[fam].Contains(r.Id.IntegerValue) && (only == null || only.Contains(r.Id.IntegerValue))).ToList();
+            foreach (var r in todo) proposed[fam].Add(r.Id.IntegerValue);
             var placed = new List<Box>();
             var items = new List<object>();
             var problems = new List<object>();
@@ -302,7 +322,8 @@ public static class RoomTagsMissing
             {
                 string label = r.Number + " " + r.Name;
                 var inf = info[r.Id.IntegerValue];
-                var rect = (Box)inf[0]; var A = (double[])inf[1];
+                var rect = (Box)inf[4]; var A = (double[])inf[1];
+                if (!(bool)inf[5]) label += " (diagonal point not seen)";
                 // neighbour type: most common type among the 3 nearest tagged rooms
                 string nType = tagged.Values.Select(t => { var hp = F(t.TagHeadPosition); return new { T = typeOf(t), D = Math.Pow(hp[0] - A[0], 2) + Math.Pow(hp[1] - A[1], 2) }; })
                     .OrderBy(x => x.D).Take(3).GroupBy(x => x.T).OrderByDescending(g => g.Count()).Select(g => g.Key).FirstOrDefault();
@@ -383,29 +404,33 @@ public static class RoomTagsMissing
                     new { N = "left", Dr = -1.0, Du = 0.0, Edge = A[0] - rect.R0, Half = w / 2 } };
                 object best = null; Box bestBox = null; double bestLen = double.MaxValue;
                 anchorsTaken.Remove(A);
-                foreach (var d in dirs)
+                foreach (var lim in new[] { maxLeaderMm, farLeaderMm }.Distinct())
                 {
-                    for (double dist = d.Half + c; dist - d.Half <= d.Edge + maxLeaderMm * sc; dist += s)
+                    foreach (var d in dirs)
                     {
-                        double cr = A[0] + d.Dr * dist, cu = A[1] + d.Du * dist;
-                        var bx = new Box(cr - w / 2, cu - h / 2, cr + w / 2, cu + h / 2).Grow(c);
-                        if (crop != null && (bx.R0 < crop.R0 || bx.R1 > crop.R1 || bx.U0 < crop.U0 || bx.U1 > crop.U1)) { note(rid, "outside " + d.N + ": crop"); break; }
-                        if (inRoom(r, cr, cu)) continue; // body must be outside its room here
-                        var bk = blocker(bx, (List<Seg>)pd[4], (List<Box>)pd[5]);
-                        if (bk != null) { note(rid, "outside: " + bk); continue; }
-                        double len = dist - d.Half;
-                        if (len < bestLen)
+                        for (double dist = d.Half + c; dist - d.Half <= d.Edge + lim * sc; dist += s)
                         {
-                            bestLen = len; bestBox = bx;
-                            best = new { kind = "roomtag", elementId = rid, typeName = (string)pd[1], right = Math.Round(cr), up = Math.Round(cu), leader = true, endRight = Math.Round(A[0]), endUp = Math.Round(A[1]), note = (string)pd[7] + " · outside " + d.N + ", leader " + Math.Round(len / sc, 1) + " mm" };
+                            double cr = A[0] + d.Dr * dist, cu = A[1] + d.Du * dist;
+                            var bx = new Box(cr - w / 2, cu - h / 2, cr + w / 2, cu + h / 2).Grow(c);
+                            if (crop != null && (bx.R0 < crop.R0 || bx.R1 > crop.R1 || bx.U0 < crop.U0 || bx.U1 > crop.U1)) { note(rid, "outside " + d.N + ": crop"); break; }
+                            if (inRoom(r, cr, cu)) continue; // body must be outside its room here
+                            var bk = blocker(bx, (List<Seg>)pd[4], (List<Box>)pd[5]);
+                            if (bk != null) { note(rid, "outside: " + bk); continue; }
+                            double len = dist - d.Half;
+                            if (len < bestLen)
+                            {
+                                bestLen = len; bestBox = bx;
+                                best = new { kind = "roomtag", elementId = rid, typeName = (string)pd[1], right = Math.Round(cr), up = Math.Round(cu), leader = true, endRight = Math.Round(A[0]), endUp = Math.Round(A[1]), note = (string)pd[7] + " · outside " + d.N + (lim > maxLeaderMm ? " (far)" : "") + ", leader " + Math.Round(len / sc, 1) + " mm" };
+                            }
+                            break;
                         }
-                        break;
                     }
+                    if (best != null) break;
                 }
                 anchorsTaken.Add(A);
                 if (best == null)
                 {
-                    string msg = (string)pd[7] + ": no clear place inside or within " + maxLeaderMm + " mm outside";
+                    string msg = (string)pd[7] + ": no clear place inside or within " + farLeaderMm + " mm outside";
                     if (explain && why.ContainsKey(rid)) msg += " (" + string.Join(", ", why[rid].OrderByDescending(kv => kv.Value).Take(4).Select(kv => kv.Key + " " + kv.Value)) + ")";
                     problems.Add(msg); continue;
                 }
@@ -415,7 +440,7 @@ public static class RoomTagsMissing
             outViews.Add(new
             {
                 ViewId = vid, View = v.Name, Level = lvl?.Name, Rooms = rooms.Count, Tagged = taggedHere,
-                Untagged = todo.Count, Inside = nIn, Outside = nOut, NotPlacedOrEnclosed = notPlaced,
+                Untagged = todo.Count, ProposedInSibling = inSibling, Inside = nIn, Outside = nOut, NotPlacedOrEnclosed = notPlaced,
                 TagSize = sizeSrc.Select(kv => kv.Key + ": " + (sizeCache.ContainsKey(kv.Key) && sizeCache[kv.Key] != null ? string.Join(" x ", sizeCache[kv.Key]) : sizeArg != null ? string.Join(" x ", sizeArg) : "?") + " mm (" + kv.Value + ")").ToList(),
                 Problems = problems, Items = items
             });

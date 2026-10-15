@@ -10,7 +10,7 @@
    ```
    room_tags_missing {viewIds:[batch], typeName, tagSizeMm}
    ```
-   Per view: `Untagged`, `Inside` (no leader), `Outside` (leader), `Problems`, `Items`. Only rooms of the view's own level count; a room tagged in a sibling dependent view (overlap strip) counts as tagged. No `tagSizeMm` in the profile → the command uses the body box of a placed tag without leader; say so in the report.
+   Per view: `Untagged`, `Inside` (no leader), `Outside` (leader), `Problems`, `Items`. Only rooms of the view's own level count; a room tagged in a sibling dependent view (overlap strip) counts as tagged, and a room seen in two sibling views of one call is proposed once (`ProposedInSibling`). A room cut by the crop gets its leader dot in the part that is seen. No clear spot near the room → the body goes farther out (`farLeaderMm`, note "far"), still with a leader to the room. No `tagSizeMm` in the profile → the command uses the body box of a placed tag without leader; say so in the report.
    A room in `Problems` with "no clear place" → run again with `roomIds:[id], explain:true` to see what blocks it. Skip an obstacle kind (`ignore`, e.g. a hatch or furniture category) only with the user's yes; otherwise list the room.
 3. Per view, open it (`ui_view_focus {action:"open", viewId}`), then
    ```
