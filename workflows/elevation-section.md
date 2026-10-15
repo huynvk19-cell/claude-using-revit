@@ -6,7 +6,7 @@ Each row calls a skill; the skill's card list gives the steps and the cards give
 
 | # | Skill | Cards | Applies to |
 |---|---|---|---|
-| 0 | `drafting-start` | — | once |
+| 0 | `drafting-start` | — | once: gather the views / sheets of the job (`drafting-workflow` step 0): elevations → A, sections → B |
 | 1 | `drafting-views-sheets` | 00–04 | every view |
 | 2 | `drafting-grid-dims` | all | every view |
 | 3 | `drafting-dims` | level dims | every view |

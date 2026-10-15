@@ -18,7 +18,9 @@ No model change. Load `drafting-session` first if it is not loaded yet.
    3. the views in the latest entry of `log/YYYY-MM.md`.
 
    Resolve the names to ids with `sheet_browser_names` / `sheet_views_ids`. Unclear → show the list and ask which ones.
+   A sheet = every view placed on it: read all the sheets at once (`sheet_views_ids` once per prefix), never sheet by sheet.
    Group them into **batches of up to 10 views of the same ViewType** (and the same topic); the first batch is worked now.
+   In a workflow, this is its step 0 (`drafting-workflow`): gather the **whole job** here (every view and every sheet, all batches), not only the first batch.
 3. **Hide the panes**:
    ```
    ui_view_focus {action:"panes", panes:"hide"}
@@ -32,7 +34,7 @@ No model change. Load `drafting-session` first if it is not loaded yet.
    Reply `view window not open yet: call again` → call it once more for that view (the zoom needs the window).
    `Switched:false` while the user sees a sheet = that sheet has the view's viewport **activated**: every view request lands on the sheet. Ask the user to deactivate it (double-click outside the viewport), then open again.
    Checking by image during the work: export the **view** (`export_sheet_images {sheetNumbers:[], viewIds:[id]}`), not the sheet: a sheet export leaves the sheet in front and the user loses the view.
-5. **Snapshot** the batch for the mark types (`drafting-work-rules.md` §2c), before any change:
+5. **Snapshot** the batch for the mark types (`drafting-work-rules.md` §2c), before any change; in a workflow, every batch of the job now (one call per batch):
    ```
    mark_types {action:"snapshot", viewIds:[batch], statePath:<review>/batch-<n>-snapshot.json}
    ```

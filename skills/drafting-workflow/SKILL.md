@@ -1,11 +1,11 @@
 ---
 name: drafting-workflow
-description: "Run a whole drafting job as a fixed workflow: skills in a set order, each step with a done-when gate, each step done on all views before the next, progress kept in a checklist file so nothing is skipped and work resumes after a break. Workflows: facade elevations/sections, floor plans, ceiling plans, stair core, comment round. Use for quy trình, làm trọn bộ, làm hết mặt đứng, triển khai mặt bằng, mặt bằng trần, làm lõi thang, chạy quy trình, tiếp tục quy trình, workflow."
+description: "Run a whole drafting job as a fixed workflow: gather every view / sheet of the job once, then skills in a set order, each step done in one pass on all views before the next, with a done-when gate and a checklist file so nothing is skipped and work resumes after a break. Workflows: facade elevations/sections, floor plans, ceiling plans, stair core, comment round. Use for quy trình, làm trọn bộ, gom view, gom sheet, làm hết mặt đứng, triển khai mặt bằng, mặt bằng trần, làm lõi thang, tiếp tục quy trình, workflow."
 ---
 
 # Drafting workflow (quy trình)
 
-A **workflow** is one file in `~/.claude/drafting-domain/workflows/`: the **skills** of one job in order, which of their cards to run (default all), the views each applies to, and why this order. It holds no step content: the steps are the skills' **step cards** (`skills/<skill>/steps/`), each with its own **done when** and **skip only if**. This skill runs it: **one card on all views, then the next card**.
+A **workflow** is one file in `~/.claude/drafting-domain/workflows/`: the **skills** of one job in order, which of their cards to run (default all), the views each applies to, and why this order. It holds no step content: the steps are the skills' **step cards** (`skills/<skill>/steps/`), each with its own **done when** and **skip only if**. This skill runs it: **gather the views / sheets once (step 0), then one card on all of them in one pass, then the next card**.
 
 **Tools**: none of its own. Each step loads its skill's **Tools** line when the step starts.
 
@@ -24,9 +24,19 @@ Load `drafting-session` first if it is not loaded yet (hard rules, batches, mark
 - Read **only** the chosen file. Unclear which one, or the job fits none → ask; do not mix two workflows in one checklist.
 - A single-topic task ("dim trục view này") needs no workflow: use the topic's skill from the `drafting-session` table.
 
-## Gather the views once
+## Step 0 — gather the views and sheets once
 
-At the start (`drafting-start`), collect **every** view / sheet the job covers and sort them into the workflow's parts (by view kind: plans, elevations, sections along, sections across…). This list is fixed for the whole job; a view found later is added to its part and catches up on the steps already done.
+Every workflow starts here (its row 0), before the checklist and before any change. One pass, never view by view:
+
+1. **Take what the user gave**: view names, sheet numbers, a sheet prefix or range, or "cả bộ" (every view of the workflow's kinds on the job's sheets). A **sheet** means every view placed on it of the workflow's kinds (legends, schedules, drafting views out).
+2. **One read for all**: `sheet_views_ids` once per sheet prefix (not once per sheet), `sheet_browser_names` for the exact names (`drafting-start` step 2).
+3. **Build two lists**:
+   - **Views of the job**, sorted into the workflow's parts (by ViewType and topic), each part cut into batches of up to 10 views (`A1`, `A2`…). "Every view" in a workflow row = this list.
+   - **Sheets of the job**: every sheet holding a view of the job, plus every sheet named. "The sheets of the job" in a workflow row = this list.
+4. **Show both in one table** and ask once if anything is unclear; then they are fixed for the whole job. A view or sheet found later is added to its part and catches up on the steps already done.
+5. **Snapshot every batch now** (`mark_types {action:"snapshot"}`, one call per batch, `statePath` `batch-<part><n>-snapshot.json`): step 1 already changes all of them.
+
+Done when: both lists and the batches are in the checklist header and every batch has its snapshot file.
 
 ## Expand the rows into steps
 
@@ -39,6 +49,8 @@ Create it before the first step, in the round folder `review/<date>_<code>/` if 
 ```
 # stair-core — <date>
 Views: A: 1 = <plan name>, 2 = …   B: 1 = <section name> …
+Batches: A1 = A 1–10, A2 = A 11–14 · B1 = B 1–6
+Sheets: <number> – <name>, …
 ## A. Plans
 | # | Item | 1 | 2 | 3 |
 |---|---|---|---|---|
@@ -55,7 +67,12 @@ Tick a cell **right after** its gate is met for that view, not at the end of the
 ## Run — step by step over all views
 
 1. **Step-major.** Take the first card and do it on **every view of its part**; only then the next card. Never finish one view through all steps while the others wait.
-2. **Batches inside a step.** More than 10 views of one kind → the step runs batch after batch (up to 10 views each, `drafting-session`) before the next step. Elevation / section commands stay one view per call.
+2. **One pass per step over the whole list.** Survey all → preview all → apply all → check all, then the next step:
+   - commands taking `viewIds`: one call per batch (up to 10 views, `drafting-session`), batches back to back;
+   - elevation / section and **1V** commands: one call per view, back to back, no report in between;
+   - sheet steps (titles, drawing list, sheet export): all the sheets of the job in one call where the command takes a list or a prefix (`viewport_title_audit {sheetPrefix}`, `export_sheet_images {sheetNumbers:[…]}`), otherwise sheet after sheet in the same pass;
+   - `drafting-visual-check`: one export call per batch (or one for all the sheets) and one checker call with all the images.
+   Never come back to a view for a step already passed, except a recheck (rule 6).
 3. **Load as you go.** Load a row's skill (and the one standard it names) when the row starts; open only the card of the step at hand, and load the commands on its **Tools** line (one ToolSearch).
 4. **Gate.** A cell is `x` only when the card's **done when** holds on that view. Not met → fix and recheck; still not met → `!` with the reason (goes under Việc tồn). The next step still runs on the other views.
 5. **No silent skip.** Skip a cell only when the card's **skip only if** is proven by a tool result of this turn, or the user said so; write the reason in Notes. Otherwise do it, or ask.
