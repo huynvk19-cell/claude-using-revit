@@ -13,18 +13,14 @@ Standards: `~/.claude/drafting-domain/drafting-annotation.md`.
 
 Use the `drafting-opening-tags` skill (rules T1-T8).
 
-## Room tags
+## Step cards
 
-- **Outside its room** → `room_tags_outside` apply. It moves the tag to the room point and turns the leader off.
-- **Shows "?"** → `room_tags_broken` apply. It colours the tag red.
-  - Report the room as a model-side fix.
-  - Never edit the room.
+Each step is one file in `steps/` (next to this file). Open **only the card of the step you are on**. In a workflow (`drafting-workflow`), each card runs on every view of the job before the next card.
 
-## Viewport titles
+| # | Card | Step |
+|---|---|---|
+| 00 | `steps/00-room-tags.md` | Room tags (tag phòng) |
+| 01 | `steps/01-viewport-titles.md` | Viewport titles (title view) |
 
-1. Audit with `viewport_title_audit`, using the sheet prefix.
-2. Place with `viewport_titles_place`.
-   - The title is centred under the drawing, just below the lowest content.
-   - Use `ignoreCrop` when the crop is far from the drawing.
-3. Re-run after any grid, dim or crop change on that sheet.
-4. Leave stair-view titles alone unless a comment asks.
+A card says: what to do (commands), **done when**, **skip only if**, never.
+

@@ -5,28 +5,24 @@ description: "Viewports, viewport types, crops/scope boxes, dependent views, 2D 
 
 # Views and sheets
 
-**Tools** (load all in one ToolSearch call): `align_grid_ends`, `crop_side_to_grids`, `grid_bubble_elbow`, `print_set_from_schedule`, `print_set_info`, `set_viewport_type`, `sheet_browser_names`, `sheet_views_ids`, `view_crop_info`, `view_image_trial`.
+**Tools** (load all in one ToolSearch call): `align_grid_ends`, `crop_side_to_grids`, `grid_bubble_elbow`, `print_set_from_schedule`, `print_set_info`, `set_viewport_type`, `sheet_browser_names`, `sheet_views_ids`, `view_crop_info`, `view_image_trial`, `viewport_title_audit`, `viewport_titles_place`.
 
 Standards: `~/.claude/drafting-domain/drafting-views-sheets.md`.
 
-1. **Identify the views first.**
-   - Use `sheet_browser_names` / `sheet_views_ids`.
-   - Report names as the Project Browser shows them.
-2. **Viewport type:** `set_viewport_type`.
-   - Run preview, then apply.
-   - It can undo from its log.
-3. **Crop:** `view_crop_info`, then `crop_side_to_grids`.
-   - A Scope Box attached to the view locks the crop. Report it as manual.
-4. **Grid ends:** 2D only.
-   - `align_grid_ends` lines them up.
-   - Overlapping bubbles → stagger one 2D end. `grid_bubble_elbow` often fails.
-   - Pull grids out only when asked, and move the grid dims with them.
-5. **Hiding:** edit the controlling View Template.
-   - Name the other views that share it.
-   - Preview with `view_image_trial`.
-6. **Link display in Revit 2023:** there is no API. Use UI automation, and only when the user asks.
-7. **Afterwards:** re-place viewport titles on the affected sheets (`drafting-tags-titles`).
-8. **Sheet added, renamed or renumbered:** keep the drawing list and the print set in step (standard §5).
-   - Check the sheet is in the drawing-list schedule named in the profile.
-   - `print_set_info {setName, scheduleName}`; anything missing → `print_set_from_schedule {mode:"apply", replace:true}`.
-   - Log it and report sheets before / after.
+## Step cards
+
+Each step is one file in `steps/` (next to this file). Open **only the card of the step you are on**. In a workflow (`drafting-workflow`), each card runs on every view of the job before the next card.
+
+| # | Card | Step |
+|---|---|---|
+| 00 | `steps/00-identify.md` | Identify the views (xác định view) |
+| 01 | `steps/01-viewport-type.md` | Viewport type (type viewport) |
+| 02 | `steps/02-crop.md` | Crop (crop view) |
+| 03 | `steps/03-grid-ends.md` | Grid ends 2D (đầu trục) |
+| 04 | `steps/04-template.md` | View Template, hiding (ẩn bằng template) |
+| 05 | `steps/05-link-display.md` | Link display (hiển thị link) |
+| 06 | `steps/06-titles-after.md` | Titles after changes (đặt lại title) |
+| 07 | `steps/07-drawing-list.md` | Drawing list and print set (danh mục bản vẽ, print set) |
+
+A card says: what to do (commands), **done when**, **skip only if**, never.
+
