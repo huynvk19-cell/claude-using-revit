@@ -2,9 +2,7 @@
 
 All views of one stair core, gathered once at the start, in three parts by view kind: **A plans**, **B sections along the flights**, **C sections across the flights**. Each step is one item of the standard and runs on **every view of its part** before the next step starts.
 
-Per part, load its skill and its one standard when the part starts (A → `drafting-stair-plan`, B → `drafting-stair-section-parallel`, C → `drafting-stair-section-cross`). "How" points to the command or the skill section; the skill's rules and "Never" list still apply.
-
-Every dim step: fix the text of existing dims of that item first (`dims_text`, prefix/suffix/below, never Replace with text), then add what is missing in the check type; every new dim drawn (`view_elem_boxes` Box ≠ null).
+Per part, load its skill and its one standard when the part starts (A → `drafting-stair-plan`, B → `drafting-stair-section-parallel`, C → `drafting-stair-section-cross`). Each step is a **step card** of that skill: open only the card of the step at hand; it holds what to do, **done when** and **skip only if**. The skill's "Never" list still applies.
 
 ## Start (once)
 
@@ -37,51 +35,55 @@ Each step is a **step card** of the skill: `~/.claude/skills/drafting-stair-plan
 
 ★ mandatory, never skipped.
 
-## B. Sections along the flights (`drafting-stair-section-parallel`, rules LA–LC)
+## B. Sections along the flights (`drafting-stair-section-parallel`)
 
-One view per call, with `timeoutSeconds`.
+One view per call, with `timeoutSeconds`. Cards: `~/.claude/skills/drafting-stair-section-parallel/steps/<card>`.
 
-| # | Item | How | Done when | Skip only if |
-|---|---|---|---|---|
-| B0 | Survey | `stair_section_info` (skill §1), table per view | every view read; flights cut / beyond known; stop-and-ask cases asked | — |
-| B1 | LB1 run tags | `stair_section_annotate parts:["LB1"]` (§2) | one tag per **cut** flight, text `From EL … To EL … / …R` right; none on flights beyond | — |
-| B2 | LA1 flight heights | `parts:["LA1"]` (§2) | one segment per flight `169.4mm x 16R = 2710 (EQUAL RISERS)`, outside one wall | — |
-| B3 | LA2 levels | `level_dims_add` (§2) | level chain through the plan-cut markers + overall, on the side opposite LA1 | the view already has the level chain |
-| B4 | LA3 flight goings | `parts:["LA3"]` (§2) | one chain per cut flight `landing \| 280mm x 15T = … (EQUAL TREADS) \| landing`; overall wall to wall once | — |
-| B5 | LA4 clear height under landings | `parts:["LA4"]` (§2) | one column per side, landing top → soffit above, every landing | — |
-| B6 | LA5 handrail height | `parts:["LA5"]`, `rail_top_at` (§2) | **every cut landing**: finish top → top of handrail, round value — 1200 at an opening (P02), + 900 where the wall handrail P01 is seen | **never** (mandatory) |
-| B7 | LA6 walls, doors → grids | manual references (§2 table) | chain + overall below the section; a second one on top when the upper walls differ | — |
-| B8 | LC riser numbers | `parts:["LC"]` (§2) | cut flights only; continuous; same number as the plan at the same riser | — |
-| B9 | LB2 railing tags | `annot_place` (§2) | one per cut flight for the seen railing; `P01` on landings where it is seen; hidden rails untagged | — |
-| B10 | LB3 spot elevations | `parts:["LB3"]` (§2) | every seen landing / floor top, at each end | — |
-| B11 | LB4 floor finish `F..` | finish mark (§3) | one per landing / floor with a spot, leader down to the finish top | — |
-| B12 | LB5 soffit finish `C..` | finish mark (§3) | one per seen landing soffit, same column as its `F..` | — |
-| B13 | LB6 doors, windows | `elevation_opening_tags` + `annot_place` (§3) | one tag per door seen **and** per door in a cut wall, always with a leader | the section shows no door or window |
-| B14 | Tidy | `annotation_overlaps`, `dims_text_move` | overlaps = 0; formula texts off the riser numbers | — |
-| B15 | Recheck | `stair_section_info` again (§4) | every `Dims` row `OK` (LA5 one row per cut landing), no `Issues` except accepted | — |
+| # | Item | Card |
+|---|---|---|
+| B0 | Survey | `00-survey.md` |
+| B1 | LB1 run tags (cut flights) | `01-lb1-run-tags.md` |
+| B2 | LA1 flight heights | `02-la1-flight-heights.md` |
+| B3 | LA2 levels | `03-la2-levels.md` |
+| B4 | LA3 flight goings | `04-la3-flight-goings.md` |
+| B5 | LA4 clear height under landings | `05-la4-clear-height.md` |
+| B6 | LA5 handrail height ★ | `06-la5-handrail-height.md` |
+| B7 | LA6 walls, doors → grids | `07-la6-walls-to-grids.md` |
+| B8 | LC riser numbers | `08-lc-riser-numbers.md` |
+| B9 | LB2 railing tags | `09-lb2-railing-tags.md` |
+| B10 | LB3 spot elevations | `10-lb3-spot-elevations.md` |
+| B11 | LB4 floor finish `F..` | `11-lb4-floor-finish.md` |
+| B12 | LB5 soffit finish `C..` | `12-lb5-soffit-finish.md` |
+| B13 | LB6 doors, windows | `13-lb6-door-tags.md` |
+| B14 | Tidy | `14-tidy.md` |
+| B15 | Recheck | `15-recheck.md` |
 
-## C. Sections across the flights (`drafting-stair-section-cross`, rules XA–XC)
+★ mandatory, never skipped.
 
-One view per call, with `timeoutSeconds`.
+## C. Sections across the flights (`drafting-stair-section-cross`)
 
-| # | Item | How | Done when | Skip only if |
-|---|---|---|---|---|
-| C0 | Survey | `stair_xsection_info` (skill §1), `view_dims_snapshot` | every view read; bands, halves, facing known; stop-and-ask cases asked | — |
-| C1 | XB1 run tags | `annot_place`, `tags_retype` (§3) | one per seen flight, **both halves**, vertical text outside the wall of its half, From/To EL right | — |
-| C2 | XA1 band heights | `dims_copy_refs` / hand-dim refs, `dims_text` (§2) | one segment per band with `… R = … (EQUAL RISERS)`, no merged band, overall outermost | — |
-| C3 | XA2 levels | `level_dims_add` (§2) | level chain on the side opposite XA1 | the view already has the level chain |
-| C4 | XA3 widths to handrails | as C2 (§2) | one chain per stair block, walls → handrails → runs | — |
-| C5 | XA4 clear height \| landing thickness | as C2 (§2) | one continuous chain in the `away` half = `ClearHeights.Expected` | — |
-| C6 | XA5 wall to wall | as C2 (§2) | chain + overall, bottom (and top when the walls differ) | — |
-| C7 | XA6 handrail height | as C2, `rail_top_at` (§2) | every cut landing / floor: finish top → top of each handrail seen, round value — 900 on a wall, 1200 at an opening | **never** (mandatory) |
-| C8 | XC riser numbers | NumberSystem + `stair_numbers_match` (§3) | `away` flights only, Start and End; none on `toward` flights; matches the plan | — |
-| C9 | XB2 handrail tags | `annot_place` (§3) | `P01` per seen handrail per band, `P02` on the balustrade, horizontal leaders | — |
-| C10 | XB3 spot elevations | `annot_place` kind spot (§3) | every cut landing / floor top (as LB3) | — |
-| C11 | XB4 floor finish `F..` | `annot_copy_in_view` / `finish_mark_place`, `finish_marks_snap` (§3) | one per cut landing / floor top, dot on the top | — |
-| C12 | XB5 soffit finish `C..` | as C11 | one per cut landing soffit, same column as its `F..`, dot on the soffit | — |
-| C13 | XB6 doors | as B13 | one tag per door, always with a leader | the section shows no door |
-| C14 | Tidy | `annotation_overlaps`, `finish_marks_snap {mode:"survey"}` | overlaps = 0; every finish dot on its face | — |
-| C15 | Recheck | `stair_xsection_info` again (§4) | XA1 `OK`, `ClearHeights` complete, no `Issues` except accepted | — |
+One view per call, with `timeoutSeconds`. Cards: `~/.claude/skills/drafting-stair-section-cross/steps/<card>`.
+
+| # | Item | Card |
+|---|---|---|
+| C0 | Survey | `00-survey.md` |
+| C1 | XB1 run tags (both halves) | `01-xb1-run-tags.md` |
+| C2 | XA1 band heights | `02-xa1-band-heights.md` |
+| C3 | XA2 levels | `03-xa2-levels.md` |
+| C4 | XA3 widths to handrails | `04-xa3-widths-to-handrails.md` |
+| C5 | XA4 clear height \| landing thickness | `05-xa4-clear-thickness.md` |
+| C6 | XA5 wall to wall | `06-xa5-wall-to-wall.md` |
+| C7 | XA6 handrail height ★ | `07-xa6-handrail-height.md` |
+| C8 | XC riser numbers | `08-xc-riser-numbers.md` |
+| C9 | XB2 handrail tags | `09-xb2-handrail-tags.md` |
+| C10 | XB3 spot elevations | `10-xb3-spot-elevations.md` |
+| C11 | XB4 floor finish `F..` | `11-xb4-floor-finish.md` |
+| C12 | XB5 soffit finish `C..` | `12-xb5-soffit-finish.md` |
+| C13 | XB6 doors | `13-xb6-door-tags.md` |
+| C14 | Tidy | `14-tidy.md` |
+| C15 | Recheck | `15-recheck.md` |
+
+★ mandatory, never skipped.
 
 ## End (once)
 

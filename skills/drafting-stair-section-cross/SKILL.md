@@ -5,7 +5,7 @@ description: "Detail a stair SECTION cut ACROSS the flights (flights seen end-on
 
 # Stair section across the flights (XA–XC)
 
-**Tools** (load all in one ToolSearch call): `annot_copy_in_view`, `annot_place`, `annotation_overlaps`, `dims_copy_refs`, `dims_edit`, `dims_text`, `elevation_opening_tags`, `finish_mark_place`, `finish_marks_snap`, `level_dims_add`, `rail_top_at`, `stair_numbers_match`, `stair_xsection_info`, `tags_retype`, `view_dims_snapshot`, `view_elem_boxes`.
+**Tools** (load all in one ToolSearch call): `annot_copy_in_view`, `annot_place`, `annotation_overlaps`, `dims_copy_refs`, `dims_edit`, `dims_text`, `elevation_opening_tags`, `export_sheet_images`, `finish_mark_place`, `finish_marks_snap`, `level_dims_add`, `rail_top_at`, `stair_numbers_match`, `stair_xsection_info`, `tag_leaders_info`, `tags_retype`, `view_dims_snapshot`, `view_elem_boxes`.
 
 **Section views whose cut is NOT parallel to the stair path** (flights seen end-on). Along the flights → `drafting-stair-section-parallel`; plans → `drafting-stair-plan`.
 
@@ -15,50 +15,32 @@ Load `drafting-session` first. From the project `drafting-profile.md` take the *
 
 Section views: **one view per call**, with `timeoutSeconds`.
 
-## 1. Read the view (read-only)
+## Step cards
 
-```
-stair_xsection_info {viewId, outPath:"<review>/xsec-<viewId>.json", excludeStairIds?}
-```
+Each step is one file in `steps/` (next to this file). Open **only the card of the step you are on**; the `_…-common.md` notes once per job, before the first card that names them. In a workflow (`drafting-workflow`), each card runs on every cross-section before the next card.
 
-- `Error` "every flight runs across the view" → it is a longitudinal section: switch to `drafting-stair-section-parallel`.
-- `Flights`: F1… going up, `Half` (left / right), `Facing` (`away` = risers seen → numbers; `toward` = soffit seen → no numbers), `TagText`, `RiseText`, run tags with their text, `FirstNumber` vs `FirstByElevation`. **Never count risers from the drawing.**
-- `Slabs`: landings and floors with top, soffit, thickness, the x range the section cuts, `Cut`.
-- `Dims`: XA1 per band (OK / missing / Replace with text / wrong prefix or below), XA2, XA3 per stair block, XB3 spots.
-- `ClearHeights`: per half, the XA4 chain expected from the model (clear | thickness …) and what is missing.
-- `Issues`: merged-band segments, 0 mm segments, duplicate dims, wrong tag type (From/To EL off), numbers on the wrong flights, Display Rule, numbering not continuous.
+| # | Card | Rule |
+|---|---|---|
+| 00 | `steps/00-survey.md` | survey (`stair_xsection_info`) |
+| 01 | `steps/01-xb1-run-tags.md` | XB1 run tags (both halves) |
+| 02 | `steps/02-xa1-band-heights.md` | XA1 band heights |
+| 03 | `steps/03-xa2-levels.md` | XA2 levels |
+| 04 | `steps/04-xa3-widths-to-handrails.md` | XA3 widths to handrails |
+| 05 | `steps/05-xa4-clear-thickness.md` | XA4 clear height \| landing thickness |
+| 06 | `steps/06-xa5-wall-to-wall.md` | XA5 wall to wall |
+| 07 | `steps/07-xa6-handrail-height.md` | XA6 handrail height ★ |
+| 08 | `steps/08-xc-riser-numbers.md` | XC riser numbers (Start and End) |
+| 09 | `steps/09-xb2-handrail-tags.md` | XB2 handrail tags |
+| 10 | `steps/10-xb3-spot-elevations.md` | XB3 spot elevations |
+| 11 | `steps/11-xb4-floor-finish.md` | XB4 floor finish F.. |
+| 12 | `steps/12-xb5-soffit-finish.md` | XB5 soffit finish C.. |
+| 13 | `steps/13-xb6-door-tags.md` | XB6 doors |
+| 14 | `steps/14-tidy.md` | tidy |
+| 15 | `steps/15-recheck.md` | recheck, report |
+| — | `steps/_dims-common.md` | shared by 02–07 |
+| — | `steps/_tags-common.md` | shared by 01, 09, 10 |
 
-Show the user one table: band → flights (half, facing) → risers × height → tag text → numbers; then the issues by rule. Also read the hand dims with `view_dims_snapshot` before treating a view as a sample.
-
-Stop and ask when: no host stairs (link); `LC:` model mismatch; numbering not continuous (start numbers are a stair property: R1, the user decides).
-
-## 2. Dims
-
-No annotate command for cross-sections yet. Per rule:
-
-1. **XA2**: `level_dims_add {viewId, side:<opposite of XA1>, typeName:<check type>, mode:"preview", logPath}` → `apply`. Skip when the view has a level chain.
-2. **XA1, XA4, XA3, XA5**: references as the project's hand dims (`view_dims_snapshot` → `Refs`): landing / floor tops and soffits on the **Stairs** element and Floors (run / landing 3D faces are hidden: dims on them are not drawn), walls, **Handrails**, never a link. Options:
-   - same stair already dimmed in another cross-section → `dims_copy_refs` (preview → apply);
-   - otherwise ask the user for one hand dim per chain kind and rebuild from its references; check every new dim is drawn (`view_elem_boxes` Box ≠ null).
-   - XA1: one segment per band (split merged segments: `dims_edit` with log, then rebuild); XA4: one continuous chain in the `away` half, values = `ClearHeights.Expected`.
-   - **XA6 handrail height, mandatory**: on every cut landing / floor, finish top → top of each handrail seen there (Handrails reference). Round values: wall handrail 900, rail at an opening 1200. Odd value → check with `rail_top_at`, pick another edge; still odd → Cần xem.
-3. **Text** (XA1): `dims_text {viewId, mode:"apply", logPath, items:[{dimId, valueMm, prefix:"169.4mm x 16R = ", below:"(EQUAL RISERS)"}]}`; a Replace-with-text value is cleared, never kept (R9). Take the text from `RiseText`.
-
-## 3. Tags, marks, numbers
-
-- **XB1** run tags: one per seen flight (both halves), vertical text outside the wall of its half, horizontal leader to the flight at mid band: `annot_place` (kind tag, the section run tag type of that floor block). Wrong From/To EL → `tags_retype`.
-- **XB2** handrail tags (`P01` per seen handrail per band, `P02` on the balustrade): `annot_place`, horizontal leader, head inside the core next to the rail; skip a rail hidden behind a bigger one.
-- **XB3** spots: `annot_place` (kind spot) on each cut landing / floor top (as LB3).
-- **XB4 / XB5** F.. / C..: copy from a landing of the same view (`annot_copy_in_view`) or `finish_mark_place`, then `finish_marks_snap {mode:"survey"}` → `preview` → `apply` (dots on the top / the soffit).
-- **XB6** doors: as LB6 (`elevation_opening_tags`, then `annot_place` for doors in cut walls).
-- **XC** numbers only on `away` flights: create on the run (NumberSystem) and copy the settings of a finished cross-section number with `stair_numbers_match` (Display Rule **Start and End**, Tag Type Riser, Right Quarter, Justify Back). Remove numbers from `toward` flights.
-
-## 4. Verify and report
-
-1. `stair_xsection_info` again → XA1 rows `OK`, `ClearHeights` complete on one half, `Issues` empty except those the user accepted.
-2. `finish_marks_snap {mode:"survey"}`, `annotation_overlaps {viewId}`.
-3. Export the **view** image and compare with the standard's sample (`drafting-visual-check`).
-4. Report per `drafting-session`: exact view name; table per band (rise dim, tags, numbers); **Cần xem** (XB3 / XA6 decisions, numbering vs plan); **Việc tồn**.
+★ mandatory, never skipped. A card says: what to do (commands), **done when**, **skip only if**, never.
 
 ## Never
 

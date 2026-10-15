@@ -5,7 +5,7 @@ description: "Detail a stair SECTION cut parallel to the stair path (longitudina
 
 # Stair section parallel to the stair path (LA–LC)
 
-**Tools** (load all in one ToolSearch call): `annot_place`, `annotation_overlaps`, `dims_text`, `dims_text_move`, `elevation_opening_tags`, `level_dims_add`, `rail_top_at`, `stair_section_annotate`, `stair_section_info`, `view_dims_snapshot`, `view_elem_boxes`.
+**Tools** (load all in one ToolSearch call): `annot_copy_in_view`, `annot_place`, `annotation_overlaps`, `dims_text`, `dims_text_move`, `elevation_opening_tags`, `export_sheet_images`, `finish_mark_place`, `finish_marks_snap`, `level_dims_add`, `rail_top_at`, `stair_section_annotate`, `stair_section_info`, `tag_leaders_info`, `view_dims_snapshot`, `view_elem_boxes`.
 
 **Section views cut along the flights only.** Plans → `drafting-stair-plan`. A section cut across the flights (flights seen end-on) → `drafting-stair-section-cross`.
 
@@ -15,74 +15,31 @@ Load `drafting-session` first. From the project `drafting-profile.md` take the *
 
 Section views: **one view per call**, with `timeoutSeconds`.
 
-## 1. Read the flights (read-only)
+## Step cards
 
-```
-stair_section_info {viewId, outPath:"<review>/stair-sec-<viewId>.json"}
-```
+Each step is one file in `steps/` (next to this file). Open **only the card of the step you are on**; `_annotate-common.md` once per job, before the first card that names it. In a workflow (`drafting-workflow`), each card runs on every section of its part before the next card.
 
-- `Flights`: F1, F2… going up; `State` (cut / beyond), `Rises` (left / right), `TagText`, `RiseText` (`169.4mm x 16R = 2710`), `GoingText` (`280mm x 15T = 4200`), run tags, riser numbers. **Never count risers from the drawing.**
-- `Landings`: elevation and side.
-- `Dims`: each flight's rise (LA1) and going (LA3) dim, `OK` / `missing` / wrong text.
-- `RunTagTypes`: the most-used run tag types in sections and elsewhere.
-- `Issues`, `Notes`. A note that flights run toward the viewer → this is a cross-section: stop.
+| # | Card | Rule |
+|---|---|---|
+| 00 | `steps/00-survey.md` | survey (`stair_section_info`) |
+| 01 | `steps/01-lb1-run-tags.md` | LB1 run tags (cut flights) |
+| 02 | `steps/02-la1-flight-heights.md` | LA1 flight heights |
+| 03 | `steps/03-la2-levels.md` | LA2 levels |
+| 04 | `steps/04-la3-flight-goings.md` | LA3 flight goings |
+| 05 | `steps/05-la4-clear-height.md` | LA4 clear height under landings |
+| 06 | `steps/06-la5-handrail-height.md` | LA5 handrail height ★ |
+| 07 | `steps/07-la6-walls-to-grids.md` | LA6 walls, doors → grids |
+| 08 | `steps/08-lc-riser-numbers.md` | LC riser numbers |
+| 09 | `steps/09-lb2-railing-tags.md` | LB2 railing tags |
+| 10 | `steps/10-lb3-spot-elevations.md` | LB3 spot elevations |
+| 11 | `steps/11-lb4-floor-finish.md` | LB4 floor finish F.. |
+| 12 | `steps/12-lb5-soffit-finish.md` | LB5 soffit finish C.. |
+| 13 | `steps/13-lb6-door-tags.md` | LB6 doors, windows |
+| 14 | `steps/14-tidy.md` | tidy |
+| 15 | `steps/15-recheck.md` | recheck, report |
+| — | `steps/_annotate-common.md` | `stair_section_annotate`, formula text, manual references |
 
-Show the user one table: flight → state → risers × height → treads × depth → tag text; then the issues by rule.
-
-Stop and ask when: no host stairs (link); `LC:` model mismatch; no run tag type used in sections.
-
-## 2. Dims, tags, numbers: `stair_section_annotate` (one view)
-
-```
-stair_section_annotate {viewId, mode:"preview", dimTypeName:<check type>, la1LineMm,
-  runTagTypes:[{fromMm, type}], spotTypeName, numberSourceId:<a finished NumberSystem>,
-  la5TargetMm:1200, la5RailingIds:[<P02…>], la5LeftX, la5RightX,
-  parts:["LA1","LA3","LA4","LA5","LB1","LB3","LC"], items:[{part, flight|landing, x, z}]}
-```
-**Never drop `LA5` from `parts`.** Without `parts` the tool runs all of them, LA5 included (`la5Auto` is on unless `la5FromDimId` is given); landings that already have a rail dim are skipped.
-Read `Done` (texts, values, positions) → same with `mode:"apply", logPath` → `view_elem_boxes` on the new ids (Box ≠ null) → export the view image. Undo: `mode:"undo", logPath`.
-
-- References are taken on the **Stairs** element (run / landing 3D faces are hidden: dims on them are created but not drawn); level plane where no landing.
-- Formula text on riser numbers or on the flight → `dims_text_move` (alongMm) into the free space under the flight, clear of the witness lines.
-- Layout that worked (1:50): LA3 line at 30 % of the flight height, run tag head at 8 % with a horizontal leader to the soffit; LA1 300 mm inside an existing overall dim; spots on the landing away from the F.. box.
-- **LA5 is MANDATORY on every cut landing** (user, 2026-10-08): landing / floor finish top → top of the **handrail** along the landing edge. Values are round, 900–1200 (user, 2026-10-15): handrail on a wall 900, rail at an opening (well, open landing edge) 1200. `la5RailingIds, la5TargetMm:1200, la5LeftX, la5RightX` (auto by default) finds the rail reference without a sample; an `Errors` line `LA5 …` = that landing has no dim yet → fix it now, do not move on; values far from the nominal height → check with `rail_top_at`, do not place when unsure, ask the user for one hand dim (`la5FromDimId`). `stair_section_info` lists every landing without it — never report a section done while one is missing. Rails often have no straight line in the API geometry: ask the user for ONE hand dim, then `parts:["LA5"], la5FromDimId:<that dim>, la5IndexFrom, la5IndexTo, items:[{part:"LA5", landing, x}]` reuses its rail reference with other indices until the value matches and the dim is drawn. Landings listed with `x` only; `skip:true` for the ones the user dimmed.
-- **Wall handrail P01 seen along a landing** (a horizontal run on the wall, not hidden by P02): add a second rail dim on every cut landing, landing top → top of the P01 **handrail** (`900`), next to the 1200 dim (230–300 mm toward the wall, or ~500 mm from the wall finish on the other side). `la5Auto` only reads top rails: take the P01 handrail reference from a hand dim (`la5FromDimId`, `la5TargetMm:900`) or ask for one.
-- **LB2** railing tags (skip a rail hidden behind a bigger one, e.g. a wall handrail behind the 1200 railing): `annot_place` (kind tag, the railing tag type used in the project, orthogonal leader); view-frame `up` = elevation + the frame offset of the view (a level's witness in `view_dims_snapshot`). A P01 seen along a landing gets its own tag (head ~230 mm above the rail, vertical leader), on the landings without a P02 tag nearby.
-- **LB1** tags and **LC** numbers only on **cut** flights (user, 2026-10-08). **LA3** counts T = R − 1 (top tread level with the landing belongs to the landing segment), as the plan.
-
-The manual reference notes below stay for cases the tool does not cover:
-
-1. **LA2 levels**: `level_dims_add {viewId, side:<opposite of LA1>, typeName:<check type>, mode:"preview", logPath}` → same with `mode:"apply"`. Skipped if the view already has a level chain.
-2. **LA1, LA3, LA4, LA5, LA6** references:
-   | Dim | References |
-   |---|---|
-   | LA1 rise chain | top faces of the landings / floors (`HostObjectUtils.GetTopFaces` for floors; landing geometry with `Options{ComputeReferences=true, View=v}`), or the level when the finish floor sits on it |
-   | LA3 going chain | wall finish faces, first / last riser faces of the cut flight (vertical planar faces normal to the view's right direction) |
-   | LA4 clear height | landing top face → soffit face of the landing / flight above |
-   | LA5 handrail | landing top → top of the rail along the landing edge (`railing.TopRail` symbol reference; P01: `GetHandRails()`), one per cut landing |
-   | LA6 | `new Reference(grid)`, wall side faces, door `FamilyInstanceReferenceType.Left / Right` |
-   Placement per the standard's table: LA1 outside one wall, LA2 outside the other, LA3 at mid-height of each cut flight, LA4 inside the core next to the walls, LA6 below the section.
-3. **Text**: set the formulas with `dims_text`:
-   ```
-   dims_text {viewId, mode:"apply", logPath, items:[
-     {dimId, valueMm:2710, prefix:"169.4mm x 16R = ", below:"(EQUAL RISERS)"},
-     {dimId, valueMm:4200, prefix:"280mm x 15T = ",  below:"(EQUAL TREADS)"}]}
-   ```
-   Take the text from `RiseText` / `GoingText`. One spelling for the project.
-
-## 3. Tags and numbers
-
-- **LB1** run tag on every **cut** flight: `IndependentTag.Create(doc, type, viewId, new Reference(run), true, Horizontal, head)`. Put the head in the free space under the flight, with a short leader into it. Check the tag reads `From EL … To EL … / …R`.
-- **LB2** railing `P01`, **LB3** spot elevation on every landing / floor top at each end (`doc.Create.NewSpotElevation`), **LB4** `F..` above each landing with its leader down, **LB5** `C..` under each landing with its leader up, in the same column as LB4.
-- **LB6** doors/windows: `elevation_opening_tags {viewIds:[id], mode:"preview", addLeader:true}` → `apply`, rules T1–T8. Every door tag in a stair section has a leader. The tool sees only doors facing the view: list the doors of the walls the section cuts (the core's rooms / levels) and tag each one it missed with `annot_place` — head outside the wall, horizontal leader into the door at about half its height.
-- **LC** riser numbers on each cut flight: `NumberSystem.Create(doc, viewId, new LinkElementId(runId), StairsNumberSystemReferenceOption.Left, new LinkElementId(typeId))`. The numbers continue over the whole stair (every second one shown) and must match the plan at the same riser. Wrong start → fix it by hand or ask.
-
-## 4. Verify and report
-
-1. `stair_section_info` again → every `Dims` row `OK` (**LA5: one row per cut landing**), no `Issues` left except those the user accepted. A `Notes` line `LA5: landing … one rail dim` → if a wall handrail P01 is seen along that landing, add its 900 dim.
-2. `annotation_overlaps {viewId}`.
-3. Export the sheet image and compare with the standard's sample (`drafting-visual-check`).
-4. Report per `drafting-session`: exact view name; table per flight (tag, rise dim, going dim, numbers); table per cut landing (LA5 values: 1200, + 900 where P01 is seen); **Cần xem** (unreadable sample values, LA4 CLEAR yes/no); **Việc tồn**.
+★ mandatory, never skipped. A card says: what to do (commands), **done when**, **skip only if**, never.
 
 ## Never
 
