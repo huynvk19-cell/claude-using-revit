@@ -45,7 +45,7 @@ Quy trình là lớp trên skill: nó không chứa luật vẽ, chỉ nói **l�
 |---|---|
 | `elevation-section` | start → views-sheets → grid-dims → dims (cao độ) → opening-dims → opening-tags → tags-titles (title) → visual-check → end |
 | `floor-plan` | start → views-sheets → grid-dims → tags-titles (room tag) → tags-titles (title) → visual-check → end |
-| `stair-core` | start → **A mặt bằng** (khảo sát → tag vế SB1 → dim thông thuỷ SA1 → chiếu nghỉ SA3 → chiều dài vế SA2 → tường/cửa → trục SA4 → số bậc → stair path → tag lan can SB2 → cao độ SB3 → F.. SB5 → W.. SB6 → tag cửa SB4 → dọn chồng → kiểm lại) → **B mặt cắt dọc** (LB1 → LA1 → LA2 → LA3 → LA4 → LA5 → LA6 → LC → LB2 → LB3 → LB4 → LB5 → LB6 → dọn → kiểm lại) → **C mặt cắt ngang** (XB1 → XA1 → XA2 → XA3 → XA4 → XA5 → XA6 → XC → XB2 → XB3 → XB4 → XB5 → XB6 → dọn → kiểm lại) → visual-check → end |
+| `stair-core` | start → **A mặt bằng** (khảo sát → tag vế SB1 → dim thông thuỷ SA1 → chiếu nghỉ SA3 → chiều dài vế SA2 → tường/cửa → trục SA4 → số bậc → stair path → tag lan can SB2 → cao độ SB3 → F.. SB5 → W.. SB6 → tag cửa SB4 → X thông tầng → dọn chồng → kiểm lại) → **B mặt cắt dọc** (LB1 → LA1 → LA2 → LA3 → LA4 → LA5 → LA6 → LC → LB2 → LB3 → LB4 → LB5 → LB6 → dọn → kiểm lại) → **C mặt cắt ngang** (XB1 → XA1 → XA2 → XA3 → XA4 → XA5 → XA6 → XC → XB2 → XB3 → XB4 → XB5 → XB6 → dọn → kiểm lại) → visual-check → end |
 | `review-round` | review-round (đọc + phân loại) → start → skill theo từng task → tags-titles (title) → visual-check → end |
 
 Thêm quy trình mới: một file `workflows/<tên>.md` + một dòng trong bảng của `drafting-workflow` + một dòng ở bảng trên.

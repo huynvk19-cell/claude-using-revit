@@ -25,12 +25,13 @@ Every dim step: fix the text of existing dims of that item first (`dims_text`, p
 | A6 | C tread numbers | `stair_plan_annotate parts:["numbers"]`, `number_systems_copy` (§3) | every seen run numbered; continuous from the lowest riser of the building; odd numbers shown; V1 / V3 columns on opposite sides | the profile says tread numbers are not shown |
 | A7 | SD stair path | `stair_plan_annotate parts:["path"]` (§3) | one Fixed Up path per seen stair, no UP / DOWN, arrows point up (image) | — |
 | A8 | SB2 railing tags | `annot_place` (§5) | `P01` on each wall handrail, `P02` on the centre railing; heads off the tread lines; orthogonal leaders | — |
-| A9 | SB3 spot elevations | `annot_place` kind spot on the **Stairs** (§5) | one on every seen landing, one on the floor landing in the core, one on the floor outside the stair door | — |
-| A10 | SB5 floor finish `F..` | finish mark (§5) | one per landing and floor landing, next to its spot | — |
+| A9 | SB3 spot elevations | `annot_place` kind spot on the **Stairs** (§5) | one on every seen landing, one on the floor landing in the core; the plan cuts the stair door → also one on the floor **outside** the door, even when it is the same level (inside vs outside the enclosure on the escape route) | — |
+| A10 | SB5 floor finish `F..` | finish mark (§5) | one per landing and floor landing, next to its spot; code from the room / legend / finished views, unknown → asked | **never** (mandatory) |
 | A11 | SB6 wall finish `W..` | finish mark (§5) | at least one per wall finish kind seen; code from the room / legend / finished views, unknown → asked | **never** (mandatory) |
 | A12 | SB4 doors, windows | `annot_place` (§5) | exactly one tag per drawn opening, off the SA4 dims and the swing | the view draws no door or window |
-| A13 | Tidy | `annotation_overlaps`, `dims_text_move`, `tag_leaders_info` | overlaps = 0; short texts apart; no diagonal leader (shape `D`) | — |
-| A14 | Recheck | `stair_plan_audit` again (§6) | no `missing`, no `Issues` except those the user accepted; ĐỦ – ĐÚNG – ĐẸP | — |
+| A13 | Open gap between flights (thông tầng) | `detail_lines_set` for an existing X; no command creates one yet → manual (§5) | a gap open to the floors below (well between two flights, used for fire-fighting pipes) carries the X in `<Overhead>` dashed lines, fitting its 4 corners; no tag head on it | the side of the flight is a solid wall or a floor |
+| A14 | Tidy | `annotation_overlaps`, `dims_text_move`, `tag_leaders_info` | overlaps = 0; short texts apart; no diagonal leader (shape `D`) | — |
+| A15 | Recheck | `stair_plan_audit` again (§6) | no `missing`, no `Issues` except those the user accepted; ĐỦ – ĐÚNG – ĐẸP | — |
 
 ## B. Sections along the flights (`drafting-stair-section-parallel`, rules LA–LC)
 

@@ -65,7 +65,7 @@ Mặt bằng tầng điển hình thường thấy **3 vế thang**. Đi theo ch
 
 ### Lỗ trống cạnh vế thang: ký hiệu X (user, 2026-10-07)
 
-- Cạnh vế thang là **lỗ trống** (giếng thang giữa hai vế, khe hở thông xuống tầng dưới) → vẽ **chữ X** (hai đường chéo, nét `<Overhead>` như dự án đang dùng) **khít đúng 4 góc lỗ**: mép trong lan can / mép vế / mép chiếu nghỉ bao quanh lỗ, không lấn ra chiếu nghỉ, không hụt.
+- Cạnh vế thang là **lỗ trống** (giếng thang giữa hai vế, khe hở thông xuống tầng dưới — thường để đi **ống nước chữa cháy**; user, 2026-10-15) → thể hiện **thông tầng** bằng nét đứt: vẽ **chữ X** (hai đường chéo, nét `<Overhead>` như dự án đang dùng) **khít đúng 4 góc lỗ**: mép trong lan can / mép vế / mép chiếu nghỉ bao quanh lỗ, không lấn ra chiếu nghỉ, không hụt.
 - Cạnh vế là **tường đặc** hoặc **sàn** (vd. vế đầu ở tầng thấp nhất, bên cạnh là sàn) → **không** vẽ X.
 - X có sẵn sai vị trí → sửa đầu mút cho khít lỗ (`detail_lines_set`), không vẽ thêm bộ thứ hai. Không đặt đầu tag lên nét X (dời tag ra chiếu nghỉ, leader vuông góc tới lan can).
 
@@ -174,9 +174,9 @@ Chiếu nghỉ có lan can chắn (vd. lan can bên shaft / lỗ mở): đo **t�
 |---|---|---|---|
 | **SB1** | Vế thang (Stair Run Tag) — mẫu: `From EL +5250 To EL +7875` / `280mm x 14T` | 1 tag / vế nhìn thấy (thường 3: V1, V2, V3) | **Ngoài tường bên** của dải vế, **giữa tường và chuỗi SA2**, chữ chạy dọc vế, **leader có mũi tên** đi qua tường vào **phần nhìn thấy** của vế. V1 và V3 cùng dải → hai tag cùng phía, mỗi tag ngang phần nhìn thấy của vế mình. Không bị dim đè. |
 | **SB2** | Tay vịn / lan can (Railing Tag) — mẫu: `P01` tay vịn tường, `P02` lan can giữa | 1 tag / lan can (mỗi tay vịn tường một `P01`) | **Leader** ngắn tới lan can. Đầu tag **không nằm trên nét vế thang**: giếng thang, chiếu nghỉ hoặc khoảng trống cạnh lan can. *(Mẫu có tag đặt đè nét bậc → không làm theo.)* |
-| **SB3** | Cao độ (Spot Elevation) | 1 / chiếu nghỉ nhìn thấy (mẫu `2625`); 1 / chiếu tới trong lõi thang (mẫu `5250`, `0.000`); 1 sàn **ngoài cửa buồng thang** | Trên mặt chiếu nghỉ / mặt sàn. Không trên cung mở cửa, không trên mũi tên path. |
+| **SB3** | Cao độ (Spot Elevation) | 1 / chiếu nghỉ nhìn thấy (mẫu `2625`); 1 / chiếu tới trong lõi thang (mẫu `5250`, `0.000`); 1 sàn **ngoài cửa buồng thang** khi mặt bằng cắt qua cửa, **kể cả khi cùng cao độ** với chiếu tới (để phân biệt cao độ trong / ngoài buồng thang trên đường thoát nạn; user, 2026-10-15) | Trên mặt chiếu nghỉ / mặt sàn. Không trên cung mở cửa, không trên mũi tên path. |
 | **SB4** | Cửa đi, cửa sổ (Door/Window Tag) | đúng 1 / cửa nhìn thấy | Sát cửa, không đè dim (SA4), không nằm trên cung mở cửa. |
-| **SB5** | Hoàn thiện sàn — mẫu: `F13` | 1 / chiếu nghỉ và 1 / chiếu tới | Cùng cụm với cao độ SB3 của sàn đó, không đè path, không đè dim SA3. |
+| **SB5** | Hoàn thiện sàn — mẫu: `F13` | **Bắt buộc** (user, 2026-10-15), 1 / chiếu nghỉ và 1 / chiếu tới | Cùng cụm với cao độ SB3 của sàn đó, không đè path, không đè dim SA3. |
 | **SB6** | Hoàn thiện tường bao lõi thang — mã `W..` | **Bắt buộc**, ≥ 1 / loại hoàn thiện tường thấy trên view (thường mỗi mặt tường một tag) | **Leader gần chủ thể nhất có thể**, chạm mặt tường hoàn thiện. Đầu tag có thể **dồn vào góc tường** (góc trong lõi thang còn trống). |
 
 - Tag nào cũng phải: gần chủ thể, không đè dim, không đè tag khác, không nằm trên nét vế thang.
@@ -244,6 +244,8 @@ Chỗ mẫu khác với quy tắc viết → **làm theo quy tắc**:
 - `annotation_overlaps` = 0.
 - Ảnh **view** (không xuất sheet): 3 vế, 3 tag vế ngoài tường có leader, số bậc liên tục đúng, mũi tên đúng chiều, không chữ UP/DOWN, các lớp dim thẳng hàng, cách đều, đúng thứ tự; chữ đoạn ngắn (80 | 30 | 80) tách ra; cùng kiểu với các view đã xong trên cùng sheet.
 ## Bài học (ghi thêm một dòng, kèm ngày)
+
+- 2026-10-15: user chốt trong quy trình lõi thang: SB3 thêm cao độ sàn ngoài cửa buồng thang khi mặt bằng cắt qua cửa, kể cả khi cùng cao độ (phân biệt trong / ngoài khi thoát nạn); SB5 bắt buộc như SB6; lỗ thông tầng giữa hai vế (đi ống chữa cháy) phải có X nét đứt, cạnh là tường thì bỏ.
 
 - 2026-10-06: `stair_plan_audit`, `stair_plan_annotate`, `dims_text` đã biên dịch với RevitAPI 2023 nhưng **chưa chạy thử trên model thật**. Lần đầu: chạy trên một view, đối chiếu kết quả với bản vẽ, ghi bài học.
 - 2026-10-06: chuẩn A–D lấy từ user. Bố trí dim/tag, cách viết công thức, đánh số bậc liên tục và mũi tên chữ V lấy theo ảnh mẫu của user (sheet lõi thang, 1:50).
