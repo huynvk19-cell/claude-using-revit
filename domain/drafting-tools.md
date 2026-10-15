@@ -123,6 +123,8 @@ metadata:
 | `view_image_trial` | Thử ẩn/bỏ template rồi xuất ảnh, luôn rollback. |
 | `tag_leaders_info` | (RO) Tag + room tag + leader trong view: đầu tag, điểm gấp, điểm cuối, hình dạng (V / H / V+H / H+V / D xiên). |
 | `view_range_info` | (RO) View range (top / cut / bottom / view depth, cao độ tuyệt đối) + cao độ Z của phần tử. |
+| `room_color_survey` | (RO) Mặt bằng: số room / room chưa tag, Color Scheme của view, template có giữ "Color Scheme" không, view có nhận scheme không (ceiling plan = không); các Color Scheme của Rooms. |
+| `room_color_apply` | Tô room có tag bằng Color Scheme đặt ở template (copy scheme nguồn, màu chung + màu theo giá trị); room chưa tag trong view: override Surface Transparency 100 (không ẩn); room vừa có tag được gỡ override. preview / apply / undo (logPath). |
 | `dim_stable_refs` | (RO) Stable reference của từng tham chiếu trong dim + id / UniqueId Top Rail của lan can. |
 | `number_systems_copy` | Chép thiết lập số bậc (Display Rule, Number Size, Justify…) từ một tread number chuẩn sang các tread number khác, giá trị lưu sẵn (không parse đơn vị). |
 | `dims_rail_refs` | Dim bám tay vịn mà Revit VẼ ĐƯỢC: dựng tham chiếu như khi pick tay (`<UniqueId top rail>:1:INSTANCE:<cạnh symbol>:LINEAR`), tự thử từng cạnh bằng dim thử tới trục (giá trị đúng + có Box). Vị trí: `{mm, rail}` / `{mm, wall}` / `{mm, ref}` / `{mm, dimId, index}`; `mode probe` liệt kê cạnh. Tay vịn nằm trên mặt cắt (<Above>) không dim được. |

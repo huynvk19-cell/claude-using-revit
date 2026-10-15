@@ -1,11 +1,11 @@
 ---
 name: drafting-views-sheets
-description: "Viewports, viewport types, crops/scope boxes, dependent views, 2D grid/level ends, view templates, link display, and keeping the print set in step with the drawing list via Revit MCP. Use for viewport, đổi type viewport, crop view, scope box, đầu trục, kéo trục, bubble chồng, view template, ẩn link, V/G, drawing list, danh mục bản vẽ, print set, sheet mới."
+description: "Viewports, viewport types, crops/scope boxes, dependent views, 2D grid/level ends, view templates, link display, room colour fill per view, and keeping the print set in step with the drawing list via Revit MCP. Use for viewport, đổi type viewport, crop view, scope box, đầu trục, kéo trục, bubble chồng, view template, ẩn link, V/G, tô màu room, color scheme, drawing list, danh mục bản vẽ, print set, sheet mới."
 ---
 
 # Views and sheets
 
-**Tools** (load all in one ToolSearch call): `align_grid_ends`, `crop_side_to_grids`, `grid_bubble_elbow`, `print_set_from_schedule`, `print_set_info`, `set_viewport_type`, `sheet_browser_names`, `sheet_views_ids`, `view_crop_info`, `view_image_trial`, `viewport_title_audit`, `viewport_titles_place`.
+**Tools** (load all in one ToolSearch call): `align_grid_ends`, `crop_side_to_grids`, `grid_bubble_elbow`, `print_set_from_schedule`, `print_set_info`, `room_color_apply`, `room_color_survey`, `set_viewport_type`, `sheet_browser_names`, `sheet_views_ids`, `view_crop_info`, `view_image_trial`, `viewport_title_audit`, `viewport_titles_place`.
 
 Standards: `~/.claude/drafting-domain/drafting-views-sheets.md`.
 
