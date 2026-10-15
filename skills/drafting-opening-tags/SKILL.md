@@ -5,50 +5,24 @@ description: "Tag every visible window and door (incl. roll-up doors) on elevati
 
 # Opening tags (elevations / sections)
 
-**Tools** (load all in one ToolSearch call): `annotation_overlaps`, `door_window_tag_check`, `elevation_opening_tags`, `tag_align`.
+**Tools** (load all in one ToolSearch call): `annotation_overlaps`, `door_window_tag_check`, `elevation_opening_tags`, `export_sheet_images`, `tag_align`.
 
 Standard: `~/.claude/drafting-domain/drafting-opening-tags.md`. Rules T1–T8 decide every case. Read it first.
 
-## Steps — ONE view per call (`viewIds:[one id]`, `maxSeconds` set)
+## Step cards
 
-1. **Audit** with `door_window_tag_check {mode:"audit", viewIds:[id], viewTypes:["Section","Elevation"], untaggedOnlyInTaggedViews:false}`. It lists:
-   - untagged openings;
-   - duplicate tags (two tags on one opening);
-   - orphaned tags, and tags showing "?" or empty;
-   - tag heads crossed by the opening's own linework.
-2. **Preview:**
-   ```
-   elevation_opening_tags {viewIds:[id], mode:"preview", addLeader:true, maxSeconds:90}
-   ```
-   The preview:
-   - finds the openings that are really visible (rays);
-   - plans a tag for each untagged one;
-   - reports wrong existing tags: on host, door tag not above, window tag beside, far, covering something.
-3. **Apply:**
-   ```
-   elevation_opening_tags {viewIds:[id], mode:"apply", addLeader:true, fixExisting:true, logPath}
-   ```
-   - `fixExisting` moves only the wrong tags. Never pass `repositionAll` on a view the user adjusted by hand (T8).
-   - Tags that still cover a dim or a hard element are coloured red.
-4. **Duplicates and orphans:**
-   - Delete the extra tag of a duplicated opening. Keep the one that is placed better.
-   - Report orphaned and "?" tags; do not touch the model.
-5. **Rows:** `tag_align {viewId, mode:"apply", refTagText, tagTexts:[...], logPath}` brings the tags of one row to the same height above their openings, with leaders (T7).
-6. **Roll-up doors (T5):**
-   - **Large door:** tag width ≤ 1/3 and tag height ≤ 1/4 of the door's visible size. The tag may sit **inside** the door: centred, about mid-height, no leader, clear of the door's own dims, other tags and room tags.
-     - `elevation_opening_tags` does this itself (`rollupInside`, on by default; `rollupFamilies` = the project's roll-up family name, default `["ROLL UP"]`).
-     - It accepts existing inside tags, places new ones inside, and adds no leader to them.
-     - Other door types are never tagged inside.
-   - **Small door:** tag above, like a door. The leader end goes about 2.5 mm inside the visible top, not on the coil box.
-7. **Verify:**
-   - Run `annotation_overlaps` (tags vs dims/tags).
-   - Export the sheet image and look (`drafting-visual-check`).
-   - Re-run step 1 until there are no untagged or duplicate openings.
-8. **Report per view:**
-   - tags added, moved and deleted;
-   - what is still red;
-   - what is left for manual work.
-   - After the user approves, `mode:"clearhighlight"` with the same `logPath` removes the red.
+Each step is one file in `steps/` (next to this file). Open **only the card of the step you are on**. In a workflow (`drafting-workflow`), each card runs on every view of the job before the next card.
+
+| # | Card | Step |
+|---|---|---|
+| 00 | `steps/00-audit.md` | Audit (khảo sát tag cửa) |
+| 01 | `steps/01-place-tags.md` | Place tags (đặt tag) |
+| 02 | `steps/02-duplicates-orphans.md` | Duplicates, orphans (tag trùng, tag mồ côi) |
+| 03 | `steps/03-align-rows.md` | Align rows (căn tag theo hàng) |
+| 04 | `steps/04-rollup-doors.md` | Roll-up doors (cửa cuốn) |
+| 05 | `steps/05-recheck.md` | Recheck (kiểm lại) |
+
+A card says: what to do (commands), **done when**, **skip only if**, never.
 
 ## Never
 

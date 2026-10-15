@@ -5,7 +5,7 @@ description: "Dimension every visible window and door (incl. roll-up doors) on e
 
 # Opening dims (elevations / sections)
 
-**Tools** (load all in one ToolSearch call): `annotation_overlaps`, `dims_declutter`, `dims_edit`, `highlight_elements`, `opening_dims_each`.
+**Tools** (load all in one ToolSearch call): `annotation_overlaps`, `dims_declutter`, `dims_edit`, `export_sheet_images`, `highlight_elements`, `opening_dims_each`.
 
 Standard: `~/.claude/drafting-domain/drafting-opening-dims.md`. Rules Q1–Q5 decide every case. Read it first.
 
@@ -13,46 +13,18 @@ Project values (check dim type, roll-up family name) come from the project `draf
 
 The user requires the work to go **opening by opening**. A row/batch tool that counts a dim as "existing" by position leaves openings without dims. So never trust a batch result: audit by reference.
 
-## Steps — ONE view per call
+## Step cards
 
-1. **Audit** (read-only, once per view, can take 1–2 min):
-   ```
-   opening_dims_each {viewId, mode:"audit", dimTypeName:<profile check type>, cachePath:<review>/each-<view>-cache.json}
-   ```
-   The audit:
-   - finds the openings that are really visible;
-   - checks, by reference to the opening, whether each has a V chain (host level / sill / head) and an H chain (both edges);
-   - lists only the openings with gaps.
-2. **For each listed opening, one call:**
-   ```
-   opening_dims_each {viewId, mode:"apply", openingId, dimTypeName:<profile check type>, nominalFamilies:<profile roll-up family>, cachePath, logPath}
-   ```
-   It adds only what that opening is missing, on the nearest clear line beside it:
-   - V: host level → bottom → top.
-   - H: nearest grid → L → R → nearest grid, just above the head or below the sill, inside the storey.
+Each step is one file in `steps/` (next to this file). Open **only the card of the step you are on**. In a workflow (`drafting-workflow`), each card runs on every view of the job before the next card.
 
-   It also handles these cases:
-   - **Own partial V pieces:** check-type pieces on the opening are replaced by one full chain.
-   - **Side-by-side openings** (same sill/head, touching): treated as one group. The H chain gets every joint; an existing chain (any type) missing a joint is completed in place. One V chain beside the group serves all.
-   - **Stacked openings** (same edges, one on top of the other, e.g. louvre over window): share one H chain; the upper one continues the lower V chain on the same line (bottom → top).
-   - **Leaf vs frame:** a black dim within 60 mm of the frame top counts, e.g. 2600 leaf vs 2650 frame.
-3. **Re-audit until `MissingV` = `MissingH` = 0.**
-   - Bad placement (`Notes` with many clashes, "outside crop", no grid on one side) → delete that dim with `dims_edit` and report it for manual placement.
-4. **Tidy:**
-   ```
-   dims_declutter {viewId, mode:"apply", typeName:<profile check type>, cachePath, logPath}
-   ```
-   - It moves check-type dims sideways in 1.2 mm steps, away from texts, tags, openings and cut slabs/beams.
-   - Black dims move only by explicit `ids`, and only when they really overlap text.
-   - Dims continuing another dim on the same line (stacked openings) are never moved.
-5. **Verify:**
-   - Run `annotation_overlaps` per view.
-   - Export the sheet images and look (`drafting-visual-check`).
-   - Long old chains that cannot be cleared (crossing many grids and slabs) → delete them and let step 2 rebuild per opening.
-6. **Report per view:**
-   - openings fixed;
-   - what is left for manual work;
-   - remaining overlaps (coloured red with `highlight_elements` when asked).
+| # | Card | Step |
+|---|---|---|
+| 00 | `steps/00-audit.md` | Audit (khảo sát dim cửa) |
+| 01 | `steps/01-dim-each-opening.md` | Dim each opening (dim từng cửa) |
+| 02 | `steps/02-tidy.md` | Tidy (dọn dim cửa) |
+| 03 | `steps/03-recheck.md` | Recheck (kiểm lại) |
+
+A card says: what to do (commands), **done when**, **skip only if**, never.
 
 ## Never
 
