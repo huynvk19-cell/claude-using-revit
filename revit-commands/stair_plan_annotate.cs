@@ -65,13 +65,14 @@
       },
       "logPath": {
         "type": "string"
-      }
+      },
+      "viewIds": { "type": "array", "items": { "type": "number" }, "description": "several plan views, one after another (logPath/outPath get -<viewId>)" }
     },
     "required": [
       "mode"
     ]
   },
-  "timeoutSeconds": 120,
+  "timeoutSeconds": 600,
   "readOnly": false
 }
 */
@@ -120,7 +121,28 @@ public static class StairPlanAnnotate
     }
     static ElementId MostUsed(IEnumerable<Element> els) { var g = els.GroupBy(e => e.GetTypeId().IntegerValue).OrderByDescending(x => x.Count()).FirstOrDefault(); return g == null ? null : new ElementId(g.Key); }
 
+    // viewIds: the same call on several plan views, one after another (each view in its own transaction);
+    // logPath / outPath get "-<viewId>" before the extension, so undo with the same viewIds + logPath finds each log
     public static object Run(UIApplication app, JObject args)
+    {
+        var ids = args["viewIds"] as JArray;
+        if (ids == null || ids.Count == 0) return RunOne(app, args);
+        var all = new JArray();
+        foreach (var id in ids)
+        {
+            var a = (JObject)args.DeepClone(); a.Remove("viewIds"); a["viewId"] = id;
+            foreach (var k in new[] { "logPath", "outPath" })
+            {
+                var p = (string)args[k];
+                if (!string.IsNullOrEmpty(p)) a[k] = Path.Combine(Path.GetDirectoryName(p) ?? "", Path.GetFileNameWithoutExtension(p) + "-" + (int)id + Path.GetExtension(p));
+            }
+            try { all.Add(JToken.FromObject(RunOne(app, a))); }
+            catch (Exception e) { all.Add(new JObject { ["ViewId"] = id, ["Error"] = e.Message }); }
+        }
+        return new JObject { ["Views"] = ids.Count, ["Results"] = all };
+    }
+
+    static object RunOne(UIApplication app, JObject args)
     {
         var doc = app.ActiveUIDocument.Document;
         string mode = (string)args["mode"], logPath = (string)args["logPath"];

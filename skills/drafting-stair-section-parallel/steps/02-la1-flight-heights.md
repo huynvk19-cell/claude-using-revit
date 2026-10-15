@@ -1,6 +1,6 @@
 # 02 · LA1 Flight heights (dim chiều cao vế)
 
-**Skill** `drafting-stair-section-parallel` · **Standard** `drafting-stair-section-parallel.md` LA1 · **Tools** `stair_section_annotate`, `dims_text`, `view_elem_boxes`
+**Skill** `drafting-stair-section-parallel` · **Standard** `drafting-stair-section-parallel.md` LA1 · **Tools** `stair_section_annotate`, `dims_text`, `view_elem_boxes`, `stair_section_info`
 **Applies to** every section along the flights of the job, one view per call (`timeoutSeconds`).
 **Read first** (once per job): `_annotate-common.md`
 
@@ -15,6 +15,8 @@ stair_section_annotate {viewId, mode:"preview", parts:["LA1"], dimTypeName:<chec
 - Sample layout: LA1 300 mm inside an existing overall dim.
 
 ## Done when
+
+Check: `stair_section_info {viewId, rules:["LA1"]}` (only LA1 rows, notes, issues).
 
 - `stair_section_info` LA1 rows `OK` for every flight.
 - R × riser height = segment value (± 1 mm from rounding); a bigger gap → wrong reference or model: report it.

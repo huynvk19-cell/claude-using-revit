@@ -1,6 +1,6 @@
 # 03 · SA3 Landings (dim chiếu nghỉ)
 
-**Skill** `drafting-stair-plan` · **Standard** `drafting-stair-plan.md` SA3 · **Tools** `dims_rail_refs`, `dims_at_positions`, `dims_text`, `export_sheet_images`, `view_elem_boxes`
+**Skill** `drafting-stair-plan` · **Standard** `drafting-stair-plan.md` SA3 · **Tools** `dims_rail_refs`, `dims_at_positions`, `dims_text`, `export_sheet_images`, `view_elem_boxes`, `stair_plan_audit`
 **Applies to** every plan view of the job, one view per call.
 **Read first** (once per job): `_dims-common.md`
 
@@ -14,7 +14,7 @@ Inside the core, **along the well axis**, on the mid landing and on the floor la
 
 ## Done when
 
-- `stair_plan_audit` SA3 `OK` on the mid landing and the floor landing.
+- `stair_plan_audit {viewIds, rules:["SA3"]}`: SA3 `OK` on the mid landing and the floor landing.
 - The end checked on the image against the drawn handrail end.
 - Every new dim drawn (Box ≠ null).
 

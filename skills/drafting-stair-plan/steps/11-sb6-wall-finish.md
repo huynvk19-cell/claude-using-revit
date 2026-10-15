@@ -12,6 +12,8 @@
 
 ## Done when
 
+Check: `stair_plan_audit {viewIds, rules:["SB6"]}` (`Tags.Walls, Tags.FinishMarks`, SB6 issues).
+
 - At least one `W..` per wall finish kind seen, leader touching the finish face.
 
 ## Skip only if

@@ -10,11 +10,12 @@
       "lineStyle": { "type": "string", "description": "line style of the X, default <Overhead>" },
       "excludeStairIds": { "type": "array", "items": { "type": "integer" } },
       "minGapMm": { "type": "number", "description": "narrower gaps are ignored, default 50" },
-      "rect": { "type": "array", "items": { "type": "number" }, "description": "[r0,u0,r1,u1] view mm: use this gap instead of the one found" }
+      "rect": { "type": "array", "items": { "type": "number" }, "description": "[r0,u0,r1,u1] view mm: use this gap instead of the one found" },
+      "viewIds": { "type": "array", "items": { "type": "number" }, "description": "several plan views, one after another (logPath/outPath get -<viewId>)" }
     },
-    "required": ["viewId", "mode"]
+    "required": ["mode"]
   },
-  "timeoutSeconds": 120
+  "timeoutSeconds": 600
 }
 */
 // ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
@@ -30,6 +31,7 @@
 //    than 5 mm; a missing diagonal is added. Tag heads lying on the X are listed in Warnings (move them, standard SB).
 // Detail lines have no type: they cannot take a mark type; the created / moved ids are in the apply log.
 // mode preview (rolled back) | apply (logPath) | undo (logPath: deletes the created lines, puts moved ends back).
+// viewIds: several plan views in one call, one after another; logPath gets -<viewId> (undo with the same viewIds + logPath).
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -71,7 +73,28 @@ public static class StairGapX
         return res;
     }
 
+    // viewIds: the same call on several plan views, one after another (each view in its own transaction);
+    // logPath / outPath get "-<viewId>" before the extension, so undo with the same viewIds + logPath finds each log
     public static object Run(UIApplication app, JObject args)
+    {
+        var ids = args["viewIds"] as JArray;
+        if (ids == null || ids.Count == 0) return RunOne(app, args);
+        var all = new JArray();
+        foreach (var id in ids)
+        {
+            var a = (JObject)args.DeepClone(); a.Remove("viewIds"); a["viewId"] = id;
+            foreach (var k in new[] { "logPath", "outPath" })
+            {
+                var p = (string)args[k];
+                if (!string.IsNullOrEmpty(p)) a[k] = Path.Combine(Path.GetDirectoryName(p) ?? "", Path.GetFileNameWithoutExtension(p) + "-" + (int)id + Path.GetExtension(p));
+            }
+            try { all.Add(JToken.FromObject(RunOne(app, a))); }
+            catch (Exception e) { all.Add(new JObject { ["ViewId"] = id, ["Error"] = e.Message }); }
+        }
+        return new JObject { ["Views"] = ids.Count, ["Results"] = all };
+    }
+
+    static object RunOne(UIApplication app, JObject args)
     {
         var doc = app.ActiveUIDocument.Document;
         string mode = (string)args["mode"] ?? "preview", logPath = (string)args["logPath"];

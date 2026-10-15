@@ -12,6 +12,8 @@
 
 ## Done when
 
+Check: `stair_plan_audit {viewIds, rules:["SB5"]}` (`Tags.Landings, Tags.FinishMarks`, SB5 issues).
+
 - One `F..` per landing and floor landing, grouped with its spot, off the path and the SA3 dims.
 
 ## Skip only if

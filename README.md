@@ -13,7 +13,7 @@ Skills and domain standards that let Claude Code, via Revit MCP, do drawing prod
 | `domain/` | Quy chuẩn bản vẽ: con số, vị trí, ngoại lệ, bẫy API | Tiếng Việt + thuật ngữ Revit |
 | `agents/` | Subagent `drafting-visual-checker`: đọc ảnh kiểm tra, chỉ trả lời bằng chữ (ảnh không ở lại trong hội thoại chính) | English |
 | `templates/drafting-profile.md` | Giá trị riêng của từng dự án (dim type, model cấm chạm, view loại trừ…) | Tiếng Việt |
-| `revit-commands/` | 85 lệnh động (dynamic commands) C# cho Revit MCP: dim, tag, title, viewport, crop, lõi thang, dim bám tay vịn, filled region cột theo kết cấu, mặt cắt dọc thang (dim, tag, số bậc, cao độ tay vịn, ô hoàn thiện), kiểm tra mặt cắt ngang thang, kiểm tra chồng lắp… Không chứa giá trị riêng dự án | C# |
+| `revit-commands/` | 86 lệnh động (dynamic commands) C# cho Revit MCP: dim, tag, title, viewport, crop, lõi thang, dim bám tay vịn, filled region cột theo kết cấu, mặt cắt dọc thang (dim, tag, số bậc, cao độ tay vịn, ô hoàn thiện), kiểm tra mặt cắt ngang thang, kiểm tra chồng lắp… Không chứa giá trị riêng dự án | C# |
 | `tools/crop.ps1` | Cắt vùng ảnh sheet để kiểm tra | PowerShell |
 | `tools/work-status/` | Cửa sổ "Đang xử lý" luôn nổi trên màn hình (tuỳ chọn) | PowerShell |
 
@@ -119,7 +119,7 @@ Mỗi bước Claude gọi tool, toàn bộ phần đầu phiên (danh sách too
 | Phần | Tốn (mỗi bước) | Cách giảm | Trạng thái |
 |---|---|---|---|
 | Tool có sẵn của Revit MCP (profile `full`, 192 tool) | ~36.6k token nếu nạp sẵn; chỉ tên (~1.5k) khi tool search bật | **A**: profile `drafting` (26 tool) | cần làm trên máy |
-| 85 lệnh của repo (header `mcp-tool`) | ~11.8k token nếu nạp sẵn; chỉ tên (~0.8k) khi tool search bật; mỗi lệnh đã nạp ~140 token | **B**: header ngắn, giải thích ở `// ---- Details` | đã làm |
+| 86 lệnh của repo (header `mcp-tool`) | ~11.8k token nếu nạp sẵn; chỉ tên (~0.8k) khi tool search bật; mỗi lệnh đã nạp ~140 token | **B**: header ngắn, giải thích ở `// ---- Details` | đã làm |
 | Tool search của Claude Code | — | **C**: giữ bật (mặc định), kiểm tra bằng `/context` | kiểm tra trên máy |
 | Nạp lệnh từng cái một (mỗi lần một lượt) | 1 lượt / lệnh | **D**: dòng **Tools** trong mỗi skill → nạp hết trong 1 lần ToolSearch | đã làm |
 | Mô tả skill (gửi mỗi request) | 6.8k → 5.3k ký tự | mô tả ngắn, luật nằm trong thân skill | đã làm |

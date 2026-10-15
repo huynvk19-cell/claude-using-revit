@@ -11,6 +11,8 @@
 
 ## Done when
 
+Check: `stair_xsection_info {viewId, rules:["XC"]}` (only XC rows, notes, issues).
+
 - Every `away` flight numbered Start and End; none on `toward` flights.
 - `FirstNumber` = `FirstByElevation` and matches the plan.
 

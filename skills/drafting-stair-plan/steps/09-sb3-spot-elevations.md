@@ -1,6 +1,6 @@
 # 09 · SB3 Spot elevations (cao độ)
 
-**Skill** `drafting-stair-plan` · **Standard** `drafting-stair-plan.md` SB3 · **Tools** `annot_place`, `view_elem_boxes`
+**Skill** `drafting-stair-plan` · **Standard** `drafting-stair-plan.md` SB3 · **Tools** `annot_place`, `view_elem_boxes`, `stair_plan_audit`
 **Applies to** every plan view of the job, one view per call.
 **Read first** (once per job): `_tags-common.md`
 
@@ -12,6 +12,8 @@
 - **when the plan cuts the stair door**: on the floor just **outside** the door, **even at the same level** — it tells inside from outside the stair enclosure on the escape route (link floor → link reference).
 
 ## Done when
+
+Check: `stair_plan_audit {viewIds, rules:["SB3"]}` (`Spots`, SB3 issues).
 
 - A spot on every seen landing and the floor landing; one outside each cut stair door.
 - None on the door swing or on the path arrow.

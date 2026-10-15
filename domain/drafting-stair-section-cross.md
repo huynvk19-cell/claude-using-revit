@@ -168,6 +168,8 @@ Lỗi thấy trên mẫu (không bắt chước): công thức XA1 dùng Replace
 
 ## Bài học (ghi thêm một dòng, kèm ngày)
 
+- 2026-10-15: có `stair_xsection_annotate` (XA1, XA3, XA4, XA5, XA6; XA2 vẫn `level_dims_add`). Chưa chạy trên model thật: lần đầu preview từng phần trên view mẫu, đối chiếu với dim tay của mẫu.
+
 - 2026-10-15: bỏ hai chỗ "chờ user chốt": XA6 bắt buộc (chiều cao tay vịn, số chẵn, tường 900 / lỗ mở 1200); XB3 theo LB3 (mỗi mặt chiếu nghỉ / sàn bị cắt).
 
 - 2026-10-08: chuẩn lập từ view mẫu mặt cắt ngang của user + chuẩn mặt cắt dọc. `stair_xsection_info` chạy thật trên view mẫu: XA4 mong đợi khớp 20/20 đoạn của chuỗi tay; nhận đúng mặt cắt dọc (trả lỗi, chuyển sang `stair_section_info`). Chưa có lệnh annotate riêng: dựng dim bằng `dims_at_positions` / dim tay mẫu, tag bằng `annot_place`.

@@ -1,6 +1,6 @@
 # 02 · SA1 Clear width of runs (dim thông thuỷ vế)
 
-**Skill** `drafting-stair-plan` · **Standard** `drafting-stair-plan.md` SA1 · **Tools** `dims_rail_refs`, `dim_stable_refs`, `dims_copy_refs`, `dims_at_positions`, `dims_text`, `view_elem_boxes`
+**Skill** `drafting-stair-plan` · **Standard** `drafting-stair-plan.md` SA1 · **Tools** `dims_rail_refs`, `dim_stable_refs`, `dims_copy_refs`, `dims_at_positions`, `dims_text`, `view_elem_boxes`, `stair_plan_audit`
 **Applies to** every plan view of the job, one view per call.
 **Read first** (once per job): `_dims-common.md`
 
@@ -19,7 +19,7 @@ Then `dims_text`: suffix `CLEAR` on the clear width of each run, nothing else.
 
 ## Done when
 
-- `stair_plan_audit` SA1 rows `OK` at both ends of the runs.
+- `stair_plan_audit {viewIds, rules:["SA1"]}`: SA1 rows `OK` at both ends of the runs.
 - `CLEAR` only on run clear widths; bounds = railing edge, else step edge, else finish wall (never across an opening).
 - Every new dim drawn (`view_elem_boxes` Box ≠ null).
 

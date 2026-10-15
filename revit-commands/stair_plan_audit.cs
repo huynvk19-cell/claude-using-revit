@@ -26,13 +26,13 @@
       "outPath": {
         "type": "string",
         "description": "write the full result as JSON here"
-      }
+      },
+      "rules": { "type": "array", "items": { "type": "string" }, "description": "only these rules, e.g. [\"SA1\"] (one step card): short result, full in outPath" },
+      "viewIds": { "type": "array", "items": { "type": "number" }, "description": "several plan views, one after another (logPath/outPath get -<viewId>)" }
     },
-    "required": [
-      "viewId"
-    ]
+    "required": []
   },
-  "timeoutSeconds": 120,
+  "timeoutSeconds": 600,
   "readOnly": true
 }
 */
@@ -49,6 +49,9 @@
 //    walls; spot elevations on landings and outside the core doors; stair paths (type family, UP/DOWN text); tread
 //    numbers per run; and the project's most-used tag / spot / path types. Returns an Issues list per rule.
 // Parameters:
+//   rules: e.g. ["SA1"] or ["SB"]: only the Expected rows / tag lists / notes / issues of those rules + a count per
+//    rule (a step card's check, a few hundred tokens). Without rules: the full result (the survey card).
+//   viewIds: several plan views in one call, one after another; logPath / outPath get -<viewId>.
 //   excludeStairIds: stairs to leave out (e.g. a neighbouring stair outside the core, partly in the crop)
 //   searchMm: how far beyond the stair footprint to look for the end walls (perpendicular to travel), default 3000;
 //    side walls: 1000
@@ -124,7 +127,28 @@ public static class StairPlanAudit
     }
     static double Ov(double a0, double a1, double b0, double b1) { return Math.Min(a1, b1) - Math.Max(a0, b0); }
 
+    // viewIds: the same call on several plan views, one after another (each view in its own transaction);
+    // logPath / outPath get "-<viewId>" before the extension, so undo with the same viewIds + logPath finds each log
     public static object Run(UIApplication app, JObject args)
+    {
+        var ids = args["viewIds"] as JArray;
+        if (ids == null || ids.Count == 0) return RunOne(app, args);
+        var all = new JArray();
+        foreach (var id in ids)
+        {
+            var a = (JObject)args.DeepClone(); a.Remove("viewIds"); a["viewId"] = id;
+            foreach (var k in new[] { "logPath", "outPath" })
+            {
+                var p = (string)args[k];
+                if (!string.IsNullOrEmpty(p)) a[k] = Path.Combine(Path.GetDirectoryName(p) ?? "", Path.GetFileNameWithoutExtension(p) + "-" + (int)id + Path.GetExtension(p));
+            }
+            try { all.Add(JToken.FromObject(RunOne(app, a))); }
+            catch (Exception e) { all.Add(new JObject { ["ViewId"] = id, ["Error"] = e.Message }); }
+        }
+        return new JObject { ["Views"] = ids.Count, ["Results"] = all };
+    }
+
+    static object RunOne(UIApplication app, JObject args)
     {
         var doc = app.ActiveUIDocument.Document;
         var v = doc.GetElement(new ElementId(args.Value<int>("viewId"))) as ViewPlan;
@@ -686,7 +710,46 @@ public static class StairPlanAudit
         };
         var outPath = args.Value<string>("outPath");
         if (!string.IsNullOrEmpty(outPath)) File.WriteAllText(outPath, JsonConvert.SerializeObject(res, Formatting.Indented));
+        if (args["rules"] is JArray ra && ra.Count > 0)
+            return OnlyRules(JObject.FromObject(res), ra, "Expected", "Runs", new[] { "Label", "Id", "State", "Treads", "Text", "ClearWidth" },
+                new Dictionary<string, string[]> {
+                    ["SB1"] = new[] { "Tags.Runs" }, ["SB2"] = new[] { "Tags.Railings" }, ["SB3"] = new[] { "Spots", "Landings" },
+                    ["SB4"] = new[] { "Openings" }, ["SB5"] = new[] { "Tags.Landings", "Tags.FinishMarks" }, ["SB6"] = new[] { "Tags.Walls", "Tags.FinishMarks" },
+                    ["C"] = new[] { "TreadNumbers" }, ["SD"] = new[] { "Paths" }, ["SA3"] = new[] { "Landings" }, ["SA4"] = new[] { "Grids", "Walls" } }, outPath);
         return res;
+    }
+
+    // rules: keep only the rows of the asked rules (one step card = one rule) + a count per rule; general notes / issues
+    // (no rule code) stay. The full result is still written to outPath.
+    static object OnlyRules(JObject full, JArray rulesArg, string rowsKey, string briefKey, string[] briefFields, Dictionary<string, string[]> sections, string outPath)
+    {
+        var rules = rulesArg.Select(x => ((string)x ?? "").Trim().ToUpper()).Where(x => x.Length > 0).ToList();
+        Func<string, bool> hit = code => code != null && rules.Any(r => code.ToUpper().StartsWith(r));
+        Func<string, bool> keepLine = s =>
+        {
+            var m = System.Text.RegularExpressions.Regex.Match(s ?? "", @"^([A-Z]{1,3}\d*)\s*:");
+            return !m.Success || hit(m.Groups[1].Value);
+        };
+        var o = new JObject { ["View"] = full["View"], ["ViewId"] = full["ViewId"], ["Rules"] = new JArray(rules) };
+        var rows = (full[rowsKey] as JArray ?? new JArray()).Where(r => hit((string)r["Rule"])).ToList();
+        var sum = new JObject();
+        foreach (var r in rules)
+        {
+            var mine = rows.Where(x => ((string)x["Rule"]).ToUpper().StartsWith(r)).ToList();
+            int ok = mine.Count(x => ((string)x["Status"] ?? "").StartsWith("OK"));
+            sum[r] = mine.Count == 0 ? "no dim rows (see the lists below)" : ok + " OK, " + (mine.Count - ok) + " to fix";
+        }
+        o["Summary"] = sum;
+        o[rowsKey] = new JArray(rows);
+        if (briefKey != null && full[briefKey] is JArray b)
+            o[briefKey] = new JArray(b.Select(x => new JObject(briefFields.Where(f => x[f] != null).Select(f => new JProperty(f, x[f])))));
+        foreach (var kv in sections)
+            if (rules.Any(r => kv.Key.StartsWith(r) || r.StartsWith(kv.Key)))
+                foreach (var path in kv.Value) { var t = full.SelectToken(path); if (t != null && o[path] == null) o[path] = t; }
+        o["Notes"] = new JArray((full["Notes"] as JArray ?? new JArray()).Where(x => keepLine((string)x)));
+        o["Issues"] = new JArray((full["Issues"] as JArray ?? new JArray()).Where(x => keepLine((string)x)));
+        o["Full"] = string.IsNullOrEmpty(outPath) ? "only these rules; pass outPath (or no rules) for the full result" : outPath;
+        return o;
     }
 
     // the run that carries the lane's dims: V3 (this floor's run), else V2, else V1

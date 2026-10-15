@@ -1,10 +1,12 @@
 # 07 · XA6 Handrail height (cao tay vịn) ★
 
-**Skill** `drafting-stair-section-cross` · **Standard** `drafting-stair-section-cross.md` XA6 · **Tools** `rail_top_at`, `dims_copy_refs`, `view_elem_boxes`
+**Skill** `drafting-stair-section-cross` · **Standard** `drafting-stair-section-cross.md` XA6 · **Tools** `stair_xsection_annotate`, `rail_top_at`, `dims_copy_refs`, `view_elem_boxes`
 **Applies to** every section across the flights of the job, one view per call (`timeoutSeconds`).
 **Read first** (once per job): `_dims-common.md`
 
 ## Do
+
+**Command**: `stair_xsection_annotate {parts:["XA6"], xa6WallMm:900, xa6OpenMm:1200}` finds each handrail cut 500–1500 above a cut slab and keeps the drawn value nearest 900 (handrail within 250 mm of a wall) or 1200 (else); `Errors` lists the rails it could not reach (hidden, or no symbol line): those need a hand dim.
 
 On **every cut landing / floor** with a handrail seen: finish top → **top of the handrail**, one dim per handrail clearly seen there.
 

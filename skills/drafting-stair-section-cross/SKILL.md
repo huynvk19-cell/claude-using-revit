@@ -5,7 +5,7 @@ description: "Detail a stair SECTION cut ACROSS the flights (flights seen end-on
 
 # Stair section across the flights (XA–XC)
 
-**Tools** (load all in one ToolSearch call): `annot_copy_in_view`, `annot_place`, `annotation_overlaps`, `dims_copy_refs`, `dims_edit`, `dims_text`, `elevation_opening_tags`, `export_sheet_images`, `finish_mark_place`, `finish_marks_snap`, `level_dims_add`, `rail_top_at`, `stair_numbers_match`, `stair_xsection_info`, `tag_leaders_info`, `tags_retype`, `view_dims_snapshot`, `view_elem_boxes`.
+**Tools** (load all in one ToolSearch call): `annot_copy_in_view`, `annot_place`, `annotation_overlaps`, `dims_copy_refs`, `dims_edit`, `dims_text`, `elevation_opening_tags`, `export_sheet_images`, `finish_mark_place`, `finish_marks_snap`, `level_dims_add`, `rail_top_at`, `stair_numbers_match`, `stair_xsection_annotate`, `stair_xsection_info`, `tag_leaders_info`, `tags_retype`, `view_dims_snapshot`, `view_elem_boxes`.
 
 **Section views whose cut is NOT parallel to the stair path** (flights seen end-on). Along the flights → `drafting-stair-section-parallel`; plans → `drafting-stair-plan`.
 
@@ -14,6 +14,8 @@ Standard: `~/.claude/drafting-domain/drafting-stair-section-cross.md` (Vietnames
 Load `drafting-session` first. From the project `drafting-profile.md` take the **check** dim type, the run tag types per floor block, the finish-mark code parameter and the numbers' source (a finished cross-section of the project, if any).
 
 Section views: **one view per call**, with `timeoutSeconds`.
+
+**Checking a card**: `stair_xsection_info {viewId, rules:["<the card's rule>"]}` (e.g. `["XA1"]`) returns only that rule's rows and a count per rule. The full result (no `rules`) is for the survey card, written to `outPath`.
 
 ## Step cards
 

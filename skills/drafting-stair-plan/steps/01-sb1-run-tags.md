@@ -1,13 +1,13 @@
 # 01 · SB1 Run tags (tag vế thang)
 
-**Skill** `drafting-stair-plan` · **Standard** `drafting-stair-plan.md` SB1 · **Tools** `stair_plan_annotate`
-**Applies to** every plan view of the job, one view per call.
+**Skill** `drafting-stair-plan` · **Standard** `drafting-stair-plan.md` SB1 · **Tools** `stair_plan_annotate`, `stair_plan_audit`
+**Applies to** every plan view of the job, all in one call (`viewIds`).
 
 ## Do
 
 ```
-stair_plan_annotate {viewId, mode:"preview", parts:["runTags"]}
-stair_plan_annotate {viewId, mode:"apply", parts:["runTags"], logPath:"<review>/stair-tags-<viewId>.json"}
+stair_plan_annotate {viewIds:[<all plans>], mode:"preview", parts:["runTags"]}
+stair_plan_annotate {viewIds:[<all plans>], mode:"apply", parts:["runTags"], logPath:"<review>/stair-tags.json"}
 ```
 
 - One tag per untagged seen run. By default (`runTagPlace:"outside"`) the head sits just outside the side wall of the run's lane (`runTagOffsetMm`, default 5 paper mm), text along the run, leader into the **seen part** of the run. The SA2 chain (card 04) then goes outside these tags.
@@ -16,6 +16,8 @@ stair_plan_annotate {viewId, mode:"apply", parts:["runTags"], logPath:"<review>/
 - The command only adds what is missing: re-running it on a half-done view is safe. Undo: `mode:"undo", logPath`.
 
 ## Done when
+
+Check: `stair_plan_audit {viewIds, rules:["SB1"]}` (`Tags.Runs`, SB1 issues).
 
 - One tag per seen run (typically V1, V2, V3); V1 and V3 share a lane → two tags on the same side, each level with its own seen part.
 - Every `Text` reads the run's real `From EL … To EL …` and `…T`.

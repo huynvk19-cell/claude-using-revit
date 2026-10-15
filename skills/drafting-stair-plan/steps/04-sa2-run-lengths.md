@@ -1,6 +1,6 @@
 # 04 · SA2 Run lengths (dim chiều dài vế)
 
-**Skill** `drafting-stair-plan` · **Standard** `drafting-stair-plan.md` SA2 · **Tools** `dims_at_positions`, `dims_text`, `view_elem_boxes`
+**Skill** `drafting-stair-plan` · **Standard** `drafting-stair-plan.md` SA2 · **Tools** `dims_at_positions`, `dims_text`, `view_elem_boxes`, `stair_plan_audit`
 **Applies to** every plan view of the job, one view per call.
 **Read first** (once per job): `_dims-common.md`
 
@@ -19,7 +19,7 @@ dims_at_positions {viewId, mode:"preview", use3D:true, typeName:<check type>,
 
 ## Done when
 
-- `stair_plan_audit` SA2 `OK` (or `OK (split)`) for every lane, prefix right.
+- `stair_plan_audit {viewIds, rules:["SA2"]}`: SA2 `OK` (or `OK (split)`) for every lane, prefix right.
 - The chain outside the run tags, the overall outermost, lines 7 paper mm apart.
 - Every new dim drawn (Box ≠ null).
 

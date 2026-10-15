@@ -1,12 +1,12 @@
 # 00 · Survey (khảo sát)
 
 **Skill** `drafting-stair-plan` · **Standard** `drafting-stair-plan.md` §0, all rules · **Tools** `stair_plan_audit`, `view_range_info`
-**Applies to** every plan view of the job, one view per call.
+**Applies to** every plan view of the job, all in one call (`viewIds`).
 
 ## Do
 
 ```
-stair_plan_audit {viewId, excludeStairIds:[<stairs outside the core>], outPath:"<review>/stair-<viewId>.json"}
+stair_plan_audit {viewIds:[<all plans>], excludeStairIds:[<stairs outside the core>], outPath:"<review>/stair.json"}   // full result, one file per view (stair-<viewId>.json)
 ```
 
 - **A neighbouring stair outside the core, partly in the crop**, breaks the audit (an extra lane, a side wall not found, every expectation shifted). Find it in `Runs` / `Lanes` (a lane beyond a core wall, a run cut by the crop) and re-run with `excludeStairIds`. Pass the same list to every later command.

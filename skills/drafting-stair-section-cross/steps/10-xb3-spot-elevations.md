@@ -1,6 +1,6 @@
 # 10 · XB3 Spot elevations (cao độ)
 
-**Skill** `drafting-stair-section-cross` · **Standard** `drafting-stair-section-cross.md` XB3 · **Tools** `annot_place`
+**Skill** `drafting-stair-section-cross` · **Standard** `drafting-stair-section-cross.md` XB3 · **Tools** `annot_place`, `stair_xsection_info`
 **Applies to** every section across the flights of the job, one view per call (`timeoutSeconds`).
 **Read first** (once per job): `_tags-common.md`
 
@@ -9,6 +9,8 @@
 - `annot_place` kind spot on each **cut** landing / floor top (as LB3; user 2026-10-15), on the cut part, off the F../C.. boxes.
 
 ## Done when
+
+Check: `stair_xsection_info {viewId, rules:["XB3"]}` (only XB3 rows, notes, issues).
 
 - A spot on every cut landing / floor top.
 

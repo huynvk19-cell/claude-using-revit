@@ -5,7 +5,7 @@
 
 ## Do
 
-1. `stair_section_info` again.
+1. `stair_section_info {viewId, rules:["LA","LB","LC"]}`: the count per rule and only the rows / issues left.
 2. Export the **view** image and compare with the standard's "Mẫu tham chiếu" (`drafting-visual-check`).
 3. Report per `drafting-session`: exact view name; table per flight (tag, rise dim, going dim, numbers); table per cut landing (LA5: 1200, + 900 where P01 is seen); **Cần xem** (unreadable sample values, LA4 CLEAR yes/no); **Việc tồn**.
 

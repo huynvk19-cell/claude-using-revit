@@ -1,6 +1,6 @@
 # 04 · LA3 Flight goings (dim chiều dài vế)
 
-**Skill** `drafting-stair-section-parallel` · **Standard** `drafting-stair-section-parallel.md` LA3 · **Tools** `stair_section_annotate`, `dims_text`, `dims_text_move`
+**Skill** `drafting-stair-section-parallel` · **Standard** `drafting-stair-section-parallel.md` LA3 · **Tools** `stair_section_annotate`, `dims_text`, `dims_text_move`, `stair_section_info`
 **Applies to** every section along the flights of the job, one view per call (`timeoutSeconds`).
 **Read first** (once per job): `_annotate-common.md`
 
@@ -16,6 +16,8 @@ stair_section_annotate {viewId, mode:"preview", parts:["LA3"], dimTypeName:<chec
 - Formula text on riser numbers or on the flight → `dims_text_move` (alongMm) into the free space under the flight.
 
 ## Done when
+
+Check: `stair_section_info {viewId, rules:["LA3"]}` (only LA3 rows, notes, issues).
 
 - `stair_section_info` LA3 rows `OK` for every cut flight, prefix `…T =` and below `(EQUAL TREADS)`.
 - No chain through a run tag or the riser numbers.

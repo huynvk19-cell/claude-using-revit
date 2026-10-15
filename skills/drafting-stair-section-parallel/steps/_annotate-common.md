@@ -9,7 +9,7 @@ stair_section_annotate {viewId, mode:"preview", dimTypeName:<check type>, la1Lin
   parts:[<the card's part>], items:[{part, flight|landing, x, z}]}
 ```
 
-- Pass `parts` with the card's part only (one card = one part). Without `parts` it runs all of them (LA1 LA3 LA4 LA5 LB1 LB3 LC).
+- Pass `parts` with the card's part only (one card = one part). Without `parts` it runs all of them (LA1 LA3 LA4 LA5 LA6 LB1 LB3 LC).
 - Read `Done` (texts, values, positions) → same call with `mode:"apply", logPath` → `view_elem_boxes` on the new ids (Box ≠ null) → export the view image. Undo: `mode:"undo", logPath`.
 - References are taken on the **Stairs** element (run / landing 3D faces are hidden: dims on them are created but not drawn); the level plane where there is no landing.
 - Layout that worked (1:50): LA3 line at 30 % of the flight height, run tag head at 8 % with a horizontal leader to the soffit; LA1 300 mm inside an existing overall dim; spots on the landing away from the F.. box.

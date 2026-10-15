@@ -1,6 +1,6 @@
 # 01 · LB1 Run tags (tag vế)
 
-**Skill** `drafting-stair-section-parallel` · **Standard** `drafting-stair-section-parallel.md` LB1 · **Tools** `stair_section_annotate`
+**Skill** `drafting-stair-section-parallel` · **Standard** `drafting-stair-section-parallel.md` LB1 · **Tools** `stair_section_annotate`, `stair_section_info`
 **Applies to** every section along the flights of the job, one view per call (`timeoutSeconds`).
 **Read first** (once per job): `_annotate-common.md`
 
@@ -14,6 +14,8 @@ stair_section_annotate {viewId, mode:"preview", parts:["LB1"], runTagTypes:[{fro
 - Run tag type per floor block (`runTagTypes`): the text must read the flight's absolute `From EL … To EL …`; wrong → the next type, never guess from the name.
 
 ## Done when
+
+Check: `stair_section_info {viewId, rules:["LB1"]}` (only LB1 rows, notes, issues).
 
 - One tag per cut flight, text `From EL … To EL … / …R` right (sections write risers `R`, plans treads `T`).
 - No tag on a flight seen beyond; no tag over a dim, a number or the tread lines.
