@@ -1,4 +1,4 @@
-# Install the drafting skills, subagents, domain files and (optionally) the Revit MCP dynamic commands for Claude Code.
+# Install the drafting skills, workflows, subagents, domain files and (optionally) the Revit MCP dynamic commands for Claude Code.
 #   -CommandsDir <path>  : the Revit MCP 'dynamic-commands' folder; the commands in revit-commands\ are copied there
 #                          (same-name files are overwritten). Default: $env:REVIT_MCP_COMMANDS, skipped when empty.
 #   -WorkStatus          : also install the status window scripts to %USERPROFILE%\Tools\WorkStatus
@@ -20,7 +20,7 @@ Get-ChildItem (Join-Path $root 'agents\*.md') | ForEach-Object {
     "agent   -> $agents\$($_.Name)"
 }
 Copy-Item (Join-Path $root 'domain\*') -Destination $domain -Recurse -Force
-foreach ($d in 'templates', 'tools') {
+foreach ($d in 'templates', 'tools', 'workflows') {
     Copy-Item (Join-Path $root $d) -Destination $domain -Recurse -Force
 }
 "domain  -> $domain"

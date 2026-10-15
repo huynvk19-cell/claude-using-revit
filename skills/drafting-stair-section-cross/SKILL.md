@@ -5,7 +5,7 @@ description: "Detail a stair SECTION cut ACROSS the flights (flights seen end-on
 
 # Stair section across the flights (XA–XC)
 
-**Tools** (load all in one ToolSearch call): `annot_copy_in_view`, `annot_place`, `annotation_overlaps`, `dims_copy_refs`, `dims_edit`, `dims_text`, `elevation_opening_tags`, `finish_mark_place`, `finish_marks_snap`, `level_dims_add`, `stair_numbers_match`, `stair_xsection_info`, `tags_retype`, `view_dims_snapshot`, `view_elem_boxes`.
+**Tools** (load all in one ToolSearch call): `annot_copy_in_view`, `annot_place`, `annotation_overlaps`, `dims_copy_refs`, `dims_edit`, `dims_text`, `elevation_opening_tags`, `finish_mark_place`, `finish_marks_snap`, `level_dims_add`, `rail_top_at`, `stair_numbers_match`, `stair_xsection_info`, `tags_retype`, `view_dims_snapshot`, `view_elem_boxes`.
 
 **Section views whose cut is NOT parallel to the stair path** (flights seen end-on). Along the flights → `drafting-stair-section-parallel`; plans → `drafting-stair-plan`.
 
@@ -30,7 +30,7 @@ stair_xsection_info {viewId, outPath:"<review>/xsec-<viewId>.json", excludeStair
 
 Show the user one table: band → flights (half, facing) → risers × height → tag text → numbers; then the issues by rule. Also read the hand dims with `view_dims_snapshot` before treating a view as a sample.
 
-Stop and ask when: no host stairs (link); `LC:` model mismatch; numbering not continuous (start numbers are a stair property: R1, the user decides); XB3 / XA6 still "chờ user chốt" in the standard.
+Stop and ask when: no host stairs (link); `LC:` model mismatch; numbering not continuous (start numbers are a stair property: R1, the user decides).
 
 ## 2. Dims
 
@@ -41,13 +41,14 @@ No annotate command for cross-sections yet. Per rule:
    - same stair already dimmed in another cross-section → `dims_copy_refs` (preview → apply);
    - otherwise ask the user for one hand dim per chain kind and rebuild from its references; check every new dim is drawn (`view_elem_boxes` Box ≠ null).
    - XA1: one segment per band (split merged segments: `dims_edit` with log, then rebuild); XA4: one continuous chain in the `away` half, values = `ClearHeights.Expected`.
+   - **XA6 handrail height, mandatory**: on every cut landing / floor, finish top → top of each handrail seen there (Handrails reference). Round values: wall handrail 900, rail at an opening 1200. Odd value → check with `rail_top_at`, pick another edge; still odd → Cần xem.
 3. **Text** (XA1): `dims_text {viewId, mode:"apply", logPath, items:[{dimId, valueMm, prefix:"169.4mm x 16R = ", below:"(EQUAL RISERS)"}]}`; a Replace-with-text value is cleared, never kept (R9). Take the text from `RiseText`.
 
 ## 3. Tags, marks, numbers
 
 - **XB1** run tags: one per seen flight (both halves), vertical text outside the wall of its half, horizontal leader to the flight at mid band: `annot_place` (kind tag, the section run tag type of that floor block). Wrong From/To EL → `tags_retype`.
 - **XB2** handrail tags (`P01` per seen handrail per band, `P02` on the balustrade): `annot_place`, horizontal leader, head inside the core next to the rail; skip a rail hidden behind a bigger one.
-- **XB3** spots: `annot_place` (kind spot) on each cut landing / floor top (until the user decides otherwise).
+- **XB3** spots: `annot_place` (kind spot) on each cut landing / floor top (as LB3).
 - **XB4 / XB5** F.. / C..: copy from a landing of the same view (`annot_copy_in_view`) or `finish_mark_place`, then `finish_marks_snap {mode:"survey"}` → `preview` → `apply` (dots on the top / the soffit).
 - **XB6** doors: as LB6 (`elevation_opening_tags`, then `annot_place` for doors in cut walls).
 - **XC** numbers only on `away` flights: create on the run (NumberSystem) and copy the settings of a finished cross-section number with `stair_numbers_match` (Display Rule **Start and End**, Tag Type Riser, Right Quarter, Justify Back). Remove numbers from `toward` flights.

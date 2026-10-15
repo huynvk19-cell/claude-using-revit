@@ -1,10 +1,10 @@
 # claude-using-revit — notes for Claude
 
-This repo holds drafting **skills** (`skills/`, English), **subagents** (`agents/`), **standards** (`domain/`, Vietnamese) and Revit MCP **commands** (`revit-commands/`, C#). Installed copies live in `~/.claude/skills/`, `~/.claude/agents/` and `~/.claude/drafting-domain/`.
+This repo holds drafting **workflows** (`workflows/`, English: skills in a set order), **skills** (`skills/`, English), **subagents** (`agents/`), **standards** (`domain/`, Vietnamese) and Revit MCP **commands** (`revit-commands/`, C#). Installed copies live in `~/.claude/skills/`, `~/.claude/agents/` and `~/.claude/drafting-domain/`.
 
 ## Read only what the task needs
 
-- Never read the whole repo, all of `domain/` or all of `skills/`.
+- Never read the whole repo, all of `domain/`, all of `skills/`, all of `workflows/` or all the step cards of a skill.
 - Find the topic in the routing table of `skills/drafting-session/SKILL.md` ("Load only what the task needs"). Open that row's skill and standard, nothing else.
 - `domain/drafting-tools.md`, `domain/drafting-api-pitfalls.md`: search them (`grep`) for one command or symptom.
 - `revit-commands/*.cs`: open only the commands the task touches; the header comment (`/* mcp-tool … */`) holds the parameters, and the `// ---- Details` comment right below it holds the full explanation.
@@ -13,6 +13,8 @@ This repo holds drafting **skills** (`skills/`, English), **subagents** (`agents
 ## Editing the repo
 
 - A new topic = one skill (`skills/<name>/SKILL.md`) + one standard (`domain/<name>.md`) + a row in the `drafting-session` routing table + rows in `README.md`.
+- A new workflow = one file `workflows/<name>.md` (steps: skill · applies to · done when · skip only if, + why this order) + a row in the `drafting-workflow` table + a row in `README.md`. A workflow only orders existing skills; rules stay in the skills and standards.
+- **Step cards** (divide and conquer): a skill with several steps keeps each step in its own file `skills/<skill>/steps/NN-<item>.md` (title · skill, standard rule, Tools · Applies to · Do · Done when · Skip only if · Never). `SKILL.md` keeps only the scope, the profile inputs, the ordered list of cards and the skill-wide Never list. Notes shared by several cards: `steps/_<topic>-common.md`. A workflow step points to its card; done-when / skip live in the card only. Read only the card of the step at hand.
 - Plan and section of the same element are separate topics (e.g. `drafting-stair-plan` vs `drafting-stair-section-parallel`).
 - No client names, model names, sheet numbers or machine paths in the repo (README, "Keeping it alive").
 - Commands take project values as arguments (from `drafting-profile.md`), never hard-coded.

@@ -94,6 +94,7 @@ metadata:
 | `annot_place` | Tag (có/không leader, đầu leader tự do), cao độ (spot, trên mặt plan của phần tử chứa điểm, vd. Stairs), room tag (`kind:"roomtag"`, cả room tầng khác thấy trong view; trả `TagText` để thấy "?") và stair path (`kind:"stairpath"`) đặt theo toạ độ khung view; type phải có sẵn. Mục lỗi không để lại phần tử nào. preview / apply / undo. |
 | `stair_parts_info` | (read-only) Vế và chiếu nghỉ của thang: hộp mặt bằng (mm), cao độ, các stair path có sẵn và view chứa chúng. Dùng để chọn điểm đặt cao độ / path trên mặt bằng tổng. |
 | `finish_mark_place` | Ô mã hoàn thiện (Generic Annotation, vd. `F..` / `W..`): chép type của một ô có sẵn, đặt mã vào tham số chữ, leader vuông góc tới mặt tường. preview / apply / undo. |
+| `stair_gap_x` | Lõi thang bộ (1V): chữ X nét đứt (`<Overhead>`, `lineStyle`) khít 4 góc lỗ thông tầng giữa hai vế; tự bỏ qua khi là tường / sàn; X có sẵn lệch → chỉnh lại, thiếu nét → vẽ thêm; báo tag đặt trên X. `rect` khi lỗ tìm sai. preview / apply / undo. |
 | `detail_lines_set` | Dời hai đầu mút của detail line có sẵn (toạ độ khung view), giữ kiểu nét; vd. chữ X lỗ trống cho khít lỗ. preview / apply / undo. |
 | `tag_reposition` | Đặt lại tag có sẵn: đầu tag, đầu leader tự do, điểm gấp vuông góc (V / H). preview / apply / undo. |
 | `dims_text_move` | Dời chữ của từng đoạn dim (dọc / ngang đường dim) khi chữ đoạn ngắn đè nhau. preview / apply / undo. |

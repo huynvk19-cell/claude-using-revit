@@ -8,11 +8,12 @@ Skills and domain standards that let Claude Code, via Revit MCP, do drawing prod
 
 | Thư mục | Nội dung | Ngôn ngữ |
 |---|---|---|
-| `skills/` | Quy trình từng bước, ngắn, mỗi skill một chủ đề | English |
+| `workflows/` | **Quy trình**: một công việc trọn vẹn = các skill theo thứ tự, mỗi bước có điều kiện "xong khi" | English |
+| `skills/` | Các bước làm của một chủ đề, ngắn, mỗi skill một chủ đề | English |
 | `domain/` | Quy chuẩn bản vẽ: con số, vị trí, ngoại lệ, bẫy API | Tiếng Việt + thuật ngữ Revit |
 | `agents/` | Subagent `drafting-visual-checker`: đọc ảnh kiểm tra, chỉ trả lời bằng chữ (ảnh không ở lại trong hội thoại chính) | English |
 | `templates/drafting-profile.md` | Giá trị riêng của từng dự án (dim type, model cấm chạm, view loại trừ…) | Tiếng Việt |
-| `revit-commands/` | 84 lệnh động (dynamic commands) C# cho Revit MCP: dim, tag, title, viewport, crop, lõi thang, dim bám tay vịn, filled region cột theo kết cấu, mặt cắt dọc thang (dim, tag, số bậc, cao độ tay vịn, ô hoàn thiện), kiểm tra mặt cắt ngang thang, kiểm tra chồng lắp… Không chứa giá trị riêng dự án | C# |
+| `revit-commands/` | 85 lệnh động (dynamic commands) C# cho Revit MCP: dim, tag, title, viewport, crop, lõi thang, dim bám tay vịn, filled region cột theo kết cấu, mặt cắt dọc thang (dim, tag, số bậc, cao độ tay vịn, ô hoàn thiện), kiểm tra mặt cắt ngang thang, kiểm tra chồng lắp… Không chứa giá trị riêng dự án | C# |
 | `tools/crop.ps1` | Cắt vùng ảnh sheet để kiểm tra | PowerShell |
 | `tools/work-status/` | Cửa sổ "Đang xử lý" luôn nổi trên màn hình (tuỳ chọn) | PowerShell |
 
@@ -21,6 +22,7 @@ Skills and domain standards that let Claude Code, via Revit MCP, do drawing prod
 | Skill | Dùng khi |
 |---|---|
 | `drafting-session` | Mở đầu mọi phiên vẽ, và khi "tiếp tục". Gồm luật cứng, **làm theo đợt ≤10 view cùng loại**, **type đánh dấu** cho mọi phần tử tạo mới, **bảng chọn skill + domain theo việc** (chỉ đọc đúng file cần), phần mở đầu và phần kết thúc lượt. |
+| `drafting-workflow` | **Chạy quy trình**: chọn một file trong `workflows/`, gom mọi view một lần, ghi checklist (bước × view) ra file, làm từng bước cho tất cả view rồi mới sang bước sau, mỗi ô phải đạt "xong khi", không bỏ bước im lặng, "tiếp tục" chạy tiếp từ ô trống đầu tiên |
 | `drafting-start` | **Bắt đầu việc**: mở các view đang làm (zoom theo crop), ẩn Properties + Project Browser, bật cửa sổ trạng thái |
 | `drafting-end` | **Kết thúc làm việc**: ghi log, bật lại Properties + Project Browser như lúc đầu, đóng cửa sổ trạng thái, báo cáo |
 | `drafting-review-round` | Xử lý một đợt comment (PDF + danh sách task) |
@@ -34,6 +36,29 @@ Skills and domain standards that let Claude Code, via Revit MCP, do drawing prod
 | `drafting-tags-titles` | Room tag, view title |
 | `drafting-views-sheets` | Viewport, crop/scope box, đầu trục 2D, view template, link |
 | `drafting-visual-check` | Xuất ảnh sheet và soát lỗi trình bày |
+
+### Thẻ bước (Step cards) — chia để trị
+
+Skill nhiều bước thì mỗi bước là **một file riêng** trong `skills/<skill>/steps/`, gọi là **thẻ bước**: `NN-<mục>.md`, gồm làm gì (lệnh) · xong khi · chỉ bỏ khi · không được làm. `SKILL.md` chỉ còn phạm vi, đầu vào từ profile, danh sách thẻ theo thứ tự và các điều cấm chung. Ghi chú dùng chung cho nhiều thẻ: `steps/_<chủ đề>-common.md`.
+
+- Claude chỉ mở thẻ của bước đang làm (ít token).
+- Duyệt, sửa một bước = sửa một file trên GitHub; lịch sử (commit, diff) theo từng bước.
+- Quy trình trỏ tới thẻ; "xong khi" / "chỉ bỏ khi" chỉ nằm trong thẻ.
+
+Đã tách: `drafting-stair-plan` (16 thẻ: `00-survey` … `15-recheck`).
+
+### Quy trình (Workflows)
+
+Quy trình là lớp trên skill: nó không chứa luật vẽ, chỉ nói **làm bước nào (một skill, hoặc một mục của chuẩn), theo thứ tự nào, khi nào coi là xong, khi nào được bỏ**. Đầu quy trình gom **mọi view / sheet** của công việc một lần; mỗi bước làm cho **tất cả view** rồi mới sang bước sau (vd. lõi thang: tag vế cho mọi mặt bằng → dim thông thuỷ cho mọi mặt bằng → …). Skill `drafting-workflow` chạy quy trình và giữ checklist `workflow-<ngày>-<tên>.md` (trong thư mục đợt comment, hoặc `log/`): mỗi ô bước × view là `x` xong, `-` bỏ (có lý do), `!` chưa xong (có lý do) hoặc `n/a`. Báo cáo cuối không được còn ô trống.
+
+| Quy trình | Các bước (skill) |
+|---|---|
+| `elevation-section` | start → views-sheets → grid-dims → dims (cao độ) → opening-dims → opening-tags → tags-titles (title) → visual-check → end |
+| `floor-plan` | start → views-sheets → grid-dims → tags-titles (room tag) → tags-titles (title) → visual-check → end |
+| `stair-core` | start → **A mặt bằng** (khảo sát → tag vế SB1 → dim thông thuỷ SA1 → chiếu nghỉ SA3 → chiều dài vế SA2 → tường/cửa → trục SA4 → số bậc → stair path → tag lan can SB2 → cao độ SB3 → F.. SB5 → W.. SB6 → tag cửa SB4 → X thông tầng → dọn chồng → kiểm lại) → **B mặt cắt dọc** (LB1 → LA1 → LA2 → LA3 → LA4 → LA5 → LA6 → LC → LB2 → LB3 → LB4 → LB5 → LB6 → dọn → kiểm lại) → **C mặt cắt ngang** (XB1 → XA1 → XA2 → XA3 → XA4 → XA5 → XA6 → XC → XB2 → XB3 → XB4 → XB5 → XB6 → dọn → kiểm lại) → visual-check → end |
+| `review-round` | review-round (đọc + phân loại) → start → skill theo từng task → tags-titles (title) → visual-check → end |
+
+Thêm quy trình mới: một file `workflows/<tên>.md` + một dòng trong bảng của `drafting-workflow` + một dòng ở bảng trên.
 
 ### Domain
 
@@ -70,6 +95,7 @@ powershell -ExecutionPolicy Bypass -File install.ps1 -CommandsDir "<đường d�
 
 Lệnh trên copy:
 - `skills/*` vào `~/.claude/skills/`
+- `workflows/` vào `~/.claude/drafting-domain/workflows/`
 - `agents/*.md` vào `~/.claude/agents/`
 - `domain/`, `templates/`, `tools/` vào `~/.claude/drafting-domain/`
 - `revit-commands/*.cs` vào thư mục dynamic-commands của Revit MCP (nếu có `-CommandsDir` hoặc biến môi trường `REVIT_MCP_COMMANDS`)
@@ -93,7 +119,7 @@ Mỗi bước Claude gọi tool, toàn bộ phần đầu phiên (danh sách too
 | Phần | Tốn (mỗi bước) | Cách giảm | Trạng thái |
 |---|---|---|---|
 | Tool có sẵn của Revit MCP (profile `full`, 192 tool) | ~36.6k token nếu nạp sẵn; chỉ tên (~1.5k) khi tool search bật | **A**: profile `drafting` (26 tool) | cần làm trên máy |
-| 84 lệnh của repo (header `mcp-tool`) | ~11.8k token nếu nạp sẵn; chỉ tên (~0.8k) khi tool search bật; mỗi lệnh đã nạp ~140 token | **B**: header ngắn, giải thích ở `// ---- Details` | đã làm |
+| 85 lệnh của repo (header `mcp-tool`) | ~11.8k token nếu nạp sẵn; chỉ tên (~0.8k) khi tool search bật; mỗi lệnh đã nạp ~140 token | **B**: header ngắn, giải thích ở `// ---- Details` | đã làm |
 | Tool search của Claude Code | — | **C**: giữ bật (mặc định), kiểm tra bằng `/context` | kiểm tra trên máy |
 | Nạp lệnh từng cái một (mỗi lần một lượt) | 1 lượt / lệnh | **D**: dòng **Tools** trong mỗi skill → nạp hết trong 1 lần ToolSearch | đã làm |
 | Mô tả skill (gửi mỗi request) | 6.8k → 5.3k ký tự | mô tả ngắn, luật nằm trong thân skill | đã làm |
