@@ -6,7 +6,7 @@ Each row calls a skill; the skill's card list gives the steps and the cards give
 
 | # | Skill | Cards | Applies to |
 |---|---|---|---|
-| 0 | `drafting-start` | — | once: gather every plan and section of the core, sort into A / B / C |
+| 0 | `drafting-start` | — | once: gather the views / sheets of the job (`drafting-workflow` step 0): every plan and section of the core (or on the named sheets), sorted into A / B / C |
 | A | `drafting-stair-plan` | all | the plans |
 | B | `drafting-stair-section-parallel` | all | the sections along the flights |
 | C | `drafting-stair-section-cross` | all | the sections across the flights |

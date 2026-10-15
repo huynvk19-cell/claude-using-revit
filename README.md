@@ -22,7 +22,7 @@ Skills and domain standards that let Claude Code, via Revit MCP, do drawing prod
 | Skill | Dùng khi |
 |---|---|
 | `drafting-session` | Mở đầu mọi phiên vẽ, và khi "tiếp tục". Gồm luật cứng, **làm theo đợt ≤10 view cùng loại**, **type đánh dấu** cho mọi phần tử tạo mới, **bảng chọn skill + domain theo việc** (chỉ đọc đúng file cần), phần mở đầu và phần kết thúc lượt. |
-| `drafting-workflow` | **Chạy quy trình**: chọn một file trong `workflows/`, gom mọi view một lần, ghi checklist (bước × view) ra file, làm từng bước cho tất cả view rồi mới sang bước sau, mỗi ô phải đạt "xong khi", không bỏ bước im lặng, "tiếp tục" chạy tiếp từ ô trống đầu tiên |
+| `drafting-workflow` | **Chạy quy trình**: chọn một file trong `workflows/`, bước 0 gom mọi view / sheet của công việc một lần (sheet → mọi view trên sheet, chia đợt ≤ 10 view, snapshot mọi đợt), ghi checklist (bước × view) ra file, làm từng bước cho tất cả view rồi mới sang bước sau, mỗi ô phải đạt "xong khi", không bỏ bước im lặng, "tiếp tục" chạy tiếp từ ô trống đầu tiên |
 | `drafting-start` | **Bắt đầu việc**: mở các view đang làm (zoom theo crop), ẩn Properties + Project Browser, bật cửa sổ trạng thái |
 | `drafting-end` | **Kết thúc làm việc**: ghi log, bật lại Properties + Project Browser như lúc đầu, đóng cửa sổ trạng thái, báo cáo |
 | `drafting-review-round` | Xử lý một đợt comment (PDF + danh sách task) |
@@ -51,17 +51,17 @@ Skill nhiều bước thì mỗi bước là **một file riêng** trong `skills
 
 ### Quy trình (Workflows)
 
-Quy trình là lớp trên skill: nó **chỉ gọi skill** — skill nào, theo thứ tự nào, cho view nào, chạy thẻ nào (mặc định tất cả) và vì sao thứ tự đó. Các bước, "xong khi", "chỉ bỏ khi" nằm trong skill và thẻ bước, không chép vào quy trình. Đầu quy trình gom **mọi view / sheet** của công việc một lần; mỗi bước làm cho **tất cả view** rồi mới sang bước sau (vd. lõi thang: tag vế cho mọi mặt bằng → dim thông thuỷ cho mọi mặt bằng → …). Skill `drafting-workflow` chạy quy trình và giữ checklist `workflow-<ngày>-<tên>.md` (trong thư mục đợt comment, hoặc `log/`): mỗi ô bước × view là `x` xong, `-` bỏ (có lý do), `!` chưa xong (có lý do) hoặc `n/a`. Báo cáo cuối không được còn ô trống.
+Quy trình là lớp trên skill: nó **chỉ gọi skill** — skill nào, theo thứ tự nào, cho view nào, chạy thẻ nào (mặc định tất cả) và vì sao thứ tự đó. Các bước, "xong khi", "chỉ bỏ khi" nằm trong skill và thẻ bước, không chép vào quy trình. Đầu quy trình (bước 0) gom **mọi view / sheet** của công việc một lần — đưa sheet thì lấy mọi view trên sheet — rồi mỗi bước làm **một lượt** cho tất cả view (lệnh nhận `viewIds`: một lần gọi cho mỗi đợt ≤ 10 view; bước theo sheet: mọi sheet trong một lần gọi) rồi mới sang bước sau (vd. lõi thang: tag vế cho mọi mặt bằng → dim thông thuỷ cho mọi mặt bằng → …). Skill `drafting-workflow` chạy quy trình và giữ checklist `workflow-<ngày>-<tên>.md` (trong thư mục đợt comment, hoặc `log/`): mỗi ô bước × view là `x` xong, `-` bỏ (có lý do), `!` chưa xong (có lý do) hoặc `n/a`. Báo cáo cuối không được còn ô trống.
 
 | Quy trình | Gọi skill (thẻ) theo thứ tự |
 |---|---|
-| `elevation-section` | start → views-sheets (00–04) → grid-dims → dims (cao độ) → opening-dims → opening-tags → tags-titles (title) → views-sheets (07) → visual-check → end |
-| `floor-plan` | start → views-sheets (00–04) → grid-dims → plan-dims (tag room) → tags-titles (room tag, title) → views-sheets (07) → visual-check → end |
-| `ceiling-plan` | start → views-sheets (00–04) → grid-dims → ceiling-plan (tag room) → tags-titles (room tag, title) → views-sheets (07) → visual-check → end |
-| `stair-core` | start → stair-plan → stair-section-parallel → stair-section-cross → visual-check → end |
-| `review-round` | review-round (đọc + phân loại) → start → skill theo từng task (thẻ khảo sát, thẻ của comment, thẻ kiểm lại) → tags-titles (title) → visual-check → end |
+| `elevation-section` | start (gom view / sheet) → views-sheets (00–04) → grid-dims → dims (cao độ) → opening-dims → opening-tags → tags-titles (title) → views-sheets (07) → visual-check → end |
+| `floor-plan` | start (gom view / sheet) → views-sheets (00–04) → grid-dims → plan-dims (tag room) → tags-titles (room tag, title) → views-sheets (07) → visual-check → end |
+| `ceiling-plan` | start (gom view / sheet) → views-sheets (00–04) → grid-dims → ceiling-plan (tag room) → tags-titles (room tag, title) → views-sheets (07) → visual-check → end |
+| `stair-core` | start (gom view / sheet) → stair-plan → stair-section-parallel → stair-section-cross → visual-check → end |
+| `review-round` | review-round (đọc + phân loại) → start (gom view / sheet mọi task) → skill theo chủ đề (task cùng chủ đề làm một lượt) (thẻ khảo sát, thẻ của comment, thẻ kiểm lại) → tags-titles (title) → visual-check → end |
 
-Thêm quy trình mới: một file `workflows/<tên>.md` (bảng skill · thẻ · view + vì sao thứ tự này) + một dòng trong bảng của `drafting-workflow` + một dòng ở bảng trên.
+Thêm quy trình mới: một file `workflows/<tên>.md` (dòng 0 = `drafting-start` gom view / sheet; bảng skill · thẻ · view + vì sao thứ tự này) + một dòng trong bảng của `drafting-workflow` + một dòng ở bảng trên.
 
 ### Domain
 
