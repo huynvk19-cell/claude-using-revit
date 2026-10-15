@@ -19,6 +19,7 @@ Do **not** read the whole `drafting-domain/` folder or every skill. Pick the tas
 
 | Task | Skill | Standard (`~/.claude/drafting-domain/`) |
 |---|---|---|
+| A whole job, several topics in order (facade, plans, stair core, comment round) | `drafting-workflow` | its one file in `workflows/` |
 | Start / end of a work session | `drafting-start` / `drafting-end` | — |
 | A round of comments (PDF, TASKS.md) | `drafting-review-round` | per task, the row below |
 | Grid dims | `drafting-grid-dims` | `drafting-grid-dims.md` |

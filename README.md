@@ -8,7 +8,8 @@ Skills and domain standards that let Claude Code, via Revit MCP, do drawing prod
 
 | Thư mục | Nội dung | Ngôn ngữ |
 |---|---|---|
-| `skills/` | Quy trình từng bước, ngắn, mỗi skill một chủ đề | English |
+| `workflows/` | **Quy trình**: một công việc trọn vẹn = các skill theo thứ tự, mỗi bước có điều kiện "xong khi" | English |
+| `skills/` | Các bước làm của một chủ đề, ngắn, mỗi skill một chủ đề | English |
 | `domain/` | Quy chuẩn bản vẽ: con số, vị trí, ngoại lệ, bẫy API | Tiếng Việt + thuật ngữ Revit |
 | `agents/` | Subagent `drafting-visual-checker`: đọc ảnh kiểm tra, chỉ trả lời bằng chữ (ảnh không ở lại trong hội thoại chính) | English |
 | `templates/drafting-profile.md` | Giá trị riêng của từng dự án (dim type, model cấm chạm, view loại trừ…) | Tiếng Việt |
@@ -21,6 +22,7 @@ Skills and domain standards that let Claude Code, via Revit MCP, do drawing prod
 | Skill | Dùng khi |
 |---|---|
 | `drafting-session` | Mở đầu mọi phiên vẽ, và khi "tiếp tục". Gồm luật cứng, **làm theo đợt ≤10 view cùng loại**, **type đánh dấu** cho mọi phần tử tạo mới, **bảng chọn skill + domain theo việc** (chỉ đọc đúng file cần), phần mở đầu và phần kết thúc lượt. |
+| `drafting-workflow` | **Chạy quy trình**: chọn một file trong `workflows/`, ghi checklist (bước × đợt) ra file, chạy từng skill theo thứ tự, chỉ sang bước sau khi đạt "xong khi", không bỏ bước im lặng, "tiếp tục" chạy tiếp từ ô trống đầu tiên |
 | `drafting-start` | **Bắt đầu việc**: mở các view đang làm (zoom theo crop), ẩn Properties + Project Browser, bật cửa sổ trạng thái |
 | `drafting-end` | **Kết thúc làm việc**: ghi log, bật lại Properties + Project Browser như lúc đầu, đóng cửa sổ trạng thái, báo cáo |
 | `drafting-review-round` | Xử lý một đợt comment (PDF + danh sách task) |
@@ -34,6 +36,19 @@ Skills and domain standards that let Claude Code, via Revit MCP, do drawing prod
 | `drafting-tags-titles` | Room tag, view title |
 | `drafting-views-sheets` | Viewport, crop/scope box, đầu trục 2D, view template, link |
 | `drafting-visual-check` | Xuất ảnh sheet và soát lỗi trình bày |
+
+### Quy trình (Workflows)
+
+Quy trình là lớp trên skill: nó không chứa luật vẽ, chỉ nói **làm skill nào, theo thứ tự nào, khi nào coi là xong, khi nào được bỏ**. Skill `drafting-workflow` chạy quy trình và giữ checklist `workflow-<ngày>-<tên>.md` (trong thư mục đợt comment, hoặc `log/`): mỗi ô bước × đợt là `x` xong, `-` bỏ (có lý do), `!` chưa xong (có lý do) hoặc `n/a`. Báo cáo cuối không được còn ô trống.
+
+| Quy trình | Các bước (skill) |
+|---|---|
+| `elevation-section` | start → views-sheets → grid-dims → dims (cao độ) → opening-dims → opening-tags → tags-titles (title) → visual-check → end |
+| `floor-plan` | start → views-sheets → grid-dims → tags-titles (room tag) → tags-titles (title) → visual-check → end |
+| `stair-core` | start → stair-plan → stair-section-parallel → stair-section-cross → visual-check → end |
+| `review-round` | review-round (đọc + phân loại) → start → skill theo từng task → tags-titles (title) → visual-check → end |
+
+Thêm quy trình mới: một file `workflows/<tên>.md` + một dòng trong bảng của `drafting-workflow` + một dòng ở bảng trên.
 
 ### Domain
 
@@ -70,6 +85,7 @@ powershell -ExecutionPolicy Bypass -File install.ps1 -CommandsDir "<đường d�
 
 Lệnh trên copy:
 - `skills/*` vào `~/.claude/skills/`
+- `workflows/` vào `~/.claude/drafting-domain/workflows/`
 - `agents/*.md` vào `~/.claude/agents/`
 - `domain/`, `templates/`, `tools/` vào `~/.claude/drafting-domain/`
 - `revit-commands/*.cs` vào thư mục dynamic-commands của Revit MCP (nếu có `-CommandsDir` hoặc biến môi trường `REVIT_MCP_COMMANDS`)
