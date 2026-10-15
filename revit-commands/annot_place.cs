@@ -40,7 +40,8 @@
 //    head an elbow is added, elbowFirst V (default: vertical from the head, then horizontal) or H, or explicit
 //    elbowRight / elbowUp)} | {kind:'spot', elementId (floor / landing / run: its highest horizontal face), typeName
 //    (spot elevation type), right, up (point on the face)} | {kind:'roomtag', elementId (room, any level seen in the
-//    view), typeName (room tag type), right, up, leader, endRight, endUp, elbow as for tags} | {kind:'stairpath', elementId (stairs),
+//    view), typeName (room tag type), right, up = centre of the tag BODY (the leader starts there), leader, endRight,
+//    endUp (inside the room), elbow as for tags} | {kind:'stairpath', elementId (stairs),
 //    typeName (stair path type)}. Types must already exist in the project (never created).
 //    mode preview (rolled back) | apply (logPath) | undo (logPath: deletes what was created).
 using System;
@@ -148,26 +149,34 @@ public static class AnnotPlace
                         var rtt = new FilteredElementCollector(doc).OfClass(typeof(FamilySymbol)).Cast<FamilySymbol>()
                             .FirstOrDefault(x => x.Name == typeName && x.Category != null && x.Category.Id.IntegerValue == (int)BuiltInCategory.OST_RoomTags);
                         if (rtt == null) { errors.Add(i + ": no room tag type '" + typeName + "'"); continue; }
-                        var head = P(r, u, z0);
                         bool leader = it.Value<bool?>("leader") ?? false;
-                        // created inside the room (leader end when given), then the head is moved
-                        var at = leader && it["endRight"] != null ? P((double)it["endRight"], (double)it["endUp"], z0) : head;
+                        bool hasEnd = leader && it["endRight"] != null;
+                        // right / up = centre of the tag BODY (a room tag leader starts there, not at TagHeadPosition)
+                        var body = P(r, u, z0);
+                        // created inside the room (leader end when given, else the body point), then moved
+                        var at = hasEnd ? P((double)it["endRight"], (double)it["endUp"], z0) : body;
                         var rt = doc.Create.NewRoomTag(new LinkElementId(room.Id), new UV(at.X, at.Y), v.Id);
                         if (rt == null) { errors.Add(i + ": room tag not created for " + e.Id.IntegerValue); continue; }
                         rt.ChangeTypeId(rtt.Id);
+                        rt.HasLeader = false;
+                        doc.Regenerate();
+                        var bb = rt.get_BoundingBox(v);
+                        XYZ off = bb == null ? XYZ.Zero : (bb.Min + bb.Max) / 2 - rt.TagHeadPosition;
+                        off = new XYZ(off.X, off.Y, 0);
+                        // leader on BEFORE the head moves: a head without leader cannot sit outside its room
                         rt.HasLeader = leader;
-                        if (leader && it["endRight"] != null) rt.LeaderEnd = P((double)it["endRight"], (double)it["endUp"], z0);
-                        rt.TagHeadPosition = head;
-                        if (leader && it["endRight"] != null)
+                        rt.TagHeadPosition = body - off;
+                        if (hasEnd)
                         {
                             // orthogonal leader on paper (user rule): straight H / V (elbow on the line), else one elbow
                             double er = (double)it["endRight"], eu = (double)it["endUp"];
+                            rt.LeaderEnd = P(er, eu, z0);
                             XYZ elb;
                             if (it["elbowRight"] != null) elb = P((double)it["elbowRight"], (double)it["elbowUp"], z0);
                             else if (Math.Abs(er - r) < 1 || Math.Abs(eu - u) < 1) elb = P((r + er) / 2, (u + eu) / 2, z0);
                             else if (((string)it["elbowFirst"] ?? "V").ToUpper() == "H") elb = P(er, u, z0);
                             else elb = P(r, eu, z0);
-                            rt.LeaderElbow = elb;
+                            try { rt.LeaderElbow = elb; } catch { }
                         }
                         created.Add(rt.Id.IntegerValue);
                         done.Add(new { Item = i, Kind = "roomtag", Id = rt.Id.IntegerValue, On = e.Id.IntegerValue, Text = room.Number + " " + room.get_Parameter(BuiltInParameter.ROOM_NAME).AsString(), TagText = rt.TagText, Type = typeName });

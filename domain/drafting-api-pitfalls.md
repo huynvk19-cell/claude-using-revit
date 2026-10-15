@@ -2,7 +2,7 @@
 name: drafting-api-pitfalls
 description: "Các bẫy Revit API (2023) đã gặp khi tự động hoá triển khai bản vẽ, kèm cách tránh. Revit API pitfalls for drafting automation."
 metadata:
-  updated: "2026-10-14"
+  updated: "2026-10-15"
   related: ["drafting-tools", "drafting-dimensions", "drafting-views-sheets"]
 ---
 
@@ -69,3 +69,7 @@ metadata:
 - 2026-10-10: room tag **có leader** của room hẹp (shaft) có thể hiện "?" sau khi commit dù `TagText` trong transaction vẫn đúng → kiểm bằng `room_tags_broken` sau khi apply; nếu "?" thì đặt tag trong room, không leader.
 - 2026-10-10: try/catch từng mục trong một transaction giữ lại phần tử đã tạo trước khi lỗi (tag mồ côi) → mỗi mục một `SubTransaction`, lỗi thì rollback (`annot_place` đã làm).
 - 2026-10-10: `PrintManager.ViewSheetSetting` ném lỗi "only available when user choose Select of Print Range" → trong transaction đặt `PrintRange = Select` trước khi lấy `ViewSheetSetting` (đổi tên / lưu print set).
+- 2026-10-15: leader của **room tag** bắt đầu từ **tâm thân tag** (tâm hộp bao khi tắt leader), không phải `TagHeadPosition` → muốn leader thẳng đứng / ngang thì đặt tâm thân thẳng hàng với điểm cuối (`annot_place` roomtag: `right/up` = tâm thân).
+- 2026-10-15: room tag **không leader** không đặt được đầu tag ra ngoài room → bật `HasLeader` **trước** khi dời đầu tag.
+- 2026-10-15: mặt bằng tầng trên thấy room của tầng dưới (room nhiều tầng / view range) → `NewRoomTag` báo "point outside spatial element"; chỉ tag room cùng level với view (`room_tags_missing`).
+- 2026-10-15: dependent view: chú thích thuộc view chính (`OwnerViewId` = primary) → lọc theo `OwnerViewId == view` bỏ sót tag / text; room đã tag ở dải chồng của view anh em vẫn tính là đã tag.
