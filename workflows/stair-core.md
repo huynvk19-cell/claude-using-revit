@@ -14,24 +14,28 @@ Every dim step: fix the text of existing dims of that item first (`dims_text`, p
 
 ## A. Plans (`drafting-stair-plan`, rules SA–SD)
 
-| # | Item | How | Done when | Skip only if |
-|---|---|---|---|---|
-| A0 | Survey | `stair_plan_audit` (skill §1), table per view | every view audited; run / landing count matches what the view shows; every stop-and-ask case asked | — |
-| A1 | SB1 run tags | `stair_plan_annotate parts:["runTags"]` (§3) | one tag per seen run, `From EL … To EL …` = the run's real elevations, outside the side wall, leader into the seen part | — |
-| A2 | SA1 clear width of runs | `dims_rail_refs` / `dims_at_positions` (§4) | audit SA1 rows `OK` at both ends of the runs; `CLEAR` only on run clear widths; overall chain `handrail \| overall \| handrail \| gap` closed on the walls | — |
-| A3 | SA3 landings | as A2 (§4) | audit SA3 `OK` on the mid landing and the floor landing; end on the handrail end **seen on the image** | — |
-| A4 | SA2 run lengths | `dims_at_positions` (§4) | audit SA2 `OK`: chain `landing \| 280mm x 14T = … (EQUAL TREADS) \| landing \| (grid)` + overall, outside the SB1 tags, one side only | — |
-| A5 | SA4 walls, doors, windows → grids | `dims_at_positions` (§4) | audit SA4 `OK`: grid → wall faces → opening edges → grid + overall, outside the end walls | — |
-| A6 | C tread numbers | `stair_plan_annotate parts:["numbers"]`, `number_systems_copy` (§3) | every seen run numbered; continuous from the lowest riser of the building; odd numbers shown; V1 / V3 columns on opposite sides | the profile says tread numbers are not shown |
-| A7 | SD stair path | `stair_plan_annotate parts:["path"]` (§3) | one Fixed Up path per seen stair, no UP / DOWN, arrows point up (image) | — |
-| A8 | SB2 railing tags | `annot_place` (§5) | `P01` on each wall handrail, `P02` on the centre railing; heads off the tread lines; orthogonal leaders | — |
-| A9 | SB3 spot elevations | `annot_place` kind spot on the **Stairs** (§5) | one on every seen landing, one on the floor landing in the core; the plan cuts the stair door → also one on the floor **outside** the door, even when it is the same level (inside vs outside the enclosure on the escape route) | — |
-| A10 | SB5 floor finish `F..` | finish mark (§5) | one per landing and floor landing, next to its spot; code from the room / legend / finished views, unknown → asked | **never** (mandatory) |
-| A11 | SB6 wall finish `W..` | finish mark (§5) | at least one per wall finish kind seen; code from the room / legend / finished views, unknown → asked | **never** (mandatory) |
-| A12 | SB4 doors, windows | `annot_place` (§5) | exactly one tag per drawn opening, off the SA4 dims and the swing | the view draws no door or window |
-| A13 | Open gap between flights (thông tầng) | `stair_gap_x` preview → apply (§5) | a gap open to the floors below (well between two flights, used for fire-fighting pipes) carries the X in `<Overhead>` dashed lines, fitting its 4 corners; no tag head on it | the side of the flight is a solid wall or a floor |
-| A14 | Tidy | `annotation_overlaps`, `dims_text_move`, `tag_leaders_info` | overlaps = 0; short texts apart; no diagonal leader (shape `D`) | — |
-| A15 | Recheck | `stair_plan_audit` again (§6) | no `missing`, no `Issues` except those the user accepted; ĐỦ – ĐÚNG – ĐẸP | — |
+Each step is a **step card** of the skill: `~/.claude/skills/drafting-stair-plan/steps/<card>`. The card holds what to do, **done when** and **skip only if**.
+
+| # | Item | Card |
+|---|---|---|
+| A0 | Survey | `00-survey.md` |
+| A1 | SB1 run tags | `01-sb1-run-tags.md` |
+| A2 | SA1 clear width of runs | `02-sa1-clear-width.md` |
+| A3 | SA3 landings | `03-sa3-landings.md` |
+| A4 | SA2 run lengths | `04-sa2-run-lengths.md` |
+| A5 | SA4 walls, doors, windows → grids | `05-sa4-walls-to-grids.md` |
+| A6 | C tread numbers | `06-c-tread-numbers.md` |
+| A7 | SD stair path | `07-sd-stair-path.md` |
+| A8 | SB2 railing tags | `08-sb2-railing-tags.md` |
+| A9 | SB3 spot elevations | `09-sb3-spot-elevations.md` |
+| A10 | SB5 floor finish `F..` ★ | `10-sb5-floor-finish.md` |
+| A11 | SB6 wall finish `W..` ★ | `11-sb6-wall-finish.md` |
+| A12 | SB4 doors, windows | `12-sb4-door-tags.md` |
+| A13 | X over the open gap between flights | `13-open-gap-x.md` |
+| A14 | Tidy | `14-tidy.md` |
+| A15 | Recheck | `15-recheck.md` |
+
+★ mandatory, never skipped.
 
 ## B. Sections along the flights (`drafting-stair-section-parallel`, rules LA–LC)
 

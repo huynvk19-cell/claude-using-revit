@@ -5,7 +5,7 @@ description: "Run a whole drafting job as a fixed workflow: skills in a set orde
 
 # Drafting workflow (quy trình)
 
-A **workflow** is one file in `~/.claude/drafting-domain/workflows/`: the steps of one job, in order (each step = one skill, or one item of a standard), each with the views it applies to, a **done when** gate and a **skip only if** condition. This skill runs it: **one step on all views, then the next step**. The skills do the work.
+A **workflow** is one file in `~/.claude/drafting-domain/workflows/`: the steps of one job, in order (each step = one skill, or one step card of a skill), each with the views it applies to, a **done when** gate and a **skip only if** condition. This skill runs it: **one step on all views, then the next step**. The skills do the work.
 
 **Tools**: none of its own. Each step loads its skill's **Tools** line when the step starts.
 
@@ -50,7 +50,7 @@ Tick a cell **right after** its gate is met for that view, not at the end of the
 
 1. **Step-major.** Take the first step and do it on **every view of its part**; only then the next step. Never finish one view through all steps while the others wait.
 2. **Batches inside a step.** More than 10 views of one kind → the step runs batch after batch (up to 10 views each, `drafting-session`) before the next step. Elevation / section commands stay one view per call.
-3. **Load as you go.** Load a part's skill (and the one standard it names) when the part starts, and the commands of the step when the step starts (one ToolSearch).
+3. **Load as you go.** Load a part's skill (and the one standard it names) when the part starts. A step that points to a **step card** (`skills/<skill>/steps/<card>.md`): open only that card when the step starts, and load the commands on its **Tools** line (one ToolSearch).
 4. **Gate.** A cell is `x` only when the step's **done when** holds on that view. Not met → fix and recheck; still not met → `!` with the reason (goes under Việc tồn). The next step still runs on the other views.
 5. **No silent skip.** Skip a cell only when its **skip only if** is proven by a tool result of this turn, or the user said so; write the reason in Notes. Otherwise do it, or ask.
 6. **Order is fixed.** Later steps depend on earlier ones (crop before grid dims, run tags before the outer dims, dims before the other tags, tidy last). A step that moves something an earlier step checked → recheck that earlier step on the view.

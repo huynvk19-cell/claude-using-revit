@@ -37,6 +37,16 @@ Skills and domain standards that let Claude Code, via Revit MCP, do drawing prod
 | `drafting-views-sheets` | Viewport, crop/scope box, đầu trục 2D, view template, link |
 | `drafting-visual-check` | Xuất ảnh sheet và soát lỗi trình bày |
 
+### Thẻ bước (Step cards) — chia để trị
+
+Skill nhiều bước thì mỗi bước là **một file riêng** trong `skills/<skill>/steps/`, gọi là **thẻ bước**: `NN-<mục>.md`, gồm làm gì (lệnh) · xong khi · chỉ bỏ khi · không được làm. `SKILL.md` chỉ còn phạm vi, đầu vào từ profile, danh sách thẻ theo thứ tự và các điều cấm chung. Ghi chú dùng chung cho nhiều thẻ: `steps/_<chủ đề>-common.md`.
+
+- Claude chỉ mở thẻ của bước đang làm (ít token).
+- Duyệt, sửa một bước = sửa một file trên GitHub; lịch sử (commit, diff) theo từng bước.
+- Quy trình trỏ tới thẻ; "xong khi" / "chỉ bỏ khi" chỉ nằm trong thẻ.
+
+Đã tách: `drafting-stair-plan` (16 thẻ: `00-survey` … `15-recheck`).
+
 ### Quy trình (Workflows)
 
 Quy trình là lớp trên skill: nó không chứa luật vẽ, chỉ nói **làm bước nào (một skill, hoặc một mục của chuẩn), theo thứ tự nào, khi nào coi là xong, khi nào được bỏ**. Đầu quy trình gom **mọi view / sheet** của công việc một lần; mỗi bước làm cho **tất cả view** rồi mới sang bước sau (vd. lõi thang: tag vế cho mọi mặt bằng → dim thông thuỷ cho mọi mặt bằng → …). Skill `drafting-workflow` chạy quy trình và giữ checklist `workflow-<ngày>-<tên>.md` (trong thư mục đợt comment, hoặc `log/`): mỗi ô bước × view là `x` xong, `-` bỏ (có lý do), `!` chưa xong (có lý do) hoặc `n/a`. Báo cáo cuối không được còn ô trống.
