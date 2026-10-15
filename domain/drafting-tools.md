@@ -92,7 +92,7 @@ metadata:
 | `stair_plan_annotate` | Lõi thang bộ (1V): stair path Fixed Up Direction, tắt chữ UP/DOWN (SD); số bậc từng vế, V1 phía đối diện V3 (C, `numberSide`); tag vế thang ngoài tường bên, leader vào phần nhìn thấy (SB1, `runTagPlace`). preview / apply / undo. Truyền `pathTypeName` / `runTagTypeName` theo bản vẽ cùng sheet. `viewIds` → nhiều mặt bằng một lần gọi (log `-<viewId>`). |
 | `stair_numbers_match` | Số bậc (1V): chép Display Rule, Number Size, Justify, Orientation… từ một số bậc mẫu của dự án (`sourceId`) và đặt Reference từng vế (Left/Right Quarter…). preview / apply / undo. |
 | `dims_at_positions` | Dim (1V) đặt theo toạ độ khung view (như `stair_plan_audit`): mỗi vị trí phải có tham chiếu thật (mặt/nét tường, lan can, vế thang – fallback mặt 3D, sàn, cửa, cột, trục); `{mm, id}` ép đúng phần tử; không tìm thấy → báo các tham chiếu gần nhất. `typeName` bắt buộc. `src:"3d"|"view"` theo từng điểm, `use3D`, `refDims` (dùng lại tham chiếu của dim vẽ tay). Bỏ nét thuộc subcategory bị ẩn. preview / apply / undo. **Sau khi tạo kiểm tra dim có hiện không** (`view_elem_boxes`: Box ≠ null). |
-| `annot_place` | Tag (có/không leader, đầu leader tự do), cao độ (spot, trên mặt plan của phần tử chứa điểm, vd. Stairs), room tag (`kind:"roomtag"`, cả room tầng khác thấy trong view; trả `TagText` để thấy "?") và stair path (`kind:"stairpath"`) đặt theo toạ độ khung view; type phải có sẵn. Mục lỗi không để lại phần tử nào. preview / apply / undo. |
+| `annot_place` | Tag (có/không leader, đầu leader tự do), cao độ (spot, trên mặt plan của phần tử chứa điểm, vd. Stairs), room tag (`kind:"roomtag"`, cả room tầng khác thấy trong view; leader có điểm gấp vuông góc như tag; trả `TagText` để thấy "?") và stair path (`kind:"stairpath"`) đặt theo toạ độ khung view; type phải có sẵn. Mục lỗi không để lại phần tử nào. preview / apply / undo. |
 | `stair_parts_info` | (read-only) Vế và chiếu nghỉ của thang: hộp mặt bằng (mm), cao độ, các stair path có sẵn và view chứa chúng. Dùng để chọn điểm đặt cao độ / path trên mặt bằng tổng. |
 | `finish_mark_place` | Ô mã hoàn thiện (Generic Annotation, vd. `F..` / `W..`): chép type của một ô có sẵn, đặt mã vào tham số chữ, leader vuông góc tới mặt tường. preview / apply / undo. |
 | `stair_gap_x` | Lõi thang bộ (1V): chữ X nét đứt (`<Overhead>`, `lineStyle`) khít 4 góc lỗ thông tầng giữa hai vế; tự bỏ qua khi là tường / sàn; X có sẵn lệch → chỉnh lại, thiếu nét → vẽ thêm; báo tag đặt trên X. `rect` khi lỗ tìm sai. preview / apply / undo. `viewIds` → nhiều mặt bằng một lần gọi (log `-<viewId>`). |
@@ -121,7 +121,7 @@ metadata:
 | `align_grid_ends` | Căn đầu trục 2D (`compact`). |
 | `grid_bubble_elbow` | Elbow cho bubble (hay lỗi → dùng so le đầu trục). |
 | `view_image_trial` | Thử ẩn/bỏ template rồi xuất ảnh, luôn rollback. |
-| `tag_leaders_info` | (RO) Tag + leader trong view: đầu tag, điểm gấp, điểm cuối, hình dạng (V / H / V+H / H+V / D xiên). |
+| `tag_leaders_info` | (RO) Tag + room tag + leader trong view: đầu tag, điểm gấp, điểm cuối, hình dạng (V / H / V+H / H+V / D xiên). |
 | `view_range_info` | (RO) View range (top / cut / bottom / view depth, cao độ tuyệt đối) + cao độ Z của phần tử. |
 | `dim_stable_refs` | (RO) Stable reference của từng tham chiếu trong dim + id / UniqueId Top Rail của lan can. |
 | `number_systems_copy` | Chép thiết lập số bậc (Display Rule, Number Size, Justify…) từ một tread number chuẩn sang các tread number khác, giá trị lưu sẵn (không parse đơn vị). |

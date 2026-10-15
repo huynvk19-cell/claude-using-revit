@@ -1,6 +1,6 @@
 # 00 · Tag room (tag phòng)
 
-**Skill** `drafting-ceiling-plan` · **Standard** `drafting-annotation.md` §2 RT1–RT4 · **Tools** `room_tags_missing`, `annot_place`, `room_tags_broken`, `delete_element`, `mark_types`, `export_sheet_images`
+**Skill** `drafting-ceiling-plan` · **Standard** `drafting-annotation.md` §2 RT1–RT4 · **Tools** `room_tags_missing`, `annot_place`, `room_tags_broken`, `tag_leaders_info`, `delete_element`, `mark_types`, `export_sheet_images`
 **Applies to** every ceiling plan view of the job.
 
 ## Do
@@ -17,12 +17,13 @@
    annot_place {mode:"apply",   viewId, items:<Items>, logPath:"<review>/room-tags-<viewId>.json"}
    ```
 4. `room_tags_broken` on the views: a new tag with a leader showing "?" (narrow room) → delete that tag (`delete_element`) and place it inside without a leader (`annot_place`, `leader:false`), or list it.
-5. Mark types (`drafting-session`), then export the views and check by image (`drafting-visual-check`).
+5. Leaders (all tags, `drafting-annotation.md` "Leader của tag"): straight, one right-angle elbow when needed, horizontal / vertical on the paper. `tag_leaders_info {viewId}` per view: every room tag leader shape is `H`, `V`, `H+V` or `V+H`; a `D` (diagonal) on a tag of this job → delete it (`delete_element`) and place it again with `annot_place` (it sets the elbow).
+6. Mark types (`drafting-session`), then export the views and check by image (`drafting-visual-check`).
 
 ## Done when
 
 - `room_tags_missing` again: `Untagged` = 0 on every view, or each room left is in `Problems` with its reason (→ Việc tồn).
-- On the image: no tag crosses a wall, a ceiling edge, a dim, a tag or a text; leaders only vertical / horizontal; each tag or leader dot sits near the room's diagonal centre.
+- On the image: no tag crosses a wall, a ceiling edge, a dim, a tag or a text; leaders straight with at most one right-angle elbow, horizontal / vertical on the paper (`tag_leaders_info`: no `D`); each tag or leader dot sits near the room's diagonal centre.
 
 ## Skip only if
 

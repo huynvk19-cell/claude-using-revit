@@ -40,7 +40,7 @@
 //    head an elbow is added, elbowFirst V (default: vertical from the head, then horizontal) or H, or explicit
 //    elbowRight / elbowUp)} | {kind:'spot', elementId (floor / landing / run: its highest horizontal face), typeName
 //    (spot elevation type), right, up (point on the face)} | {kind:'roomtag', elementId (room, any level seen in the
-//    view), typeName (room tag type), right, up, leader, endRight, endUp} | {kind:'stairpath', elementId (stairs),
+//    view), typeName (room tag type), right, up, leader, endRight, endUp, elbow as for tags} | {kind:'stairpath', elementId (stairs),
 //    typeName (stair path type)}. Types must already exist in the project (never created).
 //    mode preview (rolled back) | apply (logPath) | undo (logPath: deletes what was created).
 using System;
@@ -158,6 +158,17 @@ public static class AnnotPlace
                         rt.HasLeader = leader;
                         if (leader && it["endRight"] != null) rt.LeaderEnd = P((double)it["endRight"], (double)it["endUp"], z0);
                         rt.TagHeadPosition = head;
+                        if (leader && it["endRight"] != null)
+                        {
+                            // orthogonal leader on paper (user rule): straight H / V (elbow on the line), else one elbow
+                            double er = (double)it["endRight"], eu = (double)it["endUp"];
+                            XYZ elb;
+                            if (it["elbowRight"] != null) elb = P((double)it["elbowRight"], (double)it["elbowUp"], z0);
+                            else if (Math.Abs(er - r) < 1 || Math.Abs(eu - u) < 1) elb = P((r + er) / 2, (u + eu) / 2, z0);
+                            else if (((string)it["elbowFirst"] ?? "V").ToUpper() == "H") elb = P(er, u, z0);
+                            else elb = P(r, eu, z0);
+                            rt.LeaderElbow = elb;
+                        }
                         created.Add(rt.Id.IntegerValue);
                         done.Add(new { Item = i, Kind = "roomtag", Id = rt.Id.IntegerValue, On = e.Id.IntegerValue, Text = room.Number + " " + room.get_Parameter(BuiltInParameter.ROOM_NAME).AsString(), TagText = rt.TagText, Type = typeName });
                     }

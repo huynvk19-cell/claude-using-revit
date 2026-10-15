@@ -1,6 +1,6 @@
 /* mcp-tool
 {
-  "description": "Read-only: tags / spots in ONE view: head, leader end, elbow (view frame mm) and segment directions H / V / D.",
+  "description": "Read-only: tags / room tags in ONE view: head, leader end, elbow (view frame mm) and segment directions H / V / D.",
   "inputSchema": {
     "type": "object",
     "properties": {
@@ -23,7 +23,7 @@
 }
 */
 // ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
-// Read-only: for every tag (IndependentTag) and spot elevation in ONE view (or the given ids): type, tagged element,
+// Read-only: for every tag (IndependentTag) and room tag in ONE view (or the given ids): type, tagged element,
 //    head position, leader on/off, end condition, leader end and elbow per reference (view frame mm: Right / Up from
 //    the view origin), and the leader segment directions (H = horizontal, V = vertical, D = diagonal). Use to learn
 //    how the user draws leaders.
@@ -31,6 +31,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Autodesk.Revit.DB;
+using Autodesk.Revit.DB.Architecture;
 using Autodesk.Revit.UI;
 using Newtonsoft.Json.Linq;
 
@@ -54,6 +55,25 @@ public static class TagLeadersInfo
         if (args["ids"] != null) tags = ((JArray)args["ids"]).Select(i => doc.GetElement(new ElementId((int)i)) as IndependentTag).Where(t => t != null);
         else tags = new FilteredElementCollector(doc, v.Id).OfClass(typeof(IndependentTag)).Cast<IndependentTag>();
         var rows = new JArray();
+        // room tags: one leader, head > elbow > end
+        IEnumerable<RoomTag> rtags = args["ids"] != null
+            ? ((JArray)args["ids"]).Select(i => doc.GetElement(new ElementId((int)i)) as RoomTag).Where(t => t != null)
+            : new FilteredElementCollector(doc, v.Id).OfCategory(BuiltInCategory.OST_RoomTags).WhereElementIsNotElementType().OfType<RoomTag>();
+        foreach (var t in rtags)
+        {
+            var row = new JObject { ["id"] = t.Id.IntegerValue, ["cat"] = t.Category?.Name, ["type"] = doc.GetElement(t.GetTypeId())?.Name, ["head"] = P(t.TagHeadPosition), ["leader"] = t.HasLeader };
+            var refs = new JArray();
+            if (t.HasLeader)
+            {
+                XYZ end = null, elb = null;
+                try { end = t.LeaderEnd; } catch { }
+                try { elb = t.LeaderElbow; } catch { }
+                string shape = elb != null ? Dir(t.TagHeadPosition, elb) + "+" + Dir(elb, end) : Dir(t.TagHeadPosition, end);
+                refs.Add(new JObject { ["on"] = t.Room?.Id.IntegerValue, ["end"] = P(end), ["elbow"] = P(elb), ["shape(head>elbow>end)"] = shape });
+            }
+            row["refs"] = refs;
+            rows.Add(row);
+        }
         foreach (var t in tags)
         {
             var row = new JObject

@@ -23,7 +23,7 @@ metadata:
 | RT1 | **Type (family : type) do người dùng chọn.** Yêu cầu **bổ sung** (tag các room còn thiếu trên view đã có tag) → dùng type của các room lân cận (type phổ biến nhất trong 3 room gần nhất đã tag). Việc mới mà chưa có type → hỏi, không tự chọn. |
 | RT2 | **Không cắt**: tag không cắt qua tường, cạnh của sàn (mặt bằng trần: cạnh của trần); không đè dim, tag, text. |
 | RT3 | **Vị trí**: tag (hoặc chấm của leader) đặt gần **giao điểm hai đường chéo** của room (tâm hình chữ nhật bao room theo khung view). Room chữ L có giao điểm nằm ngoài room → điểm gần nhất trong room. |
-| RT4 | **Trong hay ngoài**: room đủ chỗ chứa tag mà không vi phạm RT2 → đặt **trong** room, không leader, gần giao điểm. Không đủ → đặt **ngoài** room, **có leader** (vuông góc, mục "Leader của tag" bên dưới), chấm của leader gần giao điểm hai đường chéo; chọn leader ngắn nhất. |
+| RT4 | **Trong hay ngoài**: room đủ chỗ chứa tag mà không vi phạm RT2 → đặt **trong** room, không leader, gần giao điểm. Không đủ → đặt **ngoài** room, **có leader** đi thẳng, bẻ góc vuông khi cần so với khổ giấy (mục "Leader của tag" bên dưới), chấm của leader gần giao điểm hai đường chéo; chọn leader ngắn nhất. |
 
 Kích thước tag trên giấy (rộng × cao mm) lấy từ `drafting-profile.md`; không có thì lệnh lấy hộp bao của một tag cùng type (rộng hơn chữ, kết quả thiên về an toàn).
 
@@ -49,8 +49,9 @@ Kích thước tag trên giấy (rộng × cao mm) lấy từ `drafting-profile.
 
 **Kiểm tra**: `viewport_title_audit`.
 
-## Leader của tag (mọi loại tag, user 2026-10-07)
+## Leader của tag (mọi loại tag, kể cả room tag, user 2026-10-07, 2026-10-15)
 
-- Leader **luôn vuông góc**: chỉ đoạn ngang hoặc dọc so với view. Đầu tag thẳng hàng với điểm chạm → một đoạn thẳng; không thì đúng một điểm gấp (dọc rồi ngang, hoặc ngang rồi dọc). Không có leader xiên.
+- Leader **đi đường thẳng, bẻ góc vuông khi cần**, ngang / dọc **so với khổ giấy** (cạnh của sheet). Đầu tag thẳng hàng với điểm chạm → một đoạn thẳng; không thì đúng một điểm gấp (dọc rồi ngang, hoặc ngang rồi dọc). Không có leader xiên.
+- Khung view (Right / Up) trùng phương khổ giấy (viewport chỉ xoay 0° / 90° / 270°), nên ngang / dọc theo khung view là ngang / dọc trên giấy.
 - Điểm cuối chạm đúng mép chủ thể.
-- Tool: `annot_place` tự thêm điểm gấp (`elbowFirst` V mặc định / H, hoặc `elbowRight/elbowUp`); kiểm tra bằng `tag_leaders_info` (cột shape: V, H, V+H, H+V; `D` = xiên → sửa).
+- Tool: `annot_place` tự thêm điểm gấp (`elbowFirst` V mặc định / H, hoặc `elbowRight/elbowUp`), cả với room tag; kiểm tra bằng `tag_leaders_info` (cả room tag; cột shape: V, H, V+H, H+V; `D` = xiên → sửa).
