@@ -2,7 +2,7 @@
 name: drafting-tools
 description: "Danh mục lệnh động (dynamic commands) Revit MCP dùng cho triển khai bản vẽ, theo chủ đề, kèm tham số chính. Drafting tool catalog."
 metadata:
-  updated: "2026-10-14"
+  updated: "2026-10-15"
   related: ["drafting-work-rules", "drafting-dimensions", "drafting-annotation", "drafting-views-sheets"]
 ---
 
@@ -104,7 +104,8 @@ metadata:
 | `view_dims_snapshot` | (read-only) Mọi dim tuyến tính của 1 view theo khung view: vị trí đường dim, các điểm gióng, giá trị + prefix/suffix/below từng đoạn, tham chiếu. Chụp trước / sau khi user chỉnh tay để học cách user dim (`outPath`). |
 | `elevation_opening_tags` | Tag cửa trên mặt đứng/cắt (1V), `addLeader`, `fixExisting`; cửa cuốn lớn: tag nằm trong cửa (`rollupInside`, `rollupFamilies`). |
 | `tag_align` | Căn đầu tag theo tag mẫu. |
-| `room_tags_outside` / `room_tags_broken` | Room tag nằm ngoài phòng / room tag "?". |
+| `room_tags_outside` / `room_tags_broken` | Room tag nằm ngoài phòng (không có leader chỉ vào phòng; tag RT4 có leader được giữ) / room tag "?". |
+| `room_tags_missing` | (read-only) Mặt bằng / mặt bằng trần, nhiều view một lần: room chưa có tag trong view + vị trí đặt theo RT1–RT4 (`drafting-annotation.md` §2): giao điểm hai đường chéo, trong room nếu đủ chỗ không cắt tường / cạnh sàn (trần) / dim / tag, không thì ngoài room có leader thẳng; type = `typeName` hoặc type của room lân cận (`NeighbourType`); trả `Items` cho `annot_place`. |
 | `viewport_titles_place` | Bật và căn title (`ignoreCrop`). |
 | `ui_view_focus` | Mở view + zoom theo crop để user theo dõi (`open`); ẩn/hiện Properties, Project Browser và báo trạng thái trước/sau (`panes` hide/show, `which` properties/browser). Dùng trong `drafting-start` / `drafting-end`. |
 

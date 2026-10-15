@@ -13,7 +13,7 @@ Skills and domain standards that let Claude Code, via Revit MCP, do drawing prod
 | `domain/` | Quy chuẩn bản vẽ: con số, vị trí, ngoại lệ, bẫy API | Tiếng Việt + thuật ngữ Revit |
 | `agents/` | Subagent `drafting-visual-checker`: đọc ảnh kiểm tra, chỉ trả lời bằng chữ (ảnh không ở lại trong hội thoại chính) | English |
 | `templates/drafting-profile.md` | Giá trị riêng của từng dự án (dim type, model cấm chạm, view loại trừ…) | Tiếng Việt |
-| `revit-commands/` | 86 lệnh động (dynamic commands) C# cho Revit MCP: dim, tag, title, viewport, crop, lõi thang, dim bám tay vịn, filled region cột theo kết cấu, mặt cắt dọc thang (dim, tag, số bậc, cao độ tay vịn, ô hoàn thiện), kiểm tra mặt cắt ngang thang, kiểm tra chồng lắp… Không chứa giá trị riêng dự án | C# |
+| `revit-commands/` | 87 lệnh động (dynamic commands) C# cho Revit MCP: dim, tag, title, viewport, crop, lõi thang, dim bám tay vịn, filled region cột theo kết cấu, mặt cắt dọc thang (dim, tag, số bậc, cao độ tay vịn, ô hoàn thiện), kiểm tra mặt cắt ngang thang, kiểm tra chồng lắp… Không chứa giá trị riêng dự án | C# |
 | `tools/crop.ps1` | Cắt vùng ảnh sheet để kiểm tra | PowerShell |
 | `tools/work-status/` | Cửa sổ "Đang xử lý" luôn nổi trên màn hình (tuỳ chọn) | PowerShell |
 
@@ -33,7 +33,9 @@ Skills and domain standards that let Claude Code, via Revit MCP, do drawing prod
 | `drafting-stair-section-parallel` | **Mặt cắt dọc** thang bộ (cắt song song stair path, LA–LC): chiều cao vế `169.4mm x 16R = 2710 (EQUAL RISERS)`, cao độ tầng, chiều dài vế, thông thuỷ dưới chiếu nghỉ, tay vịn; tag vế, P01, cao độ, F../C.., cửa; số bậc liên tục |
 | `drafting-stair-section-cross` | **Mặt cắt ngang** thang bộ (cắt không song song stair path, vế nhìn thẳng đầu, XA–XC): chuỗi chiều cao từng dải vế có công thức, cao độ tầng, chuỗi thông thuỷ | dày chiếu nghỉ liên tục, bề rộng tới tay vịn, tường; tag vế chữ đứng hai bên, tay vịn, cao độ, F../C..; số bậc Start and End trên vế thấy cổ bậc |
 | `drafting-stair-plan` | **Mặt bằng** lõi thang bộ (SA1–SD; mặt cắt thang sẽ là skill riêng): 3 vế + mọi chiếu nghỉ thấy được (kể cả dưới View Depth), dim tay vịn không cần dim tay, dim thông thuỷ (CLEAR chỉ trên bề rộng vế; mép lan can → mép bậc → tường), chiều dài vế có công thức (bậc trên cùng ngang chiếu nghỉ không tính), chuỗi chiếu nghỉ / tổng khép tới tường, tường/cửa tới trục; tag vế, tay vịn, cao độ, cửa, hoàn thiện; đếm/đánh số bậc từng vế; stair path chỉ có mũi tên |
-| `drafting-tags-titles` | Room tag, view title |
+| `drafting-plan-dims` | **Khai triển mặt bằng kích thước**: thẻ Tag room (RT1–RT4: type do người dùng chọn, bổ sung thì theo room lân cận; không cắt tường, cạnh sàn; gần giao điểm hai đường chéo; trong room nếu đủ chỗ, không thì ngoài room có leader) |
+| `drafting-ceiling-plan` | **Khai triển mặt bằng trần**: thẻ Tag room (RT1–RT4, như trên; không cắt tường, cạnh trần) |
+| `drafting-tags-titles` | Room tag (sửa tag ngoài phòng, tag "?"), view title |
 | `drafting-views-sheets` | Viewport, crop/scope box, đầu trục 2D, view template, link |
 | `drafting-visual-check` | Xuất ảnh sheet và soát lỗi trình bày |
 
@@ -45,7 +47,7 @@ Skill nhiều bước thì mỗi bước là **một file riêng** trong `skills
 - Duyệt, sửa một bước = sửa một file trên GitHub; lịch sử (commit, diff) theo từng bước.
 - Quy trình chỉ gọi skill; thứ tự thẻ nằm trong `SKILL.md`, "xong khi" / "chỉ bỏ khi" chỉ nằm trong thẻ.
 
-Đã tách: `drafting-stair-plan`, `drafting-stair-section-parallel`, `drafting-stair-section-cross` (mỗi skill 16 thẻ), `drafting-views-sheets` (8), `drafting-grid-dims` (4), `drafting-opening-dims` (4), `drafting-opening-tags` (6), `drafting-tags-titles` (2). Skill một bước (`drafting-dims`) và các skill mở/đóng phiên (`drafting-start`, `drafting-end`, `drafting-visual-check`, `drafting-review-round`) giữ nguyên.
+Đã tách: `drafting-stair-plan`, `drafting-stair-section-parallel`, `drafting-stair-section-cross` (mỗi skill 16 thẻ), `drafting-views-sheets` (8), `drafting-grid-dims` (4), `drafting-opening-dims` (4), `drafting-opening-tags` (6), `drafting-tags-titles` (2), `drafting-plan-dims` (1), `drafting-ceiling-plan` (1). Skill một bước (`drafting-dims`) và các skill mở/đóng phiên (`drafting-start`, `drafting-end`, `drafting-visual-check`, `drafting-review-round`) giữ nguyên.
 
 ### Quy trình (Workflows)
 
@@ -54,7 +56,8 @@ Quy trình là lớp trên skill: nó **chỉ gọi skill** — skill nào, theo
 | Quy trình | Gọi skill (thẻ) theo thứ tự |
 |---|---|
 | `elevation-section` | start → views-sheets (00–04) → grid-dims → dims (cao độ) → opening-dims → opening-tags → tags-titles (title) → views-sheets (07) → visual-check → end |
-| `floor-plan` | start → views-sheets (00–04) → grid-dims → tags-titles (room tag, title) → views-sheets (07) → visual-check → end |
+| `floor-plan` | start → views-sheets (00–04) → grid-dims → plan-dims (tag room) → tags-titles (room tag, title) → views-sheets (07) → visual-check → end |
+| `ceiling-plan` | start → views-sheets (00–04) → grid-dims → ceiling-plan (tag room) → tags-titles (room tag, title) → views-sheets (07) → visual-check → end |
 | `stair-core` | start → stair-plan → stair-section-parallel → stair-section-cross → visual-check → end |
 | `review-round` | review-round (đọc + phân loại) → start → skill theo từng task (thẻ khảo sát, thẻ của comment, thẻ kiểm lại) → tags-titles (title) → visual-check → end |
 
@@ -72,7 +75,9 @@ Thêm quy trình mới: một file `workflows/<tên>.md` (bảng skill · thẻ 
 | `drafting-dimensions.md` | Chuẩn dim cao độ, type dim (dim trục → `drafting-grid-dims.md`) |
 | `drafting-opening-dims.md` | 5 quy tắc dim cửa sổ, cửa đi (Q1–Q5) |
 | `drafting-opening-tags.md` | 8 quy tắc tag cửa sổ, cửa đi (T1–T8) |
-| `drafting-annotation.md` | Room tag, view title, leader vuông góc |
+| `drafting-annotation.md` | Room tag (đặt tag RT1–RT4, sửa tag), view title, leader vuông góc |
+| `drafting-plan-dims.md` | Mặt bằng kích thước: các thẻ bước (hiện có tag room) |
+| `drafting-ceiling-plan.md` | Mặt bằng trần: các thẻ bước (hiện có tag room) |
 | `drafting-views-sheets.md` | Viewport, crop, dependent view, template |
 | `drafting-tools.md` | Danh mục lệnh MCP theo chủ đề |
 | `drafting-api-pitfalls.md` | Bẫy Revit API và cách tránh |
@@ -119,7 +124,7 @@ Mỗi bước Claude gọi tool, toàn bộ phần đầu phiên (danh sách too
 | Phần | Tốn (mỗi bước) | Cách giảm | Trạng thái |
 |---|---|---|---|
 | Tool có sẵn của Revit MCP (profile `full`, 192 tool) | ~36.6k token nếu nạp sẵn; chỉ tên (~1.5k) khi tool search bật | **A**: profile `drafting` (26 tool) | cần làm trên máy |
-| 86 lệnh của repo (header `mcp-tool`) | ~11.8k token nếu nạp sẵn; chỉ tên (~0.8k) khi tool search bật; mỗi lệnh đã nạp ~140 token | **B**: header ngắn, giải thích ở `// ---- Details` | đã làm |
+| 87 lệnh của repo (header `mcp-tool`) | ~11.8k token nếu nạp sẵn; chỉ tên (~0.8k) khi tool search bật; mỗi lệnh đã nạp ~140 token | **B**: header ngắn, giải thích ở `// ---- Details` | đã làm |
 | Tool search của Claude Code | — | **C**: giữ bật (mặc định), kiểm tra bằng `/context` | kiểm tra trên máy |
 | Nạp lệnh từng cái một (mỗi lần một lượt) | 1 lượt / lệnh | **D**: dòng **Tools** trong mỗi skill → nạp hết trong 1 lần ToolSearch | đã làm |
 | Mô tả skill (gửi mỗi request) | 6.8k → 5.3k ký tự | mô tả ngắn, luật nằm trong thân skill | đã làm |

@@ -24,6 +24,7 @@ description: "Giá trị riêng của dự án cho bộ skill drafting. Copy fil
 | Mặt cắt thang: dim thông thuỷ dưới chiếu nghỉ (LA4) có `CLEAR`? | `<không (theo mẫu) / có>` |
 | Lõi thang: hiện số bậc? / phía số bậc | `<có / không>` · `<left / right>` |
 | Lõi thang: type tag/path riêng (nếu không dùng type phổ biến nhất) | `<vd. stair path: Fixed Up Direction : Arrow only>` |
+| Room tag: type cố định của dự án (RT1; để trống = user chọn mỗi việc) · kích thước tag trên giấy (rộng × cao mm) | `<tên type, không kèm tên family>` · `<vd. 24 x 8>` → `typeName`, `tagSizeMm:[24,8]` |
 | Schedule danh mục bản vẽ / print set khớp với nó | `<vd. DRAWINGS LIST>` / `<tên print set>` |
 | Sổ tay dự án (nếu có) | `<link>` |
 

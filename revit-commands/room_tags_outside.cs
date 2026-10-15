@@ -1,6 +1,6 @@
 /* mcp-tool
 {
-  "description": "Plan: room tags whose head lies outside their room; apply moves them to the room point (log); undo restores.",
+  "description": "Plan: room tags whose head lies outside their room (no leader into it); apply moves them to the room point (log); undo restores.",
   "inputSchema": {
     "type": "object",
     "properties": {
@@ -42,6 +42,7 @@
 // Room tags whose head lies outside their own room in plan views. mode preview lists them (view, tag id, room
 //    number/name, distance outside, leader); apply moves the selected tags (ids, or all listed) to the room's location
 //    point (leader off) and writes logPath with the old positions; undo restores from logPath.
+//    A tag outside its room with a leader ending inside the room is placed on purpose (rule RT4) and is not listed.
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -92,6 +93,7 @@ public static class RoomTagsOutside
                     double z = (room.Level?.Elevation ?? 0) + 1.0 / MM * 500;
                     var hp = new XYZ(head.X, head.Y, z);
                     if (room.IsPointInRoom(hp)) continue;
+                    if (tag.HasLeader) { try { var le = tag.LeaderEnd; if (room.IsPointInRoom(new XYZ(le.X, le.Y, z))) continue; } catch { } } // RT4: outside with a leader into the room
                     var rp = ((LocationPoint)room.Location).Point;
                     double dist = new XYZ(head.X - rp.X, head.Y - rp.Y, 0).GetLength() * MM;
                     bool sel = only == null || only.Contains(tag.Id.IntegerValue);

@@ -5,7 +5,8 @@
 
 ## Do
 
-- **Outside its room** → `room_tags_outside` preview → apply: moves the tag to the room point, leader off.
+- **Outside its room** (no leader into the room) → `room_tags_outside` preview → apply: moves the tag to the room point, leader off. A tag outside with a leader ending in its room is placed on purpose (RT4) and is not listed.
+- **Missing** (a room with no tag) → the "Tag room" card of `drafting-plan-dims` (floor plans) or `drafting-ceiling-plan` (ceiling plans).
 - **Shows "?"** → `room_tags_broken` apply: colours the tag red; report the room as a model-side fix. Never edit the room.
 
 ## Done when

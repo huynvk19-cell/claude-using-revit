@@ -1,6 +1,6 @@
 ---
 name: drafting-workflow
-description: "Run a whole drafting job as a fixed workflow: skills in a set order, each step with a done-when gate, each step done on all views before the next, progress kept in a checklist file so nothing is skipped and work resumes after a break. Workflows: facade elevations/sections, floor plans, stair core, comment round. Use for quy trình, làm trọn bộ, làm hết mặt đứng, triển khai mặt bằng, làm lõi thang, chạy quy trình, tiếp tục quy trình, workflow."
+description: "Run a whole drafting job as a fixed workflow: skills in a set order, each step with a done-when gate, each step done on all views before the next, progress kept in a checklist file so nothing is skipped and work resumes after a break. Workflows: facade elevations/sections, floor plans, ceiling plans, stair core, comment round. Use for quy trình, làm trọn bộ, làm hết mặt đứng, triển khai mặt bằng, mặt bằng trần, làm lõi thang, chạy quy trình, tiếp tục quy trình, workflow."
 ---
 
 # Drafting workflow (quy trình)
@@ -17,6 +17,7 @@ Load `drafting-session` first if it is not loaded yet (hard rules, batches, mark
 |---|---|
 | Facade elevations, building sections (not stair views) | `workflows/elevation-section.md` |
 | Floor plans | `workflows/floor-plan.md` |
+| Reflected ceiling plans (mặt bằng trần) | `workflows/ceiling-plan.md` |
 | Stair core: plans + sections along + sections across | `workflows/stair-core.md` |
 | A round of reviewer comments (PDF, TASKS.md) | `workflows/review-round.md` |
 

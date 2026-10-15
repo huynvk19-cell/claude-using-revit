@@ -29,7 +29,9 @@ Do **not** read the whole `drafting-domain/` folder or every skill. Pick the tas
 | Stair core **plan** | `drafting-stair-plan` | `drafting-stair-plan.md` |
 | Stair **section along the flights** (parallel to the stair path) | `drafting-stair-section-parallel` | `drafting-stair-section-parallel.md` |
 | Stair section **across** the flights (not parallel: flights seen end-on) | `drafting-stair-section-cross` | `drafting-stair-section-cross.md` |
-| Room tags, view titles | `drafting-tags-titles` | `drafting-annotation.md` |
+| Floor plan dimension drawings (khai triển mặt bằng kích thước): tag room… | `drafting-plan-dims` | `drafting-plan-dims.md` |
+| Reflected ceiling plans (khai triển mặt bằng trần): tag room… | `drafting-ceiling-plan` | `drafting-ceiling-plan.md` |
+| Room tags (fix outside / "?"), view titles | `drafting-tags-titles` | `drafting-annotation.md` |
 | Viewports, crops, templates, links, drawing list + print set | `drafting-views-sheets` | `drafting-views-sheets.md` |
 | Checking by image | `drafting-visual-check` | — |
 
