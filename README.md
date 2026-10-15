@@ -22,7 +22,7 @@ Skills and domain standards that let Claude Code, via Revit MCP, do drawing prod
 | Skill | Dùng khi |
 |---|---|
 | `drafting-session` | Mở đầu mọi phiên vẽ, và khi "tiếp tục". Gồm luật cứng, **làm theo đợt ≤10 view cùng loại**, **type đánh dấu** cho mọi phần tử tạo mới, **bảng chọn skill + domain theo việc** (chỉ đọc đúng file cần), phần mở đầu và phần kết thúc lượt. |
-| `drafting-workflow` | **Chạy quy trình**: chọn một file trong `workflows/`, ghi checklist (bước × đợt) ra file, chạy từng skill theo thứ tự, chỉ sang bước sau khi đạt "xong khi", không bỏ bước im lặng, "tiếp tục" chạy tiếp từ ô trống đầu tiên |
+| `drafting-workflow` | **Chạy quy trình**: chọn một file trong `workflows/`, gom mọi view một lần, ghi checklist (bước × view) ra file, làm từng bước cho tất cả view rồi mới sang bước sau, mỗi ô phải đạt "xong khi", không bỏ bước im lặng, "tiếp tục" chạy tiếp từ ô trống đầu tiên |
 | `drafting-start` | **Bắt đầu việc**: mở các view đang làm (zoom theo crop), ẩn Properties + Project Browser, bật cửa sổ trạng thái |
 | `drafting-end` | **Kết thúc làm việc**: ghi log, bật lại Properties + Project Browser như lúc đầu, đóng cửa sổ trạng thái, báo cáo |
 | `drafting-review-round` | Xử lý một đợt comment (PDF + danh sách task) |
@@ -39,13 +39,13 @@ Skills and domain standards that let Claude Code, via Revit MCP, do drawing prod
 
 ### Quy trình (Workflows)
 
-Quy trình là lớp trên skill: nó không chứa luật vẽ, chỉ nói **làm skill nào, theo thứ tự nào, khi nào coi là xong, khi nào được bỏ**. Skill `drafting-workflow` chạy quy trình và giữ checklist `workflow-<ngày>-<tên>.md` (trong thư mục đợt comment, hoặc `log/`): mỗi ô bước × đợt là `x` xong, `-` bỏ (có lý do), `!` chưa xong (có lý do) hoặc `n/a`. Báo cáo cuối không được còn ô trống.
+Quy trình là lớp trên skill: nó không chứa luật vẽ, chỉ nói **làm bước nào (một skill, hoặc một mục của chuẩn), theo thứ tự nào, khi nào coi là xong, khi nào được bỏ**. Đầu quy trình gom **mọi view / sheet** của công việc một lần; mỗi bước làm cho **tất cả view** rồi mới sang bước sau (vd. lõi thang: tag vế cho mọi mặt bằng → dim thông thuỷ cho mọi mặt bằng → …). Skill `drafting-workflow` chạy quy trình và giữ checklist `workflow-<ngày>-<tên>.md` (trong thư mục đợt comment, hoặc `log/`): mỗi ô bước × view là `x` xong, `-` bỏ (có lý do), `!` chưa xong (có lý do) hoặc `n/a`. Báo cáo cuối không được còn ô trống.
 
 | Quy trình | Các bước (skill) |
 |---|---|
 | `elevation-section` | start → views-sheets → grid-dims → dims (cao độ) → opening-dims → opening-tags → tags-titles (title) → visual-check → end |
 | `floor-plan` | start → views-sheets → grid-dims → tags-titles (room tag) → tags-titles (title) → visual-check → end |
-| `stair-core` | start → stair-plan → stair-section-parallel → stair-section-cross → visual-check → end |
+| `stair-core` | start → **A mặt bằng** (khảo sát → tag vế SB1 → dim thông thuỷ SA1 → chiếu nghỉ SA3 → chiều dài vế SA2 → tường/cửa → trục SA4 → số bậc → stair path → tag lan can SB2 → cao độ SB3 → F.. SB5 → W.. SB6 → tag cửa SB4 → dọn chồng → kiểm lại) → **B mặt cắt dọc** (LB1 → LA1 → LA2 → LA3 → LA4 → LA5 → LA6 → LC → LB2 → LB3 → LB4 → LB5 → LB6 → dọn → kiểm lại) → **C mặt cắt ngang** (XB1 → XA1 → XA2 → XA3 → XA4 → XA5 → XA6 → XC → XB2 → XB3 → XB4 → XB5 → XB6 → dọn → kiểm lại) → visual-check → end |
 | `review-round` | review-round (đọc + phân loại) → start → skill theo từng task → tags-titles (title) → visual-check → end |
 
 Thêm quy trình mới: một file `workflows/<tên>.md` + một dòng trong bảng của `drafting-workflow` + một dòng ở bảng trên.

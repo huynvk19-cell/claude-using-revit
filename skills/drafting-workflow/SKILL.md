@@ -1,11 +1,11 @@
 ---
 name: drafting-workflow
-description: "Run a whole drafting job as a fixed workflow: skills in a set order, each step with a done-when gate, progress kept in a checklist file so nothing is skipped and work resumes after a break. Workflows: facade elevations/sections, floor plans, stair core, comment round. Use for quy trình, làm trọn bộ, làm hết mặt đứng, triển khai mặt bằng, làm lõi thang, chạy quy trình, tiếp tục quy trình, workflow."
+description: "Run a whole drafting job as a fixed workflow: skills in a set order, each step with a done-when gate, each step done on all views before the next, progress kept in a checklist file so nothing is skipped and work resumes after a break. Workflows: facade elevations/sections, floor plans, stair core, comment round. Use for quy trình, làm trọn bộ, làm hết mặt đứng, triển khai mặt bằng, làm lõi thang, chạy quy trình, tiếp tục quy trình, workflow."
 ---
 
 # Drafting workflow (quy trình)
 
-A **workflow** is one file in `~/.claude/drafting-domain/workflows/`: the skills of one job, in order, each with the views it applies to, a **done when** gate and a **skip only if** condition. This skill runs it. The steps' skills do the work.
+A **workflow** is one file in `~/.claude/drafting-domain/workflows/`: the steps of one job, in order (each step = one skill, or one item of a standard), each with the views it applies to, a **done when** gate and a **skip only if** condition. This skill runs it: **one step on all views, then the next step**. The skills do the work.
 
 **Tools**: none of its own. Each step loads its skill's **Tools** line when the step starts.
 
@@ -23,38 +23,43 @@ Load `drafting-session` first if it is not loaded yet (hard rules, batches, mark
 - Read **only** the chosen file. Unclear which one, or the job fits none → ask; do not mix two workflows in one checklist.
 - A single-topic task ("dim trục view này") needs no workflow: use the topic's skill from the `drafting-session` table.
 
+## Gather the views once
+
+At the start (`drafting-start`), collect **every** view / sheet the job covers and sort them into the workflow's parts (by view kind: plans, elevations, sections along, sections across…). This list is fixed for the whole job; a view found later is added to its part and catches up on the steps already done.
+
 ## Checklist file (the source of truth)
 
-Create it before step 1, in the round folder `review/<date>_<code>/` if there is one, otherwise `log/`: `workflow-<YYYY-MM-DD>-<workflow>.md`.
+Create it before the first step, in the round folder `review/<date>_<code>/` if there is one, otherwise `log/`: `workflow-<YYYY-MM-DD>-<workflow>.md`. One table per part: rows = the workflow's steps, columns = the part's views.
 
 ```
-# <workflow> — <date>
-Batches: B1 = <view names> (<ViewType>), B2 = …
-| # | Step (skill) | B1 | B2 |
-|---|---|---|---|
-| 1 | drafting-start | x | x |
-| 2 | drafting-views-sheets |  |  |
-Marks: x done (gate met) · - skipped (reason below) · ! not done (reason below) · n/a step does not apply to this batch
+# stair-core — <date>
+Views: A: 1 = <plan name>, 2 = …   B: 1 = <section name> …
+## A. Plans
+| # | Item | 1 | 2 | 3 |
+|---|---|---|---|---|
+| A1 | SB1 run tags | x | x | x |
+| A2 | SA1 clear width |  |  |  |
+Marks: x done (gate met) · - skipped (reason below) · ! not done (reason below) · n/a
 Notes:
-- B2 step 4 skipped: survey shows 0 visible openings (opening_dims_each).
+- A12 view 2 skipped: the view draws no door (stair_plan_audit Tags).
 ```
 
-- Fill the batches from `drafting-start` (up to 10 views of one ViewType + topic).
-- Tick a cell **right after** its gate is met, not at the end of the turn.
+Tick a cell **right after** its gate is met for that view, not at the end of the turn.
 
-## Run
+## Run — step by step over all views
 
-1. **Batch by batch.** For each batch, run the steps that apply to its views, in the workflow's order. Steps marked *once* (start, end) run once for the whole job.
-2. **One step at a time.** Load that step's skill (and the one standard it names) only when the step starts; follow the skill as written.
-3. **Gate.** A step is done for a batch only when its **done when** holds for every view of the batch. Not met → fix and recheck; still not met → mark `!` with the reason, it goes under Việc tồn. Never start a later step that depends on it as if it were done.
-4. **No silent skip.** Skip a step only when its **skip only if** condition is proven by a tool result of this turn, or the user said so; write the reason in Notes. Otherwise do it, or ask.
-5. **Order is fixed.** The order exists because later steps depend on earlier ones (crop before grid dims, dims before tags, titles last). A step that changes something an earlier step checked (crop, grid ends, dims) → run that earlier step's check again for the batch.
-6. One-line progress to the user after each batch: `B1: 5/7 steps, next: drafting-opening-tags`.
-7. "dừng" → stop at once; the checklist shows where.
+1. **Step-major.** Take the first step and do it on **every view of its part**; only then the next step. Never finish one view through all steps while the others wait.
+2. **Batches inside a step.** More than 10 views of one kind → the step runs batch after batch (up to 10 views each, `drafting-session`) before the next step. Elevation / section commands stay one view per call.
+3. **Load as you go.** Load a part's skill (and the one standard it names) when the part starts, and the commands of the step when the step starts (one ToolSearch).
+4. **Gate.** A cell is `x` only when the step's **done when** holds on that view. Not met → fix and recheck; still not met → `!` with the reason (goes under Việc tồn). The next step still runs on the other views.
+5. **No silent skip.** Skip a cell only when its **skip only if** is proven by a tool result of this turn, or the user said so; write the reason in Notes. Otherwise do it, or ask.
+6. **Order is fixed.** Later steps depend on earlier ones (crop before grid dims, run tags before the outer dims, dims before the other tags, tidy last). A step that moves something an earlier step checked → recheck that earlier step on the view.
+7. Progress line to the user after each step: `A2 SA1 clear width: 5/6 views, 1 ! (view 4: rail edge not drawable)`.
+8. "dừng" → stop at once; the checklist shows where.
 
 ## Resume ("tiếp tục")
 
-Find the latest `workflow-*.md` in the round folder or `log/`, re-anchor (`hello_revit`), and continue at the first empty cell. Never redo a step marked `x` unless a later change broke its gate.
+Find the latest `workflow-*.md` in the round folder or `log/`, re-anchor (`hello_revit`), and continue at the first empty cell. Never redo a cell marked `x` unless a later change broke its gate.
 
 ## Finish
 
