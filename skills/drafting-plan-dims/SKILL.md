@@ -5,7 +5,7 @@ description: "Develop floor plan dimension drawings (khai triển mặt bằng k
 
 # Floor plan dimensions (khai triển mặt bằng kích thước)
 
-**Tools** (load all in one ToolSearch call): `annot_place`, `delete_element`, `export_sheet_images`, `mark_types`, `room_tags_broken`, `room_tags_missing`, `ui_view_focus`.
+**Tools** (load all in one ToolSearch call): `annot_place`, `delete_element`, `export_sheet_images`, `mark_types`, `room_tags_broken`, `room_tags_missing`, `tag_leaders_info`, `ui_view_focus`.
 
 Standard: `~/.claude/drafting-domain/drafting-plan-dims.md` (Vietnamese); room tag rules RT1–RT4 in `drafting-annotation.md` §2.
 
