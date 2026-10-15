@@ -105,7 +105,7 @@ metadata:
 | `elevation_opening_tags` | Tag cửa trên mặt đứng/cắt (1V), `addLeader`, `fixExisting`; cửa cuốn lớn: tag nằm trong cửa (`rollupInside`, `rollupFamilies`). |
 | `tag_align` | Căn đầu tag theo tag mẫu. |
 | `room_tags_outside` / `room_tags_broken` | Room tag nằm ngoài phòng (không có leader chỉ vào phòng; tag RT4 có leader được giữ) / room tag "?". |
-| `room_tags_missing` | (read-only) Mặt bằng / mặt bằng trần, nhiều view một lần: room chưa có tag trong view + vị trí đặt theo RT1–RT4 (`drafting-annotation.md` §2): giao điểm hai đường chéo, trong room nếu đủ chỗ không cắt tường / cạnh sàn (trần) / dim / tag, không thì ngoài room có leader thẳng; type = `typeName` hoặc type của room lân cận (`NeighbourType`); trả `Items` cho `annot_place`. |
+| `room_tags_missing` | (read-only) Mặt bằng / mặt bằng trần, nhiều view một lần: room **cùng level với view** chưa có tag (tính cả tag ở view chính / dependent anh em) + vị trí đặt theo RT1–RT4 (`drafting-annotation.md` §2): giao điểm hai đường chéo, trong room nếu đủ chỗ không cắt tường / cạnh sàn (trần) / dim / tag, không thì ngoài room có leader thẳng; type = `typeName` hoặc type của room lân cận (`NeighbourType`); trả `Items` cho `annot_place` (`right/up` = tâm thân tag); `explain` cho biết vật cản, `ignore` bỏ một loại vật cản. |
 | `viewport_titles_place` | Bật và căn title (`ignoreCrop`). |
 | `ui_view_focus` | Mở view + zoom theo crop để user theo dõi (`open`); ẩn/hiện Properties, Project Browser và báo trạng thái trước/sau (`panes` hide/show, `which` properties/browser). Dùng trong `drafting-start` / `drafting-end`. |
 

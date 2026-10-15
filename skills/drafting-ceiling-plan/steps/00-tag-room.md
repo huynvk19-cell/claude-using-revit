@@ -10,12 +10,14 @@
    ```
    room_tags_missing {viewIds:[batch], typeName, tagSizeMm}
    ```
-   Per view: `Untagged`, `Inside` (no leader), `Outside` (leader), `Problems`, `Items`. No `tagSizeMm` in the profile → the command uses the box of a placed tag (wider than the text); say so in the report.
+   Per view: `Untagged`, `Inside` (no leader), `Outside` (leader), `Problems`, `Items`. Only rooms of the view's own level count; a room tagged in a sibling dependent view (overlap strip) counts as tagged. No `tagSizeMm` in the profile → the command uses the body box of a placed tag without leader; say so in the report.
+   A room in `Problems` with "no clear place" → run again with `roomIds:[id], explain:true` to see what blocks it. Skip an obstacle kind (`ignore`, e.g. a hatch or furniture category) only with the user's yes; otherwise list the room.
 3. Per view, open it (`ui_view_focus {action:"open", viewId}`), then
    ```
    annot_place {mode:"preview", viewId, items:<Items>}
    annot_place {mode:"apply",   viewId, items:<Items>, logPath:"<review>/room-tags-<viewId>.json"}
    ```
+   For a room tag, `right` / `up` is the centre of the tag **body** (the leader starts there); `annot_place` turns the leader on before it moves the head, so a body outside the room is accepted.
 4. `room_tags_broken` on the views: a new tag with a leader showing "?" (narrow room) → delete that tag (`delete_element`) and place it inside without a leader (`annot_place`, `leader:false`), or list it.
 5. Leaders (all tags, `drafting-annotation.md` "Leader của tag"): straight, one right-angle elbow when needed, horizontal / vertical on the paper. `tag_leaders_info {viewId}` per view: every room tag leader shape is `H`, `V`, `H+V` or `V+H`; a `D` (diagonal) on a tag of this job → delete it (`delete_element`) and place it again with `annot_place` (it sets the elbow).
 6. Mark types (`drafting-session`), then export the views and check by image (`drafting-visual-check`).
