@@ -2,7 +2,7 @@
 name: drafting-views-sheets
 description: "Chuẩn view/sheet: viewport type, crop và scope box, dependent view, đầu trục 2D, view template, hiển thị link, danh mục bản vẽ + print set. Views, sheets, crops, templates, links, drawing list, print set."
 metadata:
-  updated: "2026-10-10"
+  updated: "2026-10-15"
   related: ["drafting-work-rules", "drafting-annotation", "drafting-tools", "drafting-api-pitfalls"]
 ---
 
@@ -56,6 +56,13 @@ Thao tác:
 - Annotation Categories = `<Custom>`, bỏ tick "Show annotation categories in this view".
 - Chỉ làm bằng cách điều khiển UI, và chỉ khi user yêu cầu.
 - Xem link nào đang hiện trong template: `template_link_visibility`.
+
+**Tô màu room theo view** (vd. chỉ tô room có tag, user 2026-10-15)
+- Màu đặt ở **View Template**: một Color Scheme cho Rooms (copy scheme có sẵn, tên trung tính, theo tham số như Department), mọi giá trị một màu, giá trị riêng (vd. CIRCULATION) màu khác; Location = Background. `room_color_survey` (RO) → `room_color_apply` preview → apply (logPath).
+- Room **chưa có tag trong view** thì không tô: Override Graphics in View › By Element › Surface Transparency 100. **Không** Hide in View: mất cả room lẫn dấu X (Reference) của room.
+- Tag thêm room sau đó → chạy lại `room_color_apply`: room đã có tag được gỡ override, tự lên màu.
+- Ceiling plan **không** nhận Color Scheme (`CanApplyColorFillScheme` = false); Interior Fill + override màu cũng không tô được → báo user, không vẽ Filled Region nếu user không yêu cầu.
+- Có room không lên màu dù có tag và không bị ẩn (gặp ở room lớn trên mặt bằng tầng đặt room, các tầng trên vẫn tô) → ghi Việc tồn, kiểm lại room trong model.
 
 ## 5. Danh mục bản vẽ và print set (Drawing list, print set)
 

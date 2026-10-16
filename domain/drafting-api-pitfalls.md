@@ -69,3 +69,5 @@ metadata:
 - 2026-10-10: room tag **có leader** của room hẹp (shaft) có thể hiện "?" sau khi commit dù `TagText` trong transaction vẫn đúng → kiểm bằng `room_tags_broken` sau khi apply; nếu "?" thì đặt tag trong room, không leader.
 - 2026-10-10: try/catch từng mục trong một transaction giữ lại phần tử đã tạo trước khi lỗi (tag mồ côi) → mỗi mục một `SubTransaction`, lỗi thì rollback (`annot_place` đã làm).
 - 2026-10-10: `PrintManager.ViewSheetSetting` ném lỗi "only available when user choose Select of Print Range" → trong transaction đặt `PrintRange = Select` trước khi lấy `ViewSheetSetting` (đổi tên / lưu print set).
+- 2026-10-15: `View.CanCategoryBeHidden` trả false khi view template giữ V/G → muốn ẩn / override từng phần tử trong view có template thì kiểm `Element.CanBeHidden(view)`; Hide in View và `SetElementOverrides` vẫn làm được.
+- 2026-10-15: tham số "Color Scheme Location" của view / template: 1 = Background, 0 = Foreground. Room colour fill bị ẩn khi room bị Hide in View; Surface Transparency 100 (override theo phần tử) bỏ màu mà vẫn giữ room.
