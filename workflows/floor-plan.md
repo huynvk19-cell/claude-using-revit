@@ -15,4 +15,4 @@ Each row calls a skill; the skill's card list gives the steps and the cards give
 | 6 | `drafting-visual-check` | — | every view |
 | 7 | `drafting-end` | — | once |
 
-Why this order: crop and grid ends decide where grid dims go (1 → 2); room tags go after the grid dims so they keep clear of them (3); the room tag check and titles go after every tag, dim and crop change (4); the drawing list last (5).
+Why this order: crop and grid ends decide where grid dims go (1 → 2); inside `drafting-plan-dims` (3) the door / window dims come first (card 00), then the door / window tags that keep clear of them (01), then the room tags that keep clear of every dim and tag (02), all after the grid dims; the room tag check and titles go after every tag, dim and crop change (4); the drawing list last (5).

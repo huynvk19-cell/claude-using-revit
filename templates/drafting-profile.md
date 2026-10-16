@@ -25,6 +25,8 @@ description: "Giá trị riêng của dự án cho bộ skill drafting. Copy fil
 | Lõi thang: hiện số bậc? / phía số bậc | `<có / không>` · `<left / right>` |
 | Lõi thang: type tag/path riêng (nếu không dùng type phổ biến nhất) | `<vd. stair path: Fixed Up Direction : Arrow only>` |
 | Room tag: type cố định của dự án (RT1; để trống = user chọn mỗi việc) · kích thước tag trên giấy (rộng × cao mm) | `<tên type, không kèm tên family>` · `<vd. 24 x 8>` → `typeName`, `tagSizeMm:[24,8]` |
+| Tài khoản Revit của người dùng (annotation của mình = LastChangedBy, `annot_owners`) | `<tên đăng nhập Revit>` |
+| Mặt bằng: vùng chỉ dim trục (không dim / tag cửa, `drafting-plan-dims` 00–01) | `<vd. vùng xưởng, x > 61 m>` |
 | Schedule danh mục bản vẽ / print set khớp với nó | `<vd. DRAWINGS LIST>` / `<tên print set>` |
 | Sổ tay dự án (nếu có) | `<link>` |
 

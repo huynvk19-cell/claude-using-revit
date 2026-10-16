@@ -1,21 +1,67 @@
 ---
 name: drafting-plan-dims
-description: "Chuẩn khai triển mặt bằng kích thước (floor plan dimension drawings): các bước và quy tắc riêng của mặt bằng. Hiện có: tag room (RT1–RT4). Floor plan dimension standard."
+description: "Chuẩn khai triển mặt bằng kích thước (floor plan dimension drawings): các bước và quy tắc riêng của mặt bằng. Hiện có: dim cửa tới tường và trục (PD1–PD6), tag cửa (PT1–PT6), tag room (RT1–RT4). Floor plan dimension standard."
 metadata:
-  updated: "2026-10-15"
-  related: ["drafting-annotation", "drafting-grid-dims", "drafting-work-rules", "drafting-tools"]
+  updated: "2026-10-16"
+  related: ["drafting-annotation", "drafting-grid-dims", "drafting-opening-dims", "drafting-opening-tags", "drafting-stair-plan", "drafting-work-rules", "drafting-tools"]
 ---
 
 # Khai triển mặt bằng kích thước (Floor plan dimensions)
 
 Áp dụng cho mặt bằng các tầng đặt trên sheet. Không áp dụng cho mặt bằng lõi thang (`drafting-stair-plan.md`) và mặt bằng trần (`drafting-ceiling-plan.md`).
 
-Skill: `drafting-plan-dims`; mỗi mục dưới đây là một thẻ bước của skill.
+Skill: `drafting-plan-dims`; mỗi mục dưới đây là một thẻ bước của skill, chạy theo thứ tự thẻ.
 
 | Thẻ | Mục | Quy tắc |
 |---|---|---|
-| 00 | Tag room | `drafting-annotation.md` §2 RT1–RT4: type do người dùng chọn (bổ sung → type room lân cận); không cắt tường, cạnh sàn; gần giao điểm hai đường chéo; trong room nếu đủ chỗ, không thì ngoài room có leader. |
+| 00 | Dim cửa đi, cửa sổ → tường, trục | PD1–PD6 (mục 1) |
+| 01 | Tag cửa đi, cửa sổ | PT1–PT6 (mục 2) |
+| 02 | Tag room | `drafting-annotation.md` §2 RT1–RT4: type do người dùng chọn (bổ sung → type room lân cận); không cắt tường, cạnh sàn; gần giao điểm hai đường chéo; trong room nếu đủ chỗ, không thì ngoài room có leader. |
 
-Dim trục: `drafting-grid-dims.md` (G1–G4), chạy trước trong quy trình `floor-plan`.
+Thứ tự: dim trục (`drafting-grid-dims.md`, G1–G4) → dim cửa → tag cửa → tag room. Dim khó dời hơn tag, nên dim đặt trước, tag tránh dim; tag room đặt sau cùng vì phải tránh mọi dim và tag cửa (RT2).
 
-Các mục khác của mặt bằng kích thước (dim tường, dim cửa trên mặt bằng, cao độ sàn…) sẽ thêm thành thẻ mới khi có quy tắc.
+Nguồn: PD lấy từ Q1–Q5 (`drafting-opening-dims.md`, user 2026-10-06) và SA4 của mặt bằng lõi thang (`drafting-stair-plan.md`, user 2026-10-07); PT lấy từ T1–T8 (`drafting-opening-tags.md`), SB4 và bài học đợt tag cửa mặt đứng/mặt cắt 2026-10-16. Mặt bằng thường chưa có mẫu riêng của user → lần đầu làm ở một dự án: làm xong **một view mẫu**, cho user duyệt, ghi điều user chỉnh vào profile, rồi mới làm các view còn lại.
+
+## Phạm vi chung (cả hai thẻ cửa)
+
+- Cửa "có trên view" = cửa đi / cửa sổ **host** mà mặt bằng **vẽ ra** (bị mặt cắt cắt qua hoặc nhìn thấy). Không tính: cửa của link, cửa bị che (dưới vùng tô / masking region, ngoài crop), cửa tầng khác chỉ hiện do view range.
+- View OVERALL / key plan tỉ lệ nhỏ: **không** dim, **không** tag cửa (như T1).
+- Vùng mà profile ghi là "chỉ dim trục" (vd. vùng hangar, vùng thiết bị) → không dim, không tag cửa ở đó.
+- Chỉ thêm annotation. Không sửa cửa, tường, trục (R1). Không dời / xoá dim, tag của người khác (mục "Của ai" bên dưới).
+
+### Của ai
+
+Trước khi dời, đổi type hay xoá một tag / dim có sẵn: `annot_owners {viewId, listIds:true}`. Được sửa khi **LastChangedBy** = tài khoản Revit của người dùng (profile) hoặc phần tử do Claude tạo (type đánh dấu). Của người khác → để nguyên, ghi vào báo cáo, trừ khi user cho phép trong phiên đó (đợt 2026-10-16 user cho phép giữa chừng → dời cả tag người khác).
+
+## 1. Dim cửa đi, cửa sổ (PD1–PD6) — thẻ 00
+
+| # | Quy tắc |
+|---|---|
+| PD1 | **Mỗi cửa có trên view nằm trong một chuỗi dim ngang theo tường chứa nó**: đọc được bề rộng cửa và cửa cách trục / tường bao nhiêu. Mặt bằng **không** dim chiều cao cửa (chiều cao ở mặt đứng, mặt cắt, Q2). |
+| PD2 | **Chuỗi tới trục**: trục → mép cửa → mép cửa → … → trục, dọc theo tường chứa cửa (như Q3). Trục host gần nhất mỗi bên trong khoảng ~12 m, đang thấy trên view; không trục link. |
+| PD3 | **Chuỗi tới tường**: chuỗi đi qua tường giao (tường vuông góc cắt ngang chuỗi) thì lấy **hai mép tường hoàn thiện** của tường đó (thể hiện bề dày, như SA4: `trục → mép tường → mép tường → mép cửa → mép cửa → trục`). Một phía không có trục trong ~12 m → chuỗi dừng ở **mép tường hoàn thiện** gần nhất phía đó (góc tường, đầu tường), báo user. Cửa trong tường ngăn ngắn giữa hai tường giao → mép tường → mép cửa → mép cửa → mép tường là đủ. |
+| PD4 | **Gộp chuỗi**: nhiều cửa cùng một tường giữa hai trục → **một** chuỗi chung. Cửa sát nhau (< 150 mm) → có điểm nối giữa các cửa (`drafting-opening-dims.md` §3). Chuỗi dim có sẵn chạy qua cửa mà thiếu mép cửa → thêm mép vào chính chuỗi đó (cùng đường, cùng type) nếu chuỗi là của mình; của người khác → vẽ chuỗi mới, báo. |
+| PD5 | **Tham chiếu** (như Q5): cửa = tham chiếu của chính cửa (mép khung, `Left` / `Right`); cửa cuốn = bề rộng danh nghĩa `LEFT` → `RIGHT` (family theo profile). Tường = **mặt hoàn thiện** lấy từ 3D (`src:"3d"`). Trục = trục host. Không lấy mép lỗ tường, detail line, hình học link. |
+| PD6 | **Vị trí**: tường bao → phía **ngoài nhà**, đường dim đầu tiên ngoài mặt tường (~7 mm giấy), **nằm trong** dải dim trục (dim trục luôn ngoài cùng, G3). Tường trong → phía không có cung mở cửa, không đè room, tag, chữ. Các đường dim song song cách nhau ~7 mm giấy. Chữ đoạn ngắn đè nhau → dời chữ (`dims_text_move`). Hết chỗ → không đẩy dim ra xa, báo user đặt tay. |
+
+**Coi là đã có**: một chuỗi sẵn có (của ai cũng được) đã tham chiếu đúng hai mép cửa (PD5), cho đúng chuỗi (PD2/PD3) và nằm sát tường (PD6) → không thêm chuỗi thứ hai. Chuỗi đang trỏ vào mép lỗ tường → không tính; thêm chuỗi đúng, báo user chuỗi cũ có cần xoá không.
+
+Type: dim type **kiểm tra** của profile (= type đánh dấu). Mỗi lần gọi `dims_at_positions` là một view; sau apply kiểm dim có vẽ ra không (`view_elem_boxes`: `Box` ≠ null).
+
+## 2. Tag cửa đi, cửa sổ (PT1–PT6) — thẻ 01
+
+| # | Quy tắc |
+|---|---|
+| PT1 | **Đủ và đúng**: mỗi cửa có trên view có **đúng một** tag. Cửa không vẽ ra → không tag (tag tool lỡ đặt cho cửa bị vùng tô che → xoá). Hai tag cùng một cửa (kể cả một tag type mark nhiều leader trùng với các tag số) → giữ tag đặt tốt hơn, xoá tag kia nếu là của mình; của người khác → báo. Tag mồ côi, tag "?" / rỗng → báo. |
+| PT2 | **Sát cửa, đúng phía**: đầu tag đặt sát cửa (~1–2 mm giấy từ mặt tường), căn giữa bề rộng cửa. Cửa đi: phía **không có cung mở cửa**; mở cả hai phía → phía hành lang / phía ngoài phòng. Cửa sổ: phía **ngoài nhà**; ngoài nhà chật (dim, trục) → phía trong. Cửa rất rộng (cửa cuốn lớn, cửa hangar): phía trong nhà, giữa bề rộng cửa. |
+| PT3 | **Không đè**: đầu tag không nằm trên khung cửa, lá cửa, cung mở cửa (`door_window_tag_check`: `overlap`), tường, cột, cầu thang, thiết bị; không đè dim (đường + chữ), tag khác, room tag, text. Nét trục, nét sàn, hatch là vật mềm, được đè. |
+| PT4 | **Leader**: tag sát cửa thì không leader. Vướng → dời tag ra chỗ trống gần nhất, có leader đi thẳng hoặc **một góc vuông** so với khổ giấy, điểm cuối chạm cửa (`drafting-annotation.md` "Leader của tag"). Không leader xiên. Tag có leader mà đầu tag vẫn nằm trên cửa → sửa (hoặc báo nếu của người khác). |
+| PT5 | **Thẳng hàng**: các cửa cùng một tường, cùng hàng → đầu tag cùng khoảng cách tới tường (cùng một đường). Tag dời ra xa gom thành cột / hàng thẳng, leader dẫn tới cửa. |
+| PT6 | **Type và tôn trọng việc có sẵn**: type tag cửa đi / cửa sổ dùng **nhiều nhất** trong view (không có → nhiều nhất trong dự án; không có → hỏi). Không tạo type mới ngoài type đánh dấu. Tag mới mang type đánh dấu. Không "đặt lại toàn bộ" trên view user đã chỉnh tay: chỉ thêm tag thiếu và sửa tag sai của mình. |
+
+Kiểm tra sau khi làm: `door_window_tag_check` không còn `untagged` (trừ cửa lý do ghi rõ), `duplicate`, `overlap` trên tag của mình; `tag_leaders_info` không có `D`; `annotation_overlaps` không có tag cửa đè dim / tag; ảnh xuất nhìn gọn.
+
+## Việc tồn của chuẩn
+
+- Mặt bằng chưa có lệnh khảo sát cửa riêng (vị trí mép cửa theo khung view, cửa nào đã có dim / tag): thẻ 00, 01 dùng `query_elements_with_filter` + `view_elem_boxes` + `door_window_tag_check`. Làm nhiều lần thấy chậm → viết lệnh `plan_openings_survey`.
+- Các mục khác của mặt bằng kích thước (dim bề dày tường, cao độ sàn…) sẽ thêm thành thẻ mới khi có quy tắc.

@@ -20,7 +20,7 @@ Use the `drafting-grid-dims` skill (rules G1–G4, tool `grid_dims_band`). The o
 
 1. Level dims: `level_dims_add {viewId, typeName:<profile check type>}` (chain + overall).
    - **Done when**: every level shown has its chain + overall, in the check type, on one side. **Skip only if**: the view already has them.
-2. Windows and doors (vertical + horizontal): use the `drafting-opening-dims` skill.
+2. Windows and doors (vertical + horizontal): use the `drafting-opening-dims` skill (on floor plans: `drafting-plan-dims` card 00).
 
 ## Type
 
