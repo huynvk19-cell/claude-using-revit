@@ -16,6 +16,7 @@ Skills and domain standards that let Claude Code, via Revit MCP, do drawing prod
 | `revit-commands/` | 87 lệnh động (dynamic commands) C# cho Revit MCP: dim, tag, title, viewport, crop, lõi thang, dim bám tay vịn, filled region cột theo kết cấu, mặt cắt dọc thang (dim, tag, số bậc, cao độ tay vịn, ô hoàn thiện), kiểm tra mặt cắt ngang thang, kiểm tra chồng lắp… Không chứa giá trị riêng dự án | C# |
 | `tools/crop.ps1` | Cắt vùng ảnh sheet để kiểm tra | PowerShell |
 | `tools/work-status/` | Cửa sổ "Đang xử lý" luôn nổi trên màn hình (tuỳ chọn) | PowerShell |
+| `pyrevit/ClaudeUsingRevit.extension/` | Extension pyRevit, tab **claude using revit**: nút **Highlight** (Filled Region đỏ, trong suốt 50%, bao quanh từng đối tượng đang chọn, trong view chứa nó) và **Clear Highlight** (chỉ xoá highlight do chính mình tạo; Shift+click: chỉ view đang mở) | IronPython |
 
 ### Skills
 
@@ -105,6 +106,7 @@ Lệnh trên copy:
 - `domain/`, `templates/`, `tools/` vào `~/.claude/drafting-domain/`
 - `revit-commands/*.cs` vào thư mục dynamic-commands của Revit MCP (nếu có `-CommandsDir` hoặc biến môi trường `REVIT_MCP_COMMANDS`)
 - `-WorkStatus`: script cửa sổ trạng thái vào `%USERPROFILE%\Tools\WorkStatus`
+- `-PyRevit`: extension pyRevit vào `%APPDATA%\pyRevit\Extensions` (cần [pyRevit](https://github.com/pyrevitlabs/pyRevit)); sau đó bấm pyRevit > Reload trong Revit. Highlight có type `Highlight - Red 50%` và dấu Extensible Storage ghi tên người tạo, nên Clear Highlight không bao giờ xoá Filled Region khác hay highlight của người khác.
 
 **Lệnh dùng chung, giá trị theo dự án**: tool không ghi cứng tên type hay tên family của dự án nào. Tên dim type (`dimTypeName` / `typeName`), family cửa cuốn (`nominalFamilies` / `rollupFamilies`)… được truyền vào khi gọi, lấy từ `drafting-profile.md` của dự án. Thiếu tham số bắt buộc thì tool báo lỗi, không tự đoán.
 

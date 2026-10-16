@@ -2,7 +2,9 @@
 #   -CommandsDir <path>  : the Revit MCP 'dynamic-commands' folder; the commands in revit-commands\ are copied there
 #                          (same-name files are overwritten). Default: $env:REVIT_MCP_COMMANDS, skipped when empty.
 #   -WorkStatus          : also install the status window scripts to %USERPROFILE%\Tools\WorkStatus
-param([string]$CommandsDir = $env:REVIT_MCP_COMMANDS, [switch]$WorkStatus)
+#   -PyRevit             : also install the pyRevit extension (ribbon tab "claude using revit") to
+#                          %APPDATA%\pyRevit\Extensions; then pyRevit > Reload in Revit
+param([string]$CommandsDir = $env:REVIT_MCP_COMMANDS, [switch]$WorkStatus, [switch]$PyRevit)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $claude = Join-Path $env:USERPROFILE '.claude'
@@ -36,4 +38,14 @@ if ($WorkStatus) {
     New-Item -ItemType Directory -Force $ws | Out-Null
     Copy-Item (Join-Path $root 'tools\work-status\*.ps1') -Destination $ws -Force
     "work status -> $ws"
+}
+if ($PyRevit) {
+    $ext = Join-Path $env:APPDATA 'pyRevit\Extensions'
+    New-Item -ItemType Directory -Force $ext | Out-Null
+    Get-ChildItem (Join-Path $root 'pyrevit') -Directory -Filter '*.extension' | ForEach-Object {
+        $dst = Join-Path $ext $_.Name
+        if (Test-Path $dst) { Remove-Item $dst -Recurse -Force }
+        Copy-Item $_.FullName -Destination $ext -Recurse -Force
+        "pyrevit -> $dst"
+    }
 }
