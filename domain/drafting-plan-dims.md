@@ -1,6 +1,6 @@
 ---
 name: drafting-plan-dims
-description: "Chuẩn khai triển mặt bằng kích thước (floor plan dimension drawings): các bước và quy tắc riêng của mặt bằng. Hiện có: dim cửa tới tường và trục (PD1–PD6), tag cửa (PT1–PT6), tag room (RT1–RT4). Floor plan dimension standard."
+description: "Chuẩn khai triển mặt bằng kích thước (floor plan dimension drawings): các bước và quy tắc riêng của mặt bằng. Hiện có: dim cửa tới tường và trục (PD1–PD6), tag cửa (PT1–PT6), tag room (RT1–RT4), tag cao độ sàn (FL1–FL3). Floor plan dimension standard."
 metadata:
   updated: "2026-10-16"
   related: ["drafting-annotation", "drafting-grid-dims", "drafting-opening-dims", "drafting-opening-tags", "drafting-stair-plan", "drafting-work-rules", "drafting-tools"]
@@ -17,8 +17,9 @@ Skill: `drafting-plan-dims`; mỗi mục dưới đây là một thẻ bước c
 | 00 | Dim cửa đi, cửa sổ → tường, trục | PD1–PD6 (mục 1) |
 | 01 | Tag cửa đi, cửa sổ | PT1–PT6 (mục 2) |
 | 02 | Tag room | `drafting-annotation.md` §2 RT1–RT4: type do người dùng chọn (bổ sung → type room lân cận); không cắt tường, cạnh sàn; gần giao điểm hai đường chéo; trong room nếu đủ chỗ, không thì ngoài room có leader. |
+| 03 | Tag cao độ sàn | `drafting-annotation.md` §2b FL1–FL3: mỗi gian phòng một cao độ (trừ phòng nhỏ nằm trong phòng khác); buồng thang có cao độ bên trong và bên ngoài cửa; type theo người dùng. Cùng thẻ với `drafting-plan-floor-finish`. |
 
-Thứ tự: dim trục (`drafting-grid-dims.md`, G1–G4) → dim cửa → tag cửa → tag room. Dim khó dời hơn tag, nên dim đặt trước, tag tránh dim; tag room đặt sau cùng vì phải tránh mọi dim và tag cửa (RT2).
+Thứ tự: dim trục (`drafting-grid-dims.md`, G1–G4) → dim cửa → tag cửa → tag room → cao độ sàn. Dim khó dời hơn tag, nên dim đặt trước, tag tránh dim; tag room tránh mọi dim và tag cửa (RT2); cao độ sàn đặt sau cùng, tránh tag room (cùng muốn tâm phòng, tag room được ưu tiên).
 
 Nguồn: PD lấy từ Q1–Q5 (`drafting-opening-dims.md`, user 2026-10-06) và SA4 của mặt bằng lõi thang (`drafting-stair-plan.md`, user 2026-10-07); PT lấy từ T1–T8 (`drafting-opening-tags.md`), SB4 và bài học đợt tag cửa mặt đứng/mặt cắt 2026-10-16. Mặt bằng thường chưa có mẫu riêng của user → lần đầu làm ở một dự án: làm xong **một view mẫu**, cho user duyệt, ghi điều user chỉnh vào profile, rồi mới làm các view còn lại.
 
@@ -64,4 +65,4 @@ Kiểm tra sau khi làm: `door_window_tag_check` không còn `untagged` (trừ c
 ## Việc tồn của chuẩn
 
 - Mặt bằng chưa có lệnh khảo sát cửa riêng (vị trí mép cửa theo khung view, cửa nào đã có dim / tag): thẻ 00, 01 dùng `query_elements_with_filter` + `view_elem_boxes` + `door_window_tag_check`. Làm nhiều lần thấy chậm → viết lệnh `plan_openings_survey`.
-- Các mục khác của mặt bằng kích thước (dim bề dày tường, cao độ sàn…) sẽ thêm thành thẻ mới khi có quy tắc.
+- Các mục khác của mặt bằng kích thước (dim bề dày tường…) sẽ thêm thành thẻ mới khi có quy tắc.

@@ -34,6 +34,18 @@ Kích thước tag trên giấy (rộng × cao mm) lấy từ `drafting-profile.
 | Tag nằm ngoài phòng của nó, không có leader chỉ vào phòng | Dời về location point của room, tắt leader (`room_tags_outside`). Tag ngoài phòng có leader chỉ vào phòng là đặt theo RT4, giữ nguyên. |
 | Tag hiện "?" (room không có tên/số) | Tô đỏ bằng view override (`room_tags_broken`), báo user sửa model. **Không** tự sửa room. |
 
+## 2b. Cao độ sàn trên mặt bằng (FL1–FL3, user 2026-10-16)
+
+Áp dụng cho mặt bằng kích thước (`drafting-plan-dims`) và mặt bằng hoàn thiện sàn (`drafting-plan-floor-finish`), thẻ bước "Tag cao độ sàn". Lệnh: `room_spots_missing` (phòng chưa có cao độ + điểm đặt) → `annot_place`; buồng thang: `stair_door_spots`.
+
+| # | Quy tắc |
+|---|---|
+| FL1 | **Mỗi gian phòng có 1 cao độ sàn** (Spot Elevation trên mặt sàn của phòng). Trừ gian phòng **nằm bên trong một gian phòng khác** mà diện tích không đáng kể (ngưỡng m² trong profile, mặc định 5 m²) → không cần. Phòng đã có một cao độ bên trong → không thêm. |
+| FL2 | **Buồng thang bộ: cao độ bên trong và bên ngoài** mỗi cửa buồng thang, kể cả khi hai bên cùng cao độ (như SB3 của `drafting-stair-plan.md`, user 2026-10-15). Ra ngoài nhà ở tầng trệt: ký hiệu cao độ hiện trạng của profile nếu dự án dùng. |
+| FL3 | **Theo ý người dùng**: type cao độ do người dùng chọn (dự án cố định thì lấy trong profile); việc bổ sung trên view đã có cao độ → type đang dùng nhiều nhất trên view. Chỗ người dùng đã đặt tay thì giữ nguyên. Chưa có type → hỏi, không tự chọn. |
+
+Vị trí: trong phòng, gần giao điểm hai đường chéo (như RT3), không đè tường, cạnh sàn, dim, tag (kể cả room tag), text; không trên cung mở cửa. Room tag đặt trước, cao độ tránh nó.
+
 ## 3. View title (viewport title)
 
 **Vị trí**

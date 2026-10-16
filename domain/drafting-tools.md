@@ -60,6 +60,8 @@ metadata:
 | `dims_by_type_inventory` | Mọi dim của 1 type (hoặc ids): view, sheet, giá trị, vị trí đường dim, chữ bị dời. |
 | `opening_tags_in_views` | Phần tử (cửa…) có được thấy trong view không và có tag nào trỏ vào không. |
 | `door_window_tag_check` | Kiểm tag cửa đi / cửa sổ trong view: thiếu, hỏng, trùng, bị nét đè (audit / sửa). |
+| `room_spots_missing` | Chỉ đọc, mặt bằng (nhiều view): phòng chưa có cao độ sàn + điểm đặt theo FL1–FL3 (bỏ phòng nhỏ nằm trong phòng khác, liệt kê buồng thang); trả về items cho `annot_place` (kind spot). |
+| `stair_door_spots` | Cao độ sàn trong và ngoài cửa buồng thang (FL2, SB3) trên mặt bằng tầng và mặt bằng lõi thang. plan / apply / undo; `typeName` bắt buộc khi apply. |
 | `annot_owners` | Chỉ đọc, 1 view: ai tạo / ai sửa cuối các tag cửa và dim (worksharing), gom theo người + type; `listIds` để lấy id. Dùng trước khi dời / xoá annotation có sẵn. |
 | `annotation_override_scan` | Chú thích còn bị Override màu nét (vd. tô đỏ khi soát chưa xoá) trên các view của sheet theo tiền tố. |
 | `elements_beyond` | Nét chạy ra ngoài trục cuối. |

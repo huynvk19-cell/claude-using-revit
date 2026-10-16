@@ -27,6 +27,7 @@ description: "Giá trị riêng của dự án cho bộ skill drafting. Copy fil
 | Room tag: type cố định của dự án (RT1; để trống = user chọn mỗi việc) · kích thước tag trên giấy (rộng × cao mm) | `<tên type, không kèm tên family>` · `<vd. 24 x 8>` → `typeName`, `tagSizeMm:[24,8]` |
 | Tài khoản Revit của người dùng (annotation của mình = LastChangedBy, `annot_owners`) | `<tên đăng nhập Revit>` |
 | Mặt bằng: vùng chỉ dim trục (không dim / tag cửa, `drafting-plan-dims` 00–01) | `<vd. vùng xưởng, x > 61 m>` |
+| Cao độ sàn (FL1–FL3): type cao độ (để trống = user chọn) · ngưỡng phòng nhỏ trong phòng khác (m²) · tên room buồng thang chứa · tên view lõi thang chứa · ký hiệu cao độ hiện trạng ngoài nhà | `<vd. Plan>` · `5` → `minAreaM2` · `STAIR` → `stairRoomText` · `STAIRCASE` → `stairViewText` · `<id generic annotation, không có thì bỏ>` → `civilSymbolId` |
 | Schedule danh mục bản vẽ / print set khớp với nó | `<vd. DRAWINGS LIST>` / `<tên print set>` |
 | Sổ tay dự án (nếu có) | `<link>` |
 
