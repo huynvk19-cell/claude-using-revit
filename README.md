@@ -26,7 +26,7 @@ Skills and domain standards that let Claude Code, via Revit MCP, do drawing prod
 | `drafting-start` | **Bắt đầu việc**: mở các view đang làm (zoom theo crop), ẩn Properties + Project Browser, bật cửa sổ trạng thái |
 | `drafting-end` | **Kết thúc làm việc**: ghi log, bật lại Properties + Project Browser như lúc đầu, đóng cửa sổ trạng thái, báo cáo |
 | `drafting-review-round` | Xử lý một đợt comment (PDF + danh sách task) |
-| `drafting-grid-dims` | Dim trục theo G1–G4: mỗi nhóm trục song song đúng 1 dim cách trục + 1 dim tổng, nằm giữa mép crop và bubble, annotation crop kéo ra tới bubble |
+| `drafting-grid-dims` | Dim trục theo G1–G5: mỗi nhóm trục song song đúng 1 dim cách trục + 1 dim tổng, nằm giữa mép crop và bubble, annotation crop kéo ra tới bubble, bubble không bị che (so le đầu trục 2D) |
 | `drafting-dims` | Dim cao độ, đổi type dim (dim trục → `drafting-grid-dims`) |
 | `drafting-opening-dims` | Dim cửa sổ, cửa đi, cửa cuốn trên mặt đứng/mặt cắt (dim đứng + dim ngang) |
 | `drafting-opening-tags` | Tag cửa sổ, cửa đi, cửa cuốn trên mặt đứng/mặt cắt (T1–T8) |
@@ -69,7 +69,7 @@ Thêm quy trình mới: một file `workflows/<tên>.md` (dòng 0 = `drafting-st
 | File | Nội dung |
 |---|---|
 | `drafting-work-rules.md` | Luật cứng, nhịp làm việc, làm theo đợt + type đánh dấu (§2c), cách báo cáo |
-| `drafting-grid-dims.md` | 4 quy tắc dim trục (G1–G4): nhóm trục, 1 chain + 1 overall, dải giữa crop và bubble, annotation crop |
+| `drafting-grid-dims.md` | 5 quy tắc dim trục (G1–G5): nhóm trục, 1 chain + 1 overall, dải giữa crop và bubble, annotation crop, bubble không bị che |
 | `drafting-stair-section-parallel.md` | Mặt cắt dọc thang bộ: vế F1…, công thức R/T, lớp dim, tag, số bậc (LA–LC) |
 | `drafting-stair-section-cross.md` | Mặt cắt ngang thang bộ: dải vế, hướng vế (away / toward), lớp dim, chuỗi thông thuỷ liên tục, tag, số bậc Start and End (XA–XC) |
 | `drafting-stair-plan.md` | Mặt bằng lõi thang bộ: 3 vế V1/V2/V3, lớp dim, mép thông thuỷ, CLEAR chỉ cho bề rộng vế, công thức chiều dài vế, tag, đếm bậc, stair path (SA1–SD) |

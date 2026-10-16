@@ -6,7 +6,7 @@
 ## Do
 
 - 2D ends only. `align_grid_ends` preview → apply lines the bubbles up.
-- Overlapping bubbles → stagger one 2D end (`grid_bubble_elbow` often fails: then stagger the 2D end).
+- Overlapping or covered bubbles → `drafting-grid-dims` card 03 (G5): stagger one 2D end outward by ≥ bubble diameter + 2 paper mm (`grid_bubble_elbow` often fails).
 - Pull grids out only when asked, and move the grid dims with them.
 
 ## Done when
