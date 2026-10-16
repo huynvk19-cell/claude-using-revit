@@ -1,4 +1,4 @@
-# 00 · Tag room (tag phòng)
+# 02 · Tag room (tag phòng)
 
 **Skill** `drafting-plan-dims` · **Standard** `drafting-annotation.md` §2 RT1–RT4 · **Tools** `room_tags_missing`, `annot_place`, `room_tags_broken`, `tag_leaders_info`, `delete_element`, `mark_types`, `export_sheet_images`
 **Applies to** every floor plan view of the job.
