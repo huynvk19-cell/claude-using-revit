@@ -5,7 +5,7 @@ description: "Develop floor plan dimension drawings (khai triển mặt bằng k
 
 # Floor plan dimensions (khai triển mặt bằng kích thước)
 
-**Tools** (load all in one ToolSearch call): `annot_owners`, `annot_place`, `annotation_overlaps`, `delete_element`, `dims_at_positions`, `dims_edit`, `dims_text_move`, `door_window_tag_check`, `export_sheet_images`, `list_view_dims`, `mark_types`, `query_elements_with_filter`, `room_spots_missing`, `room_tags_broken`, `room_tags_missing`, `stair_door_spots`, `tag_leaders_info`, `tag_reposition`, `ui_view_focus`, `view_elem_boxes`.
+**Tools** (load all in one ToolSearch call): `annot_owners`, `annot_place`, `annotation_overlaps`, `delete_element`, `dims_at_positions`, `dims_edit`, `dims_text_move`, `door_window_tag_check`, `export_sheet_images`, `floor_levels_probe`, `list_view_dims`, `mark_types`, `query_elements_with_filter`, `room_spots_missing`, `room_tags_broken`, `room_tags_missing`, `stair_door_spots`, `tag_leaders_info`, `tag_reposition`, `ui_view_focus`, `view_elem_boxes`.
 
 Standard: `~/.claude/drafting-domain/drafting-plan-dims.md` (Vietnamese): PD1–PD6 door/window dims, PT1–PT6 door/window tags; room tag rules RT1–RT4 in `drafting-annotation.md` §2, floor spot rules FL1–FL3 in §2b.
 

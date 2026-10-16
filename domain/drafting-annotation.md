@@ -34,13 +34,14 @@ Kích thước tag trên giấy (rộng × cao mm) lấy từ `drafting-profile.
 | Tag nằm ngoài phòng của nó, không có leader chỉ vào phòng | Dời về location point của room, tắt leader (`room_tags_outside`). Tag ngoài phòng có leader chỉ vào phòng là đặt theo RT4, giữ nguyên. |
 | Tag hiện "?" (room không có tên/số) | Tô đỏ bằng view override (`room_tags_broken`), báo user sửa model. **Không** tự sửa room. |
 
-## 2b. Cao độ sàn trên mặt bằng (FL1–FL3, user 2026-10-16)
+## 2b. Cao độ sàn trên mặt bằng (FL1–FL3, FL1b, user 2026-10-16)
 
 Áp dụng cho mặt bằng kích thước (`drafting-plan-dims`) và mặt bằng hoàn thiện sàn (`drafting-plan-floor-finish`), thẻ bước "Tag cao độ sàn". Lệnh: `room_spots_missing` (phòng chưa có cao độ + điểm đặt) → `annot_place`; buồng thang: `stair_door_spots`.
 
 | # | Quy tắc |
 |---|---|
 | FL1 | **Mỗi gian phòng có 1 cao độ sàn** (Spot Elevation trên mặt sàn của phòng). Trừ gian phòng **nằm bên trong một gian phòng khác** mà diện tích không đáng kể (ngưỡng m² trong profile, mặc định 5 m²) → không cần. Phòng đã có một cao độ bên trong → không thêm. |
+| FL1b | **Phòng có nhiều cao độ sàn** (không có sàn chung bên dưới mà gồm nhiều sàn nhỏ chênh cao độ, có ramp dốc): cao độ **mỗi mặt sàn phẳng** (mỗi cao độ một cái) và **hai đầu mỗi ramp** (đầu thấp, đầu cao), trừ đầu ramp đã chạm sàn phẳng cùng cao độ. Điểm đầu ramp đặt sát mép đầu (1 mm) để số đọc đúng cao độ đầu ramp. `room_spots_missing` tự nhận ra (`Levels`). User, 2026-10-16. |
 | FL2 | **Buồng thang bộ: cao độ bên trong và bên ngoài** mỗi cửa buồng thang, kể cả khi hai bên cùng cao độ (như SB3 của `drafting-stair-plan.md`, user 2026-10-15). Ra ngoài nhà ở tầng trệt: ký hiệu cao độ hiện trạng của profile nếu dự án dùng. |
 | FL3 | **Theo ý người dùng**: type cao độ do người dùng chọn (dự án cố định thì lấy trong profile); việc bổ sung trên view đã có cao độ → type đang dùng nhiều nhất trên view. Chỗ người dùng đã đặt tay thì giữ nguyên. Chưa có type → hỏi, không tự chọn. |
 

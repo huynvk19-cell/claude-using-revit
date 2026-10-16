@@ -1,6 +1,6 @@
 # 03 · Floor spot elevations (tag cao độ sàn)
 
-**Skill** `drafting-plan-dims` (same card in `drafting-plan-floor-finish`) · **Standard** `drafting-annotation.md` §2b FL1–FL3 · **Tools** `room_spots_missing`, `stair_door_spots`, `annot_place`, `delete_element`, `annotation_overlaps`, `mark_types`, `ui_view_focus`, `export_sheet_images`
+**Skill** `drafting-plan-dims` (same card in `drafting-plan-floor-finish`) · **Standard** `drafting-annotation.md` §2b FL1–FL3 (FL1b: several floor levels in one room) · **Tools** `room_spots_missing`, `floor_levels_probe`, `stair_door_spots`, `annot_place`, `delete_element`, `annotation_overlaps`, `mark_types`, `ui_view_focus`, `export_sheet_images`
 **Applies to** every floor plan view of the job, except OVERALL / key plans. Runs after the room tags, so the spots keep clear of them.
 
 ## Do
@@ -10,13 +10,16 @@
    ```
    room_spots_missing {viewIds:[batch], typeName, minAreaM2:<profile, default 5>, stairRoomText:<profile>}
    ```
-   Per view: `Rooms`, `HasSpot`, `Missing`, `Nested` (small rooms inside another room: no spot, list them in the report), `StairRooms` (step 4), `Problems`, `Items`.
+   Per view: `Rooms`, `HasSpot`, `Missing`, `Nested` (small rooms inside another room: no spot, list them in the report), `StairRooms` (step 4), `Levels`, `Problems`, `Items`.
+   - **Rooms at several floor levels (FL1b)**: no single floor under the room, but floor pieces at different heights and ramps inside it. The command finds them itself (`Levels`: "<room>: N levels/ends") and gives one spot per flat level + one at each ramp end (low and high) that no flat piece at that height touches. Ramp-end spots sit 1 mm in from the end edge so they read the end height; they slide only along that edge.
+   - `no host floor under the room (linked floor?)` with no `Levels` line → look at the floors yourself before listing it (`floor_levels_probe {viewId}`: every host floor / ramp top face with its heights and slope): pieces may lie off the room's centre.
+   - Dependent views: the spots and tags of the primary view count (they own the annotations).
 3. Per view, open it (`ui_view_focus {action:"open", viewId}`), then
    ```
    annot_place {mode:"preview", viewId, items:<Items>}
    annot_place {mode:"apply",   viewId, items:<Items>, logPath:"<review>/floor-spots-<viewId>.json"}
    ```
-   Check each spot's `ElevationMm` against the room's level (a value far off = wrong floor under the point: delete it, `delete_element`, and list the room).
+   Check each spot's `ElevationMm` against the room's level (a value far off = wrong floor under the point: delete it, `delete_element`, and list the room). Ramp ends: `ElevationMm` = the end height of the ramp (±1 mm); `annot_place` takes sloped top faces too.
 4. **Stair enclosures (FL2)**: inside and outside every stair door, same level or not:
    ```
    stair_door_spots {mode:"plan",  viewIds:[batch], typeName:<check spot type>, stairRoomText, stairViewText, civilSymbolId:<profile, optional>}
@@ -28,7 +31,7 @@
 
 ## Done when
 
-- `room_spots_missing` again: `Missing` = 0 on every view, except rooms in `Problems` with their reason (→ Việc tồn); `Nested` rooms listed in the report.
+- `room_spots_missing` again: `Missing` = 0 on every view, except rooms in `Problems` with their reason (→ Việc tồn); `Nested` rooms listed in the report. A room with several floor levels has a spot on every level and at every ramp end (FL1b).
 - Every stair door seen has a spot inside and outside (`stair_door_spots` plan: every row `existing spot – skipped` or listed).
 - On the image: each spot inside its room, off walls, dims, tags, texts and door swings.
 

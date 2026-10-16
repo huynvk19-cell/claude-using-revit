@@ -22,7 +22,7 @@
 // ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
 // Read-only. For each floor plan view: the rooms seen in the view (rooms of the view's level inside the crop, plus rooms
 //    the view shows) and whether each one already has a spot elevation of the view inside it (spot origin or leader end
-//    in the room). Rules FL1-FL3 (drafting-plan-dims.md / drafting-plan-floor-finish.md "Cao độ sàn"):
+//    in the room; a dependent view counts the annotations owned by its primary view). Rules FL1-FL3 (drafting-plan-dims.md / drafting-plan-floor-finish.md "Cao độ sàn"):
 //    - FL1: every room gets one floor spot elevation, except a room enclosed by another room (it sits in an inner
 //      boundary loop of that room) whose area is below minAreaM2 (Nested, no spot);
 //    - FL2: stair enclosures (room name contains stairRoomText) need a spot inside and outside each door: they are only
@@ -33,6 +33,12 @@
 //    lies in the room and crosses no wall, no floor edge, no dim line and no tag / text / spot; else the nearest clear
 //    point anywhere in the room. The floor under the point: a host Floor (or landing) hit by a ray down at the room's
 //    level; none (linked floor only) -> Problem. Items are ready for annot_place {mode, viewId, items} (kind 'spot').
+//    - FL1b: a room whose host floors (seen in the view, centre inside the room) lie at SEVERAL levels (floor pieces at
+//      different heights, ramps): one spot per flat level (on its largest piece, near its centre) + one at each end of
+//      every sloped piece (ramp: low end and high end, 1 mm in from the end edge so the value reads the end height,
+//      sliding only along that edge) unless a flat piece at the same
+//      height touches that end or an existing spot of the view sits there. The room's single-spot rule is replaced by
+//      these targets (Levels = their count); floor-piece edges do not block the box in this case (landings are narrow).
 //    Coordinates: view frame mm (Right / Up from View.Origin), as annot_place / view_elem_boxes.
 using System;
 using System.Collections.Generic;
@@ -56,6 +62,9 @@ public static class RoomSpotsMissing
         public Box Grow(double d) { return new Box(R0 - d, U0 - d, R1 + d, U1 + d); }
         public double Area { get { return (R1 - R0) * (U1 - U0); } }
     }
+
+    // top face of a host floor in the view frame; DR / DU = down-slope direction (0 when flat)
+    class Piece { public int Id; public bool Flat; public Box B; public double Zmin, Zmax, DR, DU; public List<double[]> Pts; }
 
     // Liang-Barsky: does the segment touch the box (crossing or lying inside)?
     static bool SegHits(Seg s, Box b)
@@ -97,6 +106,7 @@ public static class RoomSpotsMissing
             double sc = v.Scale;
             Func<XYZ, double[]> F = p => new[] { (p - O).DotProduct(R) * MM, (p - O).DotProduct(U) * MM };
             Func<double, double, double, XYZ> P = (r, u, z) => { var p = O + R * (r / MM) + U * (u / MM); return new XYZ(p.X, p.Y, z); };
+            var primaryId = v.GetPrimaryViewId(); // dependent view: its annotations are owned by the primary view
 
             Box crop = null;
             if (v.CropBoxActive)
@@ -123,7 +133,7 @@ public static class RoomSpotsMissing
 
             // spots of the view and the spot type in use
             var spots = new FilteredElementCollector(doc, v.Id).OfClass(typeof(SpotDimension)).Cast<SpotDimension>()
-                .Where(s => s.OwnerViewId == v.Id && s.SpotDimensionType != null && s.SpotDimensionType.StyleType == DimensionStyleType.SpotElevation).ToList();
+                .Where(s => (s.OwnerViewId == v.Id || s.OwnerViewId == primaryId) && s.SpotDimensionType != null && s.SpotDimensionType.StyleType == DimensionStyleType.SpotElevation).ToList();
             var spotPts = new List<XYZ>();
             foreach (var s in spots)
             {
@@ -156,13 +166,52 @@ public static class RoomSpotsMissing
                 }
             };
             var gopt = new Options { View = v };
-            foreach (var bic in new[] { BuiltInCategory.OST_Walls, BuiltInCategory.OST_Floors })
-                foreach (var e in new FilteredElementCollector(doc, v.Id).OfCategory(bic).WhereElementIsNotElementType())
-                    try { addGeo(e.get_Geometry(gopt)); } catch { }
+            foreach (var e in new FilteredElementCollector(doc, v.Id).OfCategory(BuiltInCategory.OST_Walls).WhereElementIsNotElementType())
+                try { addGeo(e.get_Geometry(gopt)); } catch { }
+            int floorSeg0 = segs.Count;
+            foreach (var e in new FilteredElementCollector(doc, v.Id).OfCategory(BuiltInCategory.OST_Floors).WhereElementIsNotElementType())
+                try { addGeo(e.get_Geometry(gopt)); } catch { }
+            int floorSeg1 = segs.Count;
+
+            // FL1b: top faces of the host floors seen in the view (flat or sloped pieces)
+            var pieces = new List<Piece>();
+            var fopt = new Options { DetailLevel = ViewDetailLevel.Fine };
+            foreach (var e in new FilteredElementCollector(doc, v.Id).OfCategory(BuiltInCategory.OST_Floors).WhereElementIsNotElementType())
+            {
+                var st = new Stack<GeometryElement>();
+                try { st.Push(e.get_Geometry(fopt)); } catch { continue; }
+                while (st.Count > 0)
+                {
+                    var ge = st.Pop(); if (ge == null) continue;
+                    foreach (var g in ge)
+                    {
+                        if (g is GeometryInstance gi) { st.Push(gi.GetInstanceGeometry()); continue; }
+                        if (!(g is Solid so)) continue;
+                        foreach (Face f in so.Faces)
+                        {
+                            var pf = f as PlanarFace;
+                            if (pf == null || pf.FaceNormal.Z < 0.2 || f.Area * 0.09290304 < 0.5) continue;
+                            var pts = new List<XYZ>();
+                            foreach (EdgeArray ea in f.EdgeLoops) foreach (Edge ed in ea) pts.AddRange(ed.Tessellate());
+                            if (pts.Count == 0) continue;
+                            var fs = pts.Select(F).ToList();
+                            var dn = new XYZ(pf.FaceNormal.X, pf.FaceNormal.Y, 0);
+                            bool flat = pf.FaceNormal.Z > 0.99995; // < ~1 % slope
+                            pieces.Add(new Piece
+                            {
+                                Id = e.Id.IntegerValue, Flat = flat,
+                                B = new Box(fs.Min(x => x[0]), fs.Min(x => x[1]), fs.Max(x => x[0]), fs.Max(x => x[1])),
+                                Zmin = pts.Min(p => p.Z) * MM, Zmax = pts.Max(p => p.Z) * MM,
+                                DR = flat ? 0 : dn.Normalize().DotProduct(R), DU = flat ? 0 : dn.Normalize().DotProduct(U), Pts = fs
+                            });
+                        }
+                    }
+                }
+            }
             var annBoxes = new List<Box>();
             foreach (var e in new FilteredElementCollector(doc, v.Id).WhereElementIsNotElementType())
             {
-                if (e.OwnerViewId != v.Id || e.Category == null) continue;
+                if ((e.OwnerViewId != v.Id && e.OwnerViewId != primaryId) || e.Category == null) continue;
                 try
                 {
                     if (e is Dimension d && !(e is SpotDimension))
@@ -219,7 +268,7 @@ public static class RoomSpotsMissing
             }
             Func<Room, double, double, bool> inRoom = (r, rr, uu) => { try { return r.IsPointInRoom(P(rr, uu, zTest[r.Id.IntegerValue])); } catch { return false; } };
 
-            var nested = new List<string>(); var stairs = new List<string>(); var problems = new List<string>(); var items = new List<object>();
+            var nested = new List<string>(); var stairs = new List<string>(); var problems = new List<string>(); var items = new List<object>(); var levelsOut = new List<string>();
             var placed = new List<Box>();
             int has = 0;
             double w = size[0] * sc, h = size[1] * sc, c = clearMm * sc;
@@ -232,15 +281,106 @@ public static class RoomSpotsMissing
                 if (!rect.ContainsKey(id)) continue;
                 if (only != null && !only.Contains(id)) continue;
                 string label = r.Number + " " + r.Name;
-                if (spotPts.Any(p => inRoom(r, F(p)[0], F(p)[1]))) { has++; continue; }
                 var box = rect[id];
                 double areaM2 = r.Area * 0.09290304;
+                // FL1b: host floor pieces of this room (centre of the part inside the crop lies in the room)
+                var rp = pieces.Where(p =>
+                {
+                    var q = crop == null ? p.B : new Box(Math.Max(p.B.R0, crop.R0), Math.Max(p.B.U0, crop.U0), Math.Min(p.B.R1, crop.R1), Math.Min(p.B.U1, crop.U1));
+                    if (crop != null && (q.R0 >= q.R1 || q.U0 >= q.U1)) return false;
+                    return inRoom(r, (q.R0 + q.R1) / 2, (q.U0 + q.U1) / 2);
+                }).ToList();
+                bool multi = rp.Any(p => !p.Flat) || rp.Where(p => p.Flat).Select(p => Math.Round(p.Zmax / 5)).Distinct().Count() > 1;
+                if (!multi && spotPts.Any(p => inRoom(r, F(p)[0], F(p)[1]))) { has++; continue; }
                 // FL1: enclosed by another room (inside one of its inner loops) and small -> no spot
                 var host = rooms.FirstOrDefault(o => o.Id != r.Id && holes.ContainsKey(o.Id.IntegerValue)
                     && holes[o.Id.IntegerValue].Any(hb => hb.Grow(1).Holds(box.R0, box.U0) && hb.Grow(1).Holds(box.R1, box.U1)));
                 if (host != null && areaM2 < minArea) { nested.Add(label + " (" + Math.Round(areaM2, 1) + " m2 in " + host.Number + ")"); continue; }
                 if (stairText.Length > 0 && (r.Name ?? "").ToUpperInvariant().Contains(stairText)) { stairs.Add(label); continue; }
                 if (string.IsNullOrEmpty(typeName)) { problems.Add(label + ": no spot type (pass typeName)"); continue; }
+
+                if (multi)
+                {
+                    // targets: one per flat level (largest piece), both ends of every sloped piece
+                    var tg = new List<Tuple<Piece, double, double, double, string>>();
+                    foreach (var g in rp.Where(p => p.Flat).GroupBy(p => Math.Round(p.Zmax / 5)))
+                    {
+                        var big = g.OrderByDescending(p => p.B.Area).First();
+                        // anchor: the middle of the part of the piece inside the room and the crop
+                        var sp = new List<double[]>();
+                        for (int i = 0; i <= 16; i++) for (int k = 0; k <= 16; k++)
+                        {
+                            double rr = big.B.R0 + (big.B.R1 - big.B.R0) * i / 16.0, uu = big.B.U0 + (big.B.U1 - big.B.U0) * k / 16.0;
+                            if ((crop == null || crop.Holds(rr, uu)) && inRoom(r, rr, uu)) sp.Add(new[] { rr, uu });
+                        }
+                        if (sp.Count == 0) continue;
+                        double mr = sp.Average(q => q[0]), mu = sp.Average(q => q[1]);
+                        var an = sp.OrderBy(q => Math.Pow(q[0] - mr, 2) + Math.Pow(q[1] - mu, 2)).First();
+                        tg.Add(Tuple.Create(big, an[0], an[1], big.Zmax, "flat"));
+                    }
+                    double inset = Math.Max(1.5 * sc, 200);
+                    Action<Piece, double, double, double, string> addEnd = (p, er, eu, ez, what) =>
+                    {
+                        if (rp.Any(o => o.Flat && Math.Abs(o.Zmax - ez) < 5 && o.B.Grow(inset + 100).Holds(er, eu))) return;
+                        if (tg.Any(t => Math.Abs(t.Item4 - ez) < 5 && Math.Sqrt(Math.Pow(t.Item2 - er, 2) + Math.Pow(t.Item3 - eu, 2)) < 3000)) return;
+                        if (crop != null && !crop.Holds(er, eu)) return; // that end is drawn in another view
+                        tg.Add(Tuple.Create(p, er, eu, ez, what));
+                    };
+                    foreach (var p in rp.Where(p => !p.Flat))
+                    {
+                        // end edges: face boundary points furthest along / against the down-slope direction, mid-point, inset
+                        var pr = p.Pts.Select(q => new { q, s = q[0] * p.DR + q[1] * p.DU }).ToList();
+                        double sMax = pr.Max(x => x.s), sMin = pr.Min(x => x.s);
+                        var lo = pr.Where(x => x.s > sMax - 5).Select(x => x.q).ToList();
+                        var hi = pr.Where(x => x.s < sMin + 5).Select(x => x.q).ToList();
+                        double di = Math.Min(1, (sMax - sMin) / 2); // 1 mm in: the spot reads the end height (10 mm on a 5 % ramp already shows 0.5 mm off)
+                        // the middle of the part of the end edge (moved in by di) that lies in the room and the crop
+                        Func<List<double[]>, double, double[]> mid = (ed, sg) =>
+                        {
+                            var a = ed.OrderBy(q => q[0] * -p.DU + q[1] * p.DR).First(); var b = ed.OrderBy(q => q[0] * -p.DU + q[1] * p.DR).Last();
+                            var ok2 = new List<double[]>();
+                            for (int k = 0; k <= 40; k++)
+                            {
+                                double rr = a[0] + (b[0] - a[0]) * k / 40.0 + sg * p.DR * di, uu = a[1] + (b[1] - a[1]) * k / 40.0 + sg * p.DU * di;
+                                if ((crop == null || crop.Holds(rr, uu)) && inRoom(r, rr, uu)) ok2.Add(new[] { rr, uu });
+                            }
+                            return ok2.Count == 0 ? null : ok2[ok2.Count / 2];
+                        };
+                        var mLo = mid(lo, -1); var mHi = mid(hi, 1);
+                        if (mLo != null) addEnd(p, mLo[0], mLo[1], p.Zmin, "ramp low end");
+                        if (mHi != null) addEnd(p, mHi[0], mHi[1], p.Zmax, "ramp high end");
+                    }
+                    var mSegs = segs.Where((s, i) => i < floorSeg0 || i >= floorSeg1).ToList();
+                    foreach (var t in tg)
+                    {
+                        var pc = t.Item1; double ar = t.Item2, au = t.Item3;
+                        if (spotPts.Select(F).Any(q => pc.B.Grow(100).Holds(q[0], q[1]) && (t.Item5 == "flat" || Math.Sqrt(Math.Pow(q[0] - ar, 2) + Math.Pow(q[1] - au, 2)) < 4000))) { has++; continue; }
+                        var inner = pc.B.Grow(t.Item5 == "flat" ? -50 : -0.5);
+                        var zoneM = pc.B.Grow((w + h) * 2);
+                        var lS = mSegs.Where(s => SegHits(s, zoneM)).Concat(bnd[id]).ToList();
+                        var lA = annBoxes.Where(b => b.Hits(zoneM)).ToList();
+                        Func<double, double, bool> okM = (rr, uu) =>
+                        {
+                            if (!inner.Holds(rr, uu)) return false;
+                            var bx = boxAt(rr, uu);
+                            if (crop != null && (bx.R0 < crop.R0 || bx.R1 > crop.R1 || bx.U0 < crop.U0 || bx.U1 > crop.U1)) return false;
+                            var pts = new[] { new[] { bx.R0, bx.U0 }, new[] { bx.R1, bx.U0 }, new[] { bx.R0, bx.U1 }, new[] { bx.R1, bx.U1 }, new[] { rr, uu } };
+                            if (!pts.All(q => inRoom(r, q[0], q[1]))) return false;
+                            return !lS.Any(s => SegHits(s, bx)) && !lA.Any(b => b.Hits(bx)) && !placed.Any(b => b.Hits(bx));
+                        };
+                        double sm = Math.Max(h / 4, 1), lm = maxShiftMm * sc;
+                        double[] pk = null;
+                        var cl = new List<double[]>();
+                        if (t.Item5 == "flat") { for (double dx = -lm; dx <= lm + 1e-6; dx += sm) for (double dy = -lm; dy <= lm + 1e-6; dy += sm) cl.Add(new[] { ar + dx, au + dy }); }
+                        else for (double dt = -lm * 3; dt <= lm * 3 + 1e-6; dt += sm) cl.Add(new[] { ar - pc.DU * dt, au + pc.DR * dt }); // ramp end: along the end edge only
+                        foreach (var q in cl.OrderBy(q => Math.Pow(q[0] - ar, 2) + Math.Pow(q[1] - au, 2))) if (okM(q[0], q[1])) { pk = q; break; }
+                        if (pk == null) { problems.Add(label + ": " + t.Item5 + " " + Math.Round(t.Item4) + " on floor " + pc.Id + ": no clear place"); continue; }
+                        placed.Add(boxAt(pk[0], pk[1]));
+                        items.Add(new { kind = "spot", elementId = pc.Id, typeName, right = Math.Round(pk[0]), up = Math.Round(pk[1]), note = label + " · " + t.Item5 + " · ~" + Math.Round(t.Item4) + " mm" });
+                    }
+                    levelsOut.Add(label + ": " + tg.Count + " levels/ends");
+                    continue;
+                }
 
                 // anchor: diagonal intersection, else the nearest point inside the room
                 var A = new[] { (box.R0 + box.R1) / 2, (box.U0 + box.U1) / 2 };
@@ -298,7 +438,7 @@ public static class RoomSpotsMissing
             outViews.Add(new
             {
                 ViewId = vid, View = v.Name, Rooms = rooms.Count, HasSpot = has, Missing = items.Count + problems.Count,
-                SpotType = typeName ?? "?", Nested = nested, StairRooms = stairs, Problems = problems, Items = items
+                SpotType = typeName ?? "?", Levels = levelsOut, Nested = nested, StairRooms = stairs, Problems = problems, Items = items
             });
         }
         return new { Views = outViews };

@@ -7,7 +7,7 @@ description: "Develop floor finish plan drawings (khai triển mặt bằng hoà
 
 **Status: started.** One card so far (floor spot elevations); the finish mark cards are added when their rules are decided with the user.
 
-**Tools** (load all in one ToolSearch call, when a card needs them): `annot_place`, `annotation_overlaps`, `delete_element`, `export_sheet_images`, `finish_mark_place`, `finish_marks_snap`, `finish_marks_survey`, `mark_types`, `room_spots_missing`, `room_tags_missing`, `stair_door_spots`, `ui_view_focus`.
+**Tools** (load all in one ToolSearch call, when a card needs them): `annot_place`, `annotation_overlaps`, `delete_element`, `export_sheet_images`, `finish_mark_place`, `finish_marks_snap`, `finish_marks_survey`, `floor_levels_probe`, `mark_types`, `room_spots_missing`, `room_tags_missing`, `stair_door_spots`, `ui_view_focus`.
 
 Standard: `~/.claude/drafting-domain/drafting-plan-floor-finish.md` (Vietnamese). Sibling skill: `drafting-plan-dims`, which covers the same floor plan views.
 
