@@ -10,10 +10,10 @@ Each row calls a skill; the skill's card list gives the steps and the cards give
 | 1 | `drafting-views-sheets` | 00–04 | every view |
 | 2 | `drafting-grid-dims` | all | every view |
 | 3 | `drafting-plan-dims` | all | every view |
-| 3b | `drafting-plan-floor-finish` | all | the floor finish plans of the job (a view runs the floor spot card from one skill only) |
+| 3b | `drafting-plan-floor-finish` | all | the floor finish plans of the job (a view runs the floor spot and slope mark cards from one skill only) |
 | 4 | `drafting-tags-titles` | 00, 01 | every view (00), the sheets of the job (01) |
 | 5 | `drafting-views-sheets` | 07 | the sheets of the job |
 | 6 | `drafting-visual-check` | — | every view |
 | 7 | `drafting-end` | — | once |
 
-Why this order: crop and grid ends decide where grid dims go (1 → 2); inside `drafting-plan-dims` (3) the door / window dims come first (card 00), then the door / window tags that keep clear of them (01), then the room tags that keep clear of every dim and tag (02), then the floor spots that keep clear of the room tags (03), then the wall tags that keep clear of everything placed before (04), all after the grid dims; the floor finish plans run the same floor spot step from `drafting-plan-floor-finish` (3b); the room tag check and titles go after every tag, dim and crop change (4); the drawing list last (5).
+Why this order: crop and grid ends decide where grid dims go (1 → 2); inside `drafting-plan-dims` (3) the door / window dims come first (card 00), then the door / window tags that keep clear of them (01), then the room tags that keep clear of every dim and tag (02), then the floor spots that keep clear of the room tags (03), then the wall tags and the slope marks that keep clear of everything placed before (04, 05), all after the grid dims; the floor finish plans run the same floor spot and slope mark steps from `drafting-plan-floor-finish` (3b); the room tag check and titles go after every tag, dim and crop change (4); the drawing list last (5).

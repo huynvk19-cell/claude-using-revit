@@ -29,8 +29,8 @@ Do **not** read the whole `drafting-domain/` folder or every skill. Pick the tas
 | Stair core **plan** | `drafting-stair-plan` | `drafting-stair-plan.md` |
 | Stair **section along the flights** (parallel to the stair path) | `drafting-stair-section-parallel` | `drafting-stair-section-parallel.md` |
 | Stair section **across** the flights (not parallel: flights seen end-on) | `drafting-stair-section-cross` | `drafting-stair-section-cross.md` |
-| Floor plan dimension drawings (khai triển mặt bằng kích thước): door/window dims and tags on plans, tag room, floor spot elevations, wall tags… | `drafting-plan-dims` | `drafting-plan-dims.md` |
-| Floor finish plan (khai triển mặt bằng hoàn thiện sàn): tag cao độ sàn, mã hoàn thiện sàn… | `drafting-plan-floor-finish` | `drafting-plan-floor-finish.md` |
+| Floor plan dimension drawings (khai triển mặt bằng kích thước): door/window dims and tags on plans, tag room, floor spot elevations, wall tags, slope marks… | `drafting-plan-dims` | `drafting-plan-dims.md` |
+| Floor finish plan (khai triển mặt bằng hoàn thiện sàn): tag cao độ sàn, ký hiệu độ dốc, mã hoàn thiện sàn… | `drafting-plan-floor-finish` | `drafting-plan-floor-finish.md` |
 | Reflected ceiling plans (khai triển mặt bằng trần): tag room… | `drafting-ceiling-plan` | `drafting-ceiling-plan.md` |
 | Room tags (fix outside / "?"), view titles | `drafting-tags-titles` | `drafting-annotation.md` |
 | Viewports, crops, templates, links, drawing list + print set | `drafting-views-sheets` | `drafting-views-sheets.md` |

@@ -1,6 +1,6 @@
 /* mcp-tool
 {
-  "description": "Read-only, ONE plan view: host floors / ramps seen in the view with their top faces (z range, slope, view-frame box).",
+  "description": "Read-only, ONE plan view: host floors / ramps / roofs seen in the view with their top faces (z range, slope, view-frame box).",
   "inputSchema": {
     "type": "object",
     "properties": {
@@ -14,7 +14,7 @@
 }
 */
 // ---- Details ----
-// For each host Floor / Ramp / landing visible in the view: every upward-facing face of its solid (normal.Z > 0.2):
+// For each host Floor / Ramp / landing / Roof visible in the view: every upward-facing face of its solid (normal.Z > 0.2):
 //    view-frame box (Right / Up mm from View.Origin), z min / max of the face (mm, project), slope % and the
 //    down-slope direction in the view frame. Use to find floor pieces at different levels and ramp ends (FL1).
 using System;
@@ -35,7 +35,7 @@ public static class FloorLevelsProbe
         HashSet<int> only = args["ids"] is JArray a && a.Count > 0 ? new HashSet<int>(a.Select(t => (int)t)) : null;
         XYZ O = v.Origin, R = v.RightDirection, U = v.UpDirection;
         Func<XYZ, double[]> F = p => new[] { (p - O).DotProduct(R) * MM, (p - O).DotProduct(U) * MM };
-        var cats = new List<BuiltInCategory> { BuiltInCategory.OST_Floors, BuiltInCategory.OST_Ramps, BuiltInCategory.OST_StairsLandings };
+        var cats = new List<BuiltInCategory> { BuiltInCategory.OST_Floors, BuiltInCategory.OST_Ramps, BuiltInCategory.OST_StairsLandings, BuiltInCategory.OST_Roofs };
         var res = new List<object>();
         var opt = new Options { ComputeReferences = false, DetailLevel = ViewDetailLevel.Fine };
         foreach (var e in new FilteredElementCollector(doc, v.Id).WherePasses(new ElementMulticategoryFilter(cats)).WhereElementIsNotElementType())
