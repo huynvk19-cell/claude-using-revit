@@ -28,7 +28,7 @@ Load `drafting-session` first if it is not loaded yet (hard rules, batches, mark
 
 Every workflow starts here (its row 0), before the checklist and before any change. One pass, never view by view:
 
-1. **Take what the user gave**: view names, sheet numbers, a sheet prefix or range, or "cả bộ" (every view of the workflow's kinds on the job's sheets). A **sheet** means every view placed on it of the workflow's kinds (legends, schedules, drafting views out).
+1. **Scope = the whole workflow by default** (user rule): "workflow X" with no sheet or view named means **every sheet of the open model that holds a view of the workflow's kinds** (minus the profile's excluded views), never just the sheet or view that happens to be open. Only sheets / views the user names (numbers, names, a prefix or range) narrow it. A **sheet** means every view placed on it of the workflow's kinds (legends, schedules, drafting views out).
 2. **One read for all**: `sheet_views_ids` once per sheet prefix (not once per sheet), `sheet_browser_names` for the exact names (`drafting-start` step 2).
 3. **Build two lists**:
    - **Views of the job**, sorted into the workflow's parts (by ViewType and topic), each part cut into batches of up to 10 views (`A1`, `A2`…). "Every view" in a workflow row = this list.
