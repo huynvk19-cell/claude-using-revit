@@ -1,33 +1,39 @@
 # 03 · Grid bubbles not covered (bubble trục không bị che)
 
-**Skill** `drafting-grid-dims` · **Standard** `drafting-grid-dims.md` G5 · **Tools** `align_grid_ends`, `grid_dims_band`, `view_elem_boxes`, `move_element`, `export_sheet_images`
+**Skill** `drafting-grid-dims` · **Standard** `drafting-grid-dims.md` G5 · **Tools** `align_grid_ends`, `grid_bubble_elbow`, `grid_dims_band`, `view_elem_boxes`, `move_element`, `export_sheet_images`
 **Applies to** every view of the job; one view per call.
 
 ## Do
 
-1. **Find the covered bubbles** on the exported view and sheet (`drafting-visual-check`), and from the grid spacing: two parallel grids closer than the bubble diameter + 2 paper mm overlap at their bubbles.
+1. **Find the covered bubbles** on the exported view and sheet (`drafting-visual-check`), and from the grid spacing: `grid_bubble_elbow {viewId, mode:"plan"}` lists per group and side the bubble pairs that overlap (closer than bubble + 0.5 paper mm: `Overlaps`, with the grid to elbow, the side and the offset), the ends off the row (`OffRow`), the elbows already there (`Elbows`, bubble offset from its grid line) and the measured bubble size.
    Covered = a bubble on another bubble, or under a dim, tag, text, view marker (section / elevation / callout head), filled / masking region or model linework, another viewport, the title block or outside the sheet border; or a bubble left inside the crop while the rest of its group sits on the bubble row.
-2. **Fix by the 2D ends only** (`align_grid_ends`, never 3D extents):
-   - **Bubble left inside the crop / on the drawing** (a whole side, or a short grid) → move its 2D end out to its group's bubble row outside the crop (`side:"low"|"high"` keeps the other end):
-     `align_grid_ends {mode:"apply", viewId, only:[names], targets:{<group>:{low, high}}, logPath}` with `low` / `high` = the row's current values (read them first with `mode:"preview"`).
-   - **Two bubbles overlapping** (close or coincident grids) → stagger **one** of them **outward** (away from the drawing, so the grid dims between crop and bubbles stay put): the same command with `targets` = row value ∓ the stagger on that side. Stagger ≥ bubble diameter + 2 paper mm, the diameter read from the grid's `view_elem_boxes` height (a `6.5mm Bubble` box is 11 mm on paper → **13 mm**, 2600 mm at 1:200); less only when the grids are far enough apart that the bubbles clear (check the image). Move the one drawn behind; same grid on both ends when both ends overlap.
-   - **Bubble under a marker, tag, text or another viewport** → stagger or shorten that one 2D end to the nearest clear spot along its grid; nothing clear → Việc tồn.
-   - Grid names may carry invisible characters (`‭C`): copy the names exactly from the preview output.
-   - `grid_bubble_elbow` (bubble leader) often fails with "leader not valid": use the stagger.
-3. **Annotation crop**: run `grid_dims_band {mode:"preview"}` then `apply` (same arguments as card 01, `logPath`): it grows the annotation crop to the moved bubbles (G4) and checks the dims stay `OK`.
-4. **Siblings**: dependent views of the same parent may keep their own 2D ends; check that a sibling on another sheet did not change (`align_grid_ends {mode:"preview", viewId:<sibling>, only:[names]}`).
-5. Export the view and the sheet again: every bubble clear, none on another viewport or past the border (a staggered bubble on the border → move the viewport toward the free side, `move_element` on the viewport, paper mm); re-place the title if the bubble row moved (card 02).
+2. **One row per side first** (2D ends only, `align_grid_ends`, never 3D extents): every bubble of a group on one side sits on the same row outside the crop, staggered ends included.
+   `align_grid_ends {mode:"apply", viewId, only:[names], side:"low"|"high", targets:{<group>:{low, high}}, logPath}` with `low` / `high` = the row's current values (read them first with `mode:"preview"`); `side` keeps the other end. This covers a whole side left inside the drawing, a short grid with its bubble on the drawing, and an end staggered out of the row earlier.
+3. **Overlapping bubbles → elbow, never stagger**: run `grid_bubble_elbow {mode:"plan"}` again on the lined-up row, then `preview` → `apply` with `logPath` (no `items` = the plan's proposals, or pass `items:[{grid, end, toward, offsetMm}]`).
+   - Only the pairs that overlap get an elbow; all other bubbles stay plain on the row.
+   - **One** bubble of the pair gets the elbow: the one whose outer side (away from the other grid) has more room to its next neighbour; it moves sideways toward that room until its centre is bubble + 2 mm from the other bubble. When the same pair is already elbowed at the grids' other end (often by the user), the plan elbows the same grid on the same side, so both ends match.
+   - Shape = Revit's own Add Elbow shape (knee about 6 paper mm inside the end, back on the line at twice that); a short jog across the grid-dim lines is normal, as when the user adds the elbow by hand.
+   - `Tight` in the plan = the moved bubble would touch its next neighbour too → check the image; elbow the other grid instead (`toward` the other way) or list it under Việc tồn.
+   - `Error: no valid leader shape` → Việc tồn with the grid name; never fall back to a stagger.
+   - An elbow already there that still overlaps → the plan re-sets it (`Note: re-set the elbow`); an elbow on the other grid of the pair that does not clear → remove it with the grid's Remove Elbow grip (`Note`) or list it.
+   - Grid names may carry invisible characters (`‭C`): the command matches without them; copy the names from the plan output anyway.
+4. **Bubble under a marker, tag, text or another viewport** → elbow it sideways to the nearest clear spot (`items` with `toward` + `offsetMm`); nothing clear → Việc tồn.
+5. **Annotation crop**: run `grid_dims_band {mode:"preview"}` then `apply` (same arguments as card 01, `logPath`): it grows the annotation crop to the bubbles (G4) and checks the dims stay `OK`.
+6. **Siblings**: dependent views of the same parent may keep their own 2D ends and elbows; check that a sibling on another sheet did not change (`align_grid_ends {mode:"preview", viewId:<sibling>, only:[names]}`, `grid_bubble_elbow {mode:"plan", viewId:<sibling>}`).
+7. Export the view and the sheet again: every bubble clear, none on another viewport or past the border (a bubble on the border → move the viewport toward the free side, `move_element` on the viewport, paper mm); re-place the title if the bubble row moved (card 02).
 
 ## Done when
 
-- On the image every bubble of the view reads on its own: no bubble on another bubble, a dim, a tag, a text, a marker, hatch or model lines, another viewport, the title block or outside the border.
+- `grid_bubble_elbow {mode:"plan"}`: `OffRow` empty, every `Overlaps` entry `already elbowed`.
+- On the image every bubble of the view reads on its own and the bubbles of a side read as one row: no bubble on another bubble, a dim, a tag, a text, a marker, hatch or model lines, another viewport, the title block or outside the border.
 - `grid_dims_band` after: every group `OK`.
 
 ## Skip only if
 
-The image shows every bubble clear.
+The image shows every bubble clear and on its row.
 
 ## Never
 
+- Stagger a bubble out of its row (along the grid) to clear another bubble; elbow both bubbles of a pair.
 - Edit 3D grid extents; move a bubble inward into the grid-dim band.
 - Rename or delete grids (duplicate names → report for the user).
