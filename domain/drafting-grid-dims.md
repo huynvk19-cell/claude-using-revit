@@ -21,7 +21,7 @@ Tool: `grid_dims_band` (audit / preview / apply / undo). Skill: `drafting-grid-d
 | **G2** | Trên mỗi bản vẽ, mỗi nhóm chỉ có **đúng 1** dim cách trục và **đúng 1** dim tổng trục. |
 | **G3** | Dim trục nằm **ngoài crop boundary** và **trong bubble** của trục, tức là trong dải giữa mép crop và đầu trục có bubble. |
 | **G4** | Dim trục không được mất vì nằm ngoài annotation crop: **luôn kéo annotation crop ra tới bubble** của trục. |
-| **G5** | **Bubble của mọi trục phải đọc được**: không chồng lên bubble khác, không bị dim, tag, chữ, ký hiệu mặt cắt/mặt đứng, vùng tô, nét model, viewport khác hay khung tên che, không nằm lọt trong bản vẽ khi các trục cùng nhóm đã ra hàng bubble. Sửa bằng **đầu trục 2D** (user, 2026-10-16). |
+| **G5** | **Bubble của mọi trục phải đọc được**: không chồng lên bubble khác, không bị dim, tag, chữ, ký hiệu mặt cắt/mặt đứng, vùng tô, nét model, viewport khác hay khung tên che, không nằm lọt trong bản vẽ khi các trục cùng nhóm đã ra hàng bubble. Sửa bằng **đầu trục 2D** (user, 2026-10-16). Bubble cùng một phía của nhóm **thẳng một hàng**; chỉ bubble **chồng nhau** mới được **elbow** (Add Elbow) sang phía rộng hơn, không so le (user, 2026-10-17). |
 
 ## G1 — Nhóm trục
 
@@ -98,11 +98,11 @@ Thứ tự từ ngoài vào trong (số đo là mm trên giấy):
 
 ## G5 — Bubble không bị che (user, 2026-10-16)
 
-- Thẻ bước: `drafting-grid-dims` 03 (`steps/03-bubbles.md`). Chỉ sửa **đầu trục 2D** trong view (`align_grid_ends {only, targets}`), không sửa extent 3D.
-- **Hai trục sát nhau / trùng vị trí** → bubble chồng nhau: **so le một bubble ra ngoài** (xa bản vẽ, dải dim trục giữa crop và bubble giữ nguyên). Khoảng so le ≥ đường kính bubble + 2 mm giấy (bubble 10 mm → **12 mm giấy**, 2400 mm ở 1:200). So le 9 mm chưa đủ cho hai trục cách 150 mm (bubble vẫn chạm). Dời trục bị vẽ phía sau; hai đầu đều chồng → so le cả hai đầu của cùng trục đó.
-- **Bubble lọt trong bản vẽ** (trục ngắn hơn nhóm, bubble nằm trên tường / vùng tô) → kéo đầu 2D ra **hàng bubble** của nhóm.
-- **Bubble bị ký hiệu, tag, chữ, viewport khác che** → so le hoặc rút đầu 2D tới chỗ trống gần nhất; không có chỗ → Việc tồn.
-- Sau khi dời: chạy lại `grid_dims_band` preview → apply để nới annotation crop (G4); xem view con cùng view cha trên sheet khác (đầu 2D có thể riêng từng view); xuất ảnh view + sheet.
+- Thẻ bước: `drafting-grid-dims` 03 (`steps/03-bubbles.md`). Chỉ sửa **đầu trục 2D** và elbow trong view (`align_grid_ends`, `grid_bubble_elbow`), không sửa extent 3D.
+- **Một hàng mỗi phía** (user, 2026-10-17): mọi bubble của nhóm ở cùng một phía nằm **thẳng một hàng** ngoài crop. Trục ngắn, bubble lọt trong bản vẽ, đầu trục đã so le trước đây → kéo đầu 2D về **đúng hàng** (`align_grid_ends {side, targets}`).
+- **Hai trục sát nhau / trùng vị trí** → bubble chồng nhau: **không so le**. Thêm **elbow** (Add Elbow) cho **một** bubble của cặp, bubble ở phía **còn nhiều chỗ hơn** (khoảng tới trục kế bên phía ngoài lớn hơn), đẩy ngang về phía đó một đoạn = bubble + 2 mm giấy − khoảng cách hai trục (trùng vị trí: bubble + 2 mm). Chỉ cặp chồng mới elbow; các bubble khác giữ nguyên trên hàng. Lệnh: `grid_bubble_elbow` plan → preview → apply.
+- **Bubble bị ký hiệu, tag, chữ, viewport khác che** → elbow ngang tới chỗ trống gần nhất; không có chỗ → Việc tồn.
+- Sau khi kéo đầu / elbow: chạy lại `grid_dims_band` preview → apply để nới annotation crop (G4); xem view con cùng view cha trên sheet khác (đầu 2D có thể riêng từng view); xuất ảnh view + sheet.
 - `grid_bubble_elbow` hay báo "leader not valid" → dùng so le.
 - Tên trục có thể chứa ký tự ẩn (vd. `‭C` có U+202D): lấy đúng tên từ kết quả preview. Trục trùng tên → báo user, không đổi tên.
 

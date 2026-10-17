@@ -123,8 +123,8 @@ metadata:
 | `print_set_from_schedule` | Tạo / thay (`replace:true`) print set bằng đúng các sheet mà schedule danh mục bản vẽ liệt kê. preview / apply. |
 | `print_set_rename` | Đổi tên print set (id giữ nguyên). preview / apply. |
 | `crop_side_to_grids` | Kéo một cạnh crop tới sát trục ngoài cùng. |
-| `align_grid_ends` | Căn đầu trục 2D (`compact`); `only` + `targets` để so le một bubble ra ngoài (G5, `drafting-grid-dims` 03); `side` = chỉ dời đầu low hoặc high (kéo bubble một phía ra ngoài). |
-| `grid_bubble_elbow` | Elbow cho bubble (hay lỗi → dùng so le đầu trục). |
+| `align_grid_ends` | Căn đầu trục 2D (`compact`); `only` + `targets` để đưa đầu trục về hàng bubble (G5, `drafting-grid-dims` 03); `side` = chỉ dời đầu low hoặc high (kéo bubble một phía ra ngoài). |
+| `grid_bubble_elbow` | G5: `plan` tìm cặp bubble chồng + phía rộng hơn + đầu lệch hàng; `preview`/`apply` elbow một bubble; `remove`. |
 | `view_image_trial` | Thử ẩn/bỏ template rồi xuất ảnh, luôn rollback. |
 | `tag_leaders_info` | (RO) Tag + room tag + leader trong view: đầu tag, điểm gấp, điểm cuối, hình dạng (V / H / V+H / H+V / D xiên). |
 | `view_range_info` | (RO) View range (top / cut / bottom / view depth, cao độ tuyệt đối) + cao độ Z của phần tử. |

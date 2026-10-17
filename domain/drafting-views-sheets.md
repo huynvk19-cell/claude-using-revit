@@ -40,9 +40,7 @@ Thao tác:
 - Chỉ sửa **2D extent** (ViewSpecific). **Không** đổi 3D extent.
 - Căn đầu trục thẳng hàng: `align_grid_ends`.
 - Kéo đầu trục ra: chỉ làm khi user yêu cầu. Dim trục kéo theo.
-- Bubble chồng nhau:
-  - Ưu tiên **so le đầu trục**: dời một đầu 2D.
-  - `grid_bubble_elbow` hay báo lỗi "leader not valid".
+- Bubble chồng nhau (`drafting-grid-dims.md` G5): bubble mỗi phía thẳng một hàng; chỉ bubble chồng mới **elbow** sang phía rộng hơn (`grid_bubble_elbow`), không so le.
 
 ## 4. View template và Visibility/Graphics
 
