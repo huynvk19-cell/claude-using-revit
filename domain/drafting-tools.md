@@ -60,7 +60,9 @@ metadata:
 | `dims_by_type_inventory` | Mọi dim của 1 type (hoặc ids): view, sheet, giá trị, vị trí đường dim, chữ bị dời. |
 | `opening_tags_in_views` | Phần tử (cửa…) có được thấy trong view không và có tag nào trỏ vào không. |
 | `door_window_tag_check` | Kiểm tag cửa đi / cửa sổ trong view: thiếu, hỏng, trùng, bị nét đè (audit / sửa). |
-| `room_spots_missing` | Chỉ đọc, mặt bằng (nhiều view): phòng chưa có cao độ sàn + điểm đặt theo FL1–FL3 (bỏ phòng nhỏ nằm trong phòng khác, liệt kê buồng thang); trả về items cho `annot_place` (kind spot). |
+| `room_spots_missing` | Chỉ đọc, mặt bằng (nhiều view): phòng chưa có cao độ sàn + điểm đặt theo FL1–FL3 (bỏ phòng nhỏ nằm trong phòng khác, liệt kê buồng thang); phòng nhiều cao độ (sàn nhỏ, ramp) → mỗi cao độ phẳng + hai đầu ramp (FL1b, `Levels`); view phụ thuộc tính cả annotation của view chính; trả về items cho `annot_place` (kind spot, nhận cả mặt sàn dốc). |
+| `floor_levels_probe` | Chỉ đọc, 1 view: các mặt trên của sàn / ramp / chiếu nghỉ / mái host trong view (khung view, z min–max, độ dốc %, hướng dốc) — tìm sàn chênh cao độ, đầu ramp. |
+| `slope_spots_place` | `types`: các type Spot Slope (hướng Up/Down, đơn vị, số dùng) + số spot slope trên mặt bằng làm mẫu. 1 view mặt bằng: đặt Spot Slope trên mặt dốc (sàn, ramp, mái) bằng cách chép một spot slope có sẵn trên mặt bằng (API 2023 không tạo được) rồi đổi type; bản chép không bám đúng phần tử → xoá, báo. preview / apply / undo. |
 | `stair_door_spots` | Cao độ sàn trong và ngoài cửa buồng thang (FL2, SB3) trên mặt bằng tầng và mặt bằng lõi thang. plan / apply / undo; `typeName` bắt buộc khi apply. |
 | `annot_owners` | Chỉ đọc, 1 view: ai tạo / ai sửa cuối các tag cửa và dim (worksharing), gom theo người + type; `listIds` để lấy id. Dùng trước khi dời / xoá annotation có sẵn. |
 | `annotation_override_scan` | Chú thích còn bị Override màu nét (vd. tô đỏ khi soát chưa xoá) trên các view của sheet theo tiền tố. |
@@ -121,7 +123,7 @@ metadata:
 | `print_set_from_schedule` | Tạo / thay (`replace:true`) print set bằng đúng các sheet mà schedule danh mục bản vẽ liệt kê. preview / apply. |
 | `print_set_rename` | Đổi tên print set (id giữ nguyên). preview / apply. |
 | `crop_side_to_grids` | Kéo một cạnh crop tới sát trục ngoài cùng. |
-| `align_grid_ends` | Căn đầu trục 2D (`compact`). |
+| `align_grid_ends` | Căn đầu trục 2D (`compact`); `only` + `targets` để so le một bubble ra ngoài (G5, `drafting-grid-dims` 03); `side` = chỉ dời đầu low hoặc high (kéo bubble một phía ra ngoài). |
 | `grid_bubble_elbow` | Elbow cho bubble (hay lỗi → dùng so le đầu trục). |
 | `view_image_trial` | Thử ẩn/bỏ template rồi xuất ảnh, luôn rollback. |
 | `tag_leaders_info` | (RO) Tag + room tag + leader trong view: đầu tag, điểm gấp, điểm cuối, hình dạng (V / H / V+H / H+V / D xiên). |

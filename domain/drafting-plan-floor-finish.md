@@ -1,8 +1,8 @@
 ---
 name: drafting-plan-floor-finish
-description: "Chuẩn khai triển mặt bằng hoàn thiện sàn (floor finish plan): mã hoàn thiện sàn trên mặt bằng các tầng. Hiện có: tag cao độ sàn (FL1–FL3). Floor finish plan standard."
+description: "Chuẩn khai triển mặt bằng hoàn thiện sàn (floor finish plan): mã hoàn thiện sàn trên mặt bằng các tầng. Hiện có: tag cao độ sàn (FL1–FL3), ký hiệu độ dốc (SL1–SL5). Floor finish plan standard."
 metadata:
-  updated: "2026-10-16"
+  updated: "2026-10-17"
   related: ["drafting-plan-dims", "drafting-stair-plan", "drafting-annotation", "drafting-work-rules"]
 ---
 
@@ -17,6 +17,7 @@ Skill: `drafting-plan-floor-finish`; mỗi mục dưới đây là một thẻ b
 | Thẻ | Mục | Quy tắc |
 |---|---|---|
 | 00 | Tag cao độ sàn | `drafting-annotation.md` §2b FL1–FL3: mỗi gian phòng một cao độ (trừ phòng nhỏ nằm trong phòng khác); buồng thang có cao độ bên trong và bên ngoài cửa; type theo người dùng. Cùng thẻ với `drafting-plan-dims` thẻ 03. |
+| 01 | Ký hiệu độ dốc | `drafting-annotation.md` §2c SL1–SL5: mái, sàn chênh cao độ, ramp, mọi mặt dốc trên view có một Spot Slope; type có Slope Direction = Down, đơn vị số thập phân hoặc phần trăm, dùng type có sẵn thoả (không có thì hỏi). Cùng thẻ với `drafting-plan-dims` thẻ 05. |
 
 ## Điểm cần chốt với user
 

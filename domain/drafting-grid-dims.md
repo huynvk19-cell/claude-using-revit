@@ -1,8 +1,8 @@
 ---
 name: drafting-grid-dims
-description: "Chuẩn dim trục (grid dims) trên bản vẽ kiến trúc: nhóm trục song song, mỗi nhóm đúng 1 dim cách trục + 1 dim tổng trên mỗi bản vẽ, đặt trong dải giữa mép crop và bubble, annotation crop kéo ra tới bubble. Grid dimension standard G1–G4."
+description: "Chuẩn dim trục (grid dims) trên bản vẽ kiến trúc: nhóm trục song song, mỗi nhóm đúng 1 dim cách trục + 1 dim tổng trên mỗi bản vẽ, đặt trong dải giữa mép crop và bubble, annotation crop kéo ra tới bubble; bubble trục không bị che. Grid dimension standard G1–G5."
 metadata:
-  updated: "2026-10-06"
+  updated: "2026-10-16"
   related: ["drafting-dimensions", "drafting-views-sheets", "drafting-tools", "drafting-api-pitfalls", "drafting-work-rules"]
 ---
 
@@ -13,7 +13,7 @@ Không áp dụng cho các view loại trừ trong `drafting-profile.md` (vd. ST
 
 Tool: `grid_dims_band` (audit / preview / apply / undo). Skill: `drafting-grid-dims`.
 
-## Bốn quy tắc (G1–G4)
+## Năm quy tắc (G1–G5)
 
 | # | Quy tắc |
 |---|---|
@@ -21,6 +21,7 @@ Tool: `grid_dims_band` (audit / preview / apply / undo). Skill: `drafting-grid-d
 | **G2** | Trên mỗi bản vẽ, mỗi nhóm chỉ có **đúng 1** dim cách trục và **đúng 1** dim tổng trục. |
 | **G3** | Dim trục nằm **ngoài crop boundary** và **trong bubble** của trục, tức là trong dải giữa mép crop và đầu trục có bubble. |
 | **G4** | Dim trục không được mất vì nằm ngoài annotation crop: **luôn kéo annotation crop ra tới bubble** của trục. |
+| **G5** | **Bubble của mọi trục phải đọc được**: không chồng lên bubble khác, không bị dim, tag, chữ, ký hiệu mặt cắt/mặt đứng, vùng tô, nét model, viewport khác hay khung tên che, không nằm lọt trong bản vẽ khi các trục cùng nhóm đã ra hàng bubble. Sửa bằng **đầu trục 2D** (user, 2026-10-16). |
 
 ## G1 — Nhóm trục
 
@@ -95,6 +96,16 @@ Thứ tự từ ngoài vào trong (số đo là mm trên giấy):
 - Chain của view cha đã được view kia dời ra **đúng vị trí dải** của view này (do cùng mép crop) → lệnh **nhận lại** chain đó và nới annotation crop cho nó hiện ra, không tạo chain trùng.
 - Hai view con có **mép crop khác nhau** thì không thể dùng chung một chain: một vị trí không đúng dải cho cả hai. Giữ chain chung cho một view; ở view kia đánh dấu nó là dim thừa (`extraIds`) để ẩn ở đó, rồi tạo chain riêng.
 
+## G5 — Bubble không bị che (user, 2026-10-16)
+
+- Thẻ bước: `drafting-grid-dims` 03 (`steps/03-bubbles.md`). Chỉ sửa **đầu trục 2D** trong view (`align_grid_ends {only, targets}`), không sửa extent 3D.
+- **Hai trục sát nhau / trùng vị trí** → bubble chồng nhau: **so le một bubble ra ngoài** (xa bản vẽ, dải dim trục giữa crop và bubble giữ nguyên). Khoảng so le ≥ đường kính bubble + 2 mm giấy (bubble 10 mm → **12 mm giấy**, 2400 mm ở 1:200). So le 9 mm chưa đủ cho hai trục cách 150 mm (bubble vẫn chạm). Dời trục bị vẽ phía sau; hai đầu đều chồng → so le cả hai đầu của cùng trục đó.
+- **Bubble lọt trong bản vẽ** (trục ngắn hơn nhóm, bubble nằm trên tường / vùng tô) → kéo đầu 2D ra **hàng bubble** của nhóm.
+- **Bubble bị ký hiệu, tag, chữ, viewport khác che** → so le hoặc rút đầu 2D tới chỗ trống gần nhất; không có chỗ → Việc tồn.
+- Sau khi dời: chạy lại `grid_dims_band` preview → apply để nới annotation crop (G4); xem view con cùng view cha trên sheet khác (đầu 2D có thể riêng từng view); xuất ảnh view + sheet.
+- `grid_bubble_elbow` hay báo "leader not valid" → dùng so le.
+- Tên trục có thể chứa ký tự ẩn (vd. `‭C` có U+202D): lấy đúng tên từ kết quả preview. Trục trùng tên → báo user, không đổi tên.
+
 ## Sau khi kéo đầu trục
 
 - **Title của view** thường nằm giữa công trình và hàng bubble mới, và các đường trục chạy xuyên qua chữ. Dời title xuống dưới hàng bubble bằng `viewport_titles_place {ignoreCrop:true, onlyViewports}`.
@@ -135,3 +146,5 @@ Dim mới dùng **type kiểm tra** (type đánh dấu của dim type chính th�
 - 2026-10-06: kéo trục 100+ mm thì title nằm kẹt giữa công trình và bubble. User chọn giữ cách kéo trục và dời title xuống dưới bubble.
 - 2026-10-06: phía trái cần kéo 182 mm đã đè lên view mezzanine cùng sheet → đặt dim ở phía phải (không có bubble, còn dải 25 mm).
 - 2026-10-06: Revit không trả bounding box cho dim nằm ngoài annotation crop, nên lệnh tính khung dim từ đường dim và chiều cao chữ.
+- 2026-10-16: user: skill dim trục phải chỉnh cả bubble bị che → thêm G5 + thẻ 03. Lần đầu so le 9 mm (theo PH) vẫn chạm bubble ở cặp trục cách 150 mm → 12 mm.
+- 2026-10-17: user: đầu trục bên phải "trông chẳng ổn" (bubble nằm trong bản vẽ, lệch hàng, trục ngắn có bubble giữa bản vẽ, cặp trục sát nhau chồng bubble) → kéo mọi đầu phía đó ra **một hàng ngoài crop** (`align_grid_ends {side, targets}` để không đụng đầu kia), so le cặp chồng ra ngoài ở **cả hai đầu**. Khoảng so le lấy theo hộp bubble thật (`view_elem_boxes` của trục: cao 2200 mm = 11 mm giấy ở 1:200 với `6.5mm Bubble`) + 2 mm → 13 mm; 10 mm vẫn chạm. Bubble so le chạm khung sheet → dời viewport (khoảng trống phía bên kia đủ) rồi xuất lại sheet.

@@ -1,8 +1,8 @@
 ---
 name: drafting-plan-dims
-description: "Chuẩn khai triển mặt bằng kích thước (floor plan dimension drawings): các bước và quy tắc riêng của mặt bằng. Hiện có: dim cửa tới tường và trục (PD1–PD6), tag cửa (PT1–PT6), tag room (RT1–RT4), tag cao độ sàn (FL1–FL3). Floor plan dimension standard."
+description: "Chuẩn khai triển mặt bằng kích thước (floor plan dimension drawings): các bước và quy tắc riêng của mặt bằng. Hiện có: dim cửa tới tường và trục (PD1–PD6), tag cửa (PT1–PT6), tag room (RT1–RT4), tag cao độ sàn (FL1–FL3), tag tường (WT1–WT5), ký hiệu độ dốc (SL1–SL5). Floor plan dimension standard."
 metadata:
-  updated: "2026-10-16"
+  updated: "2026-10-17"
   related: ["drafting-annotation", "drafting-grid-dims", "drafting-opening-dims", "drafting-opening-tags", "drafting-stair-plan", "drafting-work-rules", "drafting-tools"]
 ---
 
@@ -18,8 +18,10 @@ Skill: `drafting-plan-dims`; mỗi mục dưới đây là một thẻ bước c
 | 01 | Tag cửa đi, cửa sổ | PT1–PT6 (mục 2) |
 | 02 | Tag room | `drafting-annotation.md` §2 RT1–RT4: type do người dùng chọn (bổ sung → type room lân cận); không cắt tường, cạnh sàn; gần giao điểm hai đường chéo; trong room nếu đủ chỗ, không thì ngoài room có leader. |
 | 03 | Tag cao độ sàn | `drafting-annotation.md` §2b FL1–FL3: mỗi gian phòng một cao độ (trừ phòng nhỏ nằm trong phòng khác); buồng thang có cao độ bên trong và bên ngoài cửa; type theo người dùng. Cùng thẻ với `drafting-plan-floor-finish`. |
+| 04 | Tag tường | WT1–WT5 (mục 3) |
+| 05 | Ký hiệu độ dốc | `drafting-annotation.md` §2c SL1–SL5: mái, sàn chênh cao độ, ramp, mọi mặt dốc trên view có một Spot Slope; type có Slope Direction = Down, đơn vị số thập phân hoặc phần trăm, dùng type có sẵn thoả (không có thì hỏi). Cùng thẻ với `drafting-plan-floor-finish`. |
 
-Thứ tự: dim trục (`drafting-grid-dims.md`, G1–G4) → dim cửa → tag cửa → tag room → cao độ sàn. Dim khó dời hơn tag, nên dim đặt trước, tag tránh dim; tag room tránh mọi dim và tag cửa (RT2); cao độ sàn đặt sau cùng, tránh tag room (cùng muốn tâm phòng, tag room được ưu tiên).
+Thứ tự: dim trục (`drafting-grid-dims.md`, G1–G4) → dim cửa → tag cửa → tag room → cao độ sàn → tag tường → ký hiệu độ dốc. Dim khó dời hơn tag, nên dim đặt trước, tag tránh dim; tag room tránh mọi dim và tag cửa (RT2); cao độ sàn tránh tag room (cùng muốn tâm phòng, tag room được ưu tiên); tag tường và ký hiệu độ dốc đặt sau cùng, tránh mọi thứ đã đặt (tag tường chỉ cần một đoạn tường trống, ký hiệu độ dốc chỉ cần một chỗ trống trên mặt dốc).
 
 Nguồn: PD lấy từ Q1–Q5 (`drafting-opening-dims.md`, user 2026-10-06) và SA4 của mặt bằng lõi thang (`drafting-stair-plan.md`, user 2026-10-07); PT lấy từ T1–T8 (`drafting-opening-tags.md`), SB4 và bài học đợt tag cửa mặt đứng/mặt cắt 2026-10-16. Mặt bằng thường chưa có mẫu riêng của user → lần đầu làm ở một dự án: làm xong **một view mẫu**, cho user duyệt, ghi điều user chỉnh vào profile, rồi mới làm các view còn lại.
 
@@ -62,7 +64,22 @@ Type: dim type **kiểm tra** của profile (= type đánh dấu). Mỗi lần g
 
 Kiểm tra sau khi làm: `door_window_tag_check` không còn `untagged` (trừ cửa lý do ghi rõ), `duplicate`, `overlap` trên tag của mình; `tag_leaders_info` không có `D`; `annotation_overlaps` không có tag cửa đè dim / tag; ảnh xuất nhìn gọn.
 
+## 3. Tag tường (WT1–WT5) — thẻ 04
+
+Nguồn: user 2026-10-17 (4 quy tắc: tag có sẵn / hỏi; thẳng, sát tường, không đè tường; bỏ vùng vệ sinh; phải có leader). Cách chia "một tag mỗi đoạn tường" (WT2) và phía đặt là mặc định Claude chọn, chờ user xác nhận ở view mẫu đầu tiên.
+
+| # | Quy tắc |
+|---|---|
+| WT1 | **Type có sẵn**: dùng type tag tường đã có trong dự án: type profile cố định → type dùng nhiều nhất trong view → nhiều nhất trong dự án. Dự án chưa có type tag tường nào (hoặc có hai type mà không rõ chọn cái nào) → **hỏi trực tiếp người dùng**, chờ trả lời. Không tự tải / tạo family tag tường. Tag mới mang type đánh dấu. |
+| WT2 | **Đủ**: mỗi đoạn tường host mặt bằng vẽ ra có **một** tag; một đoạn = các tường cùng type nối thẳng hàng liên tục. Tường đã có tag tường (của ai cũng được) → coi là đã có. Không tag tường link, tường bị che, tường vùng "chỉ dim trục". |
+| WT3 | **Thẳng, sát tường, không đè tường**: đầu tag đặt thẳng ra từ mặt tường, vuông góc với tường, hộp tag cách mặt tường ~2 mm giấy: sát nhưng **không chạm, không đè** nét tường. Đặt ở đoạn mặt tường trống (không trên cửa, không dưới dim, tag, chữ); tường bao → phía trong nhà (ngoài nhà là dải dim), tường trong → phía phòng còn chỗ. Không đè dim, tag cửa, room tag, cao độ, text (như PT3). |
+| WT4 | **Bỏ vùng vệ sinh**: tường bao quanh / nằm trong phòng vệ sinh (tên room chứa phần tên theo profile, mặc định `TOILET`, `WC`) **không** tag: đã thể hiện ở bộ mặt bằng vệ sinh. Tường dài chỉ một phần giáp vệ sinh → tag ở phần ngoài vùng vệ sinh. |
+| WT5 | **Phải có leader**: mọi tag tường có leader, điểm cuối chạm mặt tường; leader ngắn, **một đoạn thẳng** vuông góc với tường (`tag_leaders_info`: `H` hoặc `V`), không gấp khúc, không xiên. |
+
+Kiểm tra sau khi làm: mỗi đoạn tường ngoài vùng vệ sinh có một tag (hoặc ghi lý do); `view_elem_boxes`: hộp tag không cắt nét tường; `tag_leaders_info`: tag tường nào cũng có leader `H` / `V`; `annotation_overlaps` sạch; ảnh xuất nhìn gọn.
+
 ## Việc tồn của chuẩn
 
 - Mặt bằng chưa có lệnh khảo sát cửa riêng (vị trí mép cửa theo khung view, cửa nào đã có dim / tag): thẻ 00, 01 dùng `query_elements_with_filter` + `view_elem_boxes` + `door_window_tag_check`. Làm nhiều lần thấy chậm → viết lệnh `plan_openings_survey`.
+- Tag tường (thẻ 04) chưa có lệnh khảo sát riêng (đoạn tường nào chưa tag, đoạn mặt tường trống, tường giáp phòng vệ sinh): dùng `query_elements_with_filter` + `view_elem_boxes` + `rooms_dump` / `room_at_point`. Làm nhiều lần thấy chậm → viết lệnh `wall_tags_missing` (như `room_tags_missing`).
 - Các mục khác của mặt bằng kích thước (dim bề dày tường…) sẽ thêm thành thẻ mới khi có quy tắc.
