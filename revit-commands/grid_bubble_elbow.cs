@@ -9,7 +9,8 @@
       "items": { "type": "array", "items": { "type": "object" }, "description": "{grid, end:'low'|'high', toward:'auto'|'plus'|'minus', offsetMm}; omit = plan" },
       "only": { "type": "array", "items": { "type": "string" }, "description": "plan / auto items: only these grids" },
       "bubbleMm": { "type": "number", "description": "bubble diameter on paper (default: measured from the grids)" },
-      "gapMm": { "type": "number", "description": "paper mm kept between bubbles, default 2" },
+      "gapMm": { "type": "number", "description": "paper mm between an elbowed bubble and its neighbour, default 2" },
+      "touchMm": { "type": "number", "description": "pairs closer than bubble + touchMm overlap, default 0.5" },
       "logPath": { "type": "string" }
     },
     "required": ["viewId", "mode"]
@@ -22,16 +23,17 @@
 //    bubbles would overlap, ONE of them gets an elbow (Revit "Add Elbow") that moves it sideways, toward the side with
 //    more room. No stagger along the grid.
 // plan (read-only): per group (grids running up = 'vertical', running right = 'horizontal') and per end (low / high
-//    along the view's up or right), the visible bubbles sorted across the group; pairs closer than bubble + gap are
-//    'Overlaps'. For each pair the grid whose outer side (away from the other grid) has more room to its next
-//    neighbour gets the elbow; offset = bubble + gap - spacing (coincident grids: bubble + gap). 'OffRow' lists ends
+//    along the view's up or right), the visible bubbles sorted across the group; pairs closer than bubble + touchMm (0.5) are
+//    'Overlaps' (bubbles that only come close are left alone). For each pair the grid whose outer side (away from the other grid) has more room to its next
+//    neighbour gets the elbow (but when one grid of the pair is already elbowed at its other end, that grid, if it
+//    has room); offset = bubble + gap - spacing (coincident grids: bubble + gap). 'OffRow' lists ends
 //    that are not on the row (most common end value) - put them back with align_grid_ends before the elbow.
 //    'Tight' = the elbowed bubble would then touch its next neighbour too.
-// preview / apply: items given, or (no items) the plan's proposals. Item: grid (exact name, invisible characters
-//    are ignored when matching), end 'low'|'high', toward 'auto'|'plus'|'minus' (plus = view right for grids running
+// preview / apply: items given, or (no items) the plan's proposals. Item: grid (exact name; without its invisible
+//    characters only when that is unique), end 'low'|'high', toward 'auto'|'plus'|'minus' (plus = view right for grids running
 //    up, view up for grids running right), offsetMm (paper mm sideways; default from the plan). Legacy: sideMm or
 //    shiftMm = signed offset. The leader is built from Revit's default leader; several elbow shapes are tried until
-//    IsLeaderValid accepts one ('Shape' in the result); the bubble offset is read back after setting it.
+//    IsLeaderValid accepts one (Revit's default shape first: line point at twice the knee depth) ('Shape' in the result); the bubble offset is read back after setting it.
 //    preview rolls back. apply writes logPath.
 // remove: items {grid, end} -> tries to take the elbow off (SetLeader null); when the API refuses, use the grid's
 //    Remove Elbow grip or Ctrl+Z in Revit.
@@ -50,7 +52,7 @@ public static class GridBubbleElbow
     const double Ft = 304.8;
 
     class GI { public Grid G; public string Name, Group; public XYZ P0, P1, Dir, Axis, Side; public bool RunsUp; }
-    class Bub { public GI Gi; public string End; public DatumEnds De; public double Perp, Along; public bool HasLeader; }
+    class Bub { public GI Gi; public string End; public DatumEnds De; public double Perp, Line, Along; public bool HasLeader; }
 
     static string Clean(string s) { return new string((s ?? "").Where(ch => !char.IsControl(ch) && char.GetUnicodeCategory(ch) != System.Globalization.UnicodeCategory.Format).ToArray()).Trim(); }
 
@@ -62,7 +64,9 @@ public static class GridBubbleElbow
         double paper = view.Scale / Ft; // paper mm -> model feet
         XYZ right = view.RightDirection, up = view.UpDirection, o = view.Origin;
         double gap = args["gapMm"] != null ? (double)args["gapMm"] : 2;
-        var only = (args["only"] as JArray)?.Select(x => Clean((string)x)).ToList();
+        double touch = args["touchMm"] != null ? (double)args["touchMm"] : 0.5;
+        bool verbose = args.Value<bool?>("verbose") ?? false;
+        var only = (args["only"] as JArray)?.Select(x => (string)x).ToList();
 
         // ---- grids in view
         var gis = new List<GI>(); var skipped = new List<string>();
@@ -100,7 +104,10 @@ public static class GridBubbleElbow
                 }
             bubble = meas.Count > 0 ? Math.Round(meas.OrderBy(x => x).ElementAt(meas.Count / 2), 1) : 11;
         }
-        double need = bubble + gap;
+        double need = bubble + gap, hit = bubble + touch;
+        // exact name first; the name without invisible characters only when unique ('C1' and '‭C1' can both exist)
+        Func<string, GI> Find = n => gis.FirstOrDefault(x => x.Name == n) ?? (gis.Count(x => Clean(x.Name) == Clean(n)) == 1 ? gis.First(x => Clean(x.Name) == Clean(n)) : null);
+        Func<GI, bool> InOnly = gi => only == null || only.Any(n => Find(n) == gi);
 
         // ---- bubbles per group/end
         Func<XYZ, XYZ, double> C = (p, ax) => (p - o).DotProduct(ax) / paper;
@@ -112,9 +119,10 @@ public static class GridBubbleElbow
                 XYZ p = de == DatumEnds.End0 ? gi.P0 : gi.P1, q = de == DatumEnds.End0 ? gi.P1 : gi.P0;
                 string end = p.DotProduct(gi.Axis) < q.DotProduct(gi.Axis) ? "low" : "high";
                 Leader ld = null; try { ld = gi.G.GetLeader(de, view); } catch { }
-                XYZ at = ld != null ? ld.End : p;
-                bubs.Add(new Bub { Gi = gi, End = end, De = de, Perp = C(at, gi.Side), Along = C(p, gi.Axis), HasLeader = ld != null });
+                XYZ at = ld != null ? ld.Anchor : p;   // a datum leader's Anchor is the bubble
+                bubs.Add(new Bub { Gi = gi, End = end, De = de, Perp = C(at, gi.Side), Line = C(p, gi.Side), Along = C(p, gi.Axis), HasLeader = ld != null });
             }
+        var leaders = bubs.Where(b => b.HasLeader).Select(b => b.Gi.Name + " " + b.End + " " + Math.Round(b.Perp - b.Line, 1) + "mm").ToList();
 
         // ---- plan
         var overlaps = new List<object>(); var offRow = new List<object>(); var proposals = new List<JObject>(); var tight = new List<string>();
@@ -123,28 +131,35 @@ public static class GridBubbleElbow
         {
             var list = row.OrderBy(b => b.Perp).ToList();
             double rowAlong = list.GroupBy(b => Math.Round(b.Along)).OrderByDescending(gp => gp.Count()).First().Key;
-            foreach (var b in list) if (Math.Abs(b.Along - rowAlong) > 0.5) offRow.Add(new { Grid = b.Gi.Name, Row = row.Key, OffMm = Math.Round(b.Along - rowAlong, 1) });
+            foreach (var b in list) if (Math.Abs(b.Along - rowAlong) > 1) offRow.Add(new { Grid = b.Gi.Name, Row = row.Key, OffMm = Math.Round(b.Along - rowAlong, 1) });
             for (int i = 0; i + 1 < list.Count; i++)
             {
                 Bub a = list[i], b = list[i + 1];
                 double sp = b.Perp - a.Perp;
-                if (sp >= need - 0.05 || Math.Abs(a.Along - b.Along) >= need) continue;
-                if (only != null && !only.Contains(Clean(a.Gi.Name)) && !only.Contains(Clean(b.Gi.Name))) continue;
+                if (sp >= hit || Math.Abs(a.Along - b.Along) >= hit) continue;
+                if (!InOnly(a.Gi) && !InOnly(b.Gi)) continue;
                 double roomA = i > 0 ? a.Perp - list[i - 1].Perp : 1e6;            // a moves minus
                 double roomB = i + 2 < list.Count ? list[i + 2].Perp - b.Perp : 1e6; // b moves plus
-                if (a.HasLeader || b.HasLeader) { overlaps.Add(new { Row = row.Key, A = a.Gi.Name, B = b.Gi.Name, SpacingMm = Math.Round(sp, 1), Note = "already elbowed" }); continue; }
                 bool moveB = roomB >= roomA;
                 var m = moveB ? b : a; double room = moveB ? roomB : roomA;
-                if (only != null && !only.Contains(Clean(m.Gi.Name))) { m = moveB ? a : b; moveB = !moveB; room = moveB ? roomB : roomA; }
-                double off = Math.Round(need - sp, 1);
+                // same pair already elbowed at the grids' other end -> elbow the same grid here too, when it has room
+                Func<Bub, bool> OtherEndElbowed = x => bubs.Any(y => y.Gi == x.Gi && y.End != x.End && y.HasLeader);
+                var pref = OtherEndElbowed(a) && !OtherEndElbowed(b) ? a : OtherEndElbowed(b) && !OtherEndElbowed(a) ? b : null;
+                if (pref != null && pref != m && (pref == b ? roomB : roomA) - (need - sp) >= hit) { moveB = pref == b; m = pref; room = moveB ? roomB : roomA; }
+                if (!InOnly(m.Gi)) { m = moveB ? a : b; moveB = !moveB; room = moveB ? roomB : roomA; }
+                var other = moveB ? a : b;
+                // bubble goes to the other bubble +/- (bubble + gap); offset measured from its own grid line
+                double s = (moveB ? other.Perp + need : other.Perp - need) - m.Line;
+                double off = Math.Round(Math.Abs(s), 1); string tw = s >= 0 ? "plus" : "minus";
                 string key = m.Gi.Name + "|" + m.End;
-                overlaps.Add(new { Row = row.Key, A = a.Gi.Name, B = b.Gi.Name, SpacingMm = Math.Round(sp, 1), Elbow = m.Gi.Name, Toward = moveB ? "plus" : "minus", OffsetMm = off, RoomMm = room > 1e5 ? (double?)null : Math.Round(room, 1) });
-                if (room < 1e5 && room - off < need) tight.Add(m.Gi.Name + " " + m.End);
-                if (taken.Add(key)) proposals.Add(new JObject { ["grid"] = m.Gi.Name, ["end"] = m.End, ["toward"] = moveB ? "plus" : "minus", ["offsetMm"] = off });
+                overlaps.Add(new { Row = row.Key, A = a.Gi.Name, B = b.Gi.Name, SpacingMm = Math.Round(sp, 1), Elbow = m.Gi.Name, Toward = tw, OffsetMm = off, RoomMm = room > 1e5 ? (double?)null : Math.Round(room, 1),
+                    Note = other.HasLeader ? other.Gi.Name + " has an elbow that does not clear: remove it (Remove Elbow grip)" : m.HasLeader ? "re-set the elbow" : null });
+                if (room < 1e5 && room - (need - sp) < hit) tight.Add(m.Gi.Name + " " + m.End);
+                if (taken.Add(key)) proposals.Add(new JObject { ["grid"] = m.Gi.Name, ["end"] = m.End, ["toward"] = tw, ["offsetMm"] = off });
             }
         }
         if (mode == "plan")
-            return new { Mode = mode, View = view.Name, BubbleMm = bubble, NeedMm = need, Overlaps = overlaps, Proposed = proposals, OffRow = offRow, Tight = tight, Skipped = skipped };
+            return new { Mode = mode, View = view.Name, BubbleMm = bubble, OverlapUnderMm = hit, ElbowToMm = need, Overlaps = overlaps, Proposed = proposals, OffRow = offRow, Tight = tight, Elbows = leaders, Skipped = skipped };
 
         // ---- preview / apply / remove
         var items = (args["items"] as JArray)?.Cast<JObject>().ToList() ?? proposals;
@@ -154,8 +169,8 @@ public static class GridBubbleElbow
             t.Start();
             foreach (var it in items)
             {
-                string name = Clean((string)it["grid"]), endW = (string)it["end"] ?? "low";
-                var gi = gis.FirstOrDefault(x => Clean(x.Name) == name);
+                string name = (string)it["grid"], endW = (string)it["end"] ?? "low";
+                var gi = Find(name);
                 if (gi == null) { report.Add(new { Grid = name, Error = "not a straight grid in view" }); continue; }
                 var g = gi.G;
                 bool end0Low = gi.P0.DotProduct(gi.Axis) < gi.P1.DotProduct(gi.Axis);
@@ -163,7 +178,7 @@ public static class GridBubbleElbow
                 XYZ endPt = de == DatumEnds.End0 ? gi.P0 : gi.P1;
                 XYZ outward = endW == "high" ? gi.Axis : gi.Axis.Negate();
                 bool pinned = g.Pinned; if (pinned) g.Pinned = false;
-                string err = null, shape = null; double? got = null;
+                string err = null, shape = null, dbg = null; double? got = null;
                 try
                 {
                     if (mode == "remove")
@@ -182,7 +197,7 @@ public static class GridBubbleElbow
                             string tw = (string)it["toward"] ?? "auto";
                             if (tw == "auto")
                             {
-                                var pr = proposals.FirstOrDefault(p => Clean((string)p["grid"]) == name && (string)p["end"] == endW);
+                                var pr = proposals.FirstOrDefault(p => Find((string)p["grid"]) == gi &&(string)p["end"] == endW);
                                 tw = pr != null ? (string)pr["toward"] : "plus";
                                 if (pr != null && it["offsetMm"] == null) off = (double)pr["offsetMm"];
                             }
@@ -190,42 +205,50 @@ public static class GridBubbleElbow
                         }
                         bool had = g.GetLeader(de, view) != null;
                         log.Add(new JObject { ["id"] = g.Id.IntegerValue, ["grid"] = g.Name, ["end"] = endW, ["hadLeader"] = had });
-                        if (!had) g.AddLeader(de, view);
+                        if (!had) { g.AddLeader(de, view); doc.Regenerate(); }   // read the new leader only after a regenerate
                         var ld = g.GetLeader(de, view);
+                        // Revit's datum leader: Anchor = the bubble (read-only, follows the elbow sideways), Elbow = the
+                        // knee, End = where the leader leaves the grid line. Default: End 2 x elbow depth inside the end.
                         XYZ A = ld.Anchor, E0 = ld.Elbow, N0 = ld.End, S = gi.Side;
-                        double eIn = Math.Max(Math.Abs((E0 - endPt).DotProduct(outward)), 2 * paper);   // default elbow distance inside the end
-                        double aIn = Math.Abs((A - endPt).DotProduct(outward));
-                        double dfl = (N0 - endPt).DotProduct(S);
-                        XYZ endT = endPt + S * s;
-                        var cands = new List<Tuple<string, XYZ, XYZ>>   // name, anchor (null = keep), elbow
+                        double eIn = Math.Max(Math.Abs((E0 - endPt).DotProduct(outward)), 2 * paper);   // default elbow depth inside the end
+                        double nIn = Math.Abs((N0 - endPt).DotProduct(outward));
+                        XYZ vd = view.ViewDirection;
+                        Func<XYZ, XYZ> Pl = q => q - vd * (q - endPt).DotProduct(vd);   // keep every point in the grid's plane
+                        // Revit 2023: a leader read right after AddLeader (no regenerate) is offset by its default shape;
+                        // after a regenerate the points are absolute. The read-back corrects what is left.
+                        Func<double> Side = () => (g.GetLeader(de, view).Anchor - endPt).DotProduct(S);
+                        double k = s;
+                        Func<string, double, bool> TrySet = (nm, kk) =>
                         {
-                            Tuple.Create("default-depth", (XYZ)null, endPt - outward * eIn + S * s),
-                            Tuple.Create("mid", (XYZ)null, endPt - outward * (Math.Max(aIn, eIn) / 2) + S * s),
-                            Tuple.Create("anchor-45", endPt - outward * (eIn + Math.Abs(s)), endPt - outward * eIn + S * s),
-                            Tuple.Create("anchor-perp", (XYZ)null, A + S * s),
-                        };
-                        if (Math.Abs(dfl) > 1e-9 && Math.Sign(dfl) == Math.Sign(s))
-                            cands.Add(Tuple.Create("scaled-default", (XYZ)null, A + (E0 - A) * (s / dfl)));
-                        foreach (var cd in cands)
-                        {
+                            XYZ knee = Pl(endPt - outward * eIn + S * kk);
+                            XYZ lineEnd = nm == "45" ? Pl(endPt - outward * (eIn + Math.Abs(kk))) : nm == "default-end" ? Pl(endPt - outward * Math.Max(nIn, eIn + paper)) : Pl(endPt - outward * (2 * eIn));
                             var l2 = g.GetLeader(de, view);
                             try
                             {
-                                if (cd.Item2 != null) l2.Anchor = cd.Item2;
-                                l2.Elbow = cd.Item3; l2.End = endT;
-                                if (!g.IsLeaderValid(de, view, l2)) continue;
-                                g.SetLeader(de, view, l2); shape = cd.Item1; break;
+                                l2.Elbow = knee; l2.End = lineEnd;
+                                if (!g.IsLeaderValid(de, view, l2)) { dbg += nm + ":invalid "; return false; }
+                                g.SetLeader(de, view, l2); doc.Regenerate(); return true;
                             }
-                            catch { }
+                            catch (Exception ex) { dbg += nm + ":" + ex.GetType().Name + " "; return false; }
+                        };
+                        Func<XYZ, string> Rel = q => Math.Round((q - endPt).DotProduct(outward) / paper, 1) + "/" + Math.Round((q - endPt).DotProduct(S) / paper, 1);
+                        dbg = "default anchor/elbow/end (out/side mm): " + Rel(A) + " " + Rel(E0) + " " + Rel(N0) + "; ";
+                        foreach (var nm in new[] { "double-depth", "default-end", "45" })   // Revit's own shape first (line point = 2 x knee depth, as Add Elbow draws it)
+                        {
+                            if (!TrySet(nm, k)) continue;
+                            shape = nm;
+                            for (int it2 = 0; it2 < 3 && Math.Abs(Side() - s) > 0.2 * paper; it2++) { k += s - Side(); if (!TrySet(nm, k)) break; }
+                            break;
                         }
                         if (shape == null) err = "no valid leader shape";
+                        else if (Math.Abs(Side() - s) > 0.5 * paper) err = "bubble not where asked";
                         var chk = g.GetLeader(de, view);
-                        if (chk != null) got = Math.Round((chk.End - endPt).DotProduct(S) / paper, 1);
+                        if (chk != null) { got = Math.Round((chk.Anchor - endPt).DotProduct(S) / paper, 1); if (verbose) dbg += "set: " + Rel(chk.Anchor) + " " + Rel(chk.Elbow) + " " + Rel(chk.End); }
                     }
                 }
                 catch (Exception ex) { err = ex.Message; }
                 if (pinned) g.Pinned = true;
-                report.Add(new { Grid = g.Name, End = endW, Shape = shape, BubbleSideMm = got, Error = err });
+                report.Add(new { Grid = g.Name, End = endW, Shape = shape, BubbleSideMm = got, Error = err, Debug = (shape == null || verbose) ? dbg : null });
             }
             if (mode == "apply" || mode == "remove") t.Commit(); else t.RollBack();
         }
