@@ -5,7 +5,7 @@ description: "Grid dimensions on architectural drawings via Revit MCP, rules G1�
 
 # Grid dims (G1–G5)
 
-**Tools** (load all in one ToolSearch call): `align_grid_ends`, `annotation_overlaps`, `export_sheet_images`, `grid_dims_band`, `ui_view_focus`, `viewport_titles_place`.
+**Tools** (load all in one ToolSearch call): `align_grid_ends`, `annotation_overlaps`, `export_sheet_images`, `grid_dims_band`, `move_element`, `ui_view_focus`, `view_elem_boxes`, `viewport_titles_place`.
 
 Standard: `~/.claude/drafting-domain/drafting-grid-dims.md` (Vietnamese). Rules G1–G5 decide every case. Read it first.
 
