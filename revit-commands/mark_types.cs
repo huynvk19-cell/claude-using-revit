@@ -79,7 +79,7 @@ public static class MarkTypes
                 }
                 views.Add(v.ViewType + " | " + v.Name + (primary != ElementId.InvalidElementId ? " (+primary)" : ""));
             }
-            File.WriteAllText(statePath, JsonConvert.SerializeObject(state));
+            WriteFile(statePath, JsonConvert.SerializeObject(state));
             return new { Action = "snapshot", Views = views, MixedKinds = kinds.Count > 1 ? string.Join(", ", kinds) : null };
         }
 
@@ -123,7 +123,7 @@ public static class MarkTypes
                     }
                     catch (Exception ex) { errors.Add(e.Id.IntegerValue + " " + Label(et) + ": " + ex.Message); }
                 }
-                if (mode == "apply") { t.Commit(); File.WriteAllText(logPath, log.ToString()); }
+                if (mode == "apply") { t.Commit(); WriteFile(logPath, log.ToString()); }
                 else t.RollBack();
             }
             return new { Action = "mark", Mode = mode, New = fresh.Count, Marked = marked, AlreadyMarked = already, NoType = noType, NewTypes = created, Errors = errors.Take(20) };
@@ -218,7 +218,7 @@ public static class MarkTypes
                     catch (Exception ex) { errs.Add("delete " + Label(m) + ": " + ex.Message); }
                 }
             }
-            if (mode == "apply") { t.Commit(); File.WriteAllText(logPath, rlog.ToString()); }
+            if (mode == "apply") { t.Commit(); WriteFile(logPath, rlog.ToString()); }
             else t.RollBack();
         }
         return new { Action = "restore", Mode = mode, Restored = restored, NoOfficial = noOfficial, DeletedTypes = deleted, Errors = errs.Take(20) };
@@ -257,4 +257,13 @@ public static class MarkTypes
     static string Label(ElementType t) => t.FamilyName + " : " + t.Name;
 
     static void Bump(Dictionary<string, int> d, string k) { d.TryGetValue(k, out var n); d[k] = n + 1; }
+
+    // creates the folder first: a missing review folder used to throw after the commit, losing the log
+    static void WriteFile(string path, string text)
+    {
+        if (string.IsNullOrEmpty(path)) return;
+        var dir = Path.GetDirectoryName(path);
+        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+        File.WriteAllText(path, text);
+    }
 }
