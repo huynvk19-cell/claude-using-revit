@@ -2,7 +2,8 @@
 #   -CommandsDir <path>  : the Revit MCP 'dynamic-commands' folder; the commands in revit-commands\ are copied there
 #                          (same-name files are overwritten). Default: $env:REVIT_MCP_COMMANDS, skipped when empty.
 #   -WorkStatus          : also install the status window scripts to %USERPROFILE%\Tools\WorkStatus
-param([string]$CommandsDir = $env:REVIT_MCP_COMMANDS, [switch]$WorkStatus)
+#   -DwgBindXref         : also install the DWG bind-xref tool + its Explorer right-click menu (HKCU, no admin)
+param([string]$CommandsDir = $env:REVIT_MCP_COMMANDS, [switch]$WorkStatus, [switch]$DwgBindXref)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $claude = Join-Path $env:USERPROFILE '.claude'
@@ -37,3 +38,4 @@ if ($WorkStatus) {
     Copy-Item (Join-Path $root 'tools\work-status\*.ps1') -Destination $ws -Force
     "work status -> $ws"
 }
+if ($DwgBindXref) { & (Join-Path $root 'tools\dwg-bind-xref\install-menu.ps1') }

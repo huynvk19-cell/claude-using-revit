@@ -16,6 +16,7 @@ Skills and domain standards that let Claude Code, via Revit MCP, do drawing prod
 | `revit-commands/` | 87 lệnh động (dynamic commands) C# cho Revit MCP: dim, tag, title, viewport, crop, lõi thang, dim bám tay vịn, filled region cột theo kết cấu, mặt cắt dọc thang (dim, tag, số bậc, cao độ tay vịn, ô hoàn thiện), kiểm tra mặt cắt ngang thang, kiểm tra chồng lắp… Không chứa giá trị riêng dự án | C# |
 | `tools/crop.ps1` | Cắt vùng ảnh sheet để kiểm tra | PowerShell |
 | `tools/work-status/` | Cửa sổ "Đang xử lý" luôn nổi trên màn hình (tuỳ chọn) | PowerShell |
+| `tools/dwg-bind-xref/` | Gộp xref của DWG thành một file `_merged.dwg` (AutoCAD accoreconsole), có menu chuột phải Explorer | PowerShell |
 
 ### Skills
 
