@@ -19,7 +19,8 @@
 // ---- Details ----
 // itemsPath: a JSON file holding an items array, or an object with "Items" (room_tags_missing outPath). Items in the
 // room_tags_missing / annot_place form {elementId, typeName, right, up, leader, endRight, endUp} (view frame mm) are
-// converted to {roomId, cx, cy, ex, ey} (model mm) here.
+// converted to {roomId, cx, cy, ex, ey, path} (model mm) here. Leader end / elbow take the room point height (rooms
+// of other levels); when Revit returns no tag at the leader end it retries at the room point.
 // The tag is created at the end point (or the centre) so Revit accepts it, set to the type, leader off, then the head is
 // moved so the bbox centre of the tag body (no leader) equals (cx,cy). With a leader: vertical intent (|dy|>=|dx|) -> ex := cx,
 // horizontal intent -> ey := cy; LeaderEnd = (ex,ey); elbow (if any) put on the straight line. preview rolls back.
@@ -65,7 +66,7 @@ public static class RoomtagPlaceOrtho
             if (it["roomId"] != null) { items.Add(it); continue; }
             var c = VF((double)it["right"], (double)it["up"]);
             var o = new JObject { ["roomId"] = it["elementId"], ["typeName"] = it["typeName"], ["cx"] = c.X * MM, ["cy"] = c.Y * MM };
-            if ((bool?)it["leader"] == true && it["endRight"] != null) { var e = VF((double)it["endRight"], (double)it["endUp"]); o["ex"] = e.X * MM; o["ey"] = e.Y * MM; }
+            if ((bool?)it["leader"] == true && it["endRight"] != null) { var e = VF((double)it["endRight"], (double)it["endUp"]); o["ex"] = e.X * MM; o["ey"] = e.Y * MM; if (it["path"] != null) o["path"] = it["path"]; }
             items.Add(o);
         }
         using (var t = new Transaction(doc, "Room tags"))
@@ -87,13 +88,18 @@ public static class RoomtagPlaceOrtho
                     bool leader = it["ex"] != null;
                     double ex = leader ? (double)it["ex"] / MM : cx, ey = leader ? (double)it["ey"] / MM : cy;
                     var rt = doc.Create.NewRoomTag(new LinkElementId(room.Id), new UV(ex, ey), v.Id);
+                    var rlp = (room.Location as LocationPoint)?.Point;
+                    if (rt == null && rlp != null) rt = doc.Create.NewRoomTag(new LinkElementId(room.Id), new UV(rlp.X, rlp.Y), v.Id); // retry at the room point
+                    if (rt == null) { errors.Add(i + ": Revit makes no room tag for " + room.Number + " in this view"); continue; }
+                    double zr = rlp != null ? rlp.Z : z; // leader end at the room height (rooms of other levels)
                     made = rt.Id;
                     rt.ChangeTypeId(sym.Id);
                     rt.HasLeader = false;
                     doc.Regenerate();
                     var b = rt.get_BoundingBox(v);
                     var h = rt.TagHeadPosition;
-                    double ox = (b.Min.X + b.Max.X) / 2 - h.X, oy = (b.Min.Y + b.Max.Y) / 2 - h.Y;
+                    // no box (Revit draws nothing yet, seen on ceiling plans): keep the head on the point
+                    double ox = b == null ? 0 : (b.Min.X + b.Max.X) / 2 - h.X, oy = b == null ? 0 : (b.Min.Y + b.Max.Y) / 2 - h.Y;
                     if (leader) rt.HasLeader = true;
                     try { rt.TagHeadPosition = new XYZ(cx - ox, cy - oy, z); } catch { if (leader) throw; }
                     string dir = "none";
@@ -104,15 +110,15 @@ public static class RoomtagPlaceOrtho
                         if (path == "HV" || path == "VH")
                         {
                             dir = path;
-                            rt.LeaderEnd = new XYZ(ex, ey, z);
+                            rt.LeaderEnd = new XYZ(ex, ey, zr);
                             double pdx = it["adx"] != null ? (double)it["adx"] / MM : 0, pdy = it["ady"] != null ? (double)it["ady"] / MM : 0;
-                            rt.LeaderElbow = path == "HV" ? new XYZ(ex, cy + pdy, z) : new XYZ(cx + pdx, ey, z);
+                            rt.LeaderElbow = path == "HV" ? new XYZ(ex, cy + pdy, zr) : new XYZ(cx + pdx, ey, zr);
                         }
                         else
                         {
                             double adx = it["adx"] != null ? (double)it["adx"] / MM : 0, ady = it["ady"] != null ? (double)it["ady"] / MM : 0;
                             if (Math.Abs(ey - cy) >= Math.Abs(ex - cx)) { ex = cx + adx; dir = "V"; } else { ey = cy + ady; dir = "H"; }
-                            rt.LeaderEnd = new XYZ(ex, ey, z);
+                            rt.LeaderEnd = new XYZ(ex, ey, zr);
                             try { if (rt.HasElbow) rt.LeaderElbow = new XYZ((cx + ex) / 2, (cy + ey) / 2, z); } catch { }
                         }
                     }
@@ -122,8 +128,8 @@ public static class RoomtagPlaceOrtho
                     done.Add(new
                     {
                         item = i, id = rt.Id.IntegerValue, room = room.Number + " " + room.get_Parameter(BuiltInParameter.ROOM_NAME).AsString(), dir,
-                        body = Math.Round(b.Max.X * MM - b.Min.X * MM) + " x " + Math.Round(b.Max.Y * MM - b.Min.Y * MM),
-                        box = Math.Round(b2.Min.X * MM) + ".." + Math.Round(b2.Max.X * MM) + " , " + Math.Round(b2.Min.Y * MM) + ".." + Math.Round(b2.Max.Y * MM),
+                        body = b == null ? "no box" : Math.Round(b.Max.X * MM - b.Min.X * MM) + " x " + Math.Round(b.Max.Y * MM - b.Min.Y * MM),
+                        box = b2 == null ? "no box" : Math.Round(b2.Min.X * MM) + ".." + Math.Round(b2.Max.X * MM) + " , " + Math.Round(b2.Min.Y * MM) + ".." + Math.Round(b2.Max.Y * MM),
                         end = leader ? Math.Round(ex * MM) + "," + Math.Round(ey * MM) : null, text = rt.TagText
                     });
                 }

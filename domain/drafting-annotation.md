@@ -14,9 +14,9 @@ metadata:
 
 ## 2. Room tag
 
-### Đặt tag room (RT1–RT4, user 2026-10-15)
+### Đặt tag room (RT1–RT8, user 2026-10-15, RT5–RT8 2026-10-21)
 
-Áp dụng cho mặt bằng kích thước (`drafting-plan-dims`) và mặt bằng trần (`drafting-ceiling-plan`), thẻ bước "Tag room". Lệnh: `room_tags_missing` (room chưa tag + vị trí theo RT1–RT4) → `annot_place`.
+Áp dụng cho mặt bằng kích thước (`drafting-plan-dims`) và mặt bằng trần (`drafting-ceiling-plan`), thẻ bước "Tag room". Lệnh: `room_tags_missing` (room chưa tag + vị trí theo RT1–RT8) → `roomtag_place_ortho`.
 
 | # | Quy tắc |
 |---|---|
@@ -24,6 +24,10 @@ metadata:
 | RT2 | **Không cắt**: tag không cắt qua tường, cạnh của sàn (mặt bằng trần: cạnh của trần); không đè dim, tag, text. |
 | RT3 | **Vị trí**: tag (hoặc chấm của leader) đặt gần **giao điểm hai đường chéo** của room (tâm hình chữ nhật bao room theo khung view). Room chữ L có giao điểm nằm ngoài room → điểm gần nhất trong room. |
 | RT4 | **Trong hay ngoài**: room đủ chỗ chứa tag mà không vi phạm RT2 → đặt **trong** room, không leader, gần giao điểm. Không đủ → đặt **ngoài** room, **có leader** đi thẳng, bẻ góc vuông khi cần so với khổ giấy (mục "Leader của tag" bên dưới), chấm của leader gần giao điểm hai đường chéo; chọn leader ngắn nhất. |
+| RT5 | **Thứ tự**: tag lần lượt từ room có **diện tích nhỏ nhất** trên view tới room lớn nhất (room nhỏ khó chỗ được chọn trước). |
+| RT6 | **Đủ 100%**: mọi room thấy trên view đều có tag, không bỏ sót room nào. Không có chỗ sạch gần → leader dài hơn, rồi leader một góc vuông, rồi mới chấp nhận chạm nét; vẫn phải đặt và ghi vào Cần xem. Chỉ room không đặt (diện tích 0 / không kín) mới không tag được → báo user. |
+| RT7 | **Leader ngắn**: luôn ưu tiên vị trí có leader ngắn nhất (thẳng trước, một góc vuông sau). |
+| RT8 | **Thẳng hàng** (ưu tiên): tag gần nhau cùng hàng (cùng tâm đứng) hoặc cùng cột (cùng mép trái); khi hai chỗ gần ngang nhau về độ dài leader, chọn chỗ thẳng hàng với tag đã đặt. |
 
 Kích thước tag trên giấy (rộng × cao mm) lấy từ `drafting-profile.md`; không có thì lệnh lấy hộp bao của một tag cùng type (rộng hơn chữ, kết quả thiên về an toàn).
 

@@ -1,6 +1,6 @@
 # 02 · Tag room (tag phòng)
 
-**Skill** `drafting-plan-dims` · **Standard** `drafting-annotation.md` §2 RT1–RT4 · **Tools** `room_tags_missing`, `roomtag_place_ortho`, `room_tags_broken`, `tag_leaders_info`, `delete_element`, `mark_types`, `export_sheet_images`
+**Skill** `drafting-plan-dims` · **Standard** `drafting-annotation.md` §2 RT1–RT8 · **Tools** `room_tags_missing`, `roomtag_place_ortho`, `room_tags_broken`, `tag_leaders_info`, `delete_element`, `mark_types`, `export_sheet_images`
 **Applies to** every floor plan view of the job.
 
 ## Do
@@ -10,8 +10,8 @@
    ```
    room_tags_missing {viewIds:[one view], typeName, tagSizeMm, outPath:"<review>/p1-<viewId>.json"}
    ```
-   Per view: `Untagged`, `Inside` (no leader), `Outside` (leader); with `outPath` the `Items` + `Problems` go to the file (one view per call, short result). Kept clear: walls, floor / ceiling edges, dims, tags, texts, grid bubbles (`bubbleMm`, default 10), other room tag leaders; a leader never runs through a tag or text. Dense views: run twice, `maxLeaderMm` 30 then 70, placing between runs. No `tagSizeMm` in the profile → the command uses the box of a placed tag (wider than the text); say so in the report.
-3. Per view, open it (`ui_view_focus {action:"open", viewId}`), then place: the positions are the tag BODY centre and `roomtag_place_ortho` centres the body there (a room tag head is not its body centre; `annot_place` would shift the tag and bend the leader). Remove rooms that must not be tagged (e.g. rooms of another level that the detail sheets of the same level do not tag) from the file first. Undo: `roomtag_place_ortho {mode:"undo", logPath}`.
+   Per view: `Untagged`, `Inside` (no leader), `Outside` (leader); with `outPath` the `Items` + `Problems` go to the file (one view per call, short result). Kept clear: walls, floor / ceiling edges, dims, tags, texts, grid bubbles (`bubbleMm`, default 10), other room tag leaders; a leader never runs through a tag or text. RT5–RT8: rooms go smallest area first; every room gets an item (the search widens to 2x, 4x `maxLeaderMm`, then allows a leader over another leader, then over text, then touching model lines, last the room centre: notes `CHECK` / `FORCED` → Cần xem); shortest leader first (straight, else one right angle `path` HV / VH); a spot in line (same row / left edge) with a nearby tag wins over a slightly shorter leader. No `tagSizeMm` in the profile → the command uses the box of a placed tag (wider than the text); say so in the report.
+3. Per view, open it (`ui_view_focus {action:"open", viewId}`), then place: the positions are the tag BODY centre and `roomtag_place_ortho` centres the body there (a room tag head is not its body centre; `annot_place` would shift the tag and bend the leader). Every room is tagged (RT6), also rooms of other levels seen in the view. Undo: `roomtag_place_ortho {mode:"undo", logPath}`.
    ```
    roomtag_place_ortho {mode:"apply", viewId, itemsPath:"<review>/p1-<viewId>.json", logPath:"<review>/place-p1-<viewId>.json", brief:true}
    ```
@@ -21,7 +21,7 @@
 
 ## Done when
 
-- `room_tags_missing` again: `Untagged` = 0 on every view, or each room left is in `Problems` with its reason (→ Việc tồn).
+- `room_tags_missing` again: `Untagged` = 0 on every view (RT6). A room left only when Revit cannot tag it in that view: a tag made there has no box / shows "?" because the view range cut plane is above the room top (`view_range_info`) → Việc tồn (view setting for the user), never silently.
 - On the image: no tag crosses a wall, a floor edge, a dim, a tag or a text; leaders straight with at most one right-angle elbow, horizontal / vertical on the paper (`tag_leaders_info`: no `D`); each tag or leader dot sits near the room's diagonal centre.
 
 ## Skip only if
