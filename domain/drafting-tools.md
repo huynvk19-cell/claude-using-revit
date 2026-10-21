@@ -110,7 +110,9 @@ metadata:
 | `elevation_opening_tags` | Tag cửa trên mặt đứng/cắt (1V), `addLeader`, `fixExisting`; cửa cuốn lớn: tag nằm trong cửa (`rollupInside`, `rollupFamilies`). |
 | `tag_align` | Căn đầu tag theo tag mẫu. |
 | `room_tags_outside` / `room_tags_broken` | Room tag nằm ngoài phòng (không có leader chỉ vào phòng; tag RT4 có leader được giữ) / room tag "?". |
-| `room_tags_missing` | (read-only) Mặt bằng / mặt bằng trần, nhiều view một lần: room chưa có tag trong view + vị trí đặt theo RT1–RT4 (`drafting-annotation.md` §2): giao điểm hai đường chéo, trong room nếu đủ chỗ không cắt tường / cạnh sàn (trần) / dim / tag, không thì ngoài room có leader thẳng; type = `typeName` hoặc type của room lân cận (`NeighbourType`); trả `Items` cho `annot_place`. |
+| `room_tags_missing` | (read-only) Mặt bằng / mặt bằng trần, nhiều view một lần: room chưa có tag trong view + vị trí đặt theo RT1–RT4 (`drafting-annotation.md` §2): giao điểm hai đường chéo, trong room nếu đủ chỗ không cắt tường / cạnh sàn (trần) / dim / tag, không thì ngoài room có leader thẳng; type = `typeName` hoặc type của room lân cận (`NeighbourType`); tránh cả bubble trục (`bubbleMm`) và leader tag room khác, leader không cắt tag / chữ; vị trí = TÂM THÂN tag; `outPath` ghi `Items` ra file. |
+| `roomtag_place_ortho` | Một view: đặt room tag sao cho tâm thân tag nằm đúng điểm, leader thẳng ngang / dọc tới điểm trong room; `itemsPath` đọc file của `room_tags_missing`; `brief`; undo bằng log. |
+| `room_tags_list` | (read-only) Room tag trong view: danh sách số room đã tag (`detail` = id tag, room, type). Dùng đối chiếu view OVERALL với view chi tiết 201/202. |
 | `viewport_titles_place` | Bật và căn title (`ignoreCrop`). |
 | `ui_view_focus` | Mở view + zoom theo crop để user theo dõi (`open`); ẩn/hiện Properties, Project Browser và báo trạng thái trước/sau (`panes` hide/show, `which` properties/browser). Dùng trong `drafting-start` / `drafting-end`. |
 

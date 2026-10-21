@@ -39,6 +39,14 @@
       "maxLeaderMm": {
         "type": "number",
         "description": "paper mm the head may sit beyond the room, default 30"
+      },
+      "bubbleMm": {
+        "type": "number",
+        "description": "grid bubble diameter on paper mm kept clear, default 10 (0 = ignore bubbles)"
+      },
+      "outPath": {
+        "type": "string",
+        "description": "write Items + Problems to this JSON file (one view per call); result = counts only"
       }
     },
     "required": [
@@ -59,7 +67,13 @@
 //      lies fully in the room and crosses no wall, no floor edge (floor plans) / ceiling edge (ceiling plans), no room
 //      boundary, no dim line and overlaps no tag / text / spot / other placed head -> no leader;
 //    - otherwise outside: the head straight above / right / below / left of the anchor (shortest leader first), box
-//      clear of the same obstacles and inside the crop, leader end = anchor (orthogonal, no elbow).
+//      clear of the same obstacles and inside the crop, leader end = anchor (orthogonal, no elbow); the leader (box
+//      edge -> anchor) crosses no tag / text / spot box, no placed head and no other room tag leader.
+//    Obstacles also: grid bubbles shown in the view (a bubbleMm square at each visible bubble end) and the room tags
+//    already in the view: tag without leader = its own box; tag with leader = the leader (head -> elbow -> end) plus
+//    a tagSizeMm body at the far end of its box from the leader end (room tag boxes include the leader).
+//    The positions are the BODY centre of the tag: place them with a command that centres the tag body on the point
+//    (a room tag head is not its body centre); annot_place puts the head there.
 //    Tag type = typeName, else the most common type among the 3 nearest tagged rooms of the view (NeighbourType).
 //    Tag size: tagSizeMm, else the box of a placed tag of that type (wider than the text: room tag boxes span the
 //    family's whole label frame, so positions come out conservative).
@@ -103,6 +117,18 @@ public static class RoomTagsMissing
         return true;
     }
 
+    // do two segments cross (touching counts)?
+    static bool SegX(Seg a, Seg b)
+    {
+        Func<double, double, double, double, double, double, double> cr = (ax, ay, bx, by, cx, cy) => (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
+        double d1 = cr(b.R1, b.U1, b.R2, b.U2, a.R1, a.U1), d2 = cr(b.R1, b.U1, b.R2, b.U2, a.R2, a.U2);
+        double d3 = cr(a.R1, a.U1, a.R2, a.U2, b.R1, b.U1), d4 = cr(a.R1, a.U1, a.R2, a.U2, b.R2, b.U2);
+        if (((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0))) return true;
+        Func<Seg, double, double, bool> on = (s, x, y) => Math.Min(s.R1, s.R2) - 1 <= x && x <= Math.Max(s.R1, s.R2) + 1 && Math.Min(s.U1, s.U2) - 1 <= y && y <= Math.Max(s.U1, s.U2) + 1;
+        return (Math.Abs(d1) < 1e-6 && on(b, a.R1, a.U1)) || (Math.Abs(d2) < 1e-6 && on(b, a.R2, a.U2))
+            || (Math.Abs(d3) < 1e-6 && on(a, b.R1, b.U1)) || (Math.Abs(d4) < 1e-6 && on(a, b.R2, b.U2));
+    }
+
     public static object Run(UIApplication app, JObject args)
     {
         var doc = app.ActiveUIDocument.Document;
@@ -110,6 +136,7 @@ public static class RoomTagsMissing
         HashSet<int> only = args["roomIds"] is JArray ra && ra.Count > 0 ? new HashSet<int>(ra.Select(t => (int)t)) : null;
         string typeArg = ((string)args["typeName"] ?? "").Trim();
         double clearMm = (double?)args["clearMm"] ?? 1, maxShiftMm = (double?)args["maxShiftMm"] ?? 4, maxLeaderMm = (double?)args["maxLeaderMm"] ?? 30;
+        double bubbleMm = (double?)args["bubbleMm"] ?? 10;
         double[] sizeArg = args["tagSizeMm"] is JArray sa && sa.Count == 2 ? new[] { (double)sa[0], (double)sa[1] } : null;
 
         var allTags = new FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_RoomTags).WhereElementIsNotElementType().OfType<RoomTag>().ToList();
@@ -205,6 +232,24 @@ public static class RoomTagsMissing
                     try { addGeo(e.get_Geometry(gopt)); } catch { }
 
             var annBoxes = new List<Box>();
+            var leads = new List<Seg>(); // room tag leaders: existing + placed in this run
+            // grid bubbles shown in the view
+            if (bubbleMm > 0)
+                foreach (var g in new FilteredElementCollector(doc, v.Id).OfClass(typeof(Grid)).Cast<Grid>())
+                {
+                    try
+                    {
+                        var cs = g.GetCurvesInView(DatumExtentType.ViewSpecific, v);
+                        if (cs == null || cs.Count == 0 || !(cs[0] is Line gl)) continue;
+                        double rB = bubbleMm * sc / 2;
+                        var a = F(gl.GetEndPoint(0)); var b = F(gl.GetEndPoint(1));
+                        double len = Math.Sqrt(Math.Pow(b[0] - a[0], 2) + Math.Pow(b[1] - a[1], 2)); if (len < 1) continue;
+                        double ur = (b[0] - a[0]) / len, uu = (b[1] - a[1]) / len;
+                        if (g.IsBubbleVisibleInView(DatumEnds.End0, v)) annBoxes.Add(new Box(a[0] - ur * rB - rB, a[1] - uu * rB - rB, a[0] - ur * rB + rB, a[1] - uu * rB + rB));
+                        if (g.IsBubbleVisibleInView(DatumEnds.End1, v)) annBoxes.Add(new Box(b[0] + ur * rB - rB, b[1] + uu * rB - rB, b[0] + ur * rB + rB, b[1] + uu * rB + rB));
+                    }
+                    catch { }
+                }
             foreach (var e in new FilteredElementCollector(doc, v.Id).WhereElementIsNotElementType())
             {
                 if (e.OwnerViewId != v.Id || e.Category == null) continue;
@@ -223,10 +268,29 @@ public static class RoomTagsMissing
                     }
                     if (e is RoomTag rt)
                     {
+                        var tb = rt.get_BoundingBox(v);
                         var sz = sizeOf(typeOf(rt)) ?? sizeArg;
-                        if (sz == null) continue;
-                        var hp = F(rt.TagHeadPosition);
-                        annBoxes.Add(new Box(hp[0] - sz[0] * sc / 2, hp[1] - sz[1] * sc / 2, hp[0] + sz[0] * sc / 2, hp[1] + sz[1] * sc / 2));
+                        if (tb == null)
+                        {
+                            if (sz == null) continue;
+                            var hp = F(rt.TagHeadPosition);
+                            annBoxes.Add(new Box(hp[0] - sz[0] * sc / 2, hp[1] - sz[1] * sc / 2, hp[0] + sz[0] * sc / 2, hp[1] + sz[1] * sc / 2));
+                            continue;
+                        }
+                        var tbx = new Box(F(tb.Min)[0], F(tb.Min)[1], F(tb.Max)[0], F(tb.Max)[1]);
+                        if (!rt.HasLeader || sz == null) { annBoxes.Add(tbx); continue; }
+                        // leader: head -> elbow -> end; body at the far end of the box from the leader end
+                        var le = F(rt.LeaderEnd); var hd = F(rt.TagHeadPosition);
+                        double[] el = null; try { if (rt.HasElbow) el = F(rt.LeaderElbow); } catch { }
+                        var lpts = new List<double[]> { hd }; if (el != null) lpts.Add(el); lpts.Add(le);
+                        for (int i = 1; i < lpts.Count; i++) { var ls = new Seg { R1 = lpts[i - 1][0], U1 = lpts[i - 1][1], R2 = lpts[i][0], U2 = lpts[i][1] }; segs.Add(ls); leads.Add(ls); }
+                        double bw = Math.Min(sz[0] * sc, tbx.R1 - tbx.R0), bh = Math.Min(sz[1] * sc, tbx.U1 - tbx.U0);
+                        double dl = le[0] - tbx.R0, dr = tbx.R1 - le[0], dd = le[1] - tbx.U0, du = tbx.U1 - le[1];
+                        double m = new[] { dl, dr, dd, du }.Min();
+                        if (m == dl) annBoxes.Add(new Box(tbx.R1 - bw, tbx.U0, tbx.R1, tbx.U1));        // end at left -> body right
+                        else if (m == dr) annBoxes.Add(new Box(tbx.R0, tbx.U0, tbx.R0 + bw, tbx.U1));   // end at right -> body left
+                        else if (m == dd) annBoxes.Add(new Box(tbx.R0, tbx.U1 - bh, tbx.R1, tbx.U1));   // end below -> body top
+                        else annBoxes.Add(new Box(tbx.R0, tbx.U0, tbx.R1, tbx.U0 + bh));                 // end above -> body bottom
                         continue;
                     }
                     bool ann = e is IndependentTag || e is TextNote || e is SpatialElementTag || e is SpotDimension
@@ -303,7 +367,11 @@ public static class RoomTagsMissing
                 pending.Add(new object[] { r, tn, sz, A, lSegs, lAnn, rect, label });
             }
 
-            Func<Box, List<Seg>, List<Box>, bool> clear = (bx, ls, la) => !ls.Any(s => SegHits(s, bx)) && !la.Any(b => b.Hits(bx)) && !placed.Any(b => b.Hits(bx));
+            var placedLeads = new List<Seg>();
+            Func<Box, List<Seg>, List<Box>, bool> clear = (bx, ls, la) => !ls.Any(s => SegHits(s, bx)) && !la.Any(b => b.Hits(bx)) && !placed.Any(b => b.Hits(bx)) && !placedLeads.Any(s => SegHits(s, bx));
+            // leader (box edge -> anchor): no tag / text box, no placed head, no other leader on its way
+            Func<Seg, List<Box>, bool> leadClear = (L, la) => !la.Any(b => SegHits(L, b)) && !placed.Any(b => SegHits(L, b))
+                && !leads.Any(s => SegX(L, s)) && !placedLeads.Any(s => SegX(L, s));
 
             // pass 1: inside (RT2), pass 2: outside with leader (RT3)
             var left = new List<object[]>();
@@ -338,7 +406,7 @@ public static class RoomTagsMissing
                     new { N = "right", Dr = 1.0, Du = 0.0, Edge = rect.R1 - A[0], Half = w / 2 },
                     new { N = "down", Dr = 0.0, Du = -1.0, Edge = A[1] - rect.U0, Half = h / 2 },
                     new { N = "left", Dr = -1.0, Du = 0.0, Edge = A[0] - rect.R0, Half = w / 2 } };
-                object best = null; Box bestBox = null; double bestLen = double.MaxValue;
+                object best = null; Box bestBox = null; Seg bestLead = null; double bestLen = double.MaxValue;
                 foreach (var d in dirs)
                 {
                     for (double dist = d.Half + c; dist - d.Half <= d.Edge + maxLeaderMm * sc; dist += s)
@@ -348,25 +416,34 @@ public static class RoomTagsMissing
                         if (crop != null && (bx.R0 < crop.R0 || bx.R1 > crop.R1 || bx.U0 < crop.U0 || bx.U1 > crop.U1)) break;
                         if (inRoom(r, cr, cu)) continue; // head must be outside its room here
                         if (!clear(bx, (List<Seg>)pd[4], (List<Box>)pd[5])) continue;
+                        var lead = new Seg { R1 = cr - d.Dr * (d.Half + c), U1 = cu - d.Du * (d.Half + c), R2 = A[0], U2 = A[1] };
+                        if (!leadClear(lead, (List<Box>)pd[5])) break; // a longer leader on this side passes the same obstacle
                         double len = dist - d.Half;
                         if (len < bestLen)
                         {
-                            bestLen = len; bestBox = bx;
+                            bestLen = len; bestBox = bx; bestLead = lead;
                             best = new { kind = "roomtag", elementId = r.Id.IntegerValue, typeName = (string)pd[1], right = Math.Round(cr), up = Math.Round(cu), leader = true, endRight = Math.Round(A[0]), endUp = Math.Round(A[1]), note = (string)pd[7] + " · outside " + d.N + ", leader " + Math.Round(len / sc, 1) + " mm" };
                         }
                         break;
                     }
                 }
                 if (best == null) { problems.Add((string)pd[7] + ": no clear place inside or within " + maxLeaderMm + " mm outside"); continue; }
-                placed.Add(bestBox); nOut++; items.Add(best);
+                placed.Add(bestBox); placedLeads.Add(bestLead); nOut++; items.Add(best);
             }
 
+            string outPath = (string)args["outPath"];
+            if (!string.IsNullOrEmpty(outPath))
+            {
+                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(outPath));
+                System.IO.File.WriteAllText(outPath, JObject.FromObject(new { ViewId = vid, View = v.Name, Problems = problems, Items = items }).ToString());
+            }
+            bool toFile = !string.IsNullOrEmpty(outPath);
             outViews.Add(new
             {
                 ViewId = vid, View = v.Name, Rooms = rooms.Count, Tagged = rooms.Count(r => tagged.ContainsKey(r.Id.IntegerValue)),
                 Untagged = todo.Count, Inside = nIn, Outside = nOut, NotPlacedOrEnclosed = notPlaced,
                 TagSize = sizeSrc.Select(kv => kv.Key + ": " + (sizeCache.ContainsKey(kv.Key) && sizeCache[kv.Key] != null ? string.Join(" x ", sizeCache[kv.Key]) : sizeArg != null ? string.Join(" x ", sizeArg) : "?") + " mm (" + kv.Value + ")").ToList(),
-                Problems = problems, Items = items
+                Problems = toFile ? null : problems, Items = toFile ? null : items, OutPath = toFile ? outPath : null
             });
         }
         return new { Views = outViews };
