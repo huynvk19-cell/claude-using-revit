@@ -57,6 +57,7 @@ Một bản vẽ chỉ được báo "xong" khi đạt cả ba. Kiểm tra trư�
 
 - Mỗi thẻ bước (`skills/<skill>/steps/NN-*.md`) có mục **Score (0–10)**. Sau khi chạy thẻ trên một view: chấm điểm view theo mục đó và ghi vào bảng báo cáo (view → việc → số lượng → **điểm**), cả trước và sau khi sửa.
 - Thẻ chưa có luật trừ điểm riêng: 10 khi đủ mọi dòng **Done when**, không thì hạ điểm và nói dòng nào hỏng; hỏi user luật trừ điểm khi họ duyệt rồi ghi vào thẻ.
+- **Chỉ chấp nhận khi điểm > 7** (user 2026-10-21). Thẻ đạt: ghi cách làm tốt vào bộ nhớ (kết quả thẻ). Thẻ chưa đạt: **mổ xẻ** mỗi lần chạy — đo luật nào làm mất điểm, bao nhiêu phần tử, nguyên nhân gốc, đã đổi gì, lần sau đổi gì — rồi chạy lại, chấm lại; không báo "xong" khi còn ≤ 7, luôn nói điểm.
 
 ## 2c. Làm theo đợt và type đánh dấu (user, 2026-10-14)
 

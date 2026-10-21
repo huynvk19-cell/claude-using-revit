@@ -7,7 +7,8 @@
       "viewIds": { "type": "array", "items": { "type": "number" } },
       "tagSizeMm": { "type": "array", "items": { "type": "number" }, "description": "tag body width, height on paper mm (profile), default 30, 13" },
       "worst": { "type": "number", "description": "how many lowest-score tags to list per view, default 10" },
-      "outPath": { "type": "string", "description": "write every tag's score to this JSON file" }
+      "outPath": { "type": "string", "description": "write every tag's score to this JSON file" },
+      "acceptAbove": { "type": "number", "description": "card accepted when its score is above this, default 7" }
     },
     "required": ["viewIds"]
   },
@@ -21,7 +22,8 @@
 //    RS2 the leader has a right-angle bend (elbow off the straight line)       -> -5
 //    RS3 the leader is longer than 3x / 2x the long side of its room           -> -9 / -5
 //    RS4 the tag body sits on another room                                     -> -5
-//    floor 0. View score = average of its tags.
+//    floor 0. View score = average of its tags. Card score of the view = 0 when any leader lies on another leader or
+//    runs through the end point (dot) of another leader (RS0, user 2026-10-21); accepted when above acceptAbove (7).
 // Geometry: room tag box in the view (it includes the leader); body = tagSizeMm at the far end of the box from the
 // leader end (a tag without leader: its own box). Leader = body centre -> elbow -> end, length measured from the body
 // edge. Room long side = the longer side of the room's box in the view frame.
@@ -47,11 +49,19 @@ public static class RoomTagsScore
         return false;
     }
 
+    static double PtSeg(double pr, double pu, Seg s)
+    {
+        double dx = s.R2 - s.R1, dy = s.U2 - s.U1, l2 = dx * dx + dy * dy;
+        double t = l2 < 1e-9 ? 0 : Math.Max(0, Math.Min(1, ((pr - s.R1) * dx + (pu - s.U1) * dy) / l2));
+        return Math.Sqrt(Math.Pow(pr - (s.R1 + t * dx), 2) + Math.Pow(pu - (s.U1 + t * dy), 2));
+    }
+
     public static object Run(UIApplication app, JObject args)
     {
         var doc = app.ActiveUIDocument.Document;
         double[] sz = args["tagSizeMm"] is JArray sa && sa.Count == 2 ? new[] { (double)sa[0], (double)sa[1] } : new[] { 30.0, 13.0 };
         int worstN = (int?)args["worst"] ?? 10;
+        double acceptAbove = (double?)args["acceptAbove"] ?? 7;
         var all = new JArray();
         var res = new List<object>();
         foreach (var vid in ((JArray)args["viewIds"]).Select(x => (int)x))
@@ -61,7 +71,7 @@ public static class RoomTagsScore
             XYZ O = v.Origin, R = v.RightDirection, U = v.UpDirection; double sc = v.Scale;
             Func<XYZ, double[]> F = p => new[] { (p - O).DotProduct(R) * MM, (p - O).DotProduct(U) * MM };
             Func<double, double, double, XYZ> P = (r, u, z) => { var p = O + R * (r / MM) + U * (u / MM); return new XYZ(p.X, p.Y, z); };
-            double bw = sz[0] * sc, bh = sz[1] * sc, tolO = 0.3 * sc, tolS = 0.5 * sc;
+            double bw = sz[0] * sc, bh = sz[1] * sc, tolO = 0.3 * sc, tolS = 0.5 * sc, tolP = 0.5 * sc;
 
             // rooms seen in the view: box in the view frame, test height
             var rooms = new Dictionary<int, object[]>();
@@ -98,8 +108,13 @@ public static class RoomTagsScore
                     if (m == dl) { cr = tr1 - w / 2; } else if (m == dr) { cr = tr0 + w / 2; } else if (m == dd) { cu = tu1 - h / 2; } else { cu = tu0 + h / 2; }
                     if (m == dl || m == dr) cu = (tu0 + tu1) / 2 + 0; // body spans the full box height on a side leader
                     if (m == dd || m == du) cr = (tr0 + tr1) / 2;
+                    double[] eb = null; try { if (t.HasElbow) eb = F(t.LeaderElbow); } catch { }
+                    // an orthogonal elbow leader starts at the body centre on the line of its first segment:
+                    // V then H (end level with the elbow) -> body centre x = elbow x; H then V -> body centre y = elbow y
+                    if (eb != null && Math.Abs(le[1] - eb[1]) < tolS && Math.Abs(le[0] - eb[0]) >= tolS) { cr = eb[0]; cu = Math.Abs(tu1 - eb[1]) > Math.Abs(eb[1] - tu0) ? tu1 - h / 2 : tu0 + h / 2; }
+                    else if (eb != null && Math.Abs(le[0] - eb[0]) < tolS && Math.Abs(le[1] - eb[1]) >= tolS) { cu = eb[1]; cr = Math.Abs(tr1 - eb[0]) > Math.Abs(eb[0] - tr0) ? tr1 - w / 2 : tr0 + w / 2; }
                     var pts = new List<double[]> { new[] { cr, cu } };
-                    try { if (t.HasElbow) { var e = F(t.LeaderElbow); pts.Add(e); } } catch { }
+                    if (eb != null) pts.Add(eb);
                     pts.Add(le);
                     // drop an elbow lying on the straight line
                     if (pts.Count == 3)
@@ -126,7 +141,11 @@ public static class RoomTagsScore
                 double longSide = (double)row[4], len = (double)row[6]; bool elbow = (bool)row[5];
                 var why = new List<string>(); double s = 10;
                 bool ov = segs.Any(a => rows.Where((x, j) => j != i).Any(x => ((List<Seg>)x[3]).Any(b => Overlap(a, b, tolO))));
-                if (ov) { s = 0; why.Add("RS1 leader on another leader"); }
+                // RS0: the leader runs through the end point (dot) of another leader
+                var hit = rows.Where((x, j) => j != i && ((List<Seg>)x[3]).Count > 0).FirstOrDefault(x => { var e = ((List<Seg>)x[3]).Last(); return segs.Any(sg => PtSeg(e.R2, e.U2, sg) < tolP); });
+                bool thru = hit != null;
+                if (thru) { ov = true; }
+                if (ov) { s = 0; why.Add(thru ? "RS0 leader through the leader end of " + ((Room)hit[1]).Number : "RS1 leader on another leader"); }
                 else
                 {
                     if (elbow) { s -= 5; why.Add("RS2 elbow"); }
@@ -142,9 +161,12 @@ public static class RoomTagsScore
             {
                 ViewId = vid, View = v.Name, Tags = scored.Count,
                 ScoreAvg = scored.Count == 0 ? (double?)null : Math.Round(scored.Average(x => (double)x[1]), 2),
+                // card score: 0 when any leader lies on another or runs through another leader end (user 2026-10-21)
+                CardScore = scored.Count == 0 ? (double?)null : scored.Any(x => ((string)x[2]).Contains("RS0") || ((string)x[2]).Contains("RS1")) ? 0 : Math.Round(scored.Average(x => (double)x[1]), 2),
+                Accepted = scored.Count > 0 && !scored.Any(x => ((string)x[2]).Contains("RS0") || ((string)x[2]).Contains("RS1")) && scored.Average(x => (double)x[1]) > acceptAbove,
                 Count = new
                 {
-                    Zero = scored.Count(x => ((string)x[2]).Contains("RS1")), Elbow = scored.Count(x => ((string)x[2]).Contains("RS2")),
+                    Zero = scored.Count(x => ((string)x[2]).Contains("RS1")), ThroughEnd = scored.Count(x => ((string)x[2]).Contains("RS0")), Elbow = scored.Count(x => ((string)x[2]).Contains("RS2")),
                     Long2x = scored.Count(x => ((string)x[2]).Contains("> 2x")), Long3x = scored.Count(x => ((string)x[2]).Contains("> 3x")),
                     OtherRoom = scored.Count(x => ((string)x[2]).Contains("RS4")), Full10 = scored.Count(x => (double)x[1] >= 10)
                 },

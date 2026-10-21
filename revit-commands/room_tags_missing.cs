@@ -78,7 +78,8 @@
 //    (+6 mm for a one-elbow leader, path HV / VH) minus 8 mm when the tag lines up (same vertical centre or same left
 //    edge) with a room tag within 80 mm; within each search ring (1x, 2x, 4x maxLeaderMm) the best RS1-RS4 score wins; none clear -> the leader may cross other leaders, then text,
 //    lets the box touch model lines (note "CHECK"), and last puts the tag at the room centre ("FORCED"): every room
-//    gets an item. Items with an elbow carry path HV / VH for roomtag_place_ortho.
+//    gets an item. A leader never lies on another leader (RS1) nor runs through another leader dot, and no other leader
+//    runs through its dot (RS0). Items with an elbow carry path HV / VH for roomtag_place_ortho.
 //    Tag type = typeName, else the most common type among the 3 nearest tagged rooms of the view (NeighbourType).
 //    Tag size: tagSizeMm, else the box of a placed tag of that type (wider than the text: room tag boxes span the
 //    family's whole label frame, so positions come out conservative).
@@ -129,6 +130,13 @@ public static class RoomTagsMissing
         if (ah && bh && Math.Abs(a.U1 - b.U1) < tol) return Math.Min(Math.Max(a.R1, a.R2), Math.Max(b.R1, b.R2)) - Math.Max(Math.Min(a.R1, a.R2), Math.Min(b.R1, b.R2)) > tol;
         if (av && bv && Math.Abs(a.R1 - b.R1) < tol) return Math.Min(Math.Max(a.U1, a.U2), Math.Max(b.U1, b.U2)) - Math.Max(Math.Min(a.U1, a.U2), Math.Min(b.U1, b.U2)) > tol;
         return false;
+    }
+
+    static double PtSeg(double pr, double pu, Seg s)
+    {
+        double dx = s.R2 - s.R1, dy = s.U2 - s.U1, l2 = dx * dx + dy * dy;
+        double t = l2 < 1e-9 ? 0 : Math.Max(0, Math.Min(1, ((pr - s.R1) * dx + (pu - s.U1) * dy) / l2));
+        return Math.Sqrt(Math.Pow(pr - (s.R1 + t * dx), 2) + Math.Pow(pu - (s.U1 + t * dy), 2));
     }
 
     // do two segments cross (touching counts)?
@@ -248,6 +256,7 @@ public static class RoomTagsMissing
             var annBoxes = new List<Box>();
             var leads = new List<Seg>(); // room tag leaders: existing + placed in this run
             var tagBoxes = new List<Box>(); // existing room tag bodies (RT8 alignment)
+            var leadEnds = new List<double[]>(); // leader end points (dots): existing + placed in this run
             // grid bubbles shown in the view
             if (bubbleMm > 0)
                 foreach (var g in new FilteredElementCollector(doc, v.Id).OfClass(typeof(Grid)).Cast<Grid>())
@@ -299,6 +308,7 @@ public static class RoomTagsMissing
                         double[] el = null; try { if (rt.HasElbow) el = F(rt.LeaderElbow); } catch { }
                         var lpts = new List<double[]> { hd }; if (el != null) lpts.Add(el); lpts.Add(le);
                         for (int i = 1; i < lpts.Count; i++) { var ls = new Seg { R1 = lpts[i - 1][0], U1 = lpts[i - 1][1], R2 = lpts[i][0], U2 = lpts[i][1] }; segs.Add(ls); leads.Add(ls); }
+                        leadEnds.Add(le);
                         double bw = Math.Min(sz[0] * sc, tbx.R1 - tbx.R0), bh = Math.Min(sz[1] * sc, tbx.U1 - tbx.U0);
                         double dl = le[0] - tbx.R0, dr = tbx.R1 - le[0], dd = le[1] - tbx.U0, du = tbx.U1 - le[1];
                         double m = new[] { dl, dr, dd, du }.Min();
@@ -395,7 +405,7 @@ public static class RoomTagsMissing
             Func<Seg, List<Box>, bool> leadClear = (L, la) => !la.Any(b => SegHits(L, b)) && !placed.Any(b => SegHits(L, b))
                 && !leads.Any(s => SegX(L, s)) && !placedLeads.Any(s => SegX(L, s));
             Func<Seg, List<Box>, bool> leadSoft = (L, la) => !la.Any(b => SegHits(L, b)) && !placed.Any(b => SegHits(L, b));
-            double tolO = 0.3 * sc;
+            double tolO = 0.3 * sc, tolP = 0.5 * sc;
             // RS4: point of a tag body on another room
             Func<Room, double, double, bool> onOther = (r0, pr, pu) => rooms.Any(ro => ro.Id != r0.Id && info.ContainsKey(ro.Id.IntegerValue)
                 && ((Box)info[ro.Id.IntegerValue][0]).R0 <= pr && pr <= ((Box)info[ro.Id.IntegerValue][0]).R1
@@ -487,9 +497,13 @@ public static class RoomTagsMissing
                         if (bestS >= 0 && (S0 < bestS || (S0 == bestS && key >= bestKey))) break;
                         var bx = (Box)cd[5]; double cr = (double)cd[1], cu = (double)cd[2];
                         if (!inCrop(bx) || !annFree(bx, la)) continue;
+                        if (leadEnds.Any(e => e[0] >= bx.R0 && e[0] <= bx.R1 && e[1] >= bx.U0 && e[1] <= bx.U1)) continue; // RS0: no dot under the tag (its leader starts at the body centre)
                         if (!relaxSeg && !segFree(bx, ls)) continue;
                         var sg = (List<Seg>)cd[4];
                         if (sg.Any(x => leads.Any(y => Overlap(x, y, tolO)) || placedLeads.Any(y => Overlap(x, y, tolO)))) continue; // RS1: never on another leader
+                        // RS0: never through another leader dot, and no other leader through this dot
+                        if (sg.Any(x => leadEnds.Any(e => PtSeg(e[0], e[1], x) < tolP))) continue;
+                        if (leads.Concat(placedLeads).Any(y => PtSeg(A[0], A[1], y) < tolP)) continue;
                         if (!relaxLead && !sg.All(x => crossLeads ? leadSoft(x, la) : leadClear(x, la))) continue;
                         if (inRoom(r, cr, cu)) continue; // the head sits outside its room
                         double S = Math.Max(0, S0 - (onOther(r, cr, cu) ? 5 : 0));
@@ -514,7 +528,7 @@ public static class RoomTagsMissing
                     continue;
                 }
                 if (how.Contains("CHECK")) problems.Add(label + ": " + how);
-                placed.Add(bestBox); placedLeads.AddRange(bestLead); nOut++; items.Add(best); scores.Add(bestScore);
+                placed.Add(bestBox); placedLeads.AddRange(bestLead); leadEnds.Add(new[] { A[0], A[1] }); nOut++; items.Add(best); scores.Add(bestScore);
             }
 
             string outPath = (string)args["outPath"];
