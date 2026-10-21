@@ -38,3 +38,7 @@ Never. Stop and ask instead when:
 - V1 and V3 differ (`V1V3Same:false`);
 - treads × depth ≠ footprint length (`C:` issue): report it, never edit the model;
 - a category has no tag type used in the project.
+
+## Score (0–10)
+
+No deductions of its own yet: 10 when every **Done when** line holds; otherwise lower it and say which line failed. Ask the user for the deductions of this card when they review it, then write them here.

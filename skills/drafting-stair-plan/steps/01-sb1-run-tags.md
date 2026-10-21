@@ -31,3 +31,7 @@ Never: every seen run gets its tag.
 
 - Put a run tag under a dim.
 - Leave the head box on a wall notch or a dim (leaders orthogonal: `_tags-common.md`).
+
+## Score (0–10)
+
+No deductions of its own yet: 10 when every **Done when** line holds; otherwise lower it and say which line failed. Ask the user for the deductions of this card when they review it, then write them here.

@@ -14,3 +14,7 @@ As LB6 (`drafting-stair-section-parallel`, card 13): `elevation_opening_tags {vi
 ## Skip only if
 
 The section shows no door and cuts no wall with a door.
+
+## Score (0–10)
+
+No deductions of its own yet: 10 when every **Done when** line holds; otherwise lower it and say which line failed. Ask the user for the deductions of this card when they review it, then write them here.

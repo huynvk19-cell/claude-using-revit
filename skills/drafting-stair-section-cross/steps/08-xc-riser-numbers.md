@@ -23,3 +23,7 @@ Never. A start number off → compare with the plan first; changing it is a Stai
 ## Never
 
 - Display Rule Odd here.
+
+## Score (0–10)
+
+No deductions of its own yet: 10 when every **Done when** line holds; otherwise lower it and say which line failed. Ask the user for the deductions of this card when they review it, then write them here.

@@ -19,3 +19,7 @@ Check: `stair_plan_audit {viewIds, rules:["SB2"]}` (`Tags.Railings`, SB2 issues)
 ## Skip only if
 
 A handrail hidden by a bigger railing (not seen on the view).
+
+## Score (0–10)
+
+No deductions of its own yet: 10 when every **Done when** line holds; otherwise lower it and say which line failed. Ask the user for the deductions of this card when they review it, then write them here.

@@ -25,3 +25,7 @@ Check: `stair_section_info {viewId, rules:["LA3"]}` (only LA3 rows, notes, issue
 ## Skip only if
 
 A flight seen beyond with the same going as a cut one (not dimmed twice).
+
+## Score (0–10)
+
+No deductions of its own yet: 10 when every **Done when** line holds; otherwise lower it and say which line failed. Ask the user for the deductions of this card when they review it, then write them here.

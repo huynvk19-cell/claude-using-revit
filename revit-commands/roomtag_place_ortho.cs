@@ -46,6 +46,7 @@ public static class RoomtagPlaceOrtho
             var log = JObject.Parse(File.ReadAllText((string)args["logPath"]));
             var ids = ((JArray)log["created"]).Select(x => new ElementId((int)x)).Where(id => doc.GetElement(id) != null).ToList();
             using (var t = new Transaction(doc, "Room tags undo")) { t.Start(); doc.Delete(ids); t.Commit(); }
+            if ((bool?)args["brief"] == true) return new { deleted = ids.Count };
             return new { deleted = ids.Select(i => i.IntegerValue).ToList() };
         }
         var v = (View)doc.GetElement(new ElementId((int)args["viewId"]));

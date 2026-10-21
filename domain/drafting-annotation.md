@@ -29,6 +29,17 @@ metadata:
 | RT7 | **Leader ngắn**: luôn ưu tiên vị trí có leader ngắn nhất (thẳng trước, một góc vuông sau). |
 | RT8 | **Thẳng hàng** (ưu tiên): tag gần nhau cùng hàng (cùng tâm đứng) hoặc cùng cột (cùng mép trái); khi hai chỗ gần ngang nhau về độ dài leader, chọn chỗ thẳng hàng với tag đã đặt. |
 
+**Điểm tag room (RS1–RS4, user 2026-10-21)** — mỗi tag bắt đầu 10 điểm, tối thiểu 0; điểm view = trung bình các tag (`room_tags_score`).
+
+| # | Trừ điểm |
+|---|---|
+| RS1 | Leader trùng đè lên leader khác → **0 điểm ngay** |
+| RS2 | Leader bẻ góc vuông → −5 |
+| RS3 | Leader dài hơn 3 lần cạnh dài của room → −9; dài hơn 2 lần → −5 |
+| RS4 | Tag nằm trên room khác → −5 |
+
+`room_tags_missing` chọn chỗ có điểm cao nhất (rồi mới tới leader ngắn, thẳng hàng).
+
 Kích thước tag trên giấy (rộng × cao mm) lấy từ `drafting-profile.md`; không có thì lệnh lấy hộp bao của một tag cùng type (rộng hơn chữ, kết quả thiên về an toàn).
 
 ### Sửa tag room
