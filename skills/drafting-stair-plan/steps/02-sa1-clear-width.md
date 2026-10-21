@@ -31,3 +31,7 @@ Never.
 
 - `CLEAR` on the overall, the handrails, the gap or the walls.
 - Measuring to a wall when a railing or a step edge comes first.
+
+## Score (0–10)
+
+No deductions of its own yet: 10 when every **Done when** line holds; otherwise lower it and say which line failed. Ask the user for the deductions of this card when they review it, then write them here.

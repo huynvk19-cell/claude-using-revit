@@ -31,3 +31,7 @@
 - A spot slope type with Direction Up, or units in degrees / 1:n (SL2, SL3); change the settings of an existing type.
 - Make a new type without asking (SL4); tag a linked element; edit a floor, roof or ramp (R1).
 - Move or delete someone else's spot slopes without the user's go-ahead this session.
+
+## Score (0–10)
+
+No deductions of its own yet: 10 when every **Done when** line holds; otherwise lower it and say which line failed. Ask the user for the deductions of this card when they review it, then write them here.

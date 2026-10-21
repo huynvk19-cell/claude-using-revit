@@ -6,3 +6,7 @@
 This step is the same as `drafting-plan-dims` card 05. Open `~/.claude/skills/drafting-plan-dims/steps/05-slope-marks.md` and follow it on the floor finish plans: Do, Done when, Skip only if and Never all apply unchanged. Load its **Tools** line.
 
 A view runs this step from one skill only: when the floor plan workflow already ran `drafting-plan-dims` card 05 on a view, skip it here for that view.
+
+## Score (0–10)
+
+No deductions of its own yet: 10 when every **Done when** line holds; otherwise lower it and say which line failed. Ask the user for the deductions of this card when they review it, then write them here.

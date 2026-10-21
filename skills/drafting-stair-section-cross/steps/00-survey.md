@@ -27,3 +27,7 @@ Show the user one table per view: band → flights (half, facing) → risers × 
 ## Skip only if
 
 Never. Stop and ask instead when: no host stairs (link); `LC:` model mismatch; numbering not continuous (start numbers are a Stairs property: R1, the user decides).
+
+## Score (0–10)
+
+No deductions of its own yet: 10 when every **Done when** line holds; otherwise lower it and say which line failed. Ask the user for the deductions of this card when they review it, then write them here.

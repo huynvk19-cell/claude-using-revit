@@ -28,3 +28,7 @@ Nothing to fix (audit `OK`), or manual only (listed).
 
 - `deleteExtra` / `extendGrids` without the user's yes in this turn.
 - Several elevations or sections in one call.
+
+## Score (0–10)
+
+No deductions of its own yet: 10 when every **Done when** line holds; otherwise lower it and say which line failed. Ask the user for the deductions of this card when they review it, then write them here.

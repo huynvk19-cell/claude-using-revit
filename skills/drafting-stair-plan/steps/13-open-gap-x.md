@@ -26,3 +26,7 @@ Check: `stair_gap_x {viewIds, mode:"preview"}` again: every gap `fits` or `Skipp
 ## Skip only if
 
 The side of the flight is a solid wall or a floor (the command reports it as `Skipped`).
+
+## Score (0–10)
+
+No deductions of its own yet: 10 when every **Done when** line holds; otherwise lower it and say which line failed. Ask the user for the deductions of this card when they review it, then write them here.

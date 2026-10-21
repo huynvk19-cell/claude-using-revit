@@ -18,3 +18,7 @@ Outside the end walls: grid → wall faces → door/window edges → grid; then 
 ## Skip only if
 
 The end wall has no grid, no door and no window seen (audit `Walls`): then a wall-to-wall chain only, say so.
+
+## Score (0–10)
+
+No deductions of its own yet: 10 when every **Done when** line holds; otherwise lower it and say which line failed. Ask the user for the deductions of this card when they review it, then write them here.

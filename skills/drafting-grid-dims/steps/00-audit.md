@@ -26,3 +26,7 @@ Show one table: view name → group → issues, then sort the work:
 ## Skip only if
 
 The view is in the profile exclusions, or its template hides Dimensions (`DimensionsHidden`).
+
+## Score (0–10)
+
+No deductions of its own yet: 10 when every **Done when** line holds; otherwise lower it and say which line failed. Ask the user for the deductions of this card when they review it, then write them here.

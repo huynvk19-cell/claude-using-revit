@@ -53,6 +53,11 @@ Một bản vẽ chỉ được báo "xong" khi đạt cả ba. Kiểm tra trư�
 | **ĐÚNG** | Số liệu lấy từ model (không đếm bằng mắt, không bịa). Dim bám hình học thật, đúng mép theo chuẩn (vd. thông thuỷ: lan can → mép bậc/chiếu nghỉ → tường hoàn thiện). Giá trị khớp tính toán (± 1 mm). Mã/tên đúng type, đúng tham số. Mọi dim/tag **thật sự được vẽ** (Box ≠ null, thấy trên ảnh). | Audit `OK`; `view_elem_boxes` (Box ≠ null); ảnh view. |
 | **ĐẸP** | Không chữ/tag/dim đè nhau hay đè nét chính; các dòng dim cách đều (7 mm giấy), thẳng hàng; chữ đoạn ngắn được tách ra; leader ngắn, không cắt chữ; tag gần chủ thể; cùng kiểu trình bày với các view đã có trên cùng sheet. | `annotation_overlaps` = 0; ảnh view (xuất **view**, không xuất sheet). |
 
+## 2b2. Điểm thẻ bước 0–10 (user 2026-10-21)
+
+- Mỗi thẻ bước (`skills/<skill>/steps/NN-*.md`) có mục **Score (0–10)**. Sau khi chạy thẻ trên một view: chấm điểm view theo mục đó và ghi vào bảng báo cáo (view → việc → số lượng → **điểm**), cả trước và sau khi sửa.
+- Thẻ chưa có luật trừ điểm riêng: 10 khi đủ mọi dòng **Done when**, không thì hạ điểm và nói dòng nào hỏng; hỏi user luật trừ điểm khi họ duyệt rồi ghi vào thẻ.
+
 ## 2c. Làm theo đợt và type đánh dấu (user, 2026-10-14)
 
 **Đợt (batch)**

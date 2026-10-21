@@ -26,3 +26,7 @@ Never.
 ## Never
 
 - Create a path type the project does not have: ask.
+
+## Score (0–10)
+
+No deductions of its own yet: 10 when every **Done when** line holds; otherwise lower it and say which line failed. Ask the user for the deductions of this card when they review it, then write them here.

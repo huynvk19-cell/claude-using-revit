@@ -45,3 +45,7 @@ The view draws no door or window, it is an OVERALL / key plan, or the profile ke
 - Push a dim far from its wall to find room: list it for the user.
 - Edit or delete someone else's dims; edit a door, wall or grid (R1).
 - Dim the door height on a plan.
+
+## Score (0–10)
+
+No deductions of its own yet: 10 when every **Done when** line holds; otherwise lower it and say which line failed. Ask the user for the deductions of this card when they review it, then write them here.

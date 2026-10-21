@@ -1,6 +1,6 @@
 # 02 · Tag room (tag phòng)
 
-**Skill** `drafting-plan-dims` · **Standard** `drafting-annotation.md` §2 RT1–RT8 · **Tools** `room_tags_missing`, `roomtag_place_ortho`, `room_tags_broken`, `tag_leaders_info`, `delete_element`, `mark_types`, `export_sheet_images`
+**Skill** `drafting-plan-dims` · **Standard** `drafting-annotation.md` §2 RT1–RT8 · **Tools** `room_tags_missing`, `roomtag_place_ortho`, `room_tags_score`, `room_tags_broken`, `tag_leaders_info`, `delete_element`, `mark_types`, `export_sheet_images`
 **Applies to** every floor plan view of the job.
 
 ## Do
@@ -33,3 +33,13 @@ The view shows no rooms (`Rooms` = 0), or every room is already tagged (`Untagge
 - A tag head across a wall or a floor edge (RT2); a diagonal leader.
 - Pick the type yourself on a new job (RT1).
 - Edit a room; a room with no name / number stays "?" and is reported (R1).
+
+## Score (0–10)
+
+Rules RS1–RS4 (`drafting-annotation.md` §2). Each tag starts at 10:
+- RS1 its leader lies on another leader → 0 at once.
+- RS2 the leader has a right-angle bend → −5.
+- RS3 the leader is longer than 3× the long side of its room → −9; longer than 2× → −5.
+- RS4 the tag sits on another room → −5.
+
+View score = average of its tags (`room_tags_score {viewIds, tagSizeMm}`; `room_tags_missing` already picks the spot with the best score). Report the score of every view, before and after.

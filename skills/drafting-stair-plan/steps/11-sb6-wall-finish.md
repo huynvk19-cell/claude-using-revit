@@ -19,3 +19,7 @@ Check: `stair_plan_audit {viewIds, rules:["SB6"]}` (`Tags.Walls, Tags.FinishMark
 ## Skip only if
 
 **Never** (mandatory; error of 2026-10-07: skipped as "the project does not use it"). Unknown code → ask the user.
+
+## Score (0–10)
+
+No deductions of its own yet: 10 when every **Done when** line holds; otherwise lower it and say which line failed. Ask the user for the deductions of this card when they review it, then write them here.

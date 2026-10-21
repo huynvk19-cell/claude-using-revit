@@ -22,3 +22,7 @@ Check: `stair_xsection_info {viewId, rules:["XA2"]}` (only XA2 rows, notes, issu
 ## Skip only if
 
 The view already has a clean level chain.
+
+## Score (0–10)
+
+No deductions of its own yet: 10 when every **Done when** line holds; otherwise lower it and say which line failed. Ask the user for the deductions of this card when they review it, then write them here.

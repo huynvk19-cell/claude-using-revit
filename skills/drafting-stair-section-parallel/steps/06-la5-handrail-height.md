@@ -33,3 +33,7 @@ Check: `stair_section_info {viewId, rules:["LA5"]}` (only LA5 rows, notes, issue
 
 - Report a section done while a cut landing has no LA5 dim.
 - Dim the railing frame instead of the handrail top.
+
+## Score (0–10)
+
+No deductions of its own yet: 10 when every **Done when** line holds; otherwise lower it and say which line failed. Ask the user for the deductions of this card when they review it, then write them here.

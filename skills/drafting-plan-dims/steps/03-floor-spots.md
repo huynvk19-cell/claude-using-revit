@@ -44,3 +44,7 @@ The view shows no rooms, it is an OVERALL / key plan, or every room already has 
 - Pick the spot type yourself on a new job (FL3); move or delete spots the user placed by hand.
 - A spot on a linked floor or on the wrong level; a spot in a small room inside another room unless the user asks.
 - Edit a room or a floor (R1).
+
+## Score (0–10)
+
+No deductions of its own yet: 10 when every **Done when** line holds; otherwise lower it and say which line failed. Ask the user for the deductions of this card when they review it, then write them here.

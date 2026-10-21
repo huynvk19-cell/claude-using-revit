@@ -37,3 +37,7 @@ The image shows every bubble clear and on its row.
 - Stagger a bubble out of its row (along the grid) to clear another bubble; elbow both bubbles of a pair.
 - Edit 3D grid extents; move a bubble inward into the grid-dim band.
 - Rename or delete grids (duplicate names → report for the user).
+
+## Score (0–10)
+
+No deductions of its own yet: 10 when every **Done when** line holds; otherwise lower it and say which line failed. Ask the user for the deductions of this card when they review it, then write them here.

@@ -34,3 +34,7 @@ The view draws no host wall outside the toilet / grid-dims-only areas, it is an 
 - A wall tag box on the wall lines; a wall tag without a leader; an elbowed or diagonal leader.
 - Tag walls of a toilet area (WT4).
 - Move or delete someone else's wall tags without the user's go-ahead this session; edit a wall (R1).
+
+## Score (0–10)
+
+No deductions of its own yet: 10 when every **Done when** line holds; otherwise lower it and say which line failed. Ask the user for the deductions of this card when they review it, then write them here.

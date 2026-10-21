@@ -16,3 +16,7 @@ For views where the fix reported `ExtendedSides`:
 ## Skip only if
 
 No grid end was extended on the view.
+
+## Score (0–10)
+
+No deductions of its own yet: 10 when every **Done when** line holds; otherwise lower it and say which line failed. Ask the user for the deductions of this card when they review it, then write them here.
