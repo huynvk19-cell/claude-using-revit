@@ -1,6 +1,6 @@
 /* mcp-tool
 {
-  "description": "Read-only, plans / ceiling plans: rooms with no room tag in the view + tag head per rules RT1-RT4 (inside, else outside + leader); annot_place items.",
+  "description": "Read-only, plans / ceiling plans: rooms with no room tag + tag body centre per RT1-RT8 (smallest room first, every room, short / aligned leaders).",
   "inputSchema": {
     "type": "object",
     "properties": {
@@ -38,7 +38,7 @@
       },
       "maxLeaderMm": {
         "type": "number",
-        "description": "paper mm the head may sit beyond the room, default 30"
+        "description": "paper mm beyond the room for the first search, widened x2, x4 (RT6), default 30"
       },
       "bubbleMm": {
         "type": "number",
@@ -74,6 +74,11 @@
 //    a tagSizeMm body at the far end of its box from the leader end (room tag boxes include the leader).
 //    The positions are the BODY centre of the tag: place them with a command that centres the tag body on the point
 //    (a room tag head is not its body centre); annot_place puts the head there.
+//    RT5-RT8 (2026-10-21): rooms are taken smallest area first; outside candidates are scored by leader length
+//    (+6 mm for a one-elbow leader, path HV / VH) minus 8 mm when the tag lines up (same vertical centre or same left
+//    edge) with a room tag within 80 mm; the search widens to 2x and 4x maxLeaderMm, then lets the leader cross other leaders, then text,
+//    lets the box touch model lines (note "CHECK"), and last puts the tag at the room centre ("FORCED"): every room
+//    gets an item. Items with an elbow carry path HV / VH for roomtag_place_ortho.
 //    Tag type = typeName, else the most common type among the 3 nearest tagged rooms of the view (NeighbourType).
 //    Tag size: tagSizeMm, else the box of a placed tag of that type (wider than the text: room tag boxes span the
 //    family's whole label frame, so positions come out conservative).
@@ -233,6 +238,7 @@ public static class RoomTagsMissing
 
             var annBoxes = new List<Box>();
             var leads = new List<Seg>(); // room tag leaders: existing + placed in this run
+            var tagBoxes = new List<Box>(); // existing room tag bodies (RT8 alignment)
             // grid bubbles shown in the view
             if (bubbleMm > 0)
                 foreach (var g in new FilteredElementCollector(doc, v.Id).OfClass(typeof(Grid)).Cast<Grid>())
@@ -278,7 +284,7 @@ public static class RoomTagsMissing
                             continue;
                         }
                         var tbx = new Box(F(tb.Min)[0], F(tb.Min)[1], F(tb.Max)[0], F(tb.Max)[1]);
-                        if (!rt.HasLeader || sz == null) { annBoxes.Add(tbx); continue; }
+                        if (!rt.HasLeader || sz == null) { annBoxes.Add(tbx); tagBoxes.Add(tbx); continue; }
                         // leader: head -> elbow -> end; body at the far end of the box from the leader end
                         var le = F(rt.LeaderEnd); var hd = F(rt.TagHeadPosition);
                         double[] el = null; try { if (rt.HasElbow) el = F(rt.LeaderElbow); } catch { }
@@ -291,6 +297,7 @@ public static class RoomTagsMissing
                         else if (m == dr) annBoxes.Add(new Box(tbx.R0, tbx.U0, tbx.R0 + bw, tbx.U1));   // end at right -> body left
                         else if (m == dd) annBoxes.Add(new Box(tbx.R0, tbx.U1 - bh, tbx.R1, tbx.U1));   // end below -> body top
                         else annBoxes.Add(new Box(tbx.R0, tbx.U0, tbx.R1, tbx.U0 + bh));                 // end above -> body bottom
+                        tagBoxes.Add(annBoxes[annBoxes.Count - 1]);
                         continue;
                     }
                     bool ann = e is IndependentTag || e is TextNote || e is SpatialElementTag || e is SpotDimension
@@ -327,12 +334,15 @@ public static class RoomTagsMissing
             }
             Func<Room, double, double, bool> inRoom = (r, rr, uu) => { try { return r.IsPointInRoom(P(rr, uu, (double)info[r.Id.IntegerValue][3])); } catch { return false; } };
 
-            var todo = rooms.Where(r => !tagged.ContainsKey(r.Id.IntegerValue) && (only == null || only.Contains(r.Id.IntegerValue)) && info.ContainsKey(r.Id.IntegerValue)).ToList();
+            // RT5: smallest room first
+            var todo = rooms.Where(r => !tagged.ContainsKey(r.Id.IntegerValue) && (only == null || only.Contains(r.Id.IntegerValue)) && info.ContainsKey(r.Id.IntegerValue))
+                .OrderBy(r => r.Area).ToList();
             var placed = new List<Box>();
             var items = new List<object>();
             var problems = new List<string>();
-            var pending = new List<object[]>(); // room, type, size, anchor, local segs, local ann boxes
-            int nIn = 0, nOut = 0;
+            var pending = new List<object[]>(); // room, type, size, anchor, local segs, local ann boxes, rect, label
+            int nIn = 0, nOut = 0, nForced = 0;
+            double maxLevel = maxLeaderMm * 4; // RT6: the search widens up to 4 x maxLeaderMm before relaxing
 
             foreach (var r in todo)
             {
@@ -360,7 +370,7 @@ public static class RoomTagsMissing
                     if (best == null) { problems.Add(label + ": no point inside the room found"); continue; }
                     A = best;
                 }
-                double reach = Math.Max(rect.R1 - rect.R0, rect.U1 - rect.U0) + (maxLeaderMm + sz[0] + sz[1]) * sc;
+                double reach = Math.Max(rect.R1 - rect.R0, rect.U1 - rect.U0) + (maxLevel + sz[0] + sz[1]) * sc;
                 var zone = new Box(A[0] - reach, A[1] - reach, A[0] + reach, A[1] + reach);
                 var lSegs = segs.Where(s => SegHits(s, zone)).Concat((List<Seg>)inf[2]).ToList();
                 var lAnn = annBoxes.Where(b => b.Hits(zone)).ToList();
@@ -368,67 +378,115 @@ public static class RoomTagsMissing
             }
 
             var placedLeads = new List<Seg>();
-            Func<Box, List<Seg>, List<Box>, bool> clear = (bx, ls, la) => !ls.Any(s => SegHits(s, bx)) && !la.Any(b => b.Hits(bx)) && !placed.Any(b => b.Hits(bx)) && !placedLeads.Any(s => SegHits(s, bx));
-            // leader (box edge -> anchor): no tag / text box, no placed head, no other leader on its way
+            Func<Box, bool> inCrop = bx => crop == null || (bx.R0 >= crop.R0 && bx.R1 <= crop.R1 && bx.U0 >= crop.U0 && bx.U1 <= crop.U1);
+            Func<Box, List<Box>, bool> annFree = (bx, la) => !la.Any(b => b.Hits(bx)) && !placed.Any(b => b.Hits(bx)) && !placedLeads.Any(s => SegHits(s, bx));
+            Func<Box, List<Seg>, bool> segFree = (bx, ls) => !ls.Any(s => SegHits(s, bx));
+            // leader: no tag / text box, no placed head, no other leader on its way
             Func<Seg, List<Box>, bool> leadClear = (L, la) => !la.Any(b => SegHits(L, b)) && !placed.Any(b => SegHits(L, b))
                 && !leads.Any(s => SegX(L, s)) && !placedLeads.Any(s => SegX(L, s));
+            Func<Seg, List<Box>, bool> leadSoft = (L, la) => !la.Any(b => SegHits(L, b)) && !placed.Any(b => SegHits(L, b));
+            double tol = 0.5 * sc, near = 80 * sc, alignBonus = 8, elbowPen = 6;
+            // RT8: same row (vertical centre) or same column (left edge) as a nearby room tag
+            Func<Box, bool> aligned = bx => placed.Concat(tagBoxes).Any(p =>
+                Math.Abs((p.R0 + p.R1) / 2 - (bx.R0 + bx.R1) / 2) < near && Math.Abs((p.U0 + p.U1) / 2 - (bx.U0 + bx.U1) / 2) < near
+                && (Math.Abs((p.U0 + p.U1) / 2 - (bx.U0 + bx.U1) / 2) < tol || Math.Abs(p.R0 - bx.R0) < tol));
 
-            // pass 1: inside (RT2), pass 2: outside with leader (RT3)
-            var left = new List<object[]>();
             foreach (var pd in pending)
             {
-                var r = (Room)pd[0]; var sz = (double[])pd[2]; var A = (double[])pd[3];
+                var r = (Room)pd[0]; var sz = (double[])pd[2]; var A = (double[])pd[3]; var rect = (Box)pd[6];
+                var ls = (List<Seg>)pd[4]; var la = (List<Box>)pd[5]; string tn = (string)pd[1], label = (string)pd[7];
                 double w = sz[0] * sc, h = sz[1] * sc, c = clearMm * sc, s = Math.Max(h / 2, 1), lim = maxShiftMm * sc;
-                var offs = new List<double[]>();
-                for (double dx = -lim; dx <= lim + 1e-6; dx += s) for (double dy = -lim; dy <= lim + 1e-6; dy += s) offs.Add(new[] { dx, dy });
-                bool ok = false;
-                foreach (var o in offs.OrderBy(o => o[0] * o[0] + o[1] * o[1]))
+                // values a tag centre may snap to so it lines up with a nearby tag (RT8)
+                var nb = placed.Concat(tagBoxes).Where(p => Math.Abs((p.R0 + p.R1) / 2 - A[0]) < near + w && Math.Abs((p.U0 + p.U1) / 2 - A[1]) < near + h).ToList();
+                var snapU = nb.Select(p => (p.U0 + p.U1) / 2).ToList();
+                var snapR = nb.Select(p => p.R0 + w / 2 + c).ToList();
+
+                // inside (RT4): box in the room, clear of everything; nearest to the anchor, aligned preferred
+                var inC = new List<double[]>();
+                // anywhere inside the room, nearest to the anchor first (a big room keeps its tag inside even when
+                // smaller rooms took the spots round its centre)
+                double lr = Math.Max(lim, (rect.R1 - rect.R0) / 2), lu = Math.Max(lim, (rect.U1 - rect.U0) / 2);
+                for (double dx = -lr; dx <= lr + 1e-6; dx += s) for (double dy = -lu; dy <= lu + 1e-6; dy += s) inC.Add(new[] { A[0] + dx, A[1] + dy });
+                foreach (var u in snapU) if (Math.Abs(u - A[1]) <= lu) for (double dx = -lr; dx <= lr + 1e-6; dx += s) inC.Add(new[] { A[0] + dx, u });
+                foreach (var rr in snapR) if (Math.Abs(rr - A[0]) <= lr) for (double dy = -lu; dy <= lu + 1e-6; dy += s) inC.Add(new[] { rr, A[1] + dy });
+                bool done = false;
+                foreach (var q in inC.Select(p => new { P = p, B = new Box(p[0] - w / 2, p[1] - h / 2, p[0] + w / 2, p[1] + h / 2).Grow(c) })
+                    .Select(x => new { x.P, x.B, S = Math.Sqrt(Math.Pow(x.P[0] - A[0], 2) + Math.Pow(x.P[1] - A[1], 2)) / sc - (aligned(x.B) ? alignBonus : 0) })
+                    .OrderBy(x => x.S))
                 {
-                    double cr = A[0] + o[0], cu = A[1] + o[1];
-                    var bx = new Box(cr - w / 2, cu - h / 2, cr + w / 2, cu + h / 2).Grow(c);
-                    if (crop != null && (bx.R0 < crop.R0 || bx.R1 > crop.R1 || bx.U0 < crop.U0 || bx.U1 > crop.U1)) continue;
+                    var bx = q.B; double cr = q.P[0], cu = q.P[1];
+                    if (!inCrop(bx) || !annFree(bx, la) || !segFree(bx, ls)) continue;
                     var pts = new[] { new[] { bx.R0, bx.U0 }, new[] { bx.R1, bx.U0 }, new[] { bx.R0, bx.U1 }, new[] { bx.R1, bx.U1 }, new[] { cr, bx.U0 }, new[] { cr, bx.U1 }, new[] { bx.R0, cu }, new[] { bx.R1, cu }, new[] { cr, cu } };
                     if (!pts.All(p => inRoom(r, p[0], p[1]))) continue;
-                    if (!clear(bx, (List<Seg>)pd[4], (List<Box>)pd[5])) continue;
-                    placed.Add(bx); nIn++; ok = true;
-                    items.Add(new { kind = "roomtag", elementId = r.Id.IntegerValue, typeName = (string)pd[1], right = Math.Round(cr), up = Math.Round(cu), leader = false, note = (string)pd[7] + " · inside" });
+                    placed.Add(bx); nIn++; done = true;
+                    items.Add(new { kind = "roomtag", elementId = r.Id.IntegerValue, typeName = tn, right = Math.Round(cr), up = Math.Round(cu), leader = false, note = label + " · inside" });
                     break;
                 }
-                if (!ok) left.Add(pd);
-            }
-            foreach (var pd in left)
-            {
-                var r = (Room)pd[0]; var sz = (double[])pd[2]; var A = (double[])pd[3]; var rect = (Box)pd[6];
-                double w = sz[0] * sc, h = sz[1] * sc, c = clearMm * sc, s = Math.Max(h / 2, 1);
-                // direction: dr, du, distance from the anchor to the room rectangle edge, half box size along it
-                var dirs = new[] {
-                    new { N = "up", Dr = 0.0, Du = 1.0, Edge = rect.U1 - A[1], Half = h / 2 },
-                    new { N = "right", Dr = 1.0, Du = 0.0, Edge = rect.R1 - A[0], Half = w / 2 },
-                    new { N = "down", Dr = 0.0, Du = -1.0, Edge = A[1] - rect.U0, Half = h / 2 },
-                    new { N = "left", Dr = -1.0, Du = 0.0, Edge = A[0] - rect.R0, Half = w / 2 } };
-                object best = null; Box bestBox = null; Seg bestLead = null; double bestLen = double.MaxValue;
-                foreach (var d in dirs)
+                if (done) continue;
+
+                // outside with a leader (RT4, RT7): straight or one right angle; shortest first, aligned preferred;
+                // the search widens (RT6), then relaxes: leader may cross, then the box may touch model lines
+                object best = null; Box bestBox = null; List<Seg> bestLead = null; string how = null;
+                for (int stage = 0; stage < 6 && best == null; stage++)
                 {
-                    for (double dist = d.Half + c; dist - d.Half <= d.Edge + maxLeaderMm * sc; dist += s)
-                    {
-                        double cr = A[0] + d.Dr * dist, cu = A[1] + d.Du * dist;
-                        var bx = new Box(cr - w / 2, cu - h / 2, cr + w / 2, cu + h / 2).Grow(c);
-                        if (crop != null && (bx.R0 < crop.R0 || bx.R1 > crop.R1 || bx.U0 < crop.U0 || bx.U1 > crop.U1)) break;
-                        if (inRoom(r, cr, cu)) continue; // head must be outside its room here
-                        if (!clear(bx, (List<Seg>)pd[4], (List<Box>)pd[5])) continue;
-                        var lead = new Seg { R1 = cr - d.Dr * (d.Half + c), U1 = cu - d.Du * (d.Half + c), R2 = A[0], U2 = A[1] };
-                        if (!leadClear(lead, (List<Box>)pd[5])) break; // a longer leader on this side passes the same obstacle
-                        double len = dist - d.Half;
-                        if (len < bestLen)
+                    double L = stage == 0 ? maxLeaderMm : stage == 1 ? maxLeaderMm * 2 : maxLeaderMm * 4;
+                    bool crossLeads = stage >= 3, relaxLead = stage >= 4, relaxSeg = stage >= 5;
+                    double hr = (rect.R1 - rect.R0) / 2 + L * sc + w, hu = (rect.U1 - rect.U0) / 2 + L * sc + h;
+                    var rs = new List<double> { A[0] }; var us = new List<double> { A[1] };
+                    for (double d = s; d <= hr; d += s) { rs.Add(A[0] + d); rs.Add(A[0] - d); }
+                    for (double d = s; d <= hu; d += s) { us.Add(A[1] + d); us.Add(A[1] - d); }
+                    rs.AddRange(snapR.Where(v => Math.Abs(v - A[0]) <= hr)); us.AddRange(snapU.Where(v => Math.Abs(v - A[1]) <= hu));
+                    var cands = new List<object[]>(); // score, cr, cu, path, segs
+                    foreach (var cr in rs)
+                        foreach (var cu in us)
                         {
-                            bestLen = len; bestBox = bx; bestLead = lead;
-                            best = new { kind = "roomtag", elementId = r.Id.IntegerValue, typeName = (string)pd[1], right = Math.Round(cr), up = Math.Round(cu), leader = true, endRight = Math.Round(A[0]), endUp = Math.Round(A[1]), note = (string)pd[7] + " · outside " + d.N + ", leader " + Math.Round(len / sc, 1) + " mm" };
+                            var bx = new Box(cr - w / 2, cu - h / 2, cr + w / 2, cu + h / 2).Grow(c);
+                            bool xin = A[0] >= bx.R0 && A[0] <= bx.R1, yin = A[1] >= bx.U0 && A[1] <= bx.U1;
+                            if (xin && yin) continue;
+                            double bonus = aligned(bx) ? alignBonus : 0;
+                            var opts = new List<object[]>();
+                            if (Math.Abs(cr - A[0]) < 1 && !yin) opts.Add(new object[] { "", new List<Seg> { new Seg { R1 = cr, U1 = A[1] > cu ? bx.U1 : bx.U0, R2 = A[0], U2 = A[1] } } });
+                            else if (Math.Abs(cu - A[1]) < 1 && !xin) opts.Add(new object[] { "", new List<Seg> { new Seg { R1 = A[0] > cr ? bx.R1 : bx.R0, U1 = cu, R2 = A[0], U2 = A[1] } } });
+                            else
+                            {
+                                if (!xin) opts.Add(new object[] { "HV", new List<Seg> { new Seg { R1 = A[0] > cr ? bx.R1 : bx.R0, U1 = cu, R2 = A[0], U2 = cu }, new Seg { R1 = A[0], U1 = cu, R2 = A[0], U2 = A[1] } } });
+                                if (!yin) opts.Add(new object[] { "VH", new List<Seg> { new Seg { R1 = cr, U1 = A[1] > cu ? bx.U1 : bx.U0, R2 = cr, U2 = A[1] }, new Seg { R1 = cr, U1 = A[1], R2 = A[0], U2 = A[1] } } });
+                            }
+                            foreach (var o in opts)
+                            {
+                                var sg = (List<Seg>)o[1];
+                                double len = sg.Sum(x => Math.Sqrt(Math.Pow(x.R2 - x.R1, 2) + Math.Pow(x.U2 - x.U1, 2))) / sc;
+                                cands.Add(new object[] { len + ((string)o[0] == "" ? 0 : elbowPen) - bonus, cr, cu, o[0], sg, bx, len });
+                            }
                         }
+                    foreach (var cd in cands.OrderBy(x => (double)x[0]))
+                    {
+                        var bx = (Box)cd[5]; double cr = (double)cd[1], cu = (double)cd[2];
+                        if (!inCrop(bx) || !annFree(bx, la)) continue;
+                        if (!relaxSeg && !segFree(bx, ls)) continue;
+                        var sg = (List<Seg>)cd[4];
+                        if (!relaxLead && !sg.All(x => crossLeads ? leadSoft(x, la) : leadClear(x, la))) continue;
+                        if (inRoom(r, cr, cu)) continue; // the head sits outside its room
+                        string path = (string)cd[3];
+                        bestBox = bx; bestLead = sg;
+                        how = (path == "" ? "straight" : "elbow " + path) + ", leader " + Math.Round((double)cd[6], 1) + " mm"
+                            + (relaxSeg ? " · CHECK: touches model lines" : relaxLead ? " · CHECK: leader crosses text" : crossLeads ? " · leader crosses a leader" : "");
+                        best = new { kind = "roomtag", elementId = r.Id.IntegerValue, typeName = tn, right = Math.Round(cr), up = Math.Round(cu), leader = true, endRight = Math.Round(A[0]), endUp = Math.Round(A[1]), path = path, note = label + " · outside " + how };
                         break;
                     }
                 }
-                if (best == null) { problems.Add((string)pd[7] + ": no clear place inside or within " + maxLeaderMm + " mm outside"); continue; }
-                placed.Add(bestBox); placedLeads.Add(bestLead); nOut++; items.Add(best);
+                if (best == null)
+                {
+                    // RT6 last resort: inside at the anchor, flagged
+                    nForced++;
+                    var bx = new Box(A[0] - w / 2, A[1] - h / 2, A[0] + w / 2, A[1] + h / 2).Grow(c);
+                    placed.Add(bx);
+                    items.Add(new { kind = "roomtag", elementId = r.Id.IntegerValue, typeName = tn, right = Math.Round(A[0]), up = Math.Round(A[1]), leader = false, note = label + " · inside FORCED · CHECK" });
+                    problems.Add(label + ": no clear place, put at the room centre (check)");
+                    continue;
+                }
+                if (how.Contains("CHECK")) problems.Add(label + ": " + how);
+                placed.Add(bestBox); placedLeads.AddRange(bestLead); nOut++; items.Add(best);
             }
 
             string outPath = (string)args["outPath"];
@@ -441,7 +499,7 @@ public static class RoomTagsMissing
             outViews.Add(new
             {
                 ViewId = vid, View = v.Name, Rooms = rooms.Count, Tagged = rooms.Count(r => tagged.ContainsKey(r.Id.IntegerValue)),
-                Untagged = todo.Count, Inside = nIn, Outside = nOut, NotPlacedOrEnclosed = notPlaced,
+                Untagged = todo.Count, Inside = nIn, Outside = nOut, Forced = nForced, NotPlacedOrEnclosed = notPlaced,
                 TagSize = sizeSrc.Select(kv => kv.Key + ": " + (sizeCache.ContainsKey(kv.Key) && sizeCache[kv.Key] != null ? string.Join(" x ", sizeCache[kv.Key]) : sizeArg != null ? string.Join(" x ", sizeArg) : "?") + " mm (" + kv.Value + ")").ToList(),
                 Problems = toFile ? null : problems, Items = toFile ? null : items, OutPath = toFile ? outPath : null
             });
