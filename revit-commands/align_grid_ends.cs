@@ -27,6 +27,11 @@
         },
         "description": "optional grid names to change (others still count for the default target)"
       },
+      "side": {
+        "type": "string",
+        "enum": ["low", "high"],
+        "description": "optional: move only this end of each grid, keep the other"
+      },
       "logPath": {
         "type": "string"
       }
@@ -47,6 +52,8 @@
 // Parameters:
 //   targets: optional { vertical: { low, high }, horizontal: { low, high } } in mm along the view's up / right
 //    direction from the view origin
+//   side: optional "low" | "high": change only that end of each grid (e.g. pull the left bubbles out past section
+//    heads), the other end keeps its current position (staggered or short grids stay as they are)
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -119,7 +126,8 @@ public static class AlignGridEnds
             t.Start();
             foreach (var x in rows.OrderBy(x => x.Item2).ThenBy(x => x.Item1.Name))
             {
-                var g = x.Item1; var tg = plan[x.Item2];
+                var g = x.Item1; var tg0 = plan[x.Item2]; string side = (string)args["side"];
+                var tg = new[] { side == "high" ? x.Item3 : tg0[0], side == "low" ? x.Item4 : tg0[1] };
                 bool change = (only == null || only.Contains(g.Name)) && (Math.Abs(x.Item3 - tg[0]) > 0.5 || Math.Abs(x.Item4 - tg[1]) > 0.5);
                 report.Add(new { Grid = g.Name, Group = x.Item2, Low = Math.Round(x.Item3), High = Math.Round(x.Item4), Target = Math.Round(tg[0]) + " .. " + Math.Round(tg[1]), Change = change,
                     Ext = g.GetDatumExtentTypeInView(DatumEnds.End0, v) + "/" + g.GetDatumExtentTypeInView(DatumEnds.End1, v) });

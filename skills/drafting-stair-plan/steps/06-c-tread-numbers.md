@@ -29,3 +29,7 @@ The profile says tread numbers are not shown.
 
 - Setting a length parameter with `modify_element_parameter`: it parses the text as feet ("2" → 610 mm, the whole view turns black).
 - Changing the start numbers without the user's permission (R1).
+
+## Score (0–10)
+
+No deductions of its own yet: 10 when every **Done when** line holds; otherwise lower it and say which line failed. **Accepted only above 7**; below, dissect and run again (`drafting-work-rules.md` §2b2). Ask the user for the deductions of this card when they review it, then write them here.

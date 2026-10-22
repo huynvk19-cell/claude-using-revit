@@ -24,7 +24,12 @@ description: "Giá trị riêng của dự án cho bộ skill drafting. Copy fil
 | Mặt cắt thang: dim thông thuỷ dưới chiếu nghỉ (LA4) có `CLEAR`? | `<không (theo mẫu) / có>` |
 | Lõi thang: hiện số bậc? / phía số bậc | `<có / không>` · `<left / right>` |
 | Lõi thang: type tag/path riêng (nếu không dùng type phổ biến nhất) | `<vd. stair path: Fixed Up Direction : Arrow only>` |
-| Room tag: type cố định của dự án (RT1; để trống = user chọn mỗi việc) · kích thước tag trên giấy (rộng × cao mm) | `<tên type, không kèm tên family>` · `<vd. 24 x 8>` → `typeName`, `tagSizeMm:[24,8]` |
+| Room tag: type cố định của dự án (để trống = hỏi user mỗi việc) · kích thước tag trên giấy (rộng × cao mm) | `<tên type, không kèm tên family>` · `<vd. 24 x 8>` → `typeName`, `tagSizeMm:[24,8]` |
+| Tài khoản Revit của người dùng (annotation của mình = LastChangedBy, `annot_owners`) | `<tên đăng nhập Revit>` |
+| Mặt bằng: vùng chỉ dim trục (không dim / tag cửa, `drafting-plan-dims` 00–01) | `<vd. vùng xưởng, x > 61 m>` |
+| Cao độ sàn (FL1–FL3): type cao độ (để trống = user chọn) · ngưỡng phòng nhỏ trong phòng khác (m²) · tên room buồng thang chứa · tên view lõi thang chứa · ký hiệu cao độ hiện trạng ngoài nhà | `<vd. Plan>` · `5` → `minAreaM2` · `STAIR` → `stairRoomText` · `STAIRCASE` → `stairViewText` · `<id generic annotation, không có thì bỏ>` → `civilSymbolId` |
+| Tag tường (WT1, WT4, `drafting-plan-dims` 04): type tag tường cố định (để trống = type đang dùng, chưa có thì hỏi) · phần tên room vệ sinh (không tag tường) | `<tên type, không kèm tên family>` · `TOILET, WC` |
+| Ký hiệu độ dốc (SL2–SL4, `drafting-plan-dims` 05, `drafting-plan-floor-finish` 01): Spot Slope type cố định (để trống = type có sẵn hướng Down, đơn vị thập phân / %) | `<tên type>` |
 | Schedule danh mục bản vẽ / print set khớp với nó | `<vd. DRAWINGS LIST>` / `<tên print set>` |
 | Sổ tay dự án (nếu có) | `<link>` |
 

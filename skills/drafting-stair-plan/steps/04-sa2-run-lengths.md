@@ -32,3 +32,7 @@ Never.
 - The same length dimmed on both sides of the core.
 - Counting the flush top tread (16R → 15T).
 - Spellings like `280x13T= ` (rewrite to `280mm x 13T =`).
+
+## Score (0–10)
+
+No deductions of its own yet: 10 when every **Done when** line holds; otherwise lower it and say which line failed. **Accepted only above 7**; below, dissect and run again (`drafting-work-rules.md` §2b2). Ask the user for the deductions of this card when they review it, then write them here.

@@ -60,6 +60,11 @@ metadata:
 | `dims_by_type_inventory` | Mọi dim của 1 type (hoặc ids): view, sheet, giá trị, vị trí đường dim, chữ bị dời. |
 | `opening_tags_in_views` | Phần tử (cửa…) có được thấy trong view không và có tag nào trỏ vào không. |
 | `door_window_tag_check` | Kiểm tag cửa đi / cửa sổ trong view: thiếu, hỏng, trùng, bị nét đè (audit / sửa). |
+| `room_spots_missing` | Chỉ đọc, mặt bằng (nhiều view): phòng chưa có cao độ sàn + điểm đặt theo FL1–FL3 (bỏ phòng nhỏ nằm trong phòng khác, liệt kê buồng thang); phòng nhiều cao độ (sàn nhỏ, ramp) → mỗi cao độ phẳng + hai đầu ramp (FL1b, `Levels`); view phụ thuộc tính cả annotation của view chính; trả về items cho `annot_place` (kind spot, nhận cả mặt sàn dốc). |
+| `floor_levels_probe` | Chỉ đọc, 1 view: các mặt trên của sàn / ramp / chiếu nghỉ / mái host trong view (khung view, z min–max, độ dốc %, hướng dốc) — tìm sàn chênh cao độ, đầu ramp. |
+| `slope_spots_place` | `types`: các type Spot Slope (hướng Up/Down, đơn vị, số dùng) + số spot slope trên mặt bằng làm mẫu. 1 view mặt bằng: đặt Spot Slope trên mặt dốc (sàn, ramp, mái) bằng cách chép một spot slope có sẵn trên mặt bằng (API 2023 không tạo được) rồi đổi type; bản chép không bám đúng phần tử → xoá, báo. preview / apply / undo. |
+| `stair_door_spots` | Cao độ sàn trong và ngoài cửa buồng thang (FL2, SB3) trên mặt bằng tầng và mặt bằng lõi thang. plan / apply / undo; `typeName` bắt buộc khi apply. |
+| `annot_owners` | Chỉ đọc, 1 view: ai tạo / ai sửa cuối các tag cửa và dim (worksharing), gom theo người + type; `listIds` để lấy id. Dùng trước khi dời / xoá annotation có sẵn. |
 | `annotation_override_scan` | Chú thích còn bị Override màu nét (vd. tô đỏ khi soát chưa xoá) trên các view của sheet theo tiền tố. |
 | `elements_beyond` | Nét chạy ra ngoài trục cuối. |
 | `annotation_overlaps` | Annotation chồng lắp trong 1 view: chữ dim, tag, text note, cao độ điểm, đường dim cắt qua chữ; trả về id để `highlight_elements` tô đỏ (room tag mặc định bỏ qua). |
@@ -104,8 +109,11 @@ metadata:
 | `view_dims_snapshot` | (read-only) Mọi dim tuyến tính của 1 view theo khung view: vị trí đường dim, các điểm gióng, giá trị + prefix/suffix/below từng đoạn, tham chiếu. Chụp trước / sau khi user chỉnh tay để học cách user dim (`outPath`). |
 | `elevation_opening_tags` | Tag cửa trên mặt đứng/cắt (1V), `addLeader`, `fixExisting`; cửa cuốn lớn: tag nằm trong cửa (`rollupInside`, `rollupFamilies`). |
 | `tag_align` | Căn đầu tag theo tag mẫu. |
-| `room_tags_outside` / `room_tags_broken` | Room tag nằm ngoài phòng (không có leader chỉ vào phòng; tag RT4 có leader được giữ) / room tag "?". |
-| `room_tags_missing` | (read-only) Mặt bằng / mặt bằng trần, nhiều view một lần: room chưa có tag trong view + vị trí đặt theo RT1–RT4 (`drafting-annotation.md` §2): giao điểm hai đường chéo, trong room nếu đủ chỗ không cắt tường / cạnh sàn (trần) / dim / tag, không thì ngoài room có leader thẳng; type = `typeName` hoặc type của room lân cận (`NeighbourType`); trả `Items` cho `annot_place`. |
+| `room_tags_outside` / `room_tags_broken` | Room tag nằm ngoài phòng (không có leader chỉ vào phòng; tag có leader được giữ) / room tag "?". |
+| `room_tags_missing` | (read-only) Mặt bằng / mặt bằng trần, một view một lần (`outPath`): room chưa có tag + chỗ đặt theo TR1–TR8 (`drafting-annotation.md` §2): trong room nếu đủ chỗ, không thì leader ngắn nhất (thẳng hoặc một góc vuông, chấm ngay trong room) có điểm cao nhất; không bao giờ chọn chỗ dính TR3–TR6; type = `typeName` hoặc type tag gần nhất; vị trí = TÂM THÂN tag cho `roomtag_place_ortho`; mỗi item có điểm dự kiến. |
+| `roomtag_place_ortho` | Một view: đặt room tag sao cho tâm thân tag nằm đúng điểm, leader thẳng ngang / dọc tới điểm trong room; `itemsPath` đọc file của `room_tags_missing`; `brief`; undo bằng log. |
+| `room_tags_score` | (read-only) Chấm điểm từng room tag theo TR1–TR8 (`drafting-annotation.md` §2): tối đa khi leader 0 trong room, giảm đều về 0 ở `zeroAtMm`; thẳng hàng +2; trên tường / cạnh sàn (trần), leader trùng leader / dọc tường / qua chấm leader khác → 0; cắt qua hẳn room khác −3 mỗi room (không tính room dưới thân tag); `CardScore` = trung bình, room chưa tag → 0; `Accepted` khi > `acceptAbove`; `outPath` ghi điểm từng tag. |
+| `room_tags_list` | (read-only) Room tag trong view: danh sách số room đã tag (`detail` = id tag, room, type). Dùng đối chiếu view OVERALL với view chi tiết 201/202. |
 | `viewport_titles_place` | Bật và căn title (`ignoreCrop`). |
 | `ui_view_focus` | Mở view + zoom theo crop để user theo dõi (`open`); ẩn/hiện Properties, Project Browser và báo trạng thái trước/sau (`panes` hide/show, `which` properties/browser). Dùng trong `drafting-start` / `drafting-end`. |
 
@@ -118,8 +126,8 @@ metadata:
 | `print_set_from_schedule` | Tạo / thay (`replace:true`) print set bằng đúng các sheet mà schedule danh mục bản vẽ liệt kê. preview / apply. |
 | `print_set_rename` | Đổi tên print set (id giữ nguyên). preview / apply. |
 | `crop_side_to_grids` | Kéo một cạnh crop tới sát trục ngoài cùng. |
-| `align_grid_ends` | Căn đầu trục 2D (`compact`). |
-| `grid_bubble_elbow` | Elbow cho bubble (hay lỗi → dùng so le đầu trục). |
+| `align_grid_ends` | Căn đầu trục 2D (`compact`); `only` + `targets` để đưa đầu trục về hàng bubble (G5, `drafting-grid-dims` 03); `side` = chỉ dời đầu low hoặc high (kéo bubble một phía ra ngoài). |
+| `grid_bubble_elbow` | G5: `plan` tìm cặp bubble chồng + phía rộng hơn + đầu lệch hàng; `preview`/`apply` elbow một bubble; `remove`. |
 | `view_image_trial` | Thử ẩn/bỏ template rồi xuất ảnh, luôn rollback. |
 | `tag_leaders_info` | (RO) Tag + room tag + leader trong view: đầu tag, điểm gấp, điểm cuối, hình dạng (V / H / V+H / H+V / D xiên). |
 | `view_range_info` | (RO) View range (top / cut / bottom / view depth, cao độ tuyệt đối) + cao độ Z của phần tử. |

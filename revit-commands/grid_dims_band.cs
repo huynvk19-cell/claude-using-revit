@@ -148,7 +148,7 @@
 //   hideInSiblings: dependent families: hide new/moved dims in the other sheet-placed views where they would show
 //    (default true)
 //   extraIds: preview / apply: dims to treat as extra (with deleteExtra: deleted, or hidden here when another sheet
-//    view uses them)
+//    view uses them); with extraIds, deleteExtra touches ONLY those (other drafters' extra dims stay)
 //   forceSides: preview / apply: side per group kind, e.g. { horizontal: 'right', vertical: 'bottom' } (user decision,
 //    e.g. to keep clear of another viewport)
 using System;
@@ -671,7 +671,7 @@ public static class GridDimsBand
                         }
                     }
                     if (opt.DeleteExtra)
-                        foreach (var x in g.Extra)
+                        foreach (var x in g.Extra.Where(ex => opt.ExtraIds.Count == 0 || opt.ExtraIds.Contains(ex.D.Id.IntegerValue)))   // extraIds given: only those
                         {
                             var sh = SharedWith(x.D);
                             if (sh != null)

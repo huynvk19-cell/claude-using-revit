@@ -19,3 +19,7 @@ The user says the crops are final.
 ## Never
 
 - Shrink an annotation crop, or turn on one the user did not ask for.
+
+## Score (0–10)
+
+No deductions of its own yet: 10 when every **Done when** line holds; otherwise lower it and say which line failed. **Accepted only above 7**; below, dissect and run again (`drafting-work-rules.md` §2b2). Ask the user for the deductions of this card when they review it, then write them here.

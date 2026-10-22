@@ -2,9 +2,10 @@
 #   -CommandsDir <path>  : the Revit MCP 'dynamic-commands' folder; the commands in revit-commands\ are copied there
 #                          (same-name files are overwritten). Default: $env:REVIT_MCP_COMMANDS, skipped when empty.
 #   -WorkStatus          : also install the status window scripts to %USERPROFILE%\Tools\WorkStatus
+#   -DwgBindXref         : also install the DWG bind-xref tool + its Explorer right-click menu (HKCU, no admin)
 #   -PyRevit             : also install the pyRevit extension (ribbon tab "claude using revit") to
 #                          %APPDATA%\pyRevit\Extensions; then pyRevit > Reload in Revit
-param([string]$CommandsDir = $env:REVIT_MCP_COMMANDS, [switch]$WorkStatus, [switch]$PyRevit)
+param([string]$CommandsDir = $env:REVIT_MCP_COMMANDS, [switch]$WorkStatus, [switch]$DwgBindXref, [switch]$PyRevit)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $claude = Join-Path $env:USERPROFILE '.claude'
@@ -39,6 +40,7 @@ if ($WorkStatus) {
     Copy-Item (Join-Path $root 'tools\work-status\*.ps1') -Destination $ws -Force
     "work status -> $ws"
 }
+if ($DwgBindXref) { & (Join-Path $root 'tools\dwg-bind-xref\install-menu.ps1') }
 if ($PyRevit) {
     $ext = Join-Path $env:APPDATA 'pyRevit\Extensions'
     New-Item -ItemType Directory -Force $ext | Out-Null

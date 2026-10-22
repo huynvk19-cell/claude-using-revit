@@ -38,8 +38,8 @@
 //    (tag type name, category from the element), right, up (head), leader (default false), endRight, endUp (free
 //    leader end on the element, optional; leaders are kept orthogonal: if the end is not straight above/beside the
 //    head an elbow is added, elbowFirst V (default: vertical from the head, then horizontal) or H, or explicit
-//    elbowRight / elbowUp)} | {kind:'spot', elementId (floor / landing / run: its highest horizontal face), typeName
-//    (spot elevation type), right, up (point on the face)} | {kind:'roomtag', elementId (room, any level seen in the
+//    elbowRight / elbowUp)} | {kind:'spot', elementId (floor / landing / run: its highest top face under the point,
+//    horizontal or sloped, e.g. a ramp floor), typeName (spot elevation type), right, up (point on the face)} | {kind:'roomtag', elementId (room, any level seen in the
 //    view), typeName (room tag type), right, up, leader, endRight, endUp, elbow as for tags} | {kind:'stairpath', elementId (stairs),
 //    typeName (stair path type)}. Types must already exist in the project (never created).
 //    mode preview (rolled back) | apply (logPath) | undo (logPath: deletes what was created).
@@ -126,14 +126,17 @@ public static class AnnotPlace
                                 if (!(g is Solid s)) continue;
                                 foreach (Face f in s.Faces)
                                 {
-                                    var hp = f as PlanarFace; if (hp == null || hp.Reference == null || hp.FaceNormal.Z < 0.999) continue;
-                                    var pr = hp.Project(new XYZ(probe.X, probe.Y, hp.Origin.Z));
-                                    if (pr != null && pr.Distance < 1e-4 && hp.Origin.Z > topZ) { pf = hp; topZ = hp.Origin.Z; }
+                                    // top faces, horizontal or sloped (ramp floors): z of the plane straight above / below the point
+                                    var hp = f as PlanarFace; if (hp == null || hp.Reference == null || hp.FaceNormal.Z < 0.2) continue;
+                                    var n = hp.FaceNormal; var o = hp.Origin;
+                                    double zf = o.Z - (n.X * (probe.X - o.X) + n.Y * (probe.Y - o.Y)) / n.Z;
+                                    var pr = hp.Project(new XYZ(probe.X, probe.Y, zf));
+                                    if (pr != null && pr.Distance < 1e-4 && zf > topZ) { pf = hp; topZ = zf; }
                                 }
                             }
                         }
                         string via = "view face";
-                        if (pf == null) { pf = TopFace(e, out topZ); via = "3D top face"; }
+                        if (pf == null) { pf = TopFace(e, out topZ); via = "3D top face"; if (pf != null && pf.FaceNormal.Z < 0.999) { var n = pf.FaceNormal; var o = pf.Origin; topZ = o.Z - (n.X * (probe.X - o.X) + n.Y * (probe.Y - o.Y)) / n.Z; } }
                         if (pf == null) { errors.Add(i + ": no horizontal top face on " + e.Id.IntegerValue); continue; }
                         var pt = P(r, u, topZ);
                         var sd = doc.Create.NewSpotElevation(v, pf.Reference, pt, pt, pt, pt, false);

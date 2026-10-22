@@ -6,12 +6,12 @@
 ## Do
 
 - 2D ends only. `align_grid_ends` preview → apply lines the bubbles up.
-- Overlapping bubbles → stagger one 2D end (`grid_bubble_elbow` often fails: then stagger the 2D end).
-- Pull grids out only when asked, and move the grid dims with them.
+- Overlapping or covered bubbles → `drafting-grid-dims` card 03 (G5): bubbles of a side stay in one row; only an overlapping pair gets an elbow on one bubble, toward the roomier side (`grid_bubble_elbow`), never a stagger.
+- Pull grids out only when asked, and move the grid dims with them: `align_grid_ends {side:"low"|"high", targets}` moves one end only, then `grid_dims_band` apply with a `cropGapMm` that clears what was in the band.
 
 ## Done when
 
-- Bubbles in one line per side, none overlapping.
+- Bubbles in one line per side, none overlapping (overlapping pairs elbowed).
 
 ## Skip only if
 
@@ -20,3 +20,7 @@ The view shows no grids.
 ## Never
 
 - Edit 3D grid extents.
+
+## Score (0–10)
+
+No deductions of its own yet: 10 when every **Done when** line holds; otherwise lower it and say which line failed. **Accepted only above 7**; below, dissect and run again (`drafting-work-rules.md` §2b2). Ask the user for the deductions of this card when they review it, then write them here.
