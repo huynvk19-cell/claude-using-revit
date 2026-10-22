@@ -44,6 +44,10 @@
         "type": "number",
         "description": "grid bubble diameter on paper mm kept clear, default 10 (0 = ignore bubbles)"
       },
+      "roomSizesPath": {
+        "type": "string",
+        "description": "JSON {roomId: [w, h]} real tag body per room, paper mm (overrides tagSizeMm)"
+      },
       "outPath": {
         "type": "string",
         "description": "write Items + Problems to this JSON file (one view per call); result = counts only"
@@ -161,6 +165,12 @@ public static class RoomTagsMissing
         double clearMm = (double?)args["clearMm"] ?? 1, maxShiftMm = (double?)args["maxShiftMm"] ?? 4, maxLeaderMm = (double?)args["maxLeaderMm"] ?? 30, goodAbove = 7;
         double bubbleMm = (double?)args["bubbleMm"] ?? 10;
         double[] sizeArg = args["tagSizeMm"] is JArray sa && sa.Count == 2 ? new[] { (double)sa[0], (double)sa[1] } : null;
+        // real body size per room (the text length differs per room); e.g. from the "body" of a roomtag_place_ortho log
+        var roomSizes = new Dictionary<int, double[]>();
+        string rsp = (string)args["roomSizesPath"];
+        if (!string.IsNullOrEmpty(rsp) && System.IO.File.Exists(rsp))
+            foreach (var kv in JObject.Parse(System.IO.File.ReadAllText(rsp)))
+                if (kv.Value is JArray rja && rja.Count == 2 && int.TryParse(kv.Key, out int rsid)) roomSizes[rsid] = new[] { (double)rja[0], (double)rja[1] };
 
         var allTags = new FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_RoomTags).WhereElementIsNotElementType().OfType<RoomTag>().ToList();
         Func<Element, string> typeOf = e => doc.GetElement(e.GetTypeId())?.Name ?? "";
@@ -294,7 +304,8 @@ public static class RoomTagsMissing
                     if (e is RoomTag rt)
                     {
                         var tb = rt.get_BoundingBox(v);
-                        var sz = sizeOf(typeOf(rt)) ?? sizeArg;
+                        int trid = -1; try { trid = rt.Room?.Id.IntegerValue ?? -1; } catch { }
+                        var sz = roomSizes.ContainsKey(trid) ? roomSizes[trid] : sizeOf(typeOf(rt)) ?? sizeArg;
                         if (tb == null)
                         {
                             if (sz == null) continue;
@@ -375,7 +386,7 @@ public static class RoomTagsMissing
                     .OrderBy(x => x.D).Take(3).GroupBy(x => x.T).OrderByDescending(g => g.Count()).Select(g => g.Key).FirstOrDefault();
                 string tn = typeArg.Length > 0 ? typeArg : nType;
                 if (string.IsNullOrEmpty(tn)) { problems.Add(label + ": no type (pass typeName)"); continue; }
-                var sz = sizeOf(tn);
+                var sz = roomSizes.ContainsKey(r.Id.IntegerValue) ? roomSizes[r.Id.IntegerValue] : sizeOf(tn);
                 if (sz == null) { problems.Add(label + ": tag size unknown for '" + tn + "' (pass tagSizeMm)"); continue; }
                 // anchor: diagonal intersection, else the nearest point inside the room
                 if (!inRoom(r, A[0], A[1]))

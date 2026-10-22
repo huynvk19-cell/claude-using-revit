@@ -8,6 +8,7 @@
       "tagSizeMm": { "type": "array", "items": { "type": "number" }, "description": "tag body width, height on paper mm (profile), default 30, 13" },
       "worst": { "type": "number", "description": "how many lowest-score tags to list per view, default 10" },
       "outPath": { "type": "string", "description": "write every tag's score to this JSON file" },
+      "roomSizesPath": { "type": "string", "description": "JSON {roomId: [w, h]} real tag body per room, paper mm" },
       "acceptAbove": { "type": "number", "description": "card accepted when its score is above this, default 7" }
     },
     "required": ["viewIds"]
@@ -65,6 +66,11 @@ public static class RoomTagsScore
         double[] sz = args["tagSizeMm"] is JArray sa && sa.Count == 2 ? new[] { (double)sa[0], (double)sa[1] } : new[] { 30.0, 13.0 };
         int worstN = (int?)args["worst"] ?? 10;
         double acceptAbove = (double?)args["acceptAbove"] ?? 7;
+        var roomSizes = new Dictionary<int, double[]>();
+        string rsp = (string)args["roomSizesPath"];
+        if (!string.IsNullOrEmpty(rsp) && File.Exists(rsp))
+            foreach (var kv in JObject.Parse(File.ReadAllText(rsp)))
+                if (kv.Value is JArray rja && rja.Count == 2 && int.TryParse(kv.Key, out int rsid)) roomSizes[rsid] = new[] { (double)rja[0], (double)rja[1] };
         var all = new JArray();
         var res = new List<object>();
         foreach (var vid in ((JArray)args["viewIds"]).Select(x => (int)x))
@@ -106,7 +112,8 @@ public static class RoomTagsScore
                 if (t.HasLeader)
                 {
                     var le = F(t.LeaderEnd);
-                    double w = Math.Min(bw, tr1 - tr0), h = Math.Min(bh, tu1 - tu0);
+                    double[] rsz = roomSizes.ContainsKey(rm.Id.IntegerValue) ? roomSizes[rm.Id.IntegerValue] : null;
+                    double w = Math.Min(rsz != null ? rsz[0] * sc : bw, tr1 - tr0), h = Math.Min(rsz != null ? rsz[1] * sc : bh, tu1 - tu0);
                     double dl = le[0] - tr0, dr = tr1 - le[0], dd = le[1] - tu0, du = tu1 - le[1], m = new[] { dl, dr, dd, du }.Min();
                     if (m == dl) { cr = tr1 - w / 2; } else if (m == dr) { cr = tr0 + w / 2; } else if (m == dd) { cu = tu1 - h / 2; } else { cu = tu0 + h / 2; }
                     if (m == dl || m == dr) cu = (tu0 + tu1) / 2 + 0; // body spans the full box height on a side leader
