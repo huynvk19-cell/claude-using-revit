@@ -19,5 +19,5 @@ except Exception as ex:
     forms.alert(u"Không xoá được vùng tô:\n{0}".format(ex), exitscript=True)
 
 if not n:
-    forms.alert(u"Không có vùng tô Untagged nào do {0} tạo{1}.".format(
+    forms.alert(u"Không có vùng tô chưa tag nào do {0} tạo{1}.".format(
         doc.Application.Username, u" trong các view này" if views else u""))

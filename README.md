@@ -17,7 +17,7 @@ Skills and domain standards that let Claude Code, via Revit MCP, do drawing prod
 | `tools/crop.ps1` | Cắt vùng ảnh sheet để kiểm tra | PowerShell |
 | `tools/work-status/` | Cửa sổ "Đang xử lý" luôn nổi trên màn hình (tuỳ chọn) | PowerShell |
 | `tools/dwg-bind-xref/` | Gộp xref của DWG thành một file `_merged.dwg` (AutoCAD accoreconsole), có menu chuột phải Explorer | PowerShell |
-| `pyrevit/ClaudeUsingRevit.extension/` | Extension pyRevit, tab **claude using revit**: nút **Highlight** (Filled Region đỏ, trong suốt 50%, bao quanh từng đối tượng đang chọn, trong view chứa nó) và **Clear Highlight** (chỉ xoá highlight do chính mình tạo; Shift+click: chỉ view đang mở); panel **Untagged**: **Highlight Untagged** (một cửa sổ: chọn phạm vi + loại đối tượng, xem trước số room, cửa đi, cửa sổ, tường chưa có tag và sàn chưa có cao độ, tô cam, rồi bấm một view để mở nó và chọn sẵn các đối tượng đó) và **Remove Untagged** (chỉ xoá các vùng tô đó do chính mình tạo) | IronPython |
+| `pyrevit/ClaudeUsingRevit.extension/` | Extension pyRevit, tab **claude using revit**: panel **Đánh dấu**: nút **Tô đối tượng** (Filled Region đỏ, trong suốt 50%, bao quanh từng đối tượng đang chọn, trong view chứa nó) và **Xoá vùng tô** (chỉ xoá highlight do chính mình tạo; Shift+click: chỉ view đang mở); panel **Kiểm tra tag**: **Tìm chưa tag** (một cửa sổ: chọn phạm vi + loại đối tượng, xem trước số room, cửa đi, cửa sổ, tường chưa có tag và sàn chưa có cao độ, tô cam, rồi bấm một view để mở nó và chọn sẵn các đối tượng đó) và **Xoá vùng tô** (chỉ xoá các vùng tô cam do chính mình tạo) | IronPython |
 
 ### Skills
 
@@ -109,7 +109,7 @@ Lệnh trên copy:
 - `domain/`, `templates/`, `tools/` vào `~/.claude/drafting-domain/`
 - `revit-commands/*.cs` vào thư mục dynamic-commands của Revit MCP (nếu có `-CommandsDir` hoặc biến môi trường `REVIT_MCP_COMMANDS`)
 - `-WorkStatus`: script cửa sổ trạng thái vào `%USERPROFILE%\Tools\WorkStatus`
-- `-PyRevit`: extension pyRevit vào `%APPDATA%\pyRevit\Extensions` (cần [pyRevit](https://github.com/pyrevitlabs/pyRevit)); sau đó bấm pyRevit > Reload trong Revit. Highlight có type `Highlight - Red 50%` và dấu Extensible Storage ghi tên người tạo, nên Clear Highlight không bao giờ xoá Filled Region khác hay highlight của người khác.
+- `-PyRevit`: extension pyRevit vào `%APPDATA%\pyRevit\Extensions` (cần [pyRevit](https://github.com/pyrevitlabs/pyRevit)); sau đó bấm pyRevit > Reload trong Revit. Highlight có type `Highlight - Red 50%` và dấu Extensible Storage ghi tên người tạo, nên nút Xoá vùng tô không bao giờ xoá Filled Region khác hay highlight của người khác.
 
 **Lệnh dùng chung, giá trị theo dự án**: tool không ghi cứng tên type hay tên family của dự án nào. Tên dim type (`dimTypeName` / `typeName`), family cửa cuốn (`nominalFamilies` / `rollupFamilies`)… được truyền vào khi gọi, lấy từ `drafting-profile.md` của dự án. Thiếu tham số bắt buộc thì tool báo lỗi, không tự đoán.
 

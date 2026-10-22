@@ -1,5 +1,5 @@
-title: Clear Highlight
+title: "Xoá\nvùng tô"
 tooltip: >-
-  Xoá các highlight do chính bạn tạo bằng nút Highlight, trong cả model.
+  Xoá các highlight do chính bạn tạo bằng nút Tô đối tượng, trong cả model.
   Shift+click: chỉ trong view đang mở. Không đụng tới Filled Region nào khác.
 author: claude-using-revit

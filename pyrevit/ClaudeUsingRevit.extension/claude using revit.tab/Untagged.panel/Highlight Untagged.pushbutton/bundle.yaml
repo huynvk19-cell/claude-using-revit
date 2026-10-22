@@ -1,7 +1,7 @@
-title: Highlight Untagged
+title: "Tìm\nchưa tag"
 tooltip: >-
   Tô Filled Region cam, trong suốt 50%, lên room, cửa đi, cửa sổ, tường chưa có tag và sàn
   chưa có cao độ, trong các sheet / view đang chọn ở Project Browser (hoặc view đang mở,
   hoặc chọn trong danh sách). Chọn loại đối tượng ở hàng nút bật/tắt. Bấm lại để làm mới.
-  Xoá bằng nút Remove Untagged.
+  Xoá bằng nút Xoá vùng tô bên cạnh.
 author: claude-using-revit
