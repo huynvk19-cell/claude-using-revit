@@ -17,7 +17,7 @@ Skills and domain standards that let Claude Code, via Revit MCP, do drawing prod
 | `tools/crop.ps1` | Cắt vùng ảnh sheet để kiểm tra | PowerShell |
 | `tools/work-status/` | Cửa sổ "Đang xử lý" luôn nổi trên màn hình (tuỳ chọn) | PowerShell |
 | `tools/dwg-bind-xref/` | Gộp xref của DWG thành một file `_merged.dwg` (AutoCAD accoreconsole), có menu chuột phải Explorer | PowerShell |
-| `pyrevit/ClaudeUsingRevit.extension/` | Extension pyRevit, tab **claude using revit**: nút **Highlight** (Filled Region đỏ, trong suốt 50%, bao quanh từng đối tượng đang chọn, trong view chứa nó) và **Clear Highlight** (chỉ xoá highlight do chính mình tạo; Shift+click: chỉ view đang mở); panel **Untagged**: **Highlight Untagged** (tô cam room, cửa đi, cửa sổ, tường chưa có tag và sàn chưa có cao độ, trong các sheet / view đang chọn) và **Remove Untagged** (chỉ xoá các vùng tô đó do chính mình tạo) | IronPython |
+| `pyrevit/ClaudeUsingRevit.extension/` | Extension pyRevit, tab **claude using revit**: nút **Highlight** (Filled Region đỏ, trong suốt 50%, bao quanh từng đối tượng đang chọn, trong view chứa nó) và **Clear Highlight** (chỉ xoá highlight do chính mình tạo; Shift+click: chỉ view đang mở); panel **Untagged**: **Highlight Untagged** (một cửa sổ: chọn phạm vi + loại đối tượng, xem trước số room, cửa đi, cửa sổ, tường chưa có tag và sàn chưa có cao độ, tô cam, rồi bấm một view để mở nó và chọn sẵn các đối tượng đó) và **Remove Untagged** (chỉ xoá các vùng tô đó do chính mình tạo) | IronPython |
 
 ### Skills
 

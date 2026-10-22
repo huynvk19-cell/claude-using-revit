@@ -396,11 +396,52 @@ def _make_region(doc, view, rtype_id, polys, min_len):
 
 # ---- commands -----------------------------------------------------------
 
-def highlight_views(doc, views, kinds):
+def view_key(view):
+    """Dependent views share annotations with their primary: same key for all of them."""
+    try:
+        pid = view.GetPrimaryViewId()
+        if pid != ElementId.InvalidElementId:
+            return pid.IntegerValue
+    except Exception:
+        pass
+    return view.Id.IntegerValue
+
+
+def scan(doc, views, kinds=KINDS, cache=None):
+    """{view id: {kind: [elements]}} for the views; reuses (and fills) `cache`."""
+    cache = {} if cache is None else cache
+    for v in views:
+        if v.Id.IntegerValue not in cache:
+            cache[v.Id.IntegerValue] = untagged_in_view(doc, v, kinds)
+    return cache
+
+
+def unique_counts(views, found, kinds):
+    """{kind: count} over the views, an element seen in two dependents of one primary once."""
+    seen = dict((k, set()) for k in kinds)
+    for v in views:
+        key = view_key(v)
+        for k in kinds:
+            for e in found.get(v.Id.IntegerValue, {}).get(k, []):
+                seen[k].add((key, e.Id.IntegerValue))
+    return dict((k, len(s)) for k, s in seen.items())
+
+
+def marked_count(doc, views):
+    """How many untagged regions of the current user the views show."""
+    user = doc.Application.Username
+    ids = set()
+    for v in views:
+        for r in find_marked(doc, v, user):
+            ids.add(r.Id.IntegerValue)
+    return len(ids)
+
+
+def highlight_views(doc, views, kinds, found=None):
     """Replace the current user's untagged regions in each view with fresh ones.
 
     One transaction per view (a view that fails is rolled back alone).
-    Returns ([(view name, {kind: count})], [problem messages]).
+    `found` = scan() result to reuse. Returns ([(view, {kind: count})], [problems]).
     """
     user = doc.Application.Username
     min_len = doc.Application.ShortCurveTolerance * 2
@@ -417,14 +458,7 @@ def highlight_views(doc, views, kinds):
         schema = get_schema(create=True)
         t.Commit()
         for view in views:
-            # dependent views share annotations with their primary: one region per element
-            key = view.Id.IntegerValue
-            try:
-                pid = view.GetPrimaryViewId()
-                if pid != ElementId.InvalidElementId:
-                    key = pid.IntegerValue
-            except Exception:
-                pass
+            key = view_key(view)
             offset = hr.OFFSET_PAPER_MM / 304.8 * max(view.Scale, 1)
             counts = dict((k, 0) for k in kinds)
             t = Transaction(doc, "Highlight untagged")
@@ -434,9 +468,11 @@ def highlight_views(doc, views, kinds):
                        if marked_kind(r) in kinds]
                 if old:
                     doc.Delete(List[ElementId](old))
-                found = untagged_in_view(doc, view, kinds)
+                fv = (found or {}).get(view.Id.IntegerValue)
+                if fv is None:
+                    fv = untagged_in_view(doc, view, kinds)
                 for kind in kinds:
-                    for e in found[kind]:
+                    for e in fv[kind]:
                         if (key, e.Id.IntegerValue) in done:
                             continue
                         made = 0
@@ -457,7 +493,7 @@ def highlight_views(doc, views, kinds):
                             problems.append(u"{0}: {1} {2} không vẽ được vùng tô".format(
                                 view.Name, LABELS[kind], e.Id))
                 t.Commit()
-                report.append((view.Name, counts))
+                report.append((view, counts))
                 if any(counts.values()) and view.GetCategoryHidden(
                         ElementId(BuiltInCategory.OST_DetailComponents)):
                     problems.append(u"{0}: Detail Items đang tắt trong view, vùng tô "
