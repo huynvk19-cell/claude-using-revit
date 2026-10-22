@@ -124,6 +124,16 @@ public static class RoomtagPlaceOrtho
                         }
                     }
                     doc.Regenerate();
+                    if (!leader) // the head offset read with no leader can be stale: shift the head by what the body missed
+                    {           // (not MoveElement: that keeps the tag point and draws a leader back to it)
+                        var bn = rt.get_BoundingBox(v);
+                        if (bn != null)
+                        {
+                            double dx = cx - (bn.Min.X + bn.Max.X) / 2, dy = cy - (bn.Min.Y + bn.Max.Y) / 2;
+                            // ceiling plans refuse a no-leader head outside the room: keep it where it is
+                            if (Math.Sqrt(dx * dx + dy * dy) * MM > 1) try { rt.TagHeadPosition = new XYZ(cx - ox + dx, cy - oy + dy, z); doc.Regenerate(); } catch { }
+                        }
+                    }
                     var b2 = rt.get_BoundingBox(v);
                     created.Add(rt.Id.IntegerValue);
                     done.Add(new
