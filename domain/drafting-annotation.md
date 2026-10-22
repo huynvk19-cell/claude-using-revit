@@ -35,7 +35,7 @@ metadata:
 |---|---|
 | RS0 | Đường đi của leader **trùng đè leader khác** hoặc **đi qua chấm (điểm cuối) của leader khác** → **điểm thẻ tag room của view = 0** (user 2026-10-21) |
 | RS1 | Leader trùng đè lên leader khác → **0 điểm ngay** (tag đó; thẻ cũng về 0 theo RS0) |
-| RS2 | Leader bẻ góc vuông → −5 |
+| RS2 | Leader bẻ góc vuông → −1 (Huy 2026-10-22, trước là −5) |
 | RS3 | Leader dài hơn 3 lần cạnh dài của room → −9; dài hơn 2 lần → −5 |
 | RS4 | Tag nằm trên room khác → −5 |
 

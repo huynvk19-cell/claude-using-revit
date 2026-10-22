@@ -19,7 +19,7 @@
 // ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
 // Score of one room tag, start 10 (drafting-annotation.md §2, user 2026-10-21):
 //    RS1 its leader lies on another room tag leader (same line, overlapping)  -> 0 at once
-//    RS2 the leader has a right-angle bend (elbow off the straight line)       -> -5
+//    RS2 the leader has a right-angle bend (elbow off the straight line)       -> -1
 //    RS3 the leader is longer than 3x / 2x the long side of its room           -> -9 / -5
 //    RS4 the tag body sits on another room                                     -> -5
 //    floor 0. View score = average of its tags. Card score of the view = 0 when any leader lies on another leader or
@@ -148,7 +148,7 @@ public static class RoomTagsScore
                 if (ov) { s = 0; why.Add(thru ? "RS0 leader through the leader end of " + ((Room)hit[1]).Number : "RS1 leader on another leader"); }
                 else
                 {
-                    if (elbow) { s -= 5; why.Add("RS2 elbow"); }
+                    if (elbow) { s -= 1; why.Add("RS2 elbow"); }
                     if (longSide > 0 && len > 3 * longSide) { s -= 9; why.Add("RS3 leader > 3x room (" + Math.Round(len / sc) + " mm)"); }
                     else if (longSide > 0 && len > 2 * longSide) { s -= 5; why.Add("RS3 leader > 2x room (" + Math.Round(len / sc) + " mm)"); }
                     if (!inRoom(rm.Id.IntegerValue, c[0], c[1]) && rooms.Keys.Any(k => k != rm.Id.IntegerValue && inRoom(k, c[0], c[1]))) { s -= 5; why.Add("RS4 on another room"); }

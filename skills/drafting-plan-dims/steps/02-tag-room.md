@@ -38,7 +38,7 @@ The view shows no rooms (`Rooms` = 0), or every room is already tagged (`Untagge
 
 Rules RS0–RS4 (`drafting-annotation.md` §2). **Card score of the view = 0** when any leader lies on another leader or runs through another leader's dot (RS0). Otherwise each tag starts at 10:
 - RS1 its leader lies on another leader → 0 at once.
-- RS2 the leader has a right-angle bend → −5.
+- RS2 the leader has a right-angle bend → −1.
 - RS3 the leader is longer than 3× the long side of its room → −9; longer than 2× → −5.
 - RS4 the tag sits on another room → −5.
 

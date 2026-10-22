@@ -483,9 +483,9 @@ public static class RoomTagsMissing
                             {
                                 var sg = (List<Seg>)o[1];
                                 double len = sg.Sum(x => Math.Sqrt(Math.Pow(x.R2 - x.R1, 2) + Math.Pow(x.U2 - x.U1, 2))) / sc;
-                                // RS2, RS3: -5 for an elbow, -9 / -5 when longer than 3x / 2x the room long side
+                                // RS2, RS3: -1 for an elbow, -9 / -5 when longer than 3x / 2x the room long side
                                 double lenM = len * sc;
-                                int pen = ((string)o[0] == "" ? 0 : 5) + (lenM > 3 * longSide ? 9 : lenM > 2 * longSide ? 5 : 0);
+                                int pen = ((string)o[0] == "" ? 0 : 1) + (lenM > 3 * longSide ? 9 : lenM > 2 * longSide ? 5 : 0);
                                 cands.Add(new object[] { Math.Max(0, 10 - pen), cr, cu, o[0], sg, bx, len, len - bonus });
                             }
                         }
