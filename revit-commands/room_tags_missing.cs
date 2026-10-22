@@ -15,6 +15,8 @@
       "insetMm": { "type": "number", "description": "paper mm the leader dot sits inside the room boundary, default 2" },
       "stepMm": { "type": "number", "description": "search grid step on paper mm, default 2" },
       "bubbleMm": { "type": "number", "description": "grid bubble diameter on paper mm kept clear, default 10 (0 = ignore)" },
+      "rebalance": { "type": "boolean", "description": "move good tags aside so tags <= keepAbove score better, default true" },
+      "keepAbove": { "type": "number", "description": "rebalance: low = score <= this; a moved good tag stays above it, default 7" },
       "outPath": { "type": "string", "description": "write Items + Problems to this JSON file (one view per call); result = counts only" }
     },
     "required": ["viewIds"]
@@ -33,6 +35,11 @@
 //            (plus the rows / columns of nearby tags), leader straight or one right angle (HV = across then up / down,
 //            VH = up / down then across), dot insetMm inside the room where the leader first enters it = the shortest
 //            leader. Candidates are tried best upper bound first (TR1 by length + TR2), the exact score decides.
+//    pass 2 (rebalance, Huy 2026-10-22: good tags usually have many spots, let them make room): each tag scoring
+//            <= keepAbove, worst first, is planned again with the planned tags round it lifted; the lifted tags in the way
+//            of its new spot are planned again around it and must stay above keepAbove (or no worse when already below);
+//            kept when the sum of the changed scores rises by more than 0.5; a lifted tag that cannot move is kept fixed
+//            and the low tag tries its next spot (4 tries). Three rounds. Only tags of this plan move.
 //    Never chosen: a body on a wall / floor (ceiling) edge (TR3), a leader on another leader (TR4), along a wall or edge
 //    (TR5), through another leader dot (TR6) or with another leader through its dot; a body over a dim, tag, text, spot,
 //    grid bubble, leader or dot (clearMm); a leader through a tag / text box (relaxed last, note CHECK); outside the crop.
@@ -337,6 +344,21 @@ public static class RoomTagsMissing
     }
 
     class Cd { public double UB, L, CR, CU; public string Path; public List<double[]> Pts; }
+    class Pl { public Rm R; public string Tn; public Tg T; public Cd C; public double S; public bool Inside, Forced; public string Why = ""; public int Stage; }
+
+    // two planned tags in each other's way: bodies too close, a leader through the other body / dot, leaders on each other
+    static bool Clash(Tg a, Tg b, double clr, double tol)
+    {
+        if (a.Body != null && b.Body != null && a.Body.Hits(b.Body.Grow(clr))) return true;
+        foreach (var x in new[] { a, b })
+        {
+            var y = x == a ? b : a;
+            if (y.Body != null && x.Lead.Any(s => SegHits(s, y.Body))) return true;
+            if (x.Dot != null && y.Body != null && y.Body.Has(x.Dot[0], x.Dot[1])) return true;
+            if (x.Dot != null && y.Lead.Any(s => PtSeg(x.Dot[0], x.Dot[1], s) < tol)) return true;
+        }
+        return a.Lead.Any(s => b.Lead.Any(q => Along(s, q, tol)));
+    }
 
     // pass 1 for one room: the outside spot with the best score, then the shortest leader; stage 0 = within zeroAtMm,
     // 1 = within 2 x zeroAtMm, 2 = the leader may cross a tag / text box
@@ -447,6 +469,7 @@ public static class RoomTagsMissing
         double maxS = (double?)args["maxScore"] ?? 10, zeroAt = (double?)args["zeroAtMm"] ?? 50, alignMm = (double?)args["alignMm"] ?? 80;
         double clearMm = (double?)args["clearMm"] ?? 1, insetMm = (double?)args["insetMm"] ?? 2, stepMm = (double?)args["stepMm"] ?? 2;
         double bubbleMm = (double?)args["bubbleMm"] ?? 10;
+        bool rebalance = (bool?)args["rebalance"] ?? true; double keepAbove = (double?)args["keepAbove"] ?? 7;
         string outPath = (string)args["outPath"];
         var outViews = new List<object>();
 
@@ -560,13 +583,12 @@ public static class RoomTagsMissing
                 prep[r.Id] = new object[] { tn, w, h, A, hard.Where(s => SegHits(s, zone)).ToList(), ann.Where(b => b.Hits(zone)).ToList(), annSegs.Where(s => SegHits(s, zone)).ToList() };
             }
 
-            var done = new HashSet<int>();
-            // pass 0: inside, no leader (full score), smallest room first
-            foreach (var r in todo.Where(r => prep.ContainsKey(r.Id)))
+            // inside spot of a room (no leader, full score): aligned with a tag nearby first, then nearest to the anchor
+            Func<Rm, object[], Box> insideSpot = (r, o) =>
             {
-                var o = prep[r.Id]; string tn = (string)o[0]; double w = (double)o[1], h = (double)o[2]; var A = (double[])o[3];
+                double w = (double)o[1], h = (double)o[2]; var A = (double[])o[3];
                 var lh = (List<Seg>)o[4]; var la = (List<Box>)o[5]; var ls = (List<Seg>)o[6];
-                if (r.Rect.R1 - r.Rect.R0 < w || r.Rect.U1 - r.Rect.U0 < h) continue;
+                if (r.Rect.R1 - r.Rect.R0 < w || r.Rect.U1 - r.Rect.U0 < h) return null;
                 double sx = st, sy = st;
                 while (((r.Rect.R1 - r.Rect.R0 - w) / sx + 1) * ((r.Rect.U1 - r.Rect.U0 - h) / sy + 1) > 40000) { sx *= 1.5; sy *= 1.5; }
                 var xs = new List<double>(); var ys = new List<double>();
@@ -585,35 +607,113 @@ public static class RoomTagsMissing
                     if (aligned(b)) { pick = b; break; }
                     if (d0 < 0) { pick = b; d0 = q[2]; }
                 }
-                if (pick == null) continue;
-                others.Add(new Tg { Id = nid--, RoomId = r.Id, Num = r.Num, Type = tn, Body = pick });
-                items.Add(new { kind = "roomtag", elementId = r.Id, typeName = tn, right = Math.Round(pick.CR), up = Math.Round(pick.CU), leader = false, score = maxS, note = r.Num + " · inside" });
-                scores.Add(maxS); nIn++; done.Add(r.Id);
-            }
+                return pick;
+            };
+            // best spot of a room against the current others: inside when it fits, else outside with a leader
+            Func<Rm, Pl> spotFor = r =>
+            {
+                var o = prep[r.Id]; string tn = (string)o[0]; double w = (double)o[1], h = (double)o[2];
+                var lh = (List<Seg>)o[4]; var la = (List<Box>)o[5]; var ls = (List<Seg>)o[6];
+                var ib = insideSpot(r, o);
+                if (ib != null) return new Pl { R = r, Tn = tn, T = new Tg { RoomId = r.Id, Num = r.Num, Type = tn, Body = ib }, S = maxS, Inside = true, Why = "" };
+                Cd c; double s; string why; int stage;
+                var tg = Outside(r, tn, w, h, lh, la, others, rooms, p, st, ins, b => bodyFree(b, la, ls, lh), out c, out s, out why, out stage);
+                return tg == null ? null : new Pl { R = r, Tn = tn, T = tg, C = c, S = s, Why = why, Stage = stage };
+            };
 
+            var plans = new List<Pl>();
+            // pass 0: inside, no leader (full score), smallest room first
+            foreach (var r in todo.Where(r => prep.ContainsKey(r.Id)))
+            {
+                var ib = insideSpot(r, prep[r.Id]);
+                if (ib == null) continue;
+                var pl = new Pl { R = r, Tn = (string)prep[r.Id][0], T = new Tg { Id = nid--, RoomId = r.Id, Num = r.Num, Type = (string)prep[r.Id][0], Body = ib }, S = maxS, Inside = true, Why = "" };
+                others.Add(pl.T); plans.Add(pl);
+            }
             // pass 1: outside with the shortest leader that scores best, smallest room first
-            foreach (var r in todo.Where(r => prep.ContainsKey(r.Id) && !done.Contains(r.Id)))
+            foreach (var r in todo.Where(r => prep.ContainsKey(r.Id) && !plans.Any(q => q.R == r)))
             {
                 var o = prep[r.Id]; string tn = (string)o[0]; double w = (double)o[1], h = (double)o[2]; var A = (double[])o[3];
                 var lh = (List<Seg>)o[4]; var la = (List<Box>)o[5]; var ls = (List<Seg>)o[6];
                 Cd bestC; double bestS; string bestWhy; int bestStage;
                 var best = Outside(r, tn, w, h, lh, la, others, rooms, p, st, ins, b => bodyFree(b, la, ls, lh), out bestC, out bestS, out bestWhy, out bestStage);
-                if (best == null)
+                Pl pl;
+                if (best == null) // last resort: the room centre, no leader, flagged
+                    pl = new Pl { R = r, Tn = tn, T = new Tg { RoomId = r.Id, Num = r.Num, Type = tn, Body = new Box(A[0] - w / 2, A[1] - h / 2, A[0] + w / 2, A[1] + h / 2) }, S = 0, Forced = true, Why = "" };
+                else pl = new Pl { R = r, Tn = tn, T = best, C = bestC, S = bestS, Why = bestWhy, Stage = bestStage };
+                pl.T.Id = nid--; others.Add(pl.T); plans.Add(pl);
+            }
+
+            // pass 2 (rebalance, Huy 2026-10-22): a tag at or below keepAbove gets a better spot when the planned tags in its way
+            // move elsewhere and still score above keepAbove (or no worse, when already at or below it); kept only when the sum
+            // of the changed scores rises by more than 0.5
+            int nMoved = 0, nHelped = 0;
+            if (rebalance)
+                for (int round = 0; round < 3; round++)
                 {
-                    // last resort: the room centre, no leader, flagged
-                    var b = new Box(A[0] - w / 2, A[1] - h / 2, A[0] + w / 2, A[1] + h / 2);
-                    others.Add(new Tg { Id = nid--, RoomId = r.Id, Num = r.Num, Type = tn, Body = b });
-                    items.Add(new { kind = "roomtag", elementId = r.Id, typeName = tn, right = Math.Round(A[0]), up = Math.Round(A[1]), leader = false, score = (double?)null, note = r.Num + " · inside FORCED · CHECK" });
+                    bool any = false;
+                    foreach (var low in plans.Where(q => q.S <= keepAbove).OrderBy(q => q.S).ToList())
+                    {
+                        if (!plans.Contains(low)) continue; // already moved for another tag this round
+                        var o = prep[low.R.Id]; double w = (double)o[1], h = (double)o[2];
+                        var zone = low.R.Rect.Grow(2 * p.ZeroAt + w + h);
+                        var mov = plans.Where(q => q != low && q.T.Body != null && q.T.Body.Hits(zone)).ToList();
+                        // a lifted tag that cannot move stays put (fixed) and the low tag looks for its next spot, up to 4 tries
+                        var fix = new List<Pl>();
+                        for (int attempt = 0; attempt < 4; attempt++)
+                        {
+                            var lift = mov.Where(m => !fix.Contains(m)).ToList();
+                            if (lift.Count == 0) break;
+                            others.Remove(low.T); foreach (var m in lift) others.Remove(m.T);
+                            var nl = spotFor(low.R);
+                            if (nl == null || nl.S <= low.S + 0.5)
+                            { others.Add(low.T); others.AddRange(lift.Select(m => m.T)); break; }
+                            others.Add(nl.T);
+                            var clash = new List<Pl>();
+                            foreach (var m in lift) { if (Clash(m.T, nl.T, clr, tol)) clash.Add(m); else others.Add(m.T); }
+                            double gain = nl.S - low.S; var moved = new List<Pl[]>(); Pl stuck = null;
+                            foreach (var m in clash.OrderByDescending(m => m.S))
+                            {
+                                var nm = spotFor(m.R);
+                                if (nm == null || (m.S > keepAbove ? nm.S <= keepAbove : nm.S < m.S)) { stuck = m; break; }
+                                others.Add(nm.T); gain += nm.S - m.S; moved.Add(new[] { m, nm });
+                            }
+                            if (stuck != null || gain <= 0.5)
+                            {
+                                others.Remove(nl.T); foreach (var mm in moved) others.Remove(mm[1].T);
+                                others.Add(low.T); others.AddRange(clash.Select(m => m.T));
+                                if (stuck == null) break;
+                                fix.Add(stuck); continue;
+                            }
+                            nl.T.Id = low.T.Id; plans[plans.IndexOf(low)] = nl;
+                            foreach (var mm in moved) { mm[1].T.Id = mm[0].T.Id; plans[plans.IndexOf(mm[0])] = mm[1]; }
+                            nMoved += moved.Count; nHelped++; any = true;
+                            break;
+                        }
+                    }
+                    if (!any) break;
+                }
+
+            foreach (var pl in plans)
+            {
+                var r = pl.R;
+                if (pl.Forced)
+                {
+                    items.Add(new { kind = "roomtag", elementId = r.Id, typeName = pl.Tn, right = Math.Round(pl.T.Body.CR), up = Math.Round(pl.T.Body.CU), leader = false, score = (double?)null, note = r.Num + " · inside FORCED · CHECK" });
                     problems.Add(r.Num + ": no clear place, put at the room centre (check)");
                     nForced++; continue;
                 }
-                best.Id = nid--; others.Add(best);
-                var end = bestC.Pts[bestC.Pts.Count - 1];
-                string how = (bestC.Path == "" ? "straight" : "elbow " + bestC.Path) + ", leader " + Math.Round(bestC.L / sc, 1) + " mm, score " + Math.Round(bestS, 2)
-                    + (bestStage == 2 ? " · CHECK: leader crosses a tag / text" : bestStage == 1 ? " · beyond zeroAtMm" : "") + (bestWhy.Length > 0 ? " (" + bestWhy + ")" : "");
-                if (bestStage > 0) problems.Add(r.Num + ": " + how);
-                items.Add(new { kind = "roomtag", elementId = r.Id, typeName = tn, right = Math.Round(bestC.CR), up = Math.Round(bestC.CU), leader = true, endRight = Math.Round(end[0]), endUp = Math.Round(end[1]), path = bestC.Path, score = Math.Round(bestS, 2), note = r.Num + " · outside " + how });
-                scores.Add(bestS); nOut++;
+                if (pl.Inside)
+                {
+                    items.Add(new { kind = "roomtag", elementId = r.Id, typeName = pl.Tn, right = Math.Round(pl.T.Body.CR), up = Math.Round(pl.T.Body.CU), leader = false, score = maxS, note = r.Num + " · inside" });
+                    scores.Add(maxS); nIn++; continue;
+                }
+                var end = pl.C.Pts[pl.C.Pts.Count - 1];
+                string how = (pl.C.Path == "" ? "straight" : "elbow " + pl.C.Path) + ", leader " + Math.Round(pl.C.L / sc, 1) + " mm, score " + Math.Round(pl.S, 2)
+                    + (pl.Stage == 2 ? " · CHECK: leader crosses a tag / text" : pl.Stage == 1 ? " · beyond zeroAtMm" : "") + (pl.Why.Length > 0 ? " (" + pl.Why + ")" : "");
+                if (pl.Stage > 0) problems.Add(r.Num + ": " + how);
+                items.Add(new { kind = "roomtag", elementId = r.Id, typeName = pl.Tn, right = Math.Round(pl.C.CR), up = Math.Round(pl.C.CU), leader = true, endRight = Math.Round(end[0]), endUp = Math.Round(end[1]), path = pl.C.Path, score = Math.Round(pl.S, 2), note = r.Num + " · outside " + how });
+                scores.Add(pl.S); nOut++;
             }
 
             if (!string.IsNullOrEmpty(outPath))
@@ -626,6 +726,7 @@ public static class RoomTagsMissing
             {
                 ViewId = vid, View = v.Name, Rooms = rooms.Count, Tagged = rooms.Count(r => tagged.Contains(r.Id)), Untagged = todo.Count,
                 Inside = nIn, Outside = nOut, Forced = nForced, NotPlanned = todo.Count - nIn - nOut - nForced,
+                Rebalanced = nHelped, MovedForThem = nMoved,
                 ScoreAvgNew = scores.Count == 0 ? (double?)null : Math.Round(scores.Average(), 2),
                 TagSize = sizeArg != null ? string.Join(" x ", sizeArg) + " mm (tagSizeMm)" : "measured body of a placed tag",
                 Problems = toFile ? null : problems, Items = toFile ? null : items, OutPath = toFile ? outPath : null
