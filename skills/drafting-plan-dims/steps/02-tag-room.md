@@ -1,46 +1,40 @@
 # 02 · Tag room (tag phòng)
 
-**Skill** `drafting-plan-dims` · **Standard** `drafting-annotation.md` §2 RT1–RT8 · **Tools** `room_tags_missing`, `roomtag_place_ortho`, `room_tags_score`, `room_tags_broken`, `tag_leaders_info`, `delete_element`, `mark_types`, `export_sheet_images`
+**Skill** `drafting-plan-dims` · **Standard** `drafting-annotation.md` §2 TR1–TR8 · **Tools** `room_tags_missing`, `roomtag_place_ortho`, `room_tags_score`, `delete_element`, `mark_types`, `export_sheet_images`
 **Applies to** every floor plan view of the job.
 
 ## Do
 
-1. **Type (RT1).** New job → ask the user once which room tag type (list the types already on the sheet). Add-on request ("tag các room còn thiếu") → leave `typeName` empty: the command takes the type of the nearest tagged rooms (`NeighbourType`).
-2. **Find and place (RT2–RT4).** One view per call (`outPath`):
+1. **Score before.** `room_tags_score {viewIds, tagSizeMm}` on the views: `CardScore`, `Untagged` per view.
+2. **Type.** `typeName` from the profile; none → ask the user once (never pick one yourself). Add-on request ("tag các room còn thiếu") → leave `typeName` empty: the command takes the type of the nearest tags.
+3. **Find the spots**, one view per call:
    ```
-   room_tags_missing {viewIds:[one view], typeName, tagSizeMm, outPath:"<review>/p1-<viewId>.json"}
+   room_tags_missing {viewIds:[one view], typeName, tagSizeMm, outPath:"<review>/tr-<viewId>.json"}
    ```
-   Per view: `Untagged`, `Inside` (no leader), `Outside` (leader); with `outPath` the `Items` + `Problems` go to the file (one view per call, short result). Kept clear: walls, floor / ceiling edges, dims, tags, texts, grid bubbles (`bubbleMm`, default 10), other room tag leaders; a leader never runs through a tag, a text or another leader dot (RS0). RT5–RT8: first every room that fits takes an inside spot (no leader), then the rest go smallest area first; a low-score spot (≤ 7) keeps the search going to wider rings; every room gets an item (the search widens to 2x, 4x `maxLeaderMm`, then allows a leader to cross (never lie on) another leader, then over text, then touching model lines, last the room centre: notes `CHECK` / `FORCED` → Cần xem); shortest leader first (straight, else one right angle `path` HV / VH); a spot in line (same row / left edge) with a nearby tag wins over a slightly shorter leader. No `tagSizeMm` in the profile → the command uses the box of a placed tag (wider than the text); say so in the report.
-3. Per view, open it (`ui_view_focus {action:"open", viewId}`), then place: the positions are the tag BODY centre and `roomtag_place_ortho` centres the body there (a room tag head is not its body centre; `annot_place` would shift the tag and bend the leader). Every room is tagged (RT6), also rooms of other levels seen in the view. Undo: `roomtag_place_ortho {mode:"undo", logPath}`.
+   Inside the room when the tag fits (leader 0), else the shortest leader that scores best (straight or one right angle, dot just inside the room). Every untagged room gets an item; `Problems` lists the ones beyond `zeroAtMm`, crossing a tag / text (CHECK) or put at the room centre (FORCED) → Cần xem.
+4. **Place**, per view: open it (`ui_view_focus {action:"open", viewId}`), then
    ```
-   roomtag_place_ortho {mode:"apply", viewId, itemsPath:"<review>/p1-<viewId>.json", logPath:"<review>/place-p1-<viewId>.json", brief:true}
+   roomtag_place_ortho {mode:"apply", viewId, itemsPath:"<review>/tr-<viewId>.json", logPath:"<review>/place-tr-<viewId>.json", brief:true}
    ```
-4. `room_tags_broken` on the views: a new tag with a leader showing "?" (narrow room) → delete that tag (`delete_element`) and place it inside without a leader (`roomtag_place_ortho`, no `ex/ey`), or list it.
-5. Leaders (all tags, `drafting-annotation.md` "Leader của tag"): straight, one right-angle elbow when needed, horizontal / vertical on the paper. `tag_leaders_info {viewId}` per view: every room tag leader shape is `H`, `V`, `H+V` or `V+H`; a `D` (diagonal) on a tag of this job → delete it (`delete_element`) and place it again with `roomtag_place_ortho`.
+   Undo: `roomtag_place_ortho {mode:"undo", logPath}`.
+5. **Score after.** `room_tags_score` again (`outPath` for every tag). A tag at 0 that this job placed (TR3–TR6): delete it (`delete_element`) and run 3–4 again for that room (`roomIds`).
 6. Mark types (`drafting-session`), then export the views and check by image (`drafting-visual-check`).
 
 ## Done when
 
-- `room_tags_missing` again: `Untagged` = 0 on every view (RT6). A room left only when Revit cannot tag it in that view: a tag made there has no box / shows "?" because the view range cut plane is above the room top (`view_range_info`) → Việc tồn (view setting for the user), never silently.
-- On the image: no tag crosses a wall, a floor edge, a dim, a tag or a text; leaders straight with at most one right-angle elbow, horizontal / vertical on the paper (`tag_leaders_info`: no `D`); each tag or leader dot sits near the room's diagonal centre.
+- `room_tags_score`: `Untagged` = 0 on every view (TR8) and `CardScore` > 7 (`Accepted`).
+- No tag of this job at 0 (TR3–TR6).
 
 ## Skip only if
 
-The view shows no rooms (`Rooms` = 0), or every room is already tagged (`Untagged` = 0).
+The view shows no rooms (`Rooms` = 0).
 
 ## Never
 
-- A tag head across a wall or a floor edge (RT2); a diagonal leader.
-- Pick the type yourself on a new job (RT1).
-- Edit a room; a room with no name / number stays "?" and is reported (R1).
+- A tag body on a wall or a floor edge (TR3); a leader on another leader, along a wall or a floor edge, or through another leader's dot (TR4–TR6).
+- Pick the tag type yourself on a new job.
+- Move, retype or delete room tags of other drafters; edit a room.
 
 ## Score (0–10)
 
-Rules RS0–RS5 (`drafting-annotation.md` §2). **Card score of the view = 0** when any leader lies on another leader or runs through another leader's dot (RS0). Otherwise each tag starts at 10:
-- RS1 its leader lies on another leader → 0 at once.
-- RS2 the leader has a right-angle bend → −1.
-- RS3 the leader runs through other rooms (not its own room, not the room under the tag body): 1 room → −4, 2 rooms → −6, 3 or more → −8. No leader length rule.
-- RS4 the tag sits on another room → −5.
-- RS5 the tag lines up with another room tag within 80 mm (same row = body centre height, or same column = left edge) → +1, once per tag; the score stays 0–10.
-
-View score = average of its tags (`room_tags_score {viewIds, tagSizeMm}`; `room_tags_missing` already picks the spot with the best score). **Accepted only above 7** (`room_tags_score` → `CardScore`, `Accepted`). Report the score of every view, before and after. Below 7: dissect (which rule cost the points, how many tags, root cause, what to change), change it, run again (`drafting-work-rules.md` §2b2).
+Rules TR1–TR8 (`drafting-annotation.md` §2), computed by `room_tags_score`. Each tag: full score with no leader in its room, falling evenly to 0 at a `zeroAtMm` leader (TR1); +2 when lined up with another tag in a row or column (TR2); 0 on a wall / floor edge (TR3), with its leader on another leader (TR4), along a wall / floor edge (TR5) or through another leader's dot (TR6); −3 for each other room its leader runs through (TR7); clamped 0–10. View card score = average of its tags; **0 when any room of the view has no tag** (TR8). **Accepted only above 7.** Report the score of every view, before and after. Below 7: dissect (which rule cost the points, how many tags, root cause, what to change), change it, run again (`drafting-work-rules.md` §2b2).

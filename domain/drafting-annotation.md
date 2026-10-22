@@ -2,7 +2,7 @@
 name: drafting-annotation
 description: "Chuẩn đặt tag cửa đi/cửa sổ trên mặt đứng-mặt cắt, room tag, cao độ sàn và ký hiệu độ dốc trên mặt bằng, view title trên sheet. Tag, room tag, floor spot, slope mark and viewport title standards."
 metadata:
-  updated: "2026-10-17"
+  updated: "2026-10-22"
   related: ["drafting-work-rules", "drafting-views-sheets", "drafting-tools"]
 ---
 
@@ -14,41 +14,36 @@ metadata:
 
 ## 2. Room tag
 
-### Đặt tag room (RT1–RT8, user 2026-10-15, RT5–RT8 2026-10-21)
+### Đặt tag room và chấm điểm (TR1–TR8, Huy 2026-10-22)
 
-Áp dụng cho mặt bằng kích thước (`drafting-plan-dims`) và mặt bằng trần (`drafting-ceiling-plan`), thẻ bước "Tag room". Lệnh: `room_tags_missing` (room chưa tag + vị trí theo RT1–RT8) → `roomtag_place_ortho`.
+Viết lại từ đầu ngày 2026-10-22: toàn bộ luật cũ RT1–RT8 và RS0–RS5 đã xoá. Áp dụng cho mặt bằng kích thước (`drafting-plan-dims`) và mặt bằng trần (`drafting-ceiling-plan`), thẻ bước "Tag room". Lệnh: `room_tags_missing` (room chưa tag + chỗ đặt) → `roomtag_place_ortho` (đặt) → `room_tags_score` (chấm).
 
-| # | Quy tắc |
+**Đặt**: Claude tìm **đường leader ngắn nhất** cho mỗi tag. Room chứa được thân tag → đặt trong room, không leader (leader dài 0 = điểm tối đa). Không chứa được → thân tag ở ngoài, leader thẳng hoặc một góc vuông (mục "Leader của tag"), chấm leader nằm ngay trong room (cách biên room `insetMm`, mặc định 2 mm giấy) ở chỗ leader vào room sớm nhất. Trong các chỗ hợp lệ, chọn chỗ điểm cao nhất, bằng điểm thì leader ngắn hơn.
+
+**Điểm mỗi tag** — tối đa `maxScore` (mặc định 10), kẹp trong 0…tối đa:
+
+| # | Luật |
 |---|---|
-| RT1 | **Type (family : type) do người dùng chọn.** Yêu cầu **bổ sung** (tag các room còn thiếu trên view đã có tag) → dùng type của các room lân cận (type phổ biến nhất trong 3 room gần nhất đã tag). Việc mới mà chưa có type → hỏi, không tự chọn. |
-| RT2 | **Không cắt**: tag không cắt qua tường, cạnh của sàn (mặt bằng trần: cạnh của trần); không đè dim, tag, text. |
-| RT3 | **Vị trí**: tag (hoặc chấm của leader) đặt gần **giao điểm hai đường chéo** của room (tâm hình chữ nhật bao room theo khung view). Room chữ L có giao điểm nằm ngoài room → điểm gần nhất trong room. |
-| RT4 | **Trong hay ngoài**: room đủ chỗ chứa tag mà không vi phạm RT2 → đặt **trong** room, không leader, gần giao điểm. Không đủ → đặt **ngoài** room, **có leader** đi thẳng, bẻ góc vuông khi cần so với khổ giấy (mục "Leader của tag" bên dưới), chấm của leader gần giao điểm hai đường chéo; chọn leader ngắn nhất. |
-| RT5 | **Thứ tự**: tag lần lượt từ room có **diện tích nhỏ nhất** trên view tới room lớn nhất (room nhỏ khó chỗ được chọn trước). |
-| RT6 | **Đủ 100%**: mọi room thấy trên view đều có tag, không bỏ sót room nào. Không có chỗ sạch gần → leader dài hơn, rồi leader một góc vuông, rồi mới chấp nhận chạm nét; vẫn phải đặt và ghi vào Cần xem. Chỉ room không đặt (diện tích 0 / không kín) mới không tag được → báo user. |
-| RT7 | **Leader ngắn**: luôn ưu tiên vị trí có leader ngắn nhất (thẳng trước, một góc vuông sau). |
-| RT8 | **Thẳng hàng** (ưu tiên): tag gần nhau cùng hàng (cùng tâm đứng) hoặc cùng cột (cùng mép trái); khi hai chỗ gần ngang nhau về độ dài leader, chọn chỗ thẳng hàng với tag đã đặt. |
+| TR1 | **Leader dài 0, tag nằm trong room của nó → điểm tối đa**; giảm đều về 0 khi leader dài tới `zeroAtMm` (mặc định 50 mm giấy): điểm = tối đa × (1 − L / zeroAtMm). L đo trên giấy từ mép thân tag tới chấm; tag không leader nằm ngoài room → L = khoảng cách từ tâm thân tag tới room. |
+| TR2 | Tag **thẳng hàng** (cùng tâm đứng = cùng hàng) hoặc **thẳng cột** (cùng mép trái hoặc cùng trục giữa) với tag room khác trong 80 mm giấy → **+2** cho tag đó. |
+| TR3 | Thân tag **nằm trên tường, cạnh sàn** (mặt bằng trần: **cạnh trần**) → **0**. |
+| TR4 | Đường đi của leader **trùng** đường đi của leader khác → **0**. |
+| TR5 | Đường đi của leader **trùng tường, cạnh sàn / cạnh trần** (chạy dọc theo nét) → **0**. Cắt ngang tường để vào room thì được. |
+| TR6 | Leader **đi qua điểm cuối (chấm) của leader khác** → **0**. |
+| TR7 | Leader **đi qua vùng của room khác** → **−3 mỗi room** (mọi room trừ room của nó, kể cả room mà thân tag đang nằm lên). |
+| TR8 | **Thiếu tag** của bất kỳ room nào thấy trên view → **điểm thẻ của view = 0**. |
 
-**Điểm tag room (RS0–RS5, user 2026-10-21, Huy 2026-10-22)** — mỗi tag bắt đầu 10 điểm, kẹp trong 0–10; điểm view = trung bình các tag (`room_tags_score`). Không còn luật leader dài.
+Điểm thẻ của view = trung bình điểm các tag (TR8 thì 0). **Đạt khi > 7** (`acceptAbove`). Thang 0–10 và ngưỡng 7 là mặc định đang chờ Huy chốt.
 
-| # | Trừ / cộng điểm |
-|---|---|
-| RS0 | Đường đi của leader **trùng đè leader khác** hoặc **đi qua chấm (điểm cuối) của leader khác** → **điểm thẻ tag room của view = 0** (user 2026-10-21) |
-| RS1 | Leader trùng đè lên leader khác → **0 điểm ngay** (tag đó; thẻ cũng về 0 theo RS0) |
-| RS2 | Leader bẻ góc vuông → −1 (Huy 2026-10-22, trước là −5) |
-| RS3 | Leader **băng qua room khác** (không tính room của nó và room đang chứa thân tag, đã trừ ở RS4): qua 1 room → −4, 2 room → −6, 3 room trở lên → −8 (Huy 2026-10-22, thay luật leader dài) |
-| RS4 | Tag nằm trên room khác → −5 |
-| RS5 | Tag **thẳng hàng** với tag room khác trong 80 mm (cùng hàng = cùng tâm đứng thân tag, hoặc cùng cột = cùng mép trái) → **+1**, mỗi tag cộng một lần, tối đa 10 (Huy 2026-10-22) |
+**Lệnh không bao giờ chọn** chỗ dính TR3–TR6, và không cho leader khác đi qua chấm của tag mới; thân tag giữ cách tường, cạnh sàn / trần, dim, tag, text, bubble trục `clearMm` (mặc định 1 mm giấy), leader không chui qua tag / text (chỉ nới ở bước cuối, ghi CHECK). Không có chỗ trong `zeroAtMm` → tìm xa tới 2 lần (TR1 = 0); vẫn không có → đặt ở tâm room, ghi FORCED: room nào cũng có tag (TR8).
 
-**Đạt khi điểm thẻ > 7.** `room_tags_missing` chọn chỗ có điểm cao nhất (rồi mới tới leader ngắn, thẳng hàng) và không bao giờ cho leader trùng / đi qua chấm leader khác.
-
-Kích thước tag trên giấy (rộng × cao mm) lấy từ `drafting-profile.md`; không có thì lệnh lấy hộp bao của một tag cùng type (rộng hơn chữ, kết quả thiên về an toàn).
+Type tag: `typeName` trong profile; không có → hỏi user một lần (không tự chọn); yêu cầu bổ sung trên view đã có tag → type của các tag gần nhất. Kích thước thân tag trên giấy (rộng × cao mm) lấy từ `drafting-profile.md` (`tagSizeMm`); không có thì lệnh đo hộp của một tag cùng type (rộng hơn chữ).
 
 ### Sửa tag room
 
 | Tình huống | Xử lý |
 |---|---|
-| Tag nằm ngoài phòng của nó, không có leader chỉ vào phòng | Dời về location point của room, tắt leader (`room_tags_outside`). Tag ngoài phòng có leader chỉ vào phòng là đặt theo RT4, giữ nguyên. |
+| Tag nằm ngoài phòng của nó, không có leader chỉ vào phòng | Dời về location point của room, tắt leader (`room_tags_outside`). Tag ngoài phòng có leader chỉ vào phòng là tag có leader (TR1), giữ nguyên. |
 | Tag hiện "?" (room không có tên/số) | Tô đỏ bằng view override (`room_tags_broken`), báo user sửa model. **Không** tự sửa room. |
 
 ## 2b. Cao độ sàn trên mặt bằng (FL1–FL3, FL1b, user 2026-10-16)
@@ -62,7 +57,7 @@ Kích thước tag trên giấy (rộng × cao mm) lấy từ `drafting-profile.
 | FL2 | **Buồng thang bộ: cao độ bên trong và bên ngoài** mỗi cửa buồng thang, kể cả khi hai bên cùng cao độ (như SB3 của `drafting-stair-plan.md`, user 2026-10-15). Ra ngoài nhà ở tầng trệt: ký hiệu cao độ hiện trạng của profile nếu dự án dùng. |
 | FL3 | **Theo ý người dùng**: type cao độ do người dùng chọn (dự án cố định thì lấy trong profile); việc bổ sung trên view đã có cao độ → type đang dùng nhiều nhất trên view. Chỗ người dùng đã đặt tay thì giữ nguyên. Chưa có type → hỏi, không tự chọn. |
 
-Vị trí: trong phòng, gần giao điểm hai đường chéo (như RT3), không đè tường, cạnh sàn, dim, tag (kể cả room tag), text; không trên cung mở cửa. Room tag đặt trước, cao độ tránh nó.
+Vị trí: trong phòng, gần giao điểm hai đường chéo của room (tâm hình chữ nhật bao room theo khung view), không đè tường, cạnh sàn, dim, tag (kể cả room tag), text; không trên cung mở cửa. Room tag đặt trước, cao độ tránh nó.
 
 ## 2c. Ký hiệu độ dốc trên mặt bằng (SL1–SL5, user 2026-10-17)
 
