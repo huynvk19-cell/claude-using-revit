@@ -60,7 +60,7 @@ Thao tác:
 Khi thêm, đổi tên hoặc đổi số một sheet (user, 2026-10-10):
 1. Kiểm sheet có trong schedule danh mục bản vẽ (tên schedule ở profile; sheet phải có Appears In Sheet List = Yes).
 2. So print set của dự án với schedule: `print_set_info {setName, scheduleName}`.
-3. Thiếu / thừa sheet → `print_set_from_schedule {mode:"apply", scheduleName, setName, replace:true}`.
+3. Thiếu / thừa sheet → `print_set_from_schedule {mode:"apply", scheduleName, setName, replace:true}`. User tự làm được bằng nút pyRevit **Print set theo DM** (panel In ấn): print set mang đúng tên schedule.
 4. Ghi vào log và báo user: số sheet trước / sau, sheet được thêm / bỏ.
 
 Tên print set và tên schedule lấy từ `drafting-profile.md`. Không tự đổi tên print set nếu user chưa yêu cầu.

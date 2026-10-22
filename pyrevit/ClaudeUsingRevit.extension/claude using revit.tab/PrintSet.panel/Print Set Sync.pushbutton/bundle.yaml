@@ -1,0 +1,7 @@
+title: "Print set\ntheo DM"
+tooltip: >-
+  Tạo hoặc cập nhật print set mang đúng tên một schedule danh mục bản vẽ (Sheet List),
+  chứa đúng các sheet schedule đang hiện (theo filter của nó). Chọn schedule, xem sheet
+  được thêm / bỏ, bấm Cập nhật. Print set do người khác sửa lần cuối cần xác nhận mới ghi đè.
+  Shift+click: cập nhật ngay schedule dùng lần trước, không mở cửa sổ.
+author: claude-using-revit
