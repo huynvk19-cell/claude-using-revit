@@ -53,7 +53,7 @@
       "viewIds"
     ]
   },
-  "timeoutSeconds": 600,
+  "timeoutSeconds": 1200,
   "readOnly": true
 }
 */
