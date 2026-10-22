@@ -83,7 +83,7 @@ public static class RoomtagPlaceOrtho
                     var room = doc.GetElement(new ElementId((int)it["roomId"])) as Room;
                     var typeName = (string)it["typeName"];
                     var sym = new FilteredElementCollector(doc).OfClass(typeof(FamilySymbol)).Cast<FamilySymbol>()
-                        .FirstOrDefault(x => x.Name == typeName && x.Category != null && x.Category.Id.IntegerValue == (int)BuiltInCategory.OST_RoomTags);
+                        .FirstOrDefault(x => (x.Name == typeName || x.FamilyName + " : " + x.Name == typeName) && x.Category != null && x.Category.Id.IntegerValue == (int)BuiltInCategory.OST_RoomTags);
                     if (room == null || sym == null) { errors.Add(i + ": room or type not found"); continue; }
                     double cx = (double)it["cx"] / MM, cy = (double)it["cy"] / MM;
                     bool leader = it["ex"] != null;

@@ -203,7 +203,9 @@ public static class RoomTagsMissing
             foreach (var t in tags)
             {
                 var bb = t.get_BoundingBox(v); if (bb == null) continue;
-                var h0 = (double[])raw[t.Id.IntegerValue][0]; var h1 = F(t.TagHeadPosition);
+                // leader off: Revit draws the body at the tag point (Location = old leader end) but TagHeadPosition still reads
+                // the old head, so measure the shift from the Location point
+                var h0 = (double[])raw[t.Id.IntegerValue][0]; var lp = (t.Location as LocationPoint)?.Point; var h1 = raw[t.Id.IntegerValue][1] != null && lp != null ? F(lp) : F(t.TagHeadPosition);
                 double dr = h0[0] - h1[0], du = h0[1] - h1[1];
                 var a = F(bb.Min); var b = F(bb.Max);
                 boxes[t.Id.IntegerValue] = new Box(a[0] + dr, a[1] + du, b[0] + dr, b[1] + du);
