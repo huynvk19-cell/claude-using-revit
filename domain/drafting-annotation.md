@@ -30,10 +30,10 @@ Viết lại từ đầu ngày 2026-10-22: toàn bộ luật cũ RT1–RT8 và R
 | TR4 | Đường đi của leader **trùng** đường đi của leader khác → **0**. |
 | TR5 | Đường đi của leader **trùng tường, cạnh sàn / cạnh trần** (chạy dọc theo nét) → **0**. Cắt ngang tường để vào room thì được. |
 | TR6 | Leader **đi qua điểm cuối (chấm) của leader khác** → **0**. |
-| TR7 | Leader **đi qua vùng của room khác** → **−3 mỗi room** (mọi room trừ room của nó, kể cả room mà thân tag đang nằm lên). |
+| TR7 | Leader **cắt qua hẳn vùng của room khác** → **−3 mỗi room**. Không tính room của nó và room mà thân tag đang nằm lên (leader bắt đầu từ đó), Huy 2026-10-22. |
 | TR8 | **Thiếu tag** của bất kỳ room nào thấy trên view → **điểm thẻ của view = 0**. |
 
-Điểm thẻ của view = trung bình điểm các tag (TR8 thì 0). **Đạt khi > 7** (`acceptAbove`). Thang 0–10 và ngưỡng 7 là mặc định đang chờ Huy chốt.
+Điểm thẻ của view = trung bình điểm các tag (TR8 thì 0). **Đạt khi > 7** (`acceptAbove`). Thang 0–10, ngưỡng 7, `zeroAtMm` 50 mm: Huy chốt 2026-10-22.
 
 **Lệnh không bao giờ chọn** chỗ dính TR3–TR6, và không cho leader khác đi qua chấm của tag mới; thân tag giữ cách tường, cạnh sàn / trần, dim, tag, text, bubble trục `clearMm` (mặc định 1 mm giấy), leader không chui qua tag / text (chỉ nới ở bước cuối, ghi CHECK). Không có chỗ trong `zeroAtMm` → tìm xa tới 2 lần (TR1 = 0); vẫn không có → đặt ở tâm room, ghi FORCED: room nào cũng có tag (TR8).
 

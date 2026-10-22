@@ -283,7 +283,11 @@ public static class RoomTagsMissing
         }
         double s = Math.Max(0, p.Max * (1 - L / p.ZeroAt));
         if (L > 0) why.Add("TR1 leader " + Math.Round(L / p.Sc, 1) + " mm -> " + Math.Round(s, 2));
+        // the room under the body (where the leader starts) is not crossed, only rooms the leader runs right through (Huy 2026-10-22)
         var crossed = new HashSet<int>();
+        if (t.Body != null) foreach (var r in rooms) if (r.Id != t.RoomId && In(r, t.Body.CR, t.Body.CU)) crossed.Add(r.Id);
+        if (t.Lead.Count > 0) foreach (var r in rooms) if (r.Id != t.RoomId && In(r, t.Lead[0].R1, t.Lead[0].U1)) crossed.Add(r.Id);
+        var start = new HashSet<int>(crossed);
         foreach (var lg in t.Lead)
         {
             int n = Math.Max(1, (int)Math.Ceiling(lg.Len / (0.5 * p.Sc)));
@@ -295,6 +299,7 @@ public static class RoomTagsMissing
                 foreach (var r in near) if (!crossed.Contains(r.Id) && In(r, pr, pu)) crossed.Add(r.Id);
             }
         }
+        crossed.ExceptWith(start);
         if (crossed.Count > 0) { s -= 3 * crossed.Count; why.Add("TR7 leader through " + crossed.Count + " room(s) " + string.Join(",", rooms.Where(r => crossed.Contains(r.Id)).Select(r => r.Num))); }
         if (t.Body != null && oth.Any(o => o.Body != null && Math.Abs(o.Body.CR - t.Body.CR) < p.Near && Math.Abs(o.Body.CU - t.Body.CU) < p.Near
             && (Math.Abs(o.Body.CU - t.Body.CU) < p.Tol || Math.Abs(o.Body.R0 - t.Body.R0) < p.Tol || Math.Abs(o.Body.CR - t.Body.CR) < p.Tol)))
