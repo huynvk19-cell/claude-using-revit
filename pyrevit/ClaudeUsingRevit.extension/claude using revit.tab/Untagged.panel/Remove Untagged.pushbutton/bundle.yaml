@@ -1,0 +1,6 @@
+title: Remove Untagged
+tooltip: >-
+  Xoá các vùng tô do chính bạn tạo bằng nút Highlight Untagged, trong cả model.
+  Shift+click: chỉ trong các sheet / view đang chọn (hoặc view đang mở).
+  Không đụng tới Filled Region nào khác, kể cả của nút Highlight.
+author: claude-using-revit
