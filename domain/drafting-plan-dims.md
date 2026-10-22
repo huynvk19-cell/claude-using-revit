@@ -1,6 +1,6 @@
 ---
 name: drafting-plan-dims
-description: "Chuẩn khai triển mặt bằng kích thước (floor plan dimension drawings): các bước và quy tắc riêng của mặt bằng. Hiện có: dim cửa tới tường và trục (PD1–PD6), tag cửa (PT1–PT6), tag room (RT1–RT4), tag cao độ sàn (FL1–FL3), tag tường (WT1–WT5), ký hiệu độ dốc (SL1–SL5). Floor plan dimension standard."
+description: "Chuẩn khai triển mặt bằng kích thước (floor plan dimension drawings): các bước và quy tắc riêng của mặt bằng. Hiện có: dim cửa tới tường và trục (PD1–PD6), tag cửa (PT1–PT6), tag room (TR1–TR8), tag cao độ sàn (FL1–FL3), tag tường (WT1–WT5), ký hiệu độ dốc (SL1–SL5). Floor plan dimension standard."
 metadata:
   updated: "2026-10-17"
   related: ["drafting-annotation", "drafting-grid-dims", "drafting-opening-dims", "drafting-opening-tags", "drafting-stair-plan", "drafting-work-rules", "drafting-tools"]
@@ -16,12 +16,12 @@ Skill: `drafting-plan-dims`; mỗi mục dưới đây là một thẻ bước c
 |---|---|---|
 | 00 | Dim cửa đi, cửa sổ → tường, trục | PD1–PD6 (mục 1) |
 | 01 | Tag cửa đi, cửa sổ | PT1–PT6 (mục 2) |
-| 02 | Tag room | `drafting-annotation.md` §2 RT1–RT4: type do người dùng chọn (bổ sung → type room lân cận); không cắt tường, cạnh sàn; gần giao điểm hai đường chéo; trong room nếu đủ chỗ, không thì ngoài room có leader. |
+| 02 | Tag room | `drafting-annotation.md` §2 TR1–TR8: leader ngắn nhất, trong room nếu đủ chỗ (leader 0 = điểm tối đa, giảm về 0 khi leader dài ra), thẳng hàng +2; nằm trên tường / cạnh sàn, leader trùng leader / trùng tường / qua chấm leader khác → 0; leader qua room khác −3 mỗi room; thiếu tag → điểm thẻ 0. |
 | 03 | Tag cao độ sàn | `drafting-annotation.md` §2b FL1–FL3: mỗi gian phòng một cao độ (trừ phòng nhỏ nằm trong phòng khác); buồng thang có cao độ bên trong và bên ngoài cửa; type theo người dùng. Cùng thẻ với `drafting-plan-floor-finish`. |
 | 04 | Tag tường | WT1–WT5 (mục 3) |
 | 05 | Ký hiệu độ dốc | `drafting-annotation.md` §2c SL1–SL5: mái, sàn chênh cao độ, ramp, mọi mặt dốc trên view có một Spot Slope; type có Slope Direction = Down, đơn vị số thập phân hoặc phần trăm, dùng type có sẵn thoả (không có thì hỏi). Cùng thẻ với `drafting-plan-floor-finish`. |
 
-Thứ tự: dim trục (`drafting-grid-dims.md`, G1–G4) → dim cửa → tag cửa → tag room → cao độ sàn → tag tường → ký hiệu độ dốc. Dim khó dời hơn tag, nên dim đặt trước, tag tránh dim; tag room tránh mọi dim và tag cửa (RT2); cao độ sàn tránh tag room (cùng muốn tâm phòng, tag room được ưu tiên); tag tường và ký hiệu độ dốc đặt sau cùng, tránh mọi thứ đã đặt (tag tường chỉ cần một đoạn tường trống, ký hiệu độ dốc chỉ cần một chỗ trống trên mặt dốc).
+Thứ tự: dim trục (`drafting-grid-dims.md`, G1–G4) → dim cửa → tag cửa → tag room → cao độ sàn → tag tường → ký hiệu độ dốc. Dim khó dời hơn tag, nên dim đặt trước, tag tránh dim; tag room tránh mọi dim và tag cửa (`clearMm`, §2); cao độ sàn tránh tag room (cùng muốn tâm phòng, tag room được ưu tiên); tag tường và ký hiệu độ dốc đặt sau cùng, tránh mọi thứ đã đặt (tag tường chỉ cần một đoạn tường trống, ký hiệu độ dốc chỉ cần một chỗ trống trên mặt dốc).
 
 Nguồn: PD lấy từ Q1–Q5 (`drafting-opening-dims.md`, user 2026-10-06) và SA4 của mặt bằng lõi thang (`drafting-stair-plan.md`, user 2026-10-07); PT lấy từ T1–T8 (`drafting-opening-tags.md`), SB4 và bài học đợt tag cửa mặt đứng/mặt cắt 2026-10-16. Mặt bằng thường chưa có mẫu riêng của user → lần đầu làm ở một dự án: làm xong **một view mẫu**, cho user duyệt, ghi điều user chỉnh vào profile, rồi mới làm các view còn lại.
 
