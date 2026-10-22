@@ -36,10 +36,11 @@ The view shows no rooms (`Rooms` = 0), or every room is already tagged (`Untagge
 
 ## Score (0–10)
 
-Rules RS0–RS4 (`drafting-annotation.md` §2). **Card score of the view = 0** when any leader lies on another leader or runs through another leader's dot (RS0). Otherwise each tag starts at 10:
+Rules RS0–RS5 (`drafting-annotation.md` §2). **Card score of the view = 0** when any leader lies on another leader or runs through another leader's dot (RS0). Otherwise each tag starts at 10:
 - RS1 its leader lies on another leader → 0 at once.
 - RS2 the leader has a right-angle bend → −1.
-- RS3 the leader is longer than 3× the long side of its room → −9; longer than 2× → −5.
+- RS3 the leader runs through other rooms (not its own room, not the room under the tag body): 1 room → −4, 2 rooms → −6, 3 or more → −8. No leader length rule.
 - RS4 the tag sits on another room → −5.
+- RS5 the tag lines up with another room tag within 80 mm (same row = body centre height, or same column = left edge) → +1, once per tag; the score stays 0–10.
 
 View score = average of its tags (`room_tags_score {viewIds, tagSizeMm}`; `room_tags_missing` already picks the spot with the best score). **Accepted only above 7** (`room_tags_score` → `CardScore`, `Accepted`). Report the score of every view, before and after. Below 7: dissect (which rule cost the points, how many tags, root cause, what to change), change it, run again (`drafting-work-rules.md` §2b2).

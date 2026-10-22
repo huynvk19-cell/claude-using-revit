@@ -29,15 +29,16 @@ metadata:
 | RT7 | **Leader ngắn**: luôn ưu tiên vị trí có leader ngắn nhất (thẳng trước, một góc vuông sau). |
 | RT8 | **Thẳng hàng** (ưu tiên): tag gần nhau cùng hàng (cùng tâm đứng) hoặc cùng cột (cùng mép trái); khi hai chỗ gần ngang nhau về độ dài leader, chọn chỗ thẳng hàng với tag đã đặt. |
 
-**Điểm tag room (RS1–RS4, user 2026-10-21)** — mỗi tag bắt đầu 10 điểm, tối thiểu 0; điểm view = trung bình các tag (`room_tags_score`).
+**Điểm tag room (RS0–RS5, user 2026-10-21, Huy 2026-10-22)** — mỗi tag bắt đầu 10 điểm, kẹp trong 0–10; điểm view = trung bình các tag (`room_tags_score`). Không còn luật leader dài.
 
-| # | Trừ điểm |
+| # | Trừ / cộng điểm |
 |---|---|
 | RS0 | Đường đi của leader **trùng đè leader khác** hoặc **đi qua chấm (điểm cuối) của leader khác** → **điểm thẻ tag room của view = 0** (user 2026-10-21) |
 | RS1 | Leader trùng đè lên leader khác → **0 điểm ngay** (tag đó; thẻ cũng về 0 theo RS0) |
 | RS2 | Leader bẻ góc vuông → −1 (Huy 2026-10-22, trước là −5) |
-| RS3 | Leader dài hơn 3 lần cạnh dài của room → −9; dài hơn 2 lần → −5 |
+| RS3 | Leader **băng qua room khác** (không tính room của nó và room đang chứa thân tag, đã trừ ở RS4): qua 1 room → −4, 2 room → −6, 3 room trở lên → −8 (Huy 2026-10-22, thay luật leader dài) |
 | RS4 | Tag nằm trên room khác → −5 |
+| RS5 | Tag **thẳng hàng** với tag room khác trong 80 mm (cùng hàng = cùng tâm đứng thân tag, hoặc cùng cột = cùng mép trái) → **+1**, mỗi tag cộng một lần, tối đa 10 (Huy 2026-10-22) |
 
 **Đạt khi điểm thẻ > 7.** `room_tags_missing` chọn chỗ có điểm cao nhất (rồi mới tới leader ngắn, thẳng hàng) và không bao giờ cho leader trùng / đi qua chấm leader khác.
 

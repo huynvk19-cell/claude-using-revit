@@ -1,6 +1,6 @@
 /* mcp-tool
 {
-  "description": "Read-only: score every room tag in plan views 0-10 (rules RS1-RS4) and the view average; worst tags listed.",
+  "description": "Read-only: score every room tag in plan views 0-10 (rules RS0-RS5) and the view average; worst tags listed.",
   "inputSchema": {
     "type": "object",
     "properties": {
@@ -17,12 +17,15 @@
 }
 */
 // ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
-// Score of one room tag, start 10 (drafting-annotation.md §2, user 2026-10-21):
+// Score of one room tag, start 10 (drafting-annotation.md §2, user 2026-10-21, 2026-10-22):
 //    RS1 its leader lies on another room tag leader (same line, overlapping)  -> 0 at once
 //    RS2 the leader has a right-angle bend (elbow off the straight line)       -> -1
-//    RS3 the leader is longer than 3x / 2x the long side of its room           -> -9 / -5
+//    RS3 the leader runs through other rooms: 1 room -4, 2 rooms -6, 3 or more -8 (its own room and the room under
+//        the tag body, already RS4, are not counted; sampled every 1 mm on paper). No leader length rule any more.
 //    RS4 the tag body sits on another room                                     -> -5
-//    floor 0. View score = average of its tags. Card score of the view = 0 when any leader lies on another leader or
+//    RS5 the tag body lines up with another room tag within 80 mm (same body centre height = row, or same body left
+//        edge = column, 0.5 mm on paper)                                       -> +1, once per tag
+//    clamped 0-10 (an RS0 / RS1 tag stays 0). View score = average of its tags. Card score of the view = 0 when any leader lies on another leader or
 //    runs through the end point (dot) of another leader (RS0, user 2026-10-21); accepted when above acceptAbove (7).
 // Geometry: room tag box in the view (it includes the leader); body = tagSizeMm at the far end of the box from the
 // leader end (a tag without leader: its own box). Leader = body centre -> elbow -> end, length measured from the body
@@ -89,7 +92,7 @@ public static class RoomTagsScore
                 try { return ((Room)o[0]).IsPointInRoom(P(pr, pu, (double)o[5])); } catch { return false; }
             };
 
-            var rows = new List<object[]>(); // tag, number, body centre, segs, long side, elbow, len
+            var rows = new List<object[]>(); // tag, number, body centre, segs, long side, elbow, len, body left edge
             foreach (var t in new FilteredElementCollector(doc, v.Id).OfCategory(BuiltInCategory.OST_RoomTags).WhereElementIsNotElementType().OfType<RoomTag>())
             {
                 Room rm = null; try { rm = t.Room; } catch { }
@@ -99,7 +102,7 @@ public static class RoomTagsScore
                 double tr0 = Math.Min(r0, r1), tr1 = Math.Max(r0, r1), tu0 = Math.Min(u0, u1), tu1 = Math.Max(u0, u1);
                 double longSide = rooms.ContainsKey(rm.Id.IntegerValue) ? Math.Max((double)rooms[rm.Id.IntegerValue][3] - (double)rooms[rm.Id.IntegerValue][1], (double)rooms[rm.Id.IntegerValue][4] - (double)rooms[rm.Id.IntegerValue][2]) : 0;
                 var segs = new List<Seg>(); bool elbow = false; double len = 0;
-                double cr = (tr0 + tr1) / 2, cu = (tu0 + tu1) / 2;
+                double cr = (tr0 + tr1) / 2, cu = (tu0 + tu1) / 2, left = tr0;
                 if (t.HasLeader)
                 {
                     var le = F(t.LeaderEnd);
@@ -130,8 +133,9 @@ public static class RoomTagsScore
                     }
                     var s0 = segs[0]; bool horiz = Math.Abs(s0.U2 - s0.U1) < Math.Abs(s0.R2 - s0.R1);
                     len = Math.Max(0, len - (horiz ? w : h) / 2); // from the body edge
+                    left = cr - w / 2;
                 }
-                rows.Add(new object[] { t, rm, new[] { cr, cu }, segs, longSide, elbow, len });
+                rows.Add(new object[] { t, rm, new[] { cr, cu }, segs, longSide, elbow, len, left });
             }
 
             var scored = new List<object[]>(); // number, score, reasons, tag id
@@ -149,10 +153,34 @@ public static class RoomTagsScore
                 else
                 {
                     if (elbow) { s -= 1; why.Add("RS2 elbow"); }
-                    if (longSide > 0 && len > 3 * longSide) { s -= 9; why.Add("RS3 leader > 3x room (" + Math.Round(len / sc) + " mm)"); }
-                    else if (longSide > 0 && len > 2 * longSide) { s -= 5; why.Add("RS3 leader > 2x room (" + Math.Round(len / sc) + " mm)"); }
-                    if (!inRoom(rm.Id.IntegerValue, c[0], c[1]) && rooms.Keys.Any(k => k != rm.Id.IntegerValue && inRoom(k, c[0], c[1]))) { s -= 5; why.Add("RS4 on another room"); }
-                    s = Math.Max(0, s);
+                    int own = rm.Id.IntegerValue;
+                    int under = inRoom(own, c[0], c[1]) ? own : rooms.Keys.FirstOrDefault(q => q != own && inRoom(q, c[0], c[1]));
+                    if (under != 0 && under != own) { s -= 5; why.Add("RS4 on another room"); }
+                    // RS3: other rooms the leader runs through (not its own, not the one under the body)
+                    var crossed = new HashSet<int>();
+                    foreach (var lg in segs)
+                    {
+                        double sl = Math.Sqrt(Math.Pow(lg.R2 - lg.R1, 2) + Math.Pow(lg.U2 - lg.U1, 2)); int n = Math.Max(1, (int)Math.Ceiling(sl / sc));
+                        for (int kk = 0; kk <= n; kk++)
+                        {
+                            double pr = lg.R1 + (lg.R2 - lg.R1) * kk / n, pu = lg.U1 + (lg.U2 - lg.U1) * kk / n;
+                            foreach (var rid in rooms.Keys) if (rid != own && rid != under && !crossed.Contains(rid) && inRoom(rid, pr, pu)) crossed.Add(rid);
+                        }
+                    }
+                    if (crossed.Count > 0)
+                    {
+                        s -= crossed.Count == 1 ? 4 : crossed.Count == 2 ? 6 : 8;
+                        why.Add("RS3 leader through " + crossed.Count + " room(s) " + string.Join(",", crossed.Select(q => ((Room)rooms[q][0]).Number)));
+                    }
+                    // RS5: lined up with a room tag nearby (row: same body centre height, column: same body left edge)
+                    double near = 80 * sc, tolA = 0.5 * sc, lf = (double)row[7];
+                    bool lined = rows.Where((x, j) => j != i).Any(x =>
+                    {
+                        var c2 = (double[])x[2];
+                        return Math.Abs(c2[0] - c[0]) < near && Math.Abs(c2[1] - c[1]) < near && (Math.Abs(c2[1] - c[1]) < tolA || Math.Abs((double)x[7] - lf) < tolA);
+                    });
+                    if (lined) { s += 1; why.Add("RS5 aligned +1"); }
+                    s = Math.Max(0, Math.Min(10, s));
                 }
                 scored.Add(new object[] { rm.Number, s, string.Join("; ", why), ((RoomTag)row[0]).Id.IntegerValue });
             }
@@ -167,7 +195,7 @@ public static class RoomTagsScore
                 Count = new
                 {
                     Zero = scored.Count(x => ((string)x[2]).Contains("RS1")), ThroughEnd = scored.Count(x => ((string)x[2]).Contains("RS0")), Elbow = scored.Count(x => ((string)x[2]).Contains("RS2")),
-                    Long2x = scored.Count(x => ((string)x[2]).Contains("> 2x")), Long3x = scored.Count(x => ((string)x[2]).Contains("> 3x")),
+                    ThroughRooms = scored.Count(x => ((string)x[2]).Contains("RS3")), Aligned = scored.Count(x => ((string)x[2]).Contains("RS5")),
                     OtherRoom = scored.Count(x => ((string)x[2]).Contains("RS4")), Full10 = scored.Count(x => (double)x[1] >= 10)
                 },
                 Worst = scored.OrderBy(x => (double)x[1]).Take(worstN).Select(x => x[0] + " " + x[1] + " (" + x[2] + ")").ToList()
