@@ -37,6 +37,8 @@ Viết lại từ đầu ngày 2026-10-22: toàn bộ luật cũ RT1–RT8 và R
 
 **Lệnh không bao giờ chọn** chỗ dính TR3–TR6, và không cho leader khác đi qua chấm của tag mới; thân tag giữ cách tường, cạnh sàn / trần, dim, tag, text, bubble trục `clearMm` (mặc định 1 mm giấy), leader không chui qua tag / text (chỉ nới ở bước cuối, ghi CHECK). Không có chỗ trong `zeroAtMm` → tìm xa tới 2 lần (TR1 = 0); vẫn không có → đặt ở tâm room, ghi FORCED: room nào cũng có tag (TR8).
 
+**Phối hợp cả view (Huy 2026-10-22):** không giữ chỗ cho tag đã > 7. Sau khi xếp lần đầu, `room_tags_missing` (mặc định `rebalance`) lấy từng tag ≤ 7, nhấc các tag quanh nó lên, tìm chỗ tốt hơn cho nó rồi dời những tag cản đường sang chỗ khác (vẫn > 7); chỉ nhận khi tổng điểm tăng. LG LEVEL 1 OVERALL: 5,69 → 7,03.
+
 Type tag: `typeName` trong profile; không có → hỏi user một lần (không tự chọn); yêu cầu bổ sung trên view đã có tag → type của các tag gần nhất. Kích thước thân tag trên giấy (rộng × cao mm) lấy từ `drafting-profile.md` (`tagSizeMm`); không có thì lệnh đo hộp của một tag cùng type (rộng hơn chữ).
 
 ### Sửa tag room
