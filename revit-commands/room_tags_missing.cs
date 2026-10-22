@@ -53,7 +53,7 @@
       "viewIds"
     ]
   },
-  "timeoutSeconds": 180,
+  "timeoutSeconds": 600,
   "readOnly": true
 }
 */
@@ -158,7 +158,7 @@ public static class RoomTagsMissing
         var viewIds = ((JArray)args["viewIds"]).Select(t => (int)t).ToList();
         HashSet<int> only = args["roomIds"] is JArray ra && ra.Count > 0 ? new HashSet<int>(ra.Select(t => (int)t)) : null;
         string typeArg = ((string)args["typeName"] ?? "").Trim();
-        double clearMm = (double?)args["clearMm"] ?? 1, maxShiftMm = (double?)args["maxShiftMm"] ?? 4, maxLeaderMm = (double?)args["maxLeaderMm"] ?? 30;
+        double clearMm = (double?)args["clearMm"] ?? 1, maxShiftMm = (double?)args["maxShiftMm"] ?? 4, maxLeaderMm = (double?)args["maxLeaderMm"] ?? 30, goodAbove = 7;
         double bubbleMm = (double?)args["bubbleMm"] ?? 10;
         double[] sizeArg = args["tagSizeMm"] is JArray sa && sa.Count == 2 ? new[] { (double)sa[0], (double)sa[1] } : null;
 
@@ -436,10 +436,15 @@ public static class RoomTagsMissing
                 Math.Abs((p.R0 + p.R1) / 2 - (bx.R0 + bx.R1) / 2) < near && Math.Abs((p.U0 + p.U1) / 2 - (bx.U0 + bx.U1) / 2) < near
                 && (Math.Abs((p.U0 + p.U1) / 2 - (bx.U0 + bx.U1) / 2) < tol || Math.Abs(p.R0 - bx.R0) < tol));
 
+            // pass 0: every room that fits takes its inside spot first (score 10), so small-room tags placed outside
+            // later do not fill the big rooms; pass 1: the rest, outside with a leader, smallest first (2026-10-22)
+            var insideDone = new HashSet<int>();
+            for (int pass = 0; pass < 2; pass++)
             foreach (var pd in pending)
             {
                 var r = (Room)pd[0]; var sz = (double[])pd[2]; var A = (double[])pd[3]; var rect = (Box)pd[6];
                 var ls = (List<Seg>)pd[4]; var la = (List<Box>)pd[5]; string tn = (string)pd[1], label = (string)pd[7];
+                if (pass == 1 && insideDone.Contains(r.Id.IntegerValue)) continue;
                 double w = sz[0] * sc, h = sz[1] * sc, c = clearMm * sc, s = Math.Max(h / 2, 1), lim = maxShiftMm * sc;
                 // values a tag centre may snap to so it lines up with a nearby tag (RT8)
                 var nb = placed.Concat(tagBoxes).Where(p => Math.Abs((p.R0 + p.R1) / 2 - A[0]) < near + w && Math.Abs((p.U0 + p.U1) / 2 - A[1]) < near + h).ToList();
@@ -455,6 +460,7 @@ public static class RoomTagsMissing
                 foreach (var u in snapU) if (Math.Abs(u - A[1]) <= lu) for (double dx = -lr; dx <= lr + 1e-6; dx += s) inC.Add(new[] { A[0] + dx, u });
                 foreach (var rr in snapR) if (Math.Abs(rr - A[0]) <= lr) for (double dy = -lu; dy <= lu + 1e-6; dy += s) inC.Add(new[] { rr, A[1] + dy });
                 bool done = false;
+                if (pass == 0)
                 foreach (var q in inC.Select(p => new { P = p, B = new Box(p[0] - w / 2, p[1] - h / 2, p[0] + w / 2, p[1] + h / 2).Grow(c) })
                     .Select(x => new { x.P, x.B, S = Math.Sqrt(Math.Pow(x.P[0] - A[0], 2) + Math.Pow(x.P[1] - A[1], 2)) / sc - (aligned(x.B) ? alignBonus : 0) })
                     .OrderBy(x => x.S))
@@ -468,12 +474,15 @@ public static class RoomTagsMissing
                     scores.Add(10);
                     break;
                 }
-                if (done) continue;
+                if (done) { insideDone.Add(r.Id.IntegerValue); continue; }
+                if (pass == 0) continue;
 
                 // outside with a leader (RT4, RT7): straight or one right angle; shortest first, aligned preferred;
                 // the search widens (RT6), then relaxes: leader may cross, then the box may touch model lines
-                object best = null; Box bestBox = null; List<Seg> bestLead = null; string how = null; double bestScore = 0;
-                for (int stage = 0; stage < 6 && best == null; stage++)
+                object best = null; Box bestBox = null; List<Seg> bestLead = null; string how = null; double bestScore = 0; int bestStage = -1;
+                // a low score (not above goodAbove) keeps searching the wider rings and the crossing-leader stage; a later
+                // stage wins only with a strictly higher score; text / model-line stages only when nothing was found
+                for (int stage = 0; stage < 6 && (best == null || (stage <= 3 && bestScore <= goodAbove)); stage++)
                 {
                     double L = stage == 0 ? maxLeaderMm : stage == 1 ? maxLeaderMm * 2 : maxLeaderMm * 4; // near first: a far spot taken early blocks later rooms
                     bool crossLeads = stage >= 3, relaxLead = stage >= 4, relaxSeg = stage >= 5;
@@ -513,6 +522,7 @@ public static class RoomTagsMissing
                     {
                         double S0 = (int)cd[0], key = (double)cd[7];
                         if (bestS >= 0 && (S0 < bestS || (S0 == bestS && key >= bestKey))) break;
+                        if (bestStage >= 0 && bestStage < stage && S0 <= bestScore) break; // cannot beat an earlier stage
                         var bx = (Box)cd[5]; double cr = (double)cd[1], cu = (double)cd[2];
                         if (!inCrop(bx) || !annFree(bx, la)) continue;
                         if (leadEnds.Any(e => e[0] >= bx.R0 && e[0] <= bx.R1 && e[1] >= bx.U0 && e[1] <= bx.U1)) continue; // RS0: no dot under the tag (its leader starts at the body centre)
@@ -527,8 +537,9 @@ public static class RoomTagsMissing
                         int nx = crossN(r, sg, cr, cu), al = aligned(bx) ? 1 : 0;
                         double S = Math.Max(0, Math.Min(10, 10 - ((string)cd[3] == "" ? 0 : 1) + al - (onOther(r, cr, cu) ? 5 : 0) - (nx == 0 ? 0 : nx == 1 ? 4 : nx == 2 ? 6 : 8)));
                         if (S < bestS || (S == bestS && key >= bestKey)) continue;
+                        if (bestStage >= 0 && bestStage < stage && S <= bestScore) continue;
                         string path = (string)cd[3];
-                        bestS = S; bestKey = key; bestBox = bx; bestLead = sg; bestScore = S;
+                        bestS = S; bestKey = key; bestBox = bx; bestLead = sg; bestScore = S; bestStage = stage;
                         how = (path == "" ? "straight" : "elbow " + path) + ", leader " + Math.Round((double)cd[6], 1) + " mm, score " + S
                             + (relaxSeg ? " · CHECK: touches model lines" : relaxLead ? " · CHECK: leader crosses text" : crossLeads ? " · leader crosses a leader" : "");
                         best = new { kind = "roomtag", elementId = r.Id.IntegerValue, typeName = tn, right = Math.Round(cr), up = Math.Round(cu), leader = true, endRight = Math.Round(A[0]), endUp = Math.Round(A[1]), path = path, score = S, note = label + " · outside " + how };
