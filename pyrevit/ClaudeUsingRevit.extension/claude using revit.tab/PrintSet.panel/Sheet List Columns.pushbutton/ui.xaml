@@ -234,6 +234,14 @@
               <TextBlock Text="Mở schedule" Margin="7,0,0,0" VerticalAlignment="Center"/>
             </StackPanel>
           </Button>
+          <Button x:Name="signers_btn" Grid.Column="1" Style="{StaticResource Ghost}" HorizontalAlignment="Left"
+                  ToolTip="Ẩn / hiện cùng lúc Checked By, Approved By, Designed By, Drawn By trong các schedule đang chọn">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock x:Name="signers_icon" Text="&#xE7B3;" FontFamily="{StaticResource Icons}" FontSize="13"
+                         VerticalAlignment="Center"/>
+              <TextBlock x:Name="signers_text" Text="Hiện cột ký" Margin="7,0,0,0" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Button>
           <Button x:Name="apply_btn" Grid.Column="2" Style="{StaticResource Primary}">
             <StackPanel Orientation="Horizontal">
               <TextBlock Text="&#xE73E;" FontFamily="{StaticResource Icons}" FontSize="14" VerticalAlignment="Center"/>

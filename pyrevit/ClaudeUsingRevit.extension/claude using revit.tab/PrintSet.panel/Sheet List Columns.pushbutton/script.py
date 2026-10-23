@@ -106,6 +106,7 @@ class ColumnsWindow(forms.WPFWindow):
         self.close_btn.Click += lambda s, e: self.Close()
         self.apply_btn.Click += self.on_apply
         self.open_btn.Click += self.on_open
+        self.signers_btn.Click += self.on_signers
         self.pick_all.Checked += lambda s, e: self.tick_all(True)
         self.pick_all.Unchecked += lambda s, e: self.tick_all(False)
         for chk in (self.all_chip, self.force_chk):
@@ -203,6 +204,10 @@ class ColumnsWindow(forms.WPFWindow):
         rows.Clear()
         self.warn_box.Visibility = Visibility.Collapsed
         self.open_btn.IsEnabled = bool(sel)
+        self.signers_btn.IsEnabled = False
+        shown = slc.signers_shown(doc, sel)
+        self.signers_text.Text = u"Ẩn cột ký" if shown else u"Hiện cột ký"
+        self.signers_icon.Text = u"" if shown else u""
         if not sel:
             self.big_count.Text = u"–"
             self.big_count.Foreground = brush(GREY)
@@ -267,8 +272,8 @@ class ColumnsWindow(forms.WPFWindow):
                                       u"đầu: {1}".format(len(clashes), u", ".join(sorted(clashes)[:8])), ORANGE))
 
         blocked = False
-        busy = [p for p in todo if p["busy"]]
-        others = [p for p in todo if p["others"] and not p["busy"]]
+        busy = [p for p in plans if p["busy"]]
+        others = [p for p in plans if p["others"] and not p["busy"]]
         if busy:
             self.warn_text.Text = (u"{0} đang do người khác giữ (borrowed). Nhờ họ Sync, rồi bấm lại.").format(
                 u", ".join(u"\"{0}\"".format(p["schedule"].Name) for p in busy))
@@ -285,6 +290,7 @@ class ColumnsWindow(forms.WPFWindow):
 
         self.apply_text.Text = u"Đã đúng chuẩn" if not todo else u"Áp chuẩn"
         self.apply_btn.IsEnabled = bool(todo) and not blocked
+        self.signers_btn.IsEnabled = not blocked
 
     # ---- actions --------------------------------------------------------
 
@@ -306,6 +312,22 @@ class ColumnsWindow(forms.WPFWindow):
             self._fill_row(name)
         self.refresh()
         self.done_text.Text = done_line(res, names)
+        self.done_box.Visibility = Visibility.Visible
+
+    def on_signers(self, sender, args):
+        sel = self.selected()
+        show = not slc.signers_shown(doc, sel)
+        try:
+            n = slc.set_signers(doc, sel, show)
+        except Exception as ex:
+            forms.alert(u"Không đổi được cột ký:\n{0}".format(ex))
+            return
+        self.plan_all()
+        for name in self.boxes:
+            self._fill_row(name)
+        self.refresh()
+        self.done_text.Text = u"{0} Checked By, Approved By, Designed By, Drawn By ({1} cột) trong {2} schedule.".format(
+            u"Đã hiện" if show else u"Đã ẩn", n, len(sel))
         self.done_box.Visibility = Visibility.Visible
 
     def on_open(self, sender, args):

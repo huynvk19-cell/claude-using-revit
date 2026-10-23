@@ -5,7 +5,8 @@ Standard (only ever ADDS - no field or parameter is removed, no heading renamed)
   - shown first, in this order: No., Sheet Number, Sheet Name, Current Revision,
     Current Revision Date (made visible when hidden);
   - added hidden when missing: Checked By, Approved By, Designed By, Drawn By
-    (left as they are when already there, shown or hidden);
+    (left as they are when already there, shown or hidden; set_signers shows or
+    hides the four together);
   - every other field keeps its place after them.
 "No." is a sheet instance parameter (shared, fixed GUID) created when the model has
 none. The tool alone writes it: 1..n in the schedule's row order, placeholders
@@ -241,6 +242,43 @@ def _apply_columns(doc, vs, no_id):
     order = list(first) + [f for f in d.GetFieldOrder() if f.IntegerValue not in first_ids]
     d.SetFieldOrder(List[ScheduleFieldId](order))
     return added
+
+
+def signers_shown(doc, schedules):
+    """True when every schedule shows all of Checked / Approved / Designed / Drawn By."""
+    for vs in schedules:
+        fields = _fields(vs, None)
+        if any(k not in fields or fields[k].IsHidden for k in HIDDEN):
+            return False
+    return bool(schedules)
+
+
+def set_signers(doc, schedules, show):
+    """Show or hide the four signer columns together (added first when missing).
+    Other hidden fields are left alone. Returns the number of fields changed."""
+    changed = 0
+    t = Transaction(doc, u"Hiện cột ký" if show else u"Ẩn cột ký")
+    t.Start()
+    try:
+        for vs in schedules:
+            d = vs.Definition
+            fields = _fields(vs, None)
+            schedulable = dict((sf.ParameterId.IntegerValue, sf) for sf in d.GetSchedulableFields())
+            for k in HIDDEN:
+                f = fields.get(k)
+                if f is None and k in schedulable:
+                    f = d.AddField(schedulable[k])
+                    f.IsHidden = not show
+                    changed += 1
+                elif f is not None and f.IsHidden == show:
+                    f.IsHidden = not show
+                    changed += 1
+        t.Commit()
+    except Exception:
+        if t.HasStarted() and not t.HasEnded():
+            t.RollBack()
+        raise
+    return changed
 
 
 def _number(doc, schedules, pe):
