@@ -2,7 +2,7 @@
 name: drafting-tools
 description: "Danh mục lệnh động (dynamic commands) Revit MCP dùng cho triển khai bản vẽ, theo chủ đề, kèm tham số chính. Drafting tool catalog."
 metadata:
-  updated: "2026-10-15"
+  updated: "2026-10-23"
   related: ["drafting-work-rules", "drafting-dimensions", "drafting-annotation", "drafting-views-sheets"]
 ---
 
@@ -19,6 +19,22 @@ metadata:
 - Claude Code hoãn nạp tool MCP (tool search): đầu việc nạp mọi lệnh ở dòng **Tools** của skill trong **một** lần ToolSearch (`select:` + tên đầy đủ `mcp__<server>__<tên>`).
 - Khi không chắc tham số: đọc header của file (`/* mcp-tool */`) và comment `// ---- Details` ngay dưới nó (giải thích đầy đủ).
 - Ký hiệu: RO = read-only; **1V** = mỗi lần gọi chỉ một view.
+
+## Task dùng chung với nút pyRevit (`pyrevit_task`)
+
+Việc mà user làm bằng nút trên tab pyRevit **claude using revit** thì Claude gọi đúng code đó: `pyrevit_task {task, args}` (một lệnh cho mọi task, code ở `pyrevit/ClaudeUsingRevit.extension/lib/tasks.py`). Thêm task mới không cần sửa C# hay mở phiên mới. `args` chung: `dryRun` (chỉ báo, không ghi), `detail` (danh sách đầy đủ), `limit`.
+
+| Task | Việc · args | Nút tương ứng |
+|---|---|---|
+| `list_tasks` | (RO) Danh sách task + args. | — |
+| `print_sets_status` | (RO) Mỗi schedule danh mục so với print set cùng tên: số sheet, khớp chưa, +/−. `schedule(s)`. | Print set theo DM |
+| `print_set_sync` | Print set mang tên schedule = đúng các sheet schedule hiện (thứ tự schedule, bỏ placeholder), rồi đánh lại No. `schedule(s)` hoặc `all`; set người khác sửa cuối → `skipped`, cần `force`. | Print set theo DM |
+| `sheet_list_columns` | Cột chuẩn + đánh số No. `schedule(s)`, `columns:false` = chỉ đánh số, `force`. | Chuẩn cột danh mục |
+| `sheet_list_signers` | Hiện / ẩn 4 cột ký cùng lúc (`show`); không `show` = hỏi trạng thái. | Chuẩn cột danh mục |
+| `sheet_list_fill` | Một giá trị chữ cho một tham số mọi sheet của schedule. `param`, `value` (rỗng = xoá). | Chuẩn cột danh mục |
+| `untagged_scan` | (RO) Room / cửa đi / cửa sổ / tường / sàn chưa tag trong view. `views` (id view, sheet, viewport) hoặc `sheets` (số sheet), `kinds`. | Tìm chưa tag |
+| `untagged_highlight` / `untagged_remove` | Tô cam chỗ chưa tag (thay vùng tô cũ của mình) / xoá vùng tô của mình. | Tìm chưa tag / Xoá vùng tô |
+| `highlight` / `highlight_clear` | Tô đỏ 50% quanh phần tử (`ids`, `view`) / xoá highlight của mình (`view` hoặc cả model). | Tô đối tượng / Xoá vùng tô |
 
 ## Phiên làm việc
 
@@ -123,7 +139,6 @@ metadata:
 |---|---|
 | `set_viewport_type` | Đổi viewport type (preview / apply / undo). |
 | `print_set_info` | (RO) Các sheet trong một print set (View/Sheet Set), so với schedule danh mục bản vẽ: `MissingInSet`, `OnlyInSet`. |
-| `print_set_from_schedule` | Tạo / thay (`replace:true`) print set bằng đúng các sheet mà schedule danh mục bản vẽ liệt kê. preview / apply. |
 | `print_set_rename` | Đổi tên print set (id giữ nguyên). preview / apply. |
 | `crop_side_to_grids` | Kéo một cạnh crop tới sát trục ngoài cùng. |
 | `align_grid_ends` | Căn đầu trục 2D (`compact`); `only` + `targets` để đưa đầu trục về hàng bubble (G5, `drafting-grid-dims` 03); `side` = chỉ dời đầu low hoặc high (kéo bubble một phía ra ngoài). |

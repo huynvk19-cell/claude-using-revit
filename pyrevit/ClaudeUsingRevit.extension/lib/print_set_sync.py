@@ -143,3 +143,21 @@ def save(doc, name, sheets, pset=None):
 
 def sheet_label(s):
     return u"{0} - {1}".format(s.SheetNumber, s.Name) if isinstance(s, ViewSheet) else s.Name
+
+
+def sync(doc, c):
+    """Save comparison c as the print set named after its schedule, then renumber the
+    schedule's No. column (Chuẩn cột danh mục) when it has one.
+
+    Returns {"count", "created", "renumbered", "renumber_error"}.
+    """
+    import sheet_list_columns as slc    # it imports this module
+    vs = c["schedule"]
+    out = {"count": save(doc, vs.Name, c["sheets"], c["set"]), "created": c["set"] is None,
+           "renumbered": 0, "renumber_error": None}
+    try:
+        res = slc.renumber(doc, vs)
+        out["renumbered"] = res["written"] if res else 0
+    except Exception as ex:
+        out["renumber_error"] = u"{0}".format(ex)
+    return out
