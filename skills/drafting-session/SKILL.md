@@ -5,7 +5,7 @@ description: "Ground rules + start/end routine for any Revit drafting work throu
 
 # Drafting session
 
-**Tools** (load all in one ToolSearch call): `annotation_overlaps`, `dims_text`, `export_sheet_images`, `hello_revit`, `mark_types`, `ui_view_focus`, `view_elem_boxes`.
+**Tools** (load all in one ToolSearch call): `annotation_overlaps`, `dims_text`, `export_sheet_images`, `hello_revit`, `mark_types`, `pyrevit_task`, `ui_view_focus`, `view_elem_boxes`.
 
 Read first (only these two):
 - `~/.claude/drafting-domain/drafting-work-rules.md` (Vietnamese).
@@ -36,6 +36,7 @@ Do **not** read the whole `drafting-domain/` folder or every skill. Pick the tas
 | Viewports, crops, templates, links, drawing list + print set | `drafting-views-sheets` | `drafting-views-sheets.md` |
 | Checking by image | `drafting-visual-check` | — |
 
+- **Shared tasks first**: a job the ribbon tab "claude using revit" already does (print set = drawing list, sheet-list columns / No. / one value for all sheets, untagged scan / highlight, highlight / clear) is one `pyrevit_task {task, args}` call: same code as the user's button, short result. `pyrevit_task {task:"list_tasks"}` lists them. Never re-derive such a job step by step.
 - A task touching two topics → load the two rows, nothing else.
 - `drafting-tools.md` and `drafting-api-pitfalls.md` are look-up lists: search them for the one command or symptom you need (`grep`). Do not read them whole.
 - The `related` list in a standard's header is for maintainers. Do not open those files because of it.

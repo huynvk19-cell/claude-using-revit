@@ -5,7 +5,7 @@ description: "Viewports, viewport types, crops/scope boxes, dependent views, 2D 
 
 # Views and sheets
 
-**Tools** (load all in one ToolSearch call): `align_grid_ends`, `crop_side_to_grids`, `grid_bubble_elbow`, `print_set_from_schedule`, `print_set_info`, `set_viewport_type`, `sheet_browser_names`, `sheet_views_ids`, `view_crop_info`, `view_image_trial`, `viewport_title_audit`, `viewport_titles_place`.
+**Tools** (load all in one ToolSearch call): `align_grid_ends`, `crop_side_to_grids`, `grid_bubble_elbow`, `print_set_info`, `pyrevit_task`, `set_viewport_type`, `sheet_browser_names`, `sheet_views_ids`, `view_crop_info`, `view_image_trial`, `viewport_title_audit`, `viewport_titles_place`.
 
 Standards: `~/.claude/drafting-domain/drafting-views-sheets.md`.
 

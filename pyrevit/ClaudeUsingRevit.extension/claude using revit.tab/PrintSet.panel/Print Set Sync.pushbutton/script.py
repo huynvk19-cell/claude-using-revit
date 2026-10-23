@@ -15,7 +15,6 @@ from System.Windows.Input import Cursors, Mouse
 from System.Windows.Media import BrushConverter
 
 import print_set_sync as ps
-import sheet_list_columns as slc
 
 doc = revit.doc
 uidoc = revit.uidoc
@@ -78,26 +77,19 @@ def default_schedule(schedules):
 def save_compare(c):
     """Write the print set of comparison c; returns the done line."""
     name = c["schedule"].Name
-    n = ps.save(doc, name, c["sheets"], c["set"])
+    res = ps.sync(doc, c)
     cfg.schedule = name
     script.save_config()
-    if c["set"] is None:
-        done = u"Đã tạo print set \"{0}\": {1} sheet.".format(name, n)
+    if res["created"]:
+        done = u"Đã tạo print set \"{0}\": {1} sheet.".format(name, res["count"])
     else:
         done = u"Đã cập nhật print set \"{0}\": {1} sheet (+{2}, −{3}).".format(
-            name, n, len(c["added"]), len(c["removed"]))
-    return done + renumber_line(c["schedule"])
-
-
-def renumber_line(vs):
-    """Keep the schedule's No. column (Chuẩn cột danh mục) in step with its sheets."""
-    try:
-        res = slc.renumber(doc, vs)
-    except Exception as ex:
-        return u" Chưa đánh lại được No.: {0}".format(ex)
-    if not res or not res["written"]:
-        return u""
-    return u" Đã đánh lại No. {0} sheet.".format(res["written"])
+            name, res["count"], len(c["added"]), len(c["removed"]))
+    if res["renumber_error"]:
+        return done + u" Chưa đánh lại được No.: {0}".format(res["renumber_error"])
+    if res["renumbered"]:
+        return done + u" Đã đánh lại No. {0} sheet.".format(res["renumbered"])
+    return done
 
 
 class PrintSetWindow(forms.WPFWindow):
