@@ -107,6 +107,10 @@ class ColumnsWindow(forms.WPFWindow):
         self.apply_btn.Click += self.on_apply
         self.open_btn.Click += self.on_open
         self.signers_btn.Click += self.on_signers
+        self.fill_btn.Click += self.on_fill
+        self.fill_param.SelectionChanged += lambda s, e: self.update_fill()
+        self.fill_value.TextChanged += lambda s, e: self.update_fill()
+        self.fill_sheets, self.fill_items = [], []
         self.pick_all.Checked += lambda s, e: self.tick_all(True)
         self.pick_all.Unchecked += lambda s, e: self.tick_all(False)
         for chk in (self.all_chip, self.force_chk):
@@ -208,6 +212,7 @@ class ColumnsWindow(forms.WPFWindow):
         shown = slc.signers_shown(doc, sel)
         self.signers_text.Text = u"Ẩn cột ký" if shown else u"Hiện cột ký"
         self.signers_icon.Text = u"" if shown else u""
+        self.refresh_fill(sel)
         if not sel:
             self.big_count.Text = u"–"
             self.big_count.Foreground = brush(GREY)
@@ -291,6 +296,63 @@ class ColumnsWindow(forms.WPFWindow):
         self.apply_text.Text = u"Đã đúng chuẩn" if not todo else u"Áp chuẩn"
         self.apply_btn.IsEnabled = bool(todo) and not blocked
         self.signers_btn.IsEnabled = not blocked
+
+    def refresh_fill(self, sel):
+        """Sheets of the ticked schedules + the parameters offered for them."""
+        self.fill_sheets = slc.schedules_sheets(doc, sel)
+        items = slc.fillable(doc, self.fill_sheets)
+        if items != self.fill_items:
+            keep = self.fill_param.SelectedItem
+            self.fill_items = items
+            self.fill_param.Items.Clear()
+            for _, name in items:
+                self.fill_param.Items.Add(name)
+            names = [n for _, n in items]
+            if names:
+                self.fill_param.SelectedIndex = names.index(keep) if keep in names else 0
+        self.update_fill()
+
+    def fill_pid(self):
+        i = self.fill_param.SelectedIndex
+        return self.fill_items[i][0] if 0 <= i < len(self.fill_items) else None
+
+    def update_fill(self):
+        value = self.fill_value.Text or u""
+        self.fill_hint.Visibility = Visibility.Collapsed if value else Visibility.Visible
+        pid = self.fill_pid()
+        sheets = self.fill_sheets
+        self.fill_btn.IsEnabled = bool(sheets) and pid is not None
+        if not sheets or pid is None:
+            self.fill_info.Text = u"Tick schedule ở trên để chọn sheet."
+            return
+        vals = sorted(slc.current_values(sheets, pid).items(), key=lambda kv: -kv[1])
+        now = u" · ".join(u"{0} ×{1}".format(u"\"{0}\"".format(v) if v else u"(trống)", n) for v, n in vals[:4])
+        if len(vals) > 4:
+            now += u" · {0} giá trị khác".format(len(vals) - 4)
+        change = sum(n for v, n in vals if v != value)
+        self.fill_info.Text = u"Đang có: {0}. Bấm Gán: {1} / {2} sheet đổi thành {3}.".format(
+            now, change, len(sheets), u"\"{0}\"".format(value) if value else u"trống")
+        self.fill_btn.IsEnabled = change > 0
+
+    def on_fill(self, sender, args):
+        pid, value = self.fill_pid(), self.fill_value.Text or u""
+        name = self.fill_param.SelectedItem
+        if not value and not forms.alert(u"Xoá giá trị {0} của mọi sheet đang chọn?".format(name),
+                                         yes=True, no=True):
+            return
+        try:
+            written, skipped = slc.fill(doc, self.fill_sheets, pid, value)
+        except Exception as ex:
+            forms.alert(u"Không gán được {0}:\n{1}".format(name, ex))
+            return
+        done = u"Đã gán {0} = {1} cho {2} sheet.".format(
+            name, u"\"{0}\"".format(value) if value else u"trống", written)
+        if skipped:
+            done += u" {0} sheet đang do người khác giữ, chưa đổi: {1}.".format(
+                len(skipped), u", ".join(s.SheetNumber for s in skipped[:8]))
+        self.update_fill()
+        self.done_text.Text = done
+        self.done_box.Visibility = Visibility.Visible
 
     # ---- actions --------------------------------------------------------
 

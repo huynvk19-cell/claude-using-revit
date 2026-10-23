@@ -209,6 +209,36 @@
           </ScrollViewer>
         </Border>
 
+        <TextBlock Text="GÁN MỘT GIÁ TRỊ CHO MỌI SHEET" Style="{StaticResource Caption}"/>
+        <Border CornerRadius="10" BorderBrush="#EFEFF3" BorderThickness="1" Padding="10,8">
+          <StackPanel>
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="8"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+              </Grid.ColumnDefinitions>
+              <ComboBox x:Name="fill_param" Height="32" VerticalContentAlignment="Center"
+                        ToolTip="Tham số của sheet (không có Sheet Number, Sheet Name, No.)"/>
+              <Grid Grid.Column="2">
+                <TextBox x:Name="fill_value" Height="32" Padding="6,0" VerticalContentAlignment="Center"
+                         BorderBrush="#D9D9DE"/>
+                <TextBlock x:Name="fill_hint" Text="Giá trị (để trống = xoá)" IsHitTestVisible="False"
+                           Foreground="#B0B4BC" Margin="10,0,0,0" VerticalAlignment="Center"/>
+              </Grid>
+              <Button x:Name="fill_btn" Grid.Column="3" Style="{StaticResource Ghost}" Margin="6,0,0,0"
+                      Foreground="#2F4FC4" ToolTip="Gán giá trị cho mọi sheet của các schedule đang chọn">
+                <StackPanel Orientation="Horizontal">
+                  <TextBlock Text="&#xE70F;" FontFamily="{StaticResource Icons}" FontSize="13" VerticalAlignment="Center"/>
+                  <TextBlock Text="Gán" Margin="7,0,0,0" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                </StackPanel>
+              </Button>
+            </Grid>
+            <TextBlock x:Name="fill_info" FontSize="12" Foreground="#8A8F98" Margin="2,6,0,0" TextWrapping="Wrap"/>
+          </StackPanel>
+        </Border>
+
         <Border x:Name="warn_box" CornerRadius="10" Background="#FFF8E6" Padding="12,10" Margin="0,10,0,0"
                 Visibility="Collapsed">
           <StackPanel>

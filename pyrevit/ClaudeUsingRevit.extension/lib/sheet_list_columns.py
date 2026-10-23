@@ -281,6 +281,83 @@ def set_signers(doc, schedules, show):
     return changed
 
 
+# ---- one value for every sheet ---------------------------------------------
+
+SKIP_FILL = (int(BuiltInParameter.SHEET_NUMBER), int(BuiltInParameter.SHEET_NAME))
+
+
+def schedules_sheets(doc, schedules):
+    """Sheets shown by the schedules (placeholders included), each once."""
+    out, seen = [], set()
+    for vs in schedules:
+        for s in ps.schedule_sheets(doc, vs, with_placeholders=True)[0]:
+            if s.Id.IntegerValue not in seen:
+                seen.add(s.Id.IntegerValue)
+                out.append(s)
+    return out
+
+
+def fillable(doc, sheets):
+    """[(param id, name)] of text parameters the user may set on the sheets:
+    signer columns first, then the rest by name. Not Sheet Number / Name (unique
+    per sheet), not No. (the tool numbers it), not read-only ones."""
+    if not sheets:
+        return []
+    pe, bound = no_param(doc)
+    skip = set(SKIP_FILL)
+    if bound:
+        skip.add(pe.Id.IntegerValue)
+    found = {}
+    for p in sheets[0].Parameters:
+        if p.IsReadOnly or p.StorageType != StorageType.String or p.Id.IntegerValue in skip:
+            continue
+        found.setdefault(p.Id.IntegerValue, p.Definition.Name)
+    first = [k for k in HIDDEN if k in found]
+    rest = sorted((k for k in found if k not in first), key=lambda k: found[k].lower())
+    return [(k, found[k]) for k in first + rest]
+
+
+def _param(el, pid):
+    for p in el.Parameters:
+        if p.Id.IntegerValue == pid:
+            return p
+    return None
+
+
+def current_values(sheets, pid):
+    """{value: count} of a parameter over the sheets ("" = empty)."""
+    out = {}
+    for s in sheets:
+        p = _param(s, pid)
+        v = (p.AsString() or u"") if p is not None else u""
+        out[v] = out.get(v, 0) + 1
+    return out
+
+
+def fill(doc, sheets, pid, value):
+    """Set parameter pid to value on every sheet (empty value clears it). Only
+    sheets whose value differs are written; borrowed ones are skipped."""
+    written, skipped = 0, []
+    t = Transaction(doc, u"Gán giá trị cho sheet")
+    t.Start()
+    try:
+        for s in sheets:
+            p = _param(s, pid)
+            if p is None or p.IsReadOnly or (p.AsString() or u"") == value:
+                continue
+            if busy(doc, s):
+                skipped.append(s)
+                continue
+            p.Set(value)
+            written += 1
+        t.Commit()
+    except Exception:
+        if t.HasStarted() and not t.HasEnded():
+            t.RollBack()
+        raise
+    return written, skipped
+
+
 def _number(doc, schedules, pe):
     """Write No. for each schedule in turn. A sheet already numbered by an earlier
     schedule of this run keeps that number (reported as a clash)."""
