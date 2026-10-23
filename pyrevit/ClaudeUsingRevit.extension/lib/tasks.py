@@ -14,6 +14,7 @@ limit (list length when not detail, default 20).
 from Autodesk.Revit.DB import Element, ElementId, Transaction, View, ViewSheet
 
 import highlight_regions as hr
+import pdf_export as pe
 import print_set_sync as ps
 import sheet_list_columns as slc
 import untagged_marks as um
@@ -55,7 +56,9 @@ def run_json(name, args_json, doc, uidoc):
     except Exception as ex:
         import traceback
         out = {"error": u"{0}".format(ex), "trace": traceback.format_exc()[-1500:]}
-    return json.dumps(out, ensure_ascii=True, default=_default)
+    # ensure_ascii=True trips on non-ASCII text in IronPython; escape it by hand
+    s = json.dumps(out, ensure_ascii=False, default=_default)
+    return u"".join(c if ord(c) < 128 else u"\\u%04x" % ord(c) for c in s)
 
 
 # ---- helpers ------------------------------------------------------------------
@@ -193,6 +196,44 @@ def print_set_sync(doc, uidoc, args):
                 row["renumberError"] = res["renumber_error"]
         out.append(row)
     return {"schedules": out}
+
+
+# ---- PDF export (Xuất PDF) -----------------------------------------------------
+
+@task(u"Sheets of a sheet-list schedule to PDF: paper from title block, 100%, centred, "
+      u"heavy sheets in parts, one joined file. args: schedule, sheets (numbers), folder, "
+      u"dryRun (plan only), limit.")
+def pdf_export(doc, uidoc, args):
+    # Blocks Revit until done (minutes on a big set). A run cut short (RAM, crash)
+    # carries on where it stopped when called again with the same sheets the same day.
+    vs = _schedules(doc, uidoc, args)[0]
+    numbers = set(_names(args, "sheet", "sheets"))
+    sheets, total = pe.sheets_of(doc, vs)
+    if numbers:
+        missing = numbers - set(s.SheetNumber for s in sheets)
+        if missing:
+            raise TaskError(u"not in {0}: {1}".format(vs.Name, u", ".join(sorted(missing))))
+        sheets = [s for s in sheets if s.SheetNumber in numbers]
+    if not sheets:
+        raise TaskError(u"schedule {0} shows no printable sheet".format(vs.Name))
+    limit = int(args["limit"]) if args.get("limit") else None
+    if args.get("dryRun"):
+        lim, rows = pe.plan_sheets(doc, sheets, limit)
+        heavy = [r for r in rows if r["mode"] == "parts" or r["note"]]
+        return {"sheets": len(rows), "limit": lim, "freeMB": pe.memory_mb()[0],
+                "papers": dict((p, len([r for r in rows if r["paper"]["label"] == p]))
+                               for p in set(r["paper"]["label"] for r in rows)),
+                "heaviest": _cut([u"{0}: {1:,}".format(r["sheet"].SheetNumber, r["weight"])
+                                  for r in sorted(rows, key=lambda r: -r["weight"])], args),
+                "split": _cut([u"{0}: {1} parts {2}".format(r["sheet"].SheetNumber, r["parts"],
+                                                             r["note"]) for r in heavy], args)}
+    folder = args.get("folder") or pe.default_folder()
+    r = pe.run(doc, sheets, folder, pe.title_for(vs, sheets, total), limit=limit)
+    return {"folder": r["folder"], "joined": r["joined"], "joinError": r["join_error"],
+            "exported": len(r["done"]) - len(r["skipped"]), "resumedSkipped": len(r["skipped"]),
+            "total": r["total"], "stopped": r["stopped"], "learnt": r["learnt"],
+            "split": _cut([u"{0}: {1} parts".format(s.SheetNumber, n) for s, n in r["split"]], args),
+            "failed": _cut([u"{0}: {1}".format(s.SheetNumber, e) for s, e in r["failed"]], args)}
 
 
 # ---- sheet-list columns (Chuẩn cột danh mục) -----------------------------------
