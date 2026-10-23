@@ -208,7 +208,7 @@ def sheet_list_columns(doc, uidoc, args):
                       "showColumns": len(p["show"]), "reorder": p["reorder"],
                       "numbersToWrite": len(p["numbers"]),
                       "skippedBorrowed": _cut([ps.sheet_label(s) for s in p["skipped"]], args),
-                      "inSync": p["in_sync"]})
+                      "inSync": p["in_sync"], "scaleMissing": p["scale_missing"]})
         if p["busy"] or (p["others"] and not args.get("force")):
             blocked.append(vs.Name)
     if args.get("dryRun") or blocked:

@@ -2,8 +2,10 @@
 """Standard columns of a sheet-list schedule, and its "No." numbering.
 
 Standard (only ever ADDS - no field or parameter is removed, no heading renamed):
-  - shown first, in this order: No., Sheet Number, Sheet Name, Current Revision,
-    Current Revision Date (made visible when hidden);
+  - shown first, in this order: No., Sheet Number, Sheet Name, SCALE, Current
+    Revision, Current Revision Date (made visible when hidden). SCALE = the sheet
+    parameter named "SCALE" (any case; a project / shared one before Revit's own);
+    a model without one is reported, the parameter is not created;
   - added hidden when missing: Checked By, Approved By, Designed By, Drawn By
     (left as they are when already there, shown or hidden; set_signers shows or
     hides the four together);
@@ -30,9 +32,12 @@ import print_set_sync as ps
 NO_NAME = u"No."
 NO_GUID = Guid("6d2f1a7c-4b3e-4c8a-9f15-2e7b0c9d4a31")
 NO_KEY = "no"
+SCALE_NAME = u"SCALE"
+SCALE_KEY = "scale"
 VISIBLE = [NO_KEY,
            int(BuiltInParameter.SHEET_NUMBER),
            int(BuiltInParameter.SHEET_NAME),
+           SCALE_KEY,
            int(BuiltInParameter.SHEET_CURRENT_REVISION),
            int(BuiltInParameter.SHEET_CURRENT_REVISION_DATE)]
 HIDDEN = [int(BuiltInParameter.SHEET_CHECKED_BY),
@@ -42,6 +47,7 @@ HIDDEN = [int(BuiltInParameter.SHEET_CHECKED_BY),
 LABELS = {NO_KEY: u"No.",
           int(BuiltInParameter.SHEET_NUMBER): u"Sheet Number",
           int(BuiltInParameter.SHEET_NAME): u"Sheet Name",
+          SCALE_KEY: u"Scale",
           int(BuiltInParameter.SHEET_CURRENT_REVISION): u"Revision",
           int(BuiltInParameter.SHEET_CURRENT_REVISION_DATE): u"Revision Date",
           int(BuiltInParameter.SHEET_CHECKED_BY): u"Checked By",
@@ -126,23 +132,47 @@ def ensure_no_param(doc):
 
 # ---- one schedule ----------------------------------------------------------
 
-def _key(field, no_id):
+def scale_id(doc, vs):
+    """Parameter id of the sheet parameter named SCALE the schedule can show, or None.
+    A project / shared parameter wins over Revit's own sheet Scale."""
+    found = [sf.ParameterId.IntegerValue for sf in vs.Definition.GetSchedulableFields()
+             if (sf.GetName(doc) or u"").strip().upper() == SCALE_NAME]
+    return max(found) if found else None     # built-in ids are negative
+
+
+def _ids(doc, vs, no_id):
+    """{parameter id: key} for the standard columns that are not built-in parameters."""
+    ids = {}
+    if no_id is not None:
+        ids[no_id] = NO_KEY
+    sid = scale_id(doc, vs)
+    if sid is not None:
+        ids[sid] = SCALE_KEY
+    return ids
+
+
+def _visible_want(ids):
+    """VISIBLE without SCALE when the model has no SCALE parameter."""
+    return [k for k in VISIBLE if k != SCALE_KEY or SCALE_KEY in ids.values()]
+
+
+def _key(field, ids):
     pid = field.ParameterId.IntegerValue
-    return NO_KEY if no_id is not None and pid == no_id else pid
+    return (ids or {}).get(pid, pid)
 
 
-def _fields(vs, no_id):
+def _fields(vs, ids=None):
     d = vs.Definition
     out = {}
     for i in range(d.GetFieldCount()):
         f = d.GetField(i)
-        out.setdefault(_key(f, no_id), f)
+        out.setdefault(_key(f, ids), f)
     return out
 
 
-def _visible_keys(vs, no_id):
+def _visible_keys(vs, ids):
     d = vs.Definition
-    return [_key(d.GetField(i), no_id) for i in range(d.GetFieldCount()) if not d.GetField(i).IsHidden]
+    return [_key(d.GetField(i), ids) for i in range(d.GetFieldCount()) if not d.GetField(i).IsHidden]
 
 
 def _sorted_by_no(vs, no_field):
@@ -187,12 +217,13 @@ def plan(doc, vs, pe=None):
     if pe is None:
         pe, bound = no_param(doc)
         pe = pe if bound else None
-    no_id = pe.Id.IntegerValue if pe is not None else None
-    fields = _fields(vs, no_id)
-    add_visible = [k for k in VISIBLE if k not in fields]
+    ids = _ids(doc, vs, pe.Id.IntegerValue if pe is not None else None)
+    want = _visible_want(ids)
+    fields = _fields(vs, ids)
+    add_visible = [k for k in want if k not in fields]
     add_hidden = [k for k in HIDDEN if k not in fields]
-    show = [k for k in VISIBLE if k in fields and fields[k].IsHidden]
-    reorder = _visible_keys(vs, no_id)[:len(VISIBLE)] != VISIBLE
+    show = [k for k in want if k in fields and fields[k].IsHidden]
+    reorder = _visible_keys(vs, ids)[:len(want)] != want
     sheets = ps.schedule_sheets(doc, vs, with_placeholders=True)[0]
     definition = pe.GetDefinition() if pe is not None else None
     numbers, skipped = [], []
@@ -211,18 +242,21 @@ def plan(doc, vs, pe=None):
         "columns_ok": not (add_visible or add_hidden or show or reorder),
         "in_sync": not (add_visible or add_hidden or show or reorder or numbers),
         "busy": held, "others": ps.is_others(doc, vs), "last": last, "creator": creator,
+        "scale_missing": SCALE_KEY not in want,
     }
 
 
 def _apply_columns(doc, vs, no_id):
     d = vs.Definition
-    fields = _fields(vs, no_id)
+    ids = _ids(doc, vs, no_id)
+    want = _visible_want(ids)
+    fields = _fields(vs, ids)
     schedulable = {}
     for sf in d.GetSchedulableFields():
-        k = NO_KEY if no_id is not None and sf.ParameterId.IntegerValue == no_id else sf.ParameterId.IntegerValue
-        schedulable.setdefault(k, sf)
+        pid = sf.ParameterId.IntegerValue
+        schedulable.setdefault(ids.get(pid, pid), sf)
     added = 0
-    for k in VISIBLE + HIDDEN:
+    for k in want + HIDDEN:
         if k in fields:
             continue
         sf = schedulable.get(k)
@@ -234,10 +268,10 @@ def _apply_columns(doc, vs, no_id):
         f.IsHidden = k in HIDDEN
         fields[k] = f
         added += 1
-    for k in VISIBLE:
+    for k in want:
         if k in fields and fields[k].IsHidden:
             fields[k].IsHidden = False
-    first = [fields[k].FieldId for k in VISIBLE if k in fields]
+    first = [fields[k].FieldId for k in want if k in fields]
     first_ids = set(f.IntegerValue for f in first)
     order = list(first) + [f for f in d.GetFieldOrder() if f.IntegerValue not in first_ids]
     d.SetFieldOrder(List[ScheduleFieldId](order))
@@ -419,7 +453,7 @@ def apply(doc, schedules, columns=True):
 
 def has_no_field(doc, vs):
     pe, bound = no_param(doc)
-    return bound and NO_KEY in _fields(vs, pe.Id.IntegerValue)
+    return bound and NO_KEY in _fields(vs, {pe.Id.IntegerValue: NO_KEY})
 
 
 def renumber(doc, vs):

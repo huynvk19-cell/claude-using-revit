@@ -152,7 +152,7 @@
         <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
           <TextBlock Text="Chuẩn cột danh mục" FontSize="17" FontWeight="SemiBold"/>
           <TextBlock TextTrimming="CharacterEllipsis"
-                     Text="No. · Sheet Number · Sheet Name · Revision · Revision Date"
+                     Text="No. · Sheet Number · Sheet Name · Scale · Revision · Revision Date"
                      Foreground="#8A8F98" Margin="0,2,0,0"/>
         </StackPanel>
         <Button x:Name="close_btn" Grid.Column="2" Style="{StaticResource Ghost}" VerticalAlignment="Top"
