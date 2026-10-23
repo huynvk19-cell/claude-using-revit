@@ -1,7 +1,7 @@
 title: "Chuẩn cột\ndanh mục"
 tooltip: >-
   Áp bộ cột chuẩn cho một hay nhiều schedule danh mục bản vẽ (Sheet List): No., Sheet Number,
-  Sheet Name, Revision, Revision Date hiện đầu bảng; Checked By, Approved By, Designed By,
+  Sheet Name, SCALE (tham số sheet tên SCALE), Revision, Revision Date hiện đầu bảng; Checked By, Approved By, Designed By,
   Drawn By thêm vào ở dạng ẩn (nút Hiện / Ẩn cột ký bật tắt cả 4 cùng lúc). Chỉ thêm, không xoá cột hay tham số nào. No. là tham số sheet
   do tool tự tạo và tự đánh 1..n theo thứ tự schedule; bấm lại khi thêm / bớt sheet
   (nút Print set theo DM cũng tự đánh lại). Ô Gán: một giá trị cho một tham số của mọi sheet đang chọn.

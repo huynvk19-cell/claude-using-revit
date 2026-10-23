@@ -245,6 +245,8 @@ class ColumnsWindow(forms.WPFWindow):
                 seen.setdefault(sid, p["schedule"].Name)
         for p in plans:
             rows.Add(text(p["schedule"].Name, bold=True, margin=(0, 6 if rows.Count else 2, 0, 2)))
+            if p["scale_missing"]:
+                rows.Add(self._line(u"!", u"Model chưa có tham số sheet SCALE: chưa thêm được cột Scale", ORANGE))
             if p["in_sync"]:
                 rows.Add(self._line(u"✓", u"Đã đúng chuẩn.", GREEN))
                 continue
@@ -255,7 +257,7 @@ class ColumnsWindow(forms.WPFWindow):
             if p["show"]:
                 rows.Add(self._line(u"◐", u"Hiện lại: " + labels(p["show"]), BLUE))
             if p["reorder"]:
-                rows.Add(self._line(u"⇅", u"Xếp 5 cột chuẩn lên đầu, cột khác giữ thứ tự sau đó", BLUE))
+                rows.Add(self._line(u"⇅", u"Xếp các cột chuẩn lên đầu, cột khác giữ thứ tự sau đó", BLUE))
             if p["numbers"]:
                 rows.Add(self._line(u"#", u"Đánh lại No. {0} / {1} sheet".format(
                     len(p["numbers"]), len(p["sheets"])), BLUE))
