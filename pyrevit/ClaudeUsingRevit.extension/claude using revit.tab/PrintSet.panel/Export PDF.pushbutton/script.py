@@ -8,7 +8,7 @@ logic is in lib/pdf_export.py (shared with Claude's pyrevit_task "pdf_export").
 """
 import os
 
-from pyrevit import forms, revit
+from pyrevit import forms, revit, script
 
 import pdf_export as pe
 import print_set_sync as ps
@@ -30,7 +30,7 @@ def pick_schedule():
     name = forms.SelectFromList.show(names, title=u"Xuất PDF: chọn danh mục bản vẽ",
                                      button_name=u"Xuất PDF", multiselect=False)
     if not name:
-        raise SystemExit
+        script.exit()
     return [s for s in schedules if s.Name == name][0]
 
 
@@ -40,7 +40,7 @@ def folder():
         return f
     f = forms.pick_folder(title=u"Thư mục lưu PDF")
     if not f:
-        raise SystemExit
+        script.exit()
     pe.remember_folder(f)
     return f
 

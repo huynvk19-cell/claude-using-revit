@@ -25,7 +25,7 @@ import re
 import time
 
 from Autodesk.Revit.DB import (
-    BuiltInCategory, BuiltInParameter, CheckoutStatus, DisplayStyle, ElementId,
+    BuiltInCategory, BuiltInParameter, CheckoutStatus, ElementId,
     ExportPaperFormat, FilteredElementCollector, PageOrientationType, PaperPlacementType,
     GraphicsStyleType, Line, PDFExportOptions, RevitLinkInstance, Transaction, TransactionGroup,
     ViewDetailLevel, XYZ,
