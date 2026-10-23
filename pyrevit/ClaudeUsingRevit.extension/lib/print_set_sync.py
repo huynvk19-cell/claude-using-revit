@@ -49,11 +49,11 @@ def _number_column(vs):
     return None
 
 
-def schedule_sheets(doc, vs):
+def schedule_sheets(doc, vs, with_placeholders=False):
     """(sheets in schedule order, placeholder count) for the rows the schedule shows."""
     shown = [s for s in FilteredElementCollector(doc, vs.Id).OfClass(ViewSheet)]
     placeholders = len([s for s in shown if s.IsPlaceholder])
-    by_no = dict((s.SheetNumber, s) for s in shown if not s.IsPlaceholder)
+    by_no = dict((s.SheetNumber, s) for s in shown if with_placeholders or not s.IsPlaceholder)
     ordered = []
     col = _number_column(vs)
     if col is not None:

@@ -15,6 +15,7 @@ from System.Windows.Input import Cursors, Mouse
 from System.Windows.Media import BrushConverter
 
 import print_set_sync as ps
+import sheet_list_columns as slc
 
 doc = revit.doc
 uidoc = revit.uidoc
@@ -81,9 +82,22 @@ def save_compare(c):
     cfg.schedule = name
     script.save_config()
     if c["set"] is None:
-        return u"Đã tạo print set \"{0}\": {1} sheet.".format(name, n)
-    return u"Đã cập nhật print set \"{0}\": {1} sheet (+{2}, −{3}).".format(
-        name, n, len(c["added"]), len(c["removed"]))
+        done = u"Đã tạo print set \"{0}\": {1} sheet.".format(name, n)
+    else:
+        done = u"Đã cập nhật print set \"{0}\": {1} sheet (+{2}, −{3}).".format(
+            name, n, len(c["added"]), len(c["removed"]))
+    return done + renumber_line(c["schedule"])
+
+
+def renumber_line(vs):
+    """Keep the schedule's No. column (Chuẩn cột danh mục) in step with its sheets."""
+    try:
+        res = slc.renumber(doc, vs)
+    except Exception as ex:
+        return u" Chưa đánh lại được No.: {0}".format(ex)
+    if not res or not res["written"]:
+        return u""
+    return u" Đã đánh lại No. {0} sheet.".format(res["written"])
 
 
 class PrintSetWindow(forms.WPFWindow):
