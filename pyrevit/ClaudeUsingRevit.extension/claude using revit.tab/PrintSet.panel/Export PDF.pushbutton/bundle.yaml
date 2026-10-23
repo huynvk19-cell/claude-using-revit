@@ -1,0 +1,9 @@
+title: "Xuất\nPDF"
+tooltip: >-
+  Xuất PDF cả danh mục bản vẽ (hoặc các sheet đang chọn) thành một file, một nút bấm.
+  Khổ giấy theo khung tên, zoom 100%, căn giữa, vector. Sheet nặng được xuất từng phần rồi
+  ghép lại thành một trang để Revit không văng; giữa các sheet giải phóng bộ nhớ và kiểm
+  tra RAM, thiếu RAM thì dừng an toàn, bấm lại là xuất tiếp. Đứng ở schedule danh mục
+  (chọn vài dòng = chỉ xuất các sheet đó), hoặc bấm ở đâu cũng được rồi chọn danh mục.
+  Shift+click: đổi thư mục lưu.
+author: claude-using-revit

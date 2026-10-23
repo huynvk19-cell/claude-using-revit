@@ -32,6 +32,7 @@ Việc mà user làm bằng nút trên tab pyRevit **claude using revit** thì C
 | `sheet_list_columns` | Cột chuẩn + đánh số No. `schedule(s)`, `columns:false` = chỉ đánh số, `force`. | Chuẩn cột danh mục |
 | `sheet_list_signers` | Hiện / ẩn 4 cột ký cùng lúc (`show`); không `show` = hỏi trạng thái. | Chuẩn cột danh mục |
 | `sheet_list_fill` | Một giá trị chữ cho một tham số mọi sheet của schedule. `param`, `value` (rỗng = xoá). | Chuẩn cột danh mục |
+| `pdf_export` | Sheet của schedule danh mục ra PDF: khổ theo khung tên (ISO / ANSI / ARCH, không khớp = khổ sheet), zoom 100 %, căn giữa, vector; sheet nặng hơn ngưỡng xuất từng phần (ẩn tạm viewport trong transaction group rồi rollback, model không đổi) rồi chồng thành một trang; giữa các sheet GC + kiểm RAM, thiếu thì dừng, gọi lại là xuất tiếp; Revit văng giữa sheet → lần sau sheet đó tự chia phần, ngưỡng của máy hạ xuống. `schedule`, `sheets` (số sheet), `folder`, `limit`, `dryRun` (chỉ báo khổ + độ nặng + sheet sẽ chia). Chạy chặn Revit tới khi xong. | Xuất PDF |
 | `untagged_scan` | (RO) Room / cửa đi / cửa sổ / tường / sàn chưa tag trong view. `views` (id view, sheet, viewport) hoặc `sheets` (số sheet), `kinds`. | Tìm chưa tag |
 | `untagged_highlight` / `untagged_remove` | Tô cam chỗ chưa tag (thay vùng tô cũ của mình) / xoá vùng tô của mình. | Tìm chưa tag / Xoá vùng tô |
 | `highlight` / `highlight_clear` | Tô đỏ 50% quanh phần tử (`ids`, `view`) / xoá highlight của mình (`view` hoặc cả model). | Tô đối tượng / Xoá vùng tô |
