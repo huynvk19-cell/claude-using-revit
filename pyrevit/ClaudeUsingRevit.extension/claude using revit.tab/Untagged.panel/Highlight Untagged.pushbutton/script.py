@@ -17,6 +17,7 @@ from System.Windows.Media import BrushConverter
 
 from Autodesk.Revit.DB import ElementId
 
+import liquid_glass as lg
 import untagged_marks as um
 
 doc = revit.doc
@@ -48,9 +49,9 @@ def kinds_line(counts, kinds):
     return u" · ".join(u"{0} {1}".format(um.LABELS[k], counts[k]) for k in kinds if counts.get(k))
 
 
-class UntaggedWindow(forms.WPFWindow):
+class UntaggedWindow(lg.GlassWindow):
     def __init__(self):
-        forms.WPFWindow.__init__(self, script.get_bundle_file("ui.xaml"))
+        lg.GlassWindow.__init__(self, script.get_bundle_file("ui.xaml"))
         self.picked = um.views_from_ids(doc, list(uidoc.Selection.GetElementIds()))
         self.active = um.views_from_ids(doc, [doc.ActiveView.Id])
         self.views, self.scope_text, self.prev_scope = [], u"", None
@@ -87,14 +88,14 @@ class UntaggedWindow(forms.WPFWindow):
 
     def _add_chip(self, k):
         tb = ToggleButton()
-        tb.Style = self.FindResource("Chip")
+        tb.Style = self.FindResource("ChipLarge")
         tb.IsChecked = bool(cfg.get_option("kind_" + k, True))
         sp = StackPanel()
         sp.Orientation = Orientation.Horizontal
         sp.Children.Add(text(um.LABELS[k]))
         badge = Border()
         badge.CornerRadius = CornerRadius(9)
-        badge.Background = brush("#FFFFFF")
+        badge.Background = brush("#B3FFFFFF")
         badge.Padding = Thickness(7, 1, 7, 1)
         badge.Margin = Thickness(8, 0, 0, 0)
         cnt = text(u"–", size=11, bold=True, color="#9CA3AF")
@@ -191,7 +192,7 @@ class UntaggedWindow(forms.WPFWindow):
         try:
             um.remove(doc, self.views)
         except Exception as ex:
-            forms.alert(u"Không xoá được vùng tô:\n{0}".format(ex))
+            lg.alert(u"Không xoá được vùng tô:\n{0}".format(ex))
         self.refresh()
 
     def on_back(self, sender, args):
@@ -211,7 +212,7 @@ class UntaggedWindow(forms.WPFWindow):
             report, problems = um.highlight_views(doc, self.views, kinds, self.found)
         except Exception as ex:
             Mouse.OverrideCursor = None
-            forms.alert(u"Không tạo được vùng tô:\n{0}".format(ex))
+            lg.alert(u"Không tạo được vùng tô:\n{0}".format(ex))
             return
         finally:
             Mouse.OverrideCursor = None
@@ -281,4 +282,4 @@ if win.open_target:
         uidoc.ActiveView = view
         uidoc.Selection.SetElementIds(List[ElementId](ids))
     except Exception as ex:
-        forms.alert(u"Không mở được view {0}:\n{1}".format(view.Name, ex))
+        lg.alert(u"Không mở được view {0}:\n{1}".format(view.Name, ex))

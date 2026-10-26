@@ -10,6 +10,7 @@ import os
 
 from pyrevit import forms, revit, script
 
+import liquid_glass as lg
 import pdf_export as pe
 import print_set_sync as ps
 
@@ -20,15 +21,14 @@ uidoc = revit.uidoc
 def pick_schedule():
     schedules = ps.sheet_schedules(doc)
     if not schedules:
-        forms.alert(u"Model chưa có schedule danh mục bản vẽ (Sheet List).", exitscript=True)
+        lg.alert(u"Model chưa có schedule danh mục bản vẽ (Sheet List).", exitscript=True)
     av = doc.ActiveView.Id.IntegerValue
     for s in schedules:
         if s.Id.IntegerValue == av:
             return s
     last = pe.settings().get("schedule")
     names = sorted((s.Name for s in schedules), key=lambda n: (n != last, n.lower()))
-    name = forms.SelectFromList.show(names, title=u"Xuất PDF: chọn danh mục bản vẽ",
-                                     button_name=u"Xuất PDF", multiselect=False)
+    name = lg.choose(names, u"Xuất PDF: chọn danh mục bản vẽ", icon=lg.ICON_PDF)
     if not name:
         script.exit()
     return [s for s in schedules if s.Name == name][0]
@@ -49,7 +49,7 @@ ask_folder = False
 if __shiftclick__:  # noqa: F821 (pyRevit global)
     RETRY = u"Thử lại view / sheet đã bỏ (model đã sửa)"
     opts = [u"Đổi thư mục lưu"] + ([RETRY] if pe.crash_memory(doc) else [])
-    pick = forms.CommandSwitchWindow.show(opts, message=u"Xuất PDF")
+    pick = lg.choose(opts, u"Xuất PDF", icon=lg.ICON_PDF)
     if not pick:
         script.exit()
     if pick == RETRY:
@@ -66,11 +66,11 @@ sheets, total = pe.sheets_of(doc, vs, picked)
 if picked and not sheets:
     sheets, total = pe.sheets_of(doc, vs)
 if not sheets:
-    forms.alert(u"Schedule \"{0}\" không hiện sheet nào in được.".format(vs.Name), exitscript=True)
+    lg.alert(u"Schedule \"{0}\" không hiện sheet nào in được.".format(vs.Name), exitscript=True)
 base = folder(ask_folder)
 title = pe.title_for(vs, sheets, total)
 
-with forms.ProgressBar(title=u"Xuất PDF", cancellable=True) as pb:
+with lg.Progress(u"Xuất PDF", cancellable=True) as pb:
     def progress(i, n, text):
         pb.title = u"Xuất PDF {0}/{1} · {2}".format(i + 1, n, text)
         pb.update_progress(i, n)
@@ -102,7 +102,7 @@ if res["join_error"]:
 target = res["joined"] or res["folder"]
 if res["joined"]:
     lines.append(u"File: " + os.path.basename(res["joined"]))
-choice = forms.alert(u"\n".join(lines), title=u"Xuất PDF",
-                     options=[u"Mở PDF" if res["joined"] else u"Mở thư mục", u"Đóng"])
+choice = lg.alert(u"\n".join(lines), title=u"Xuất PDF", icon=lg.ICON_PDF,
+                  options=[u"Mở PDF" if res["joined"] else u"Mở thư mục", u"Đóng"])
 if choice and choice.startswith(u"Mở"):
     os.startfile(target)

@@ -14,6 +14,7 @@ from System.Windows.Controls import (ColumnDefinition, Grid, RadioButton,
 from System.Windows.Input import Cursors, Mouse
 from System.Windows.Media import BrushConverter
 
+import liquid_glass as lg
 import print_set_sync as ps
 
 doc = revit.doc
@@ -92,9 +93,9 @@ def save_compare(c):
     return done
 
 
-class PrintSetWindow(forms.WPFWindow):
+class PrintSetWindow(lg.GlassWindow):
     def __init__(self):
-        forms.WPFWindow.__init__(self, script.get_bundle_file("ui.xaml"))
+        lg.GlassWindow.__init__(self, script.get_bundle_file("ui.xaml"))
         self.schedules = ps.sheet_schedules(doc)
         self.cmp, self.radio = {}, {}
         self.current = None
@@ -260,7 +261,7 @@ class PrintSetWindow(forms.WPFWindow):
             done = save_compare(c)
         except Exception as ex:
             Mouse.OverrideCursor = None
-            forms.alert(u"Không lưu được print set \"{0}\":\n{1}".format(self.current, ex))
+            lg.alert(u"Không lưu được print set \"{0}\":\n{1}".format(self.current, ex))
             return
         finally:
             Mouse.OverrideCursor = None
@@ -295,7 +296,7 @@ def quick_update():
     try:
         forms.toast(save_compare(c), title=u"Print set")
     except Exception as ex:
-        forms.alert(u"Không lưu được print set \"{0}\":\n{1}".format(name, ex))
+        lg.alert(u"Không lưu được print set \"{0}\":\n{1}".format(name, ex))
     return True
 
 
@@ -306,4 +307,4 @@ if not (__shiftclick__ and quick_update()):  # noqa: F821 (pyRevit global)
         try:
             uidoc.ActiveView = win.open_target
         except Exception as ex:
-            forms.alert(u"Không mở được schedule {0}:\n{1}".format(win.open_target.Name, ex))
+            lg.alert(u"Không mở được schedule {0}:\n{1}".format(win.open_target.Name, ex))

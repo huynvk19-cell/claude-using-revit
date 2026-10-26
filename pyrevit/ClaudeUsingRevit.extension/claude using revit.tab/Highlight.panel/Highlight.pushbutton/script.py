@@ -2,8 +2,9 @@
 """Red 50% see-through filled region around each selected object, in its own view."""
 from Autodesk.Revit.Exceptions import OperationCanceledException
 from Autodesk.Revit.UI.Selection import ObjectType
-from pyrevit import forms, revit
+from pyrevit import revit
 
+import liquid_glass as lg
 import tasks
 
 doc = revit.doc
@@ -23,7 +24,7 @@ if ids:
         res = tasks.run("highlight", {"ids": [i.IntegerValue for i in ids], "detail": True},
                         doc, uidoc)
     except Exception as ex:
-        forms.alert(u"Không tạo được highlight:\n{0}".format(ex), exitscript=True)
+        lg.alert(u"Không tạo được highlight:\n{0}".format(ex), exitscript=True)
 
     per_view, skipped = res["perView"], res["skipped"]
     lines = [u"Đã highlight {0}/{1} đối tượng.".format(res["created"], len(ids))]
@@ -32,4 +33,4 @@ if ids:
         lines.append(u"Bỏ qua {0}:".format(len(skipped)))
         lines += [u"  " + s for s in skipped[:10]]
     if skipped or len(per_view) > 1:
-        forms.alert(u"\n".join(lines))
+        lg.alert(u"\n".join(lines))
