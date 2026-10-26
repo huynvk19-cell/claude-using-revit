@@ -34,9 +34,9 @@ def pick_schedule():
     return [s for s in schedules if s.Name == name][0]
 
 
-def folder():
+def folder(ask=False):
     f = pe.settings().get("folder")
-    if f and os.path.isdir(f) and not __shiftclick__:  # noqa: F821 (pyRevit global)
+    if f and os.path.isdir(f) and not ask:
         return f
     f = forms.pick_folder(title=u"Thư mục lưu PDF")
     if not f:
@@ -44,6 +44,18 @@ def folder():
     pe.remember_folder(f)
     return f
 
+
+ask_folder = False
+if __shiftclick__:  # noqa: F821 (pyRevit global)
+    RETRY = u"Thử lại view / sheet đã bỏ (model đã sửa)"
+    opts = [u"Đổi thư mục lưu"] + ([RETRY] if pe.crash_memory(doc) else [])
+    pick = forms.CommandSwitchWindow.show(opts, message=u"Xuất PDF")
+    if not pick:
+        script.exit()
+    if pick == RETRY:
+        pe.forget(doc)
+    else:
+        ask_folder = True
 
 vs = pick_schedule()
 s = pe.settings()
@@ -55,7 +67,7 @@ if picked and not sheets:
     sheets, total = pe.sheets_of(doc, vs)
 if not sheets:
     forms.alert(u"Schedule \"{0}\" không hiện sheet nào in được.".format(vs.Name), exitscript=True)
-base = folder()
+base = folder(ask_folder)
 title = pe.title_for(vs, sheets, total)
 
 with forms.ProgressBar(title=u"Xuất PDF", cancellable=True) as pb:
@@ -74,7 +86,7 @@ if res["split"]:
 for t in res["learnt"]:
     lines.append(u"Lần trước Revit văng: " + t)
 if res["missing_views"]:
-    lines.append(u"View làm Revit văng cả khi xuất raster, đã bỏ khỏi PDF (cần sửa trong model):")
+    lines.append(u"View làm Revit văng, đã bỏ khỏi PDF (sửa trong model rồi Shift+click > Thử lại):")
     lines += [u"  {0}: {1}".format(sh.SheetNumber, u", ".join(v)) for sh, v in res["missing_views"]]
 if res["failed"]:
     lines.append(u"Lỗi {0} sheet, bấm lại để thử lại:".format(len(res["failed"])))
