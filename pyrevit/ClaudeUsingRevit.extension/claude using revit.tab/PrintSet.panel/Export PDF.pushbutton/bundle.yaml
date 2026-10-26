@@ -5,5 +5,5 @@ tooltip: >-
   ghép lại thành một trang để Revit không văng; giữa các sheet giải phóng bộ nhớ và kiểm
   tra RAM, thiếu RAM thì dừng an toàn, bấm lại là xuất tiếp. Đứng ở schedule danh mục
   (chọn vài dòng = chỉ xuất các sheet đó), hoặc bấm ở đâu cũng được rồi chọn danh mục.
-  Shift+click: đổi thư mục lưu.
+  Shift+click: đổi thư mục lưu, hoặc thử lại view / sheet đã bị bỏ vì làm Revit văng (sau khi sửa model). Luôn xuất vector, không raster.
 author: claude-using-revit

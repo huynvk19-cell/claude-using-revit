@@ -17,8 +17,8 @@ A journal (.export.json) in the run folder records each sheet as started / done,
 a run cut short carries on where it stopped. Revit can also die inside its own
 drawing code on one bad view whatever the RAM (GeomUtil crash): the crash memory in
 pdf_export.json (%APPDATA%\\claude-using-revit) remembers the pass Revit died on and
-narrows it down run after run: sheet -> one view per part -> that view raster ->
-that view skipped, and the user is told which view it is.
+narrows it down run after run: sheet -> one view per part -> that view left out of
+the PDF (always vector, never raster), and the user is told which view it is.
 """
 import io
 import json
@@ -29,7 +29,7 @@ import time
 from Autodesk.Revit.DB import (
     BuiltInCategory, BuiltInParameter, CheckoutStatus, ElementId,
     ExportPaperFormat, FilteredElementCollector, PageOrientationType, PaperPlacementType,
-    GraphicsStyleType, Line, PDFExportOptions, RasterQualityType, RevitLinkInstance,
+    GraphicsStyleType, Line, PDFExportOptions, RevitLinkInstance,
     Transaction, TransactionGroup, FailureProcessingResult, FailureSeverity,
     IFailuresPreprocessor,
     ViewDetailLevel, XYZ,
@@ -154,12 +154,15 @@ class LowPriority(object):
 # crash), whatever the RAM. Before every export pass the views it draws are written
 # here; a pass still written down at the next run is the one Revit died on:
 #   - a pass of several views -> that sheet is isolated: one view per part;
-#   - a pass of one view      -> that view goes out raster; died raster too -> skipped.
-# Kept per model (document title) across days and folders.
+#   - a pass of one view      -> that view is left out (vector only, never raster)
+#                                and named, so it can be fixed in the model;
+#   - died again on an isolated sheet that cannot be split -> sheet left out.
+# Kept per model (document title) across days and folders; forget() clears it once
+# the model is fixed.
 
 def _doc_key(doc):
     # Title carries ".rvt" or not depending on the Windows "hide extensions" setting
-    return re.sub(u"(?i)\\.rvt$", u"", doc.Title)
+    return re.sub(u"(?i)\.rvt$", u"", doc.Title)
 
 
 def crash_memory(doc):
@@ -172,9 +175,17 @@ def _crash_save(doc, mem):
     save_settings(s)
 
 
-def mark_pass(doc, sheet, view_ids, raster):
+def forget(doc):
+    """Clear the crash memory of this model (after fixing the views); returns its size."""
     mem = crash_memory(doc)
-    mem["pending"] = {"sheet": sheet.Id.IntegerValue, "views": list(view_ids), "raster": raster}
+    n = len(mem.get("views", {})) + len(mem.get("sheets", [])) + len(mem.get("dead", []))
+    _crash_save(doc, {})
+    return n
+
+
+def mark_pass(doc, sheet, view_ids):
+    mem = crash_memory(doc)
+    mem["pending"] = {"sheet": sheet.Id.IntegerValue, "views": list(view_ids)}
     _crash_save(doc, mem)
 
 
@@ -192,23 +203,19 @@ def recover(doc):
         return []
     sheet = doc.GetElement(ElementId(int(p["sheet"])))
     label = sheet.SheetNumber if isinstance(sheet, ViewSheet) else str(p["sheet"])
-    views = mem.setdefault("views", {})
+    sheets = mem.setdefault("sheets", [])
     if len(p["views"]) == 1:
         vid = str(p["views"][0])
         v = doc.GetElement(ElementId(int(vid)))
-        vname = v.Name if v is not None else vid
-        views[vid] = "skip" if p["raster"] else "raster"
-        line = u"{0}: Revit văng khi vẽ view \"{1}\" ({2}), lần này {3}".format(
-            label, vname, u"raster" if p["raster"] else u"vector",
-            u"bỏ qua view này" if p["raster"] else u"xuất view này dạng raster")
+        mem.setdefault("views", {})[vid] = "skip"
+        line = u"{0}: Revit văng khi vẽ view \"{1}\", lần này bỏ view này ra khỏi PDF".format(
+            label, v.Name if v is not None else vid)
+    elif p["sheet"] in sheets:
+        mem.setdefault("dead", []).append(p["sheet"])
+        line = u"{0}: Revit văng cả khi tách view, lần này bỏ qua sheet này".format(label)
     else:
-        sheets = mem.setdefault("sheets", [])
-        if p["sheet"] in sheets:
-            mem.setdefault("dead", []).append(p["sheet"])
-            line = u"{0}: Revit văng cả khi tách view, lần này bỏ qua sheet này".format(label)
-        else:
-            sheets.append(p["sheet"])
-            line = u"{0}: Revit văng ở sheet này, lần này tách từng view để tìm view lỗi".format(label)
+        sheets.append(p["sheet"])
+        line = u"{0}: Revit văng ở sheet này, lần này tách từng view để tìm view lỗi".format(label)
     _crash_save(doc, mem)
     return [line]
 
@@ -255,7 +262,7 @@ def paper(doc, sheet):
             "label": u"{0:.0f}x{1:.0f}".format(w, h), "titleblock": name}
 
 
-def options(p, file_name, raster=False):
+def options(p, file_name):
     o = PDFExportOptions()
     o.FileName = file_name
     o.Combine = True
@@ -264,9 +271,7 @@ def options(p, file_name, raster=False):
     o.ZoomType = ZoomType.Zoom
     o.ZoomPercentage = 100
     o.PaperPlacement = PaperPlacementType.Center
-    o.AlwaysUseRaster = raster
-    if raster:
-        o.RasterQuality = RasterQualityType.High
+    o.AlwaysUseRaster = False       # vector only: raster PDFs are not accepted
     o.HideCropBoundaries = True
     o.HideScopeBoxes = True
     o.HideReferencePlane = True
@@ -330,16 +335,12 @@ def viewports(doc, sheet):
     return [doc.GetElement(i) for i in sheet.GetAllViewports()]
 
 
-def _part(vps, raster=False):
-    return {"vps": list(vps), "raster": raster}
-
-
 def assess(doc, sheet, weigher, limit, crash=None):
     """Weight of the sheet and how to export it.
 
     Returns {"weight", "views": [(viewport, weight, notes)], "mode": whole | parts | dead,
-             "parts": [{"vps": [viewport ids], "raster"}] (first = base part with the
-             title block), "raster": whole sheet raster, "skipped": [view names], "note"}.
+             "parts": [[viewport ids]] (first = base part with the title block),
+             "skipped": [view names left out], "note"}.
     """
     crash = crash or {}
     bad = crash.get("views", {})
@@ -348,7 +349,7 @@ def assess(doc, sheet, weigher, limit, crash=None):
         w, notes = weigher.view(doc.GetElement(vp.ViewId))
         rows.append((vp, w, notes))
     total = sum(w for _, w, _ in rows)
-    out = {"weight": total, "views": rows, "mode": "whole", "parts": None, "raster": False,
+    out = {"weight": total, "views": rows, "mode": "whole", "parts": None,
            "skipped": [], "note": u""}
     sid = sheet.Id.IntegerValue
     if sid in crash.get("dead", []):
@@ -364,22 +365,19 @@ def assess(doc, sheet, weigher, limit, crash=None):
     why = _cannot_split(doc, sheet, rows)
     if why:
         out["note"] = why
-        out["raster"] = isolate          # crashed before and cannot be split: try raster
+        if isolate:                      # Revit died on it and it cannot be split
+            out["mode"] = "dead"
+            out["note"] = u"Revit đã văng ở sheet này và không tách được: " + why
         return out
     out["mode"] = "parts"
     if isolate:
-        # base = title block + sheet notes only; each view alone; raster views together
-        parts, raster = [_part([])], []
+        # base = title block + sheet notes only; each view alone; bad views left out
+        parts = [[]]
         for vp, _, _ in rows:
-            how = bad.get(str(vp.ViewId.IntegerValue))
-            if how == "skip":
+            if bad.get(str(vp.ViewId.IntegerValue)) == "skip":
                 out["skipped"].append(doc.GetElement(vp.ViewId).Name)
-            elif how == "raster":
-                raster.append(vp.Id)
             else:
-                parts.append(_part([vp.Id]))
-        if raster:
-            parts.append(_part(raster, True))
+                parts.append([vp.Id])
         out["parts"] = parts
         out["note"] = u"tách từng view (lần trước Revit văng)"
         return out
@@ -396,7 +394,7 @@ def assess(doc, sheet, weigher, limit, crash=None):
     if len(groups) < 2:
         groups = [[w, [vp.Id]] for vp, w, _ in rows]
     groups.sort(key=lambda g: g[0])          # lightest first = the base part
-    out["parts"] = [_part(g[1]) for g in groups]
+    out["parts"] = [g[1] for g in groups]
     if any(w > limit for _, w, _ in rows):
         out["note"] = u"có view vượt ngưỡng một mình"
     return out
@@ -446,10 +444,10 @@ def _remove(path):
         os.remove(path)
 
 
-def _export(doc, sheet, folder, name, p, raster=False):
+def _export(doc, sheet, folder, name, p):
     path = os.path.join(folder, name + u".pdf")
     _remove(path)
-    ok = doc.Export(folder, List[ElementId]([sheet.Id]), options(p, name, raster))
+    ok = doc.Export(folder, List[ElementId]([sheet.Id]), options(p, name))
     if not ok or not os.path.exists(path):
         raise Exception(u"Revit không xuất được {0}".format(name))
     return path
@@ -501,24 +499,24 @@ def export_sheet(doc, sheet, folder, plan, p, tidy_between=None):
     Part 1 = the sheet minus the viewports of the other parts (title block, sheet
     notes, schedules stay). Part 2.. = only their viewports + two corner anchors.
     Removing / hiding / anchors happen in a transaction group that is rolled back,
-    so the model is left exactly as it was. A raster part
-    is an opaque page image, so it goes under the others instead of over them.
+    so the model is left exactly as it was. Views left out (crash memory) are in no
+    part, so they are blanked in every pass.
     Each pass is written to the crash memory first (mark_pass / clear_pass).
     """
     name = file_name(sheet)
     view_of = dict((vp.Id.IntegerValue, vp.ViewId.IntegerValue) for vp in viewports(doc, sheet))
     if plan["mode"] == "whole":
-        mark_pass(doc, sheet, view_of.values(), plan.get("raster", False))
-        path = _export(doc, sheet, folder, name, p, plan.get("raster", False))
+        mark_pass(doc, sheet, view_of.values())
+        path = _export(doc, sheet, folder, name, p)
         clear_pass(doc)
         return path
     on_sheet = [e for e in FilteredElementCollector(doc, sheet.Id).WhereElementIsNotElementType()
                 if e.Category is not None and e.CanBeHidden(sheet) and not e.IsHidden(sheet)]
     box = titleblock(doc, sheet).get_BoundingBox(sheet)
-    files, unders = [], []
+    files = []
     try:
         for k, part in enumerate(plan["parts"]):
-            keep = set(i.IntegerValue for i in part["vps"])
+            keep = set(i.IntegerValue for i in part)
             if k == 0:
                 drop = [e for e in on_sheet
                         if e.Id.IntegerValue in view_of and e.Id.IntegerValue not in keep]
@@ -530,7 +528,7 @@ def export_sheet(doc, sheet, folder, plan, p, tidy_between=None):
             hide = [e.Id for e in drop]
             blank = [doc.GetElement(ElementId(view_of[e.Id.IntegerValue]))
                      for e in drop if e.Id.IntegerValue in view_of]
-            mark_pass(doc, sheet, [view_of[i] for i in keep], part["raster"])
+            mark_pass(doc, sheet, [view_of[i] for i in keep])
             tg = TransactionGroup(doc, u"PDF part")
             tg.Start()
             try:
@@ -546,20 +544,18 @@ def export_sheet(doc, sheet, folder, plan, p, tidy_between=None):
                 if k > 0:
                     _anchors(doc, sheet, box)
                 t.Commit()
-                f = _export(doc, sheet, folder, u"{0}__part{1}".format(name, k + 1), p,
-                            part["raster"])
+                files.append(_export(doc, sheet, folder, u"{0}__part{1}".format(name, k + 1), p))
             finally:
                 tg.RollBack()
             clear_pass(doc)
-            (unders if part["raster"] and k > 0 else files).append(f)
             if tidy_between:
                 tidy_between()
         path = os.path.join(folder, name + u".pdf")
         _remove(path)
-        pdf_merge.join([(None, files[0], files[1:], unders)], path)
+        pdf_merge.join([(None, files[0], files[1:])], path)
         return path
     finally:
-        for f in files + unders:
+        for f in files:
             try:
                 _remove(f)
             except Exception:

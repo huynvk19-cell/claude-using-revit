@@ -202,10 +202,12 @@ def print_set_sync(doc, uidoc, args):
 
 @task(u"Sheets of a sheet-list schedule to PDF: paper from title block, 100%, centred, "
       u"heavy sheets in parts, one joined file. args: schedule, sheets (numbers), folder, "
-      u"dryRun (plan only), limit.")
+      u"dryRun (plan only), limit, forget (clear the crash memory of this model).")
 def pdf_export(doc, uidoc, args):
     # Blocks Revit until done (minutes on a big set). A run cut short (RAM, crash)
     # carries on where it stopped when called again with the same sheets the same day.
+    if args.get("forget"):
+        return {"forgotten": pe.forget(doc)}
     vs = _schedules(doc, uidoc, args)[0]
     numbers = set(_names(args, "sheet", "sheets"))
     sheets, total = pe.sheets_of(doc, vs)
