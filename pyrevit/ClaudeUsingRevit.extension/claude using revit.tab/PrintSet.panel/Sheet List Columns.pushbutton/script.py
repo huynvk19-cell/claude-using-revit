@@ -13,6 +13,7 @@ from System.Windows.Controls import CheckBox, ColumnDefinition, Grid, StackPanel
 from System.Windows.Input import Cursors, Mouse
 from System.Windows.Media import BrushConverter
 
+import liquid_glass as lg
 import print_set_sync as ps
 import sheet_list_columns as slc
 
@@ -94,9 +95,9 @@ def done_line(res, names):
     return u" ".join(out)
 
 
-class ColumnsWindow(forms.WPFWindow):
+class ColumnsWindow(lg.GlassWindow):
     def __init__(self):
-        forms.WPFWindow.__init__(self, script.get_bundle_file("ui.xaml"))
+        lg.GlassWindow.__init__(self, script.get_bundle_file("ui.xaml"))
         self.schedules = ps.sheet_schedules(doc)
         self.plans, self.boxes = {}, {}
         self.open_target = None
@@ -150,7 +151,7 @@ class ColumnsWindow(forms.WPFWindow):
 
     def _add_row(self, vs):
         cb = CheckBox()
-        cb.Style = self.FindResource("Pick")
+        cb.Style = self.FindResource("PickCheck")
         cb.Checked += lambda s, e: self.on_tick()
         cb.Unchecked += lambda s, e: self.on_tick()
         self.schedules_list.Children.Add(cb)
@@ -339,13 +340,13 @@ class ColumnsWindow(forms.WPFWindow):
     def on_fill(self, sender, args):
         pid, value = self.fill_pid(), self.fill_value.Text or u""
         name = self.fill_param.SelectedItem
-        if not value and not forms.alert(u"Xoá giá trị {0} của mọi sheet đang chọn?".format(name),
-                                         yes=True, no=True):
+        if not value and not lg.alert(u"Xoá giá trị {0} của mọi sheet đang chọn?".format(name),
+                                      yes=True, no=True):
             return
         try:
             written, skipped = slc.fill(doc, self.fill_sheets, pid, value)
         except Exception as ex:
-            forms.alert(u"Không gán được {0}:\n{1}".format(name, ex))
+            lg.alert(u"Không gán được {0}:\n{1}".format(name, ex))
             return
         done = u"Đã gán {0} = {1} cho {2} sheet.".format(
             name, u"\"{0}\"".format(value) if value else u"trống", written)
@@ -365,7 +366,7 @@ class ColumnsWindow(forms.WPFWindow):
             res = slc.apply(doc, sel)
         except Exception as ex:
             Mouse.OverrideCursor = None
-            forms.alert(u"Không áp được chuẩn cột:\n{0}".format(ex))
+            lg.alert(u"Không áp được chuẩn cột:\n{0}".format(ex))
             return
         finally:
             Mouse.OverrideCursor = None
@@ -384,7 +385,7 @@ class ColumnsWindow(forms.WPFWindow):
         try:
             n = slc.set_signers(doc, sel, show)
         except Exception as ex:
-            forms.alert(u"Không đổi được cột ký:\n{0}".format(ex))
+            lg.alert(u"Không đổi được cột ký:\n{0}".format(ex))
             return
         self.plan_all()
         for name in self.boxes:
@@ -416,7 +417,7 @@ def quick_apply():
         res = slc.apply(doc, sel)
         forms.toast(done_line(res, [vs.Name for vs in sel]), title=u"Chuẩn cột")
     except Exception as ex:
-        forms.alert(u"Không áp được chuẩn cột:\n{0}".format(ex))
+        lg.alert(u"Không áp được chuẩn cột:\n{0}".format(ex))
     return True
 
 
@@ -427,4 +428,4 @@ if not (__shiftclick__ and quick_apply()):  # noqa: F821 (pyRevit global)
         try:
             uidoc.ActiveView = win.open_target
         except Exception as ex:
-            forms.alert(u"Không mở được schedule {0}:\n{1}".format(win.open_target.Name, ex))
+            lg.alert(u"Không mở được schedule {0}:\n{1}".format(win.open_target.Name, ex))
