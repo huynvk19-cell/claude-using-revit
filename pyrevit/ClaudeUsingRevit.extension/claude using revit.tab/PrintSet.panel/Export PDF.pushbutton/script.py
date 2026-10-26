@@ -72,10 +72,16 @@ if res["split"]:
     lines.append(u"Sheet nặng xuất từng phần rồi ghép: " +
                  u", ".join(u"{0} ({1} phần)".format(sh.SheetNumber, n) for sh, n in res["split"]))
 for t in res["learnt"]:
-    lines.append(u"Lần trước " + t)
+    lines.append(u"Lần trước Revit văng: " + t)
+if res["missing_views"]:
+    lines.append(u"View làm Revit văng cả khi xuất raster, đã bỏ khỏi PDF (cần sửa trong model):")
+    lines += [u"  {0}: {1}".format(sh.SheetNumber, u", ".join(v)) for sh, v in res["missing_views"]]
 if res["failed"]:
     lines.append(u"Lỗi {0} sheet, bấm lại để thử lại:".format(len(res["failed"])))
     lines += [u"  {0}: {1}".format(sh.SheetNumber, e) for sh, e in res["failed"][:8]]
+if res["failed"] or res["learnt"]:
+    lines.append(u"Nếu Revit văng giữa chừng: mở lại và bấm Xuất PDF lần nữa, tool nhớ "
+                 u"chỗ văng và tự né.")
 if res["stopped"]:
     lines.append(u"Đã dừng an toàn ({0}). Bấm lại để xuất tiếp phần còn lại.".format(res["stopped"]))
 if res["join_error"]:
