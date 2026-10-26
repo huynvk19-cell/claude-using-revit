@@ -106,8 +106,19 @@
             </Border>
             <Border CornerRadius="14" Background="{StaticResource Gloss}"
                     BorderBrush="{StaticResource TileRim}" BorderThickness="1"/>
+            <!-- frosted plate behind the glyph, as on the ribbon icons (pyrevit/make_icons.ps1) -->
+            <Border CornerRadius="9" Width="27" Height="27" Margin="5,6,0,0" Background="#40FFFFFF"
+                    BorderBrush="#99FFFFFF" BorderThickness="0.8" RenderTransformOrigin="0.5,0.5">
+              <Border.RenderTransform>
+                <RotateTransform Angle="-9"/>
+              </Border.RenderTransform>
+            </Border>
             <TextBlock Text="{TemplateBinding Content}" FontFamily="{StaticResource Icons}" FontSize="20"
-                       Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                       FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center">
+              <TextBlock.Effect>
+                <DropShadowEffect Color="#66000000" BlurRadius="4" ShadowDepth="1" Direction="270" Opacity="0.5"/>
+              </TextBlock.Effect>
+            </TextBlock>
           </Grid>
         </ControlTemplate>
       </Setter.Value>
