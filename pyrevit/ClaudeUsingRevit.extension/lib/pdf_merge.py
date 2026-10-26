@@ -376,8 +376,9 @@ class Writer(object):
             return v
         return cp
 
-    def add_page(self, rd, page, cp, overlays=()):
-        """Copy page of reader rd; overlays = [(reader, page)] drawn on top of it."""
+    def add_page(self, rd, page, cp, overlays=(), underlays=()):
+        """Copy page of reader rd; overlays = [(reader, page)] drawn on top of it,
+        underlays drawn before it (opaque raster parts)."""
         p = {}
         for k, v in page.items():
             if k in ("Parent", "Annots", "StructParents", "B", "Thumb", "PieceInfo", "Tabs"):
@@ -385,24 +386,24 @@ class Writer(object):
             p[k] = cp(v)
         p["Type"] = Name("Page")
         p["Parent"] = self.pages_ref
-        if overlays:
+        if overlays or underlays:
             res = rd.get(page.get("Resources")) or {}
             cp_res = dict((k, cp(v)) for k, v in res.items())
             xobj = dict((k, cp(v)) for k, v in (rd.get(res.get("XObject")) or {}).items())
-            draw = []
-            for n, (ord_, opage) in enumerate(overlays):
+            draw, under = [], []
+            for n, (ord_, opage) in enumerate(list(underlays) + list(overlays)):
                 form = self._form(ord_, opage)
                 key = "Part%d" % (n + 1)
                 while key in xobj:
                     key += "x"
                 xobj[key] = form
-                draw.append("q /%s Do Q" % key)
+                (under if n < len(underlays) else draw).append("q /%s Do Q" % key)
             cp_res["XObject"] = xobj
             p["Resources"] = cp_res
             contents = page.get("Contents")
             arr = rd.get(contents)
             arr = list(arr) if isinstance(arr, list) else [contents]
-            head = self.put(Stream({}, "q\n"))
+            head = self.put(Stream({}, "\n".join(under) + "\nq\n"))
             tail = self.put(Stream({}, "\nQ\n" + "\n".join(draw) + "\n"))
             p["Contents"] = [head] + [cp(x) for x in arr] + [tail]
         ref = self.put(p)
@@ -458,13 +459,16 @@ class Writer(object):
 # ---- the two jobs ---------------------------------------------------------------
 
 def join(entries, out_path, title=None):
-    """entries = [(bookmark title, base pdf, [part pdfs])]: every page of each base, the
-    i-th page of each part drawn over the i-th base page. Returns the page count."""
+    """entries = [(bookmark title, base pdf, [part pdfs], optional [under pdfs])]: every
+    page of each base, the i-th page of each part drawn over the i-th base page (under
+    it for the under pdfs). Returns the page count."""
     w = Writer(out_path)
     try:
-        for mark, base, parts in entries:
+        for entry in entries:
+            mark, base, parts = entry[:3]
+            unders = entry[3] if len(entry) > 3 else []
             rd = Reader(base)
-            prs = [Reader(p) for p in parts]
+            prs = [Reader(p) for p in list(parts) + list(unders)]
             ppages = [r.pages() for r in prs]
             cp = w.copier(rd)
             for i, page in enumerate(rd.pages()):
@@ -472,7 +476,8 @@ def join(entries, out_path, title=None):
                 for r, op in ov:
                     if _box(r, op) != _box(rd, page):
                         raise PdfError("part paper differs from base: %s" % mark)
-                ref = w.add_page(rd, page, cp, ov)
+                n_over = len([1 for pp in ppages[:len(parts)] if i < len(pp)])
+                ref = w.add_page(rd, page, cp, ov[:n_over], ov[n_over:])
                 if i == 0 and mark:
                     w.marks.append((mark, ref))
             del rd, prs, ppages

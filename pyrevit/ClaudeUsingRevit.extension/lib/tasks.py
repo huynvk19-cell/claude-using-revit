@@ -226,12 +226,15 @@ def pdf_export(doc, uidoc, args):
                 "heaviest": _cut([u"{0}: {1:,}".format(r["sheet"].SheetNumber, r["weight"])
                                   for r in sorted(rows, key=lambda r: -r["weight"])], args),
                 "split": _cut([u"{0}: {1} parts {2}".format(r["sheet"].SheetNumber, r["parts"],
-                                                             r["note"]) for r in heavy], args)}
+                                                             r["note"]) for r in heavy], args),
+                "crashMemory": pe.crash_memory(doc)}
     folder = args.get("folder") or pe.default_folder()
     r = pe.run(doc, sheets, folder, pe.title_for(vs, sheets, total), limit=limit)
     return {"folder": r["folder"], "joined": r["joined"], "joinError": r["join_error"],
             "exported": len(r["done"]) - len(r["skipped"]), "resumedSkipped": len(r["skipped"]),
             "total": r["total"], "stopped": r["stopped"], "learnt": r["learnt"],
+            "viewsLeftOut": [u"{0}: {1}".format(s.SheetNumber, u", ".join(v))
+                             for s, v in r["missing_views"]],
             "split": _cut([u"{0}: {1} parts".format(s.SheetNumber, n) for s, n in r["split"]], args),
             "failed": _cut([u"{0}: {1}".format(s.SheetNumber, e) for s, e in r["failed"]], args)}
 
