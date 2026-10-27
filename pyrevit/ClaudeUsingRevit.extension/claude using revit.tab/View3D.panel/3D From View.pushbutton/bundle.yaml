@@ -4,4 +4,5 @@ tooltip: >-
   với section box ôm đúng phần view đang mở thể hiện. Mặt bằng / mặt bằng trần: crop x
   view range. Mặt cắt / mặt đứng: crop x far clip. Trên sheet: chọn 1 viewport rồi bấm.
   Phase theo view gốc. Không sửa gì khác trong model.
+  Shift+click: mặt bằng cắt đúng ở cut plane (mặt bằng trần: từ cut plane trở lên).
 author: claude-using-revit
