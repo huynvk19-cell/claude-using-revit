@@ -18,6 +18,7 @@ import pdf_export as pe
 import print_set_sync as ps
 import sheet_list_columns as slc
 import untagged_marks as um
+import view_3d as v3d
 
 TASKS = {}     # name -> (function, help)
 
@@ -376,6 +377,34 @@ def highlight_clear(doc, uidoc, args):
         t.RollBack()
         raise
     return {"removed": len(regions)}
+
+
+# ---- 3D from view (3D theo view) -----------------------------------------------
+
+@task(u"Your own 3D view '3D Box - <user>' (reused) boxed to a plan (crop x view range) "
+      u"or section / elevation (crop x far clip), then opened. args: view (id; default: "
+      u"active view or the viewport selected on a sheet), activate (default true), dryRun.")
+def view_3d_from_view(doc, uidoc, args):
+    view = doc.GetElement(ElementId(int(args["view"]))) if args.get("view") else None
+    if args.get("view") and not isinstance(view, View):
+        raise TaskError(u"view not found: {0}".format(args["view"]))
+    try:
+        src = v3d.source_view(doc, uidoc, view)
+        if args.get("dryRun"):
+            box, info = v3d.box_for(doc, src)
+            size = box.Max - box.Min
+            info.update({"source": src.Name, "sourceType": u"{0}".format(src.ViewType),
+                         "view3d": v3d.box_view_name(doc),
+                         "exists": v3d.find_box_view(doc) is not None,
+                         "sizeMm": [int(round(c / v3d.MM)) for c in (size.X, size.Y, size.Z)]})
+            return info
+        view3d, info = v3d.apply(doc, src)
+    except v3d.View3DError as ex:
+        raise TaskError(u"{0}".format(ex))
+    if args.get("activate", True):
+        v3d.show(uidoc, view3d)
+        info["opened"] = True
+    return info
 
 
 @task(u"(RO) This list: every task with its args.")
