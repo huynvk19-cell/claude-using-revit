@@ -1,14 +1,19 @@
 # -*- coding: utf-8 -*-
-"""One click: the drawing list (or the sheets picked in it) to one PDF.
+"""The drawing list (or the sheets ticked in it) to one PDF.
 
-Which sheets: the sheet-list schedule open now (rows selected = only those sheets),
-else the sheets selected in the Project Browser within the chosen schedule, else the
-whole chosen schedule. Folder asked once (Shift+click to change). All the export
+Which list: the sheet-list schedule open now, else the one picked. Then one glass
+window lists its sheets in schedule order: all ticked (or only the ones selected in
+Revit), filter by number / name, untick what is not wanted, Xuất. Shift+click: retry
+the views / sheets left out after a crash (once the model is fixed). All the export
 logic is in lib/pdf_export.py (shared with Claude's pyrevit_task "pdf_export").
 """
 import os
 
 from pyrevit import forms, revit, script
+
+from System.Windows import (FontWeights, GridLength, GridUnitType, TextTrimming,
+                            Thickness, Visibility)
+from System.Windows.Controls import CheckBox, ColumnDefinition, Grid, TextBlock
 
 import liquid_glass as lg
 import pdf_export as pe
@@ -34,40 +39,120 @@ def pick_schedule():
     return [s for s in schedules if s.Name == name][0]
 
 
-def folder(ask=False):
-    f = pe.settings().get("folder")
-    if f and os.path.isdir(f) and not ask:
-        return f
-    f = forms.pick_folder(title=u"Thư mục lưu PDF")
-    if not f:
-        script.exit()
-    pe.remember_folder(f)
-    return f
+class SheetPicker(lg.GlassWindow):
+    """Tick the sheets of the drawing list to export (all ticked, or the ones selected
+    in Revit), filter by number / name, pick the folder, export."""
+
+    def __init__(self, schedule, sheets, picked_ids):
+        lg.GlassWindow.__init__(self, script.get_bundle_file("ui.xaml"))
+        self.result = None
+        self.folder = pe.settings().get("folder")
+        if self.folder and not os.path.isdir(self.folder):
+            self.folder = None
+        self.icon.Content = lg.ICON_PDF
+        self.subtitle.Text = schedule.Name
+        self.header.MouseLeftButtonDown += self.drag
+        self.close_btn.Click += lambda s, e: self.Close()
+        want = set(picked_ids or [])
+        self.boxes = []
+        for sh in sheets:
+            cb = CheckBox()
+            cb.Style = self.FindResource("PickCheck")
+            cb.Content = self._row(sh)
+            cb.IsChecked = not want or sh.Id.IntegerValue in want
+            cb.Checked += self.refresh
+            cb.Unchecked += self.refresh
+            self.sheet_list.Children.Add(cb)
+            self.boxes.append((sh, cb))
+        self.search.TextChanged += self.on_search
+        self.pick_all.Click += self.on_all
+        self.folder_btn.Click += self.on_folder
+        self.export_btn.Click += self.on_export
+        self.refresh()
+
+    def _row(self, sh):
+        g = Grid()
+        for w in (GridLength.Auto, GridLength(1, GridUnitType.Star)):
+            cd = ColumnDefinition()
+            cd.Width = w
+            g.ColumnDefinitions.Add(cd)
+        no = TextBlock()
+        no.Text = sh.SheetNumber
+        no.FontWeight = FontWeights.SemiBold
+        g.Children.Add(no)
+        name = TextBlock()
+        name.Text = sh.Name
+        name.Margin = Thickness(12, 0, 0, 0)
+        name.TextTrimming = TextTrimming.CharacterEllipsis
+        name.Foreground = self.FindResource("Ink2")
+        Grid.SetColumn(name, 1)
+        g.Children.Add(name)
+        return g
+
+    def picked(self):
+        return [sh for sh, cb in self.boxes if cb.IsChecked]
+
+    def visible(self):
+        return [cb for _, cb in self.boxes if cb.Visibility == Visibility.Visible]
+
+    def refresh(self, sender=None, args=None):
+        n = len(self.picked())
+        self.big_count.Text = str(n)
+        self.summary.Text = u"sheet sẽ xuất · {0} sheet trong danh mục".format(len(self.boxes))
+        self.folder_text.Text = self.folder or u"Chưa chọn thư mục lưu"
+        self.export_text.Text = u"Xuất {0} sheet".format(n) if n else u"Chưa chọn sheet"
+        self.export_btn.IsEnabled = n > 0
+        vis = self.visible()
+        self.pick_all.IsChecked = bool(vis) and all(cb.IsChecked for cb in vis)
+
+    def on_search(self, sender, args):
+        key = (self.search.Text or u"").strip().lower()
+        self.search_hint.Visibility = Visibility.Collapsed if key else Visibility.Visible
+        for sh, cb in self.boxes:
+            hit = not key or key in sh.SheetNumber.lower() or key in sh.Name.lower()
+            cb.Visibility = Visibility.Visible if hit else Visibility.Collapsed
+        self.refresh()
+
+    def on_all(self, sender, args):
+        state = bool(self.pick_all.IsChecked)
+        for cb in self.visible():
+            cb.IsChecked = state
+        self.refresh()
+
+    def on_folder(self, sender=None, args=None):
+        f = forms.pick_folder(title=u"Thư mục lưu PDF")
+        if f:
+            self.folder = f
+            pe.remember_folder(f)
+        self.refresh()
+
+    def on_export(self, sender, args):
+        if not self.folder:
+            self.on_folder()
+            if not self.folder:
+                return
+        self.result = self.picked()
+        self.Close()
 
 
-ask_folder = False
-if __shiftclick__:  # noqa: F821 (pyRevit global)
-    RETRY = u"Thử lại view / sheet đã bỏ (model đã sửa)"
-    opts = [u"Đổi thư mục lưu"] + ([RETRY] if pe.crash_memory(doc) else [])
-    pick = lg.choose(opts, u"Xuất PDF", icon=lg.ICON_PDF)
-    if not pick:
-        script.exit()
-    if pick == RETRY:
+if __shiftclick__ and pe.crash_memory(doc):  # noqa: F821 (pyRevit global)
+    if lg.alert(u"Thử lại các view / sheet đã bị bỏ vì làm Revit văng (model đã sửa)?",
+                title=u"Xuất PDF", icon=lg.ICON_PDF, yes=True, no=True):
         pe.forget(doc)
-    else:
-        ask_folder = True
 
 vs = pick_schedule()
 s = pe.settings()
 s["schedule"] = vs.Name
 pe.save_settings(s)
-picked = [i.IntegerValue for i in uidoc.Selection.GetElementIds()]
-sheets, total = pe.sheets_of(doc, vs, picked)
-if picked and not sheets:
-    sheets, total = pe.sheets_of(doc, vs)
+sheets, total = pe.sheets_of(doc, vs)
 if not sheets:
     lg.alert(u"Schedule \"{0}\" không hiện sheet nào in được.".format(vs.Name), exitscript=True)
-base = folder(ask_folder)
+win = SheetPicker(vs, sheets, [i.IntegerValue for i in uidoc.Selection.GetElementIds()])
+win.ShowDialog()
+if not win.result:
+    script.exit()
+sheets = win.result
+base = win.folder
 title = pe.title_for(vs, sheets, total)
 
 with lg.Progress(u"Xuất PDF", cancellable=True) as pb:
@@ -86,7 +171,7 @@ if res["split"]:
 for t in res["learnt"]:
     lines.append(u"Lần trước Revit văng: " + t)
 if res["missing_views"]:
-    lines.append(u"View làm Revit văng, đã bỏ khỏi PDF (sửa trong model rồi Shift+click > Thử lại):")
+    lines.append(u"View làm Revit văng, đã bỏ khỏi PDF (sửa trong model rồi Shift+click để thử lại):")
     lines += [u"  {0}: {1}".format(sh.SheetNumber, u", ".join(v)) for sh, v in res["missing_views"]]
 if res["failed"]:
     lines.append(u"Lỗi {0} sheet, bấm lại để thử lại:".format(len(res["failed"])))

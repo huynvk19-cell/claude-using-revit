@@ -1,0 +1,88 @@
+<!-- Liquid Glass: styles come from lib/liquid_glass.xaml (loaded by liquid_glass.GlassWindow) -->
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Xuất PDF" Width="560" SizeToContent="Height"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        ResizeMode="NoResize" WindowStartupLocation="CenterScreen" ShowInTaskbar="False"
+        FontFamily="{StaticResource Ui}" FontSize="13" Foreground="{StaticResource Ink}"
+        TextOptions.TextFormattingMode="Display">
+  <ContentControl x:Name="glass" Style="{StaticResource GlassPanel}">
+    <Grid>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="Auto"/>
+      </Grid.RowDefinitions>
+      <Grid x:Name="header" Grid.Row="0" Margin="24,22,18,0" Background="Transparent">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="Auto"/>
+          <ColumnDefinition Width="*"/>
+          <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+        <ContentControl x:Name="icon" Style="{StaticResource AppIcon}"/>
+        <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
+          <TextBlock Text="Xuất PDF" Style="{StaticResource Title}"/>
+          <TextBlock x:Name="subtitle" Style="{StaticResource Subtitle}" TextTrimming="CharacterEllipsis"/>
+        </StackPanel>
+        <Button x:Name="close_btn" Grid.Column="2" Style="{StaticResource CloseBtn}" VerticalAlignment="Top"
+                ToolTip="Đóng (Esc)"/>
+      </Grid>
+
+      <StackPanel Grid.Row="1" Margin="24,4,24,22">
+        <Grid Margin="0,18,0,8">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+          </Grid.ColumnDefinitions>
+          <Grid>
+            <TextBox x:Name="search" Height="34" Padding="12,0" VerticalContentAlignment="Center"/>
+            <TextBlock x:Name="search_hint" Text="Lọc theo số hoặc tên sheet" IsHitTestVisible="False"
+                       Foreground="{StaticResource Ink3}" Margin="15,0,0,0" VerticalAlignment="Center"/>
+          </Grid>
+          <ToggleButton x:Name="pick_all" Grid.Column="1" Style="{StaticResource Chip}" Margin="8,0,0,0"
+                        Content="Chọn hết" ToolTip="Chọn / bỏ chọn mọi sheet đang hiện trong danh sách"/>
+        </Grid>
+        <Border Style="{StaticResource Well}">
+          <ScrollViewer MaxHeight="420" VerticalScrollBarVisibility="Auto">
+            <StackPanel x:Name="sheet_list"/>
+          </ScrollViewer>
+        </Border>
+
+        <Border Style="{StaticResource Stat}">
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="Auto"/>
+              <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Name="big_count" Text="0" FontFamily="{StaticResource UiDisplay}" FontSize="34"
+                       FontWeight="SemiBold" Foreground="#3B5BDB" VerticalAlignment="Center"/>
+            <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
+              <TextBlock x:Name="summary" FontWeight="SemiBold" Text="sheet sẽ xuất"/>
+              <TextBlock x:Name="folder_text" Foreground="{StaticResource Ink2}" FontSize="12" Margin="0,2,0,0"
+                         TextTrimming="CharacterEllipsis"/>
+            </StackPanel>
+          </Grid>
+        </Border>
+
+        <Grid Margin="0,18,0,0">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+          </Grid.ColumnDefinitions>
+          <Button x:Name="folder_btn" Style="{StaticResource Ghost}" ToolTip="Đổi thư mục lưu PDF">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Text="&#xE8B7;" FontFamily="{StaticResource Icons}" FontSize="13" VerticalAlignment="Center"/>
+              <TextBlock Text="Thư mục" Margin="7,0,0,0" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Button>
+          <Button x:Name="export_btn" Grid.Column="2" Style="{StaticResource Primary}">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Text="&#xEA90;" FontFamily="{StaticResource Icons}" FontSize="13" VerticalAlignment="Center"/>
+              <TextBlock x:Name="export_text" Text="Xuất PDF" Margin="7,0,0,0" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Button>
+        </Grid>
+      </StackPanel>
+    </Grid>
+  </ContentControl>
+</Window>
