@@ -74,7 +74,9 @@ def _plane_z(doc, view, vr, plane):
     return lvl.ProjectElevation + off
 
 
-def _plan_box(doc, view):
+def _plan_box(doc, view, cut=False):
+    """cut: stop at the cut plane (floor plans: box top; ceiling plans, which look up:
+    box bottom), so the 3D shows the very cut the plan shows."""
     vr = view.GetViewRange()
     zs = [_plane_z(doc, view, vr, p) for p in (PlanViewPlane.TopClipPlane, PlanViewPlane.CutPlane,
                                                PlanViewPlane.BottomClipPlane,
@@ -87,6 +89,11 @@ def _plan_box(doc, view):
         hi = max(hi, z0 + NO_RANGE_FT)
     if zs[3] is None:                      # view depth Unlimited
         lo = min(lo, z0 - NO_RANGE_FT)
+    if cut and zs[1] is not None:
+        if view.ViewType == ViewType.CeilingPlan:
+            lo = zs[1]
+        else:
+            hi = zs[1]
     crop = view.CropBox
     t = crop.Transform
     pts = [t.OfPoint(XYZ(x, y, 0)) for x in (crop.Min.X, crop.Max.X)
@@ -137,9 +144,9 @@ def _zup_box(pts, along):
     return box
 
 
-def box_for(doc, view):
+def box_for(doc, view, cut=False):
     if view.ViewType in PLAN_TYPES:
-        return _plan_box(doc, view)
+        return _plan_box(doc, view, cut)
     return _section_box(doc, view)
 
 
@@ -187,9 +194,9 @@ def _copy_phase(src, dst):
             b.Set(a.AsElementId())
 
 
-def apply(doc, view):
+def apply(doc, view, cut=False):
     """Set (create on first use) this user's 3D box view to `view`. Returns (View3D, info)."""
-    box, info = box_for(doc, view)
+    box, info = box_for(doc, view, cut)
     v3 = find_box_view(doc)
     user = doc.Application.Username
     if v3 is not None:

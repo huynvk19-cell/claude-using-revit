@@ -383,7 +383,8 @@ def highlight_clear(doc, uidoc, args):
 
 @task(u"Your own 3D view '3D Box - <user>' (reused) boxed to a plan (crop x view range) "
       u"or section / elevation (crop x far clip), then opened. args: view (id; default: "
-      u"active view or the viewport selected on a sheet), activate (default true), dryRun.")
+      u"active view or the viewport selected on a sheet), cut (plans: stop at the cut plane), "
+      u"activate (default true), dryRun.")
 def view_3d_from_view(doc, uidoc, args):
     view = doc.GetElement(ElementId(int(args["view"]))) if args.get("view") else None
     if args.get("view") and not isinstance(view, View):
@@ -391,14 +392,14 @@ def view_3d_from_view(doc, uidoc, args):
     try:
         src = v3d.source_view(doc, uidoc, view)
         if args.get("dryRun"):
-            box, info = v3d.box_for(doc, src)
+            box, info = v3d.box_for(doc, src, bool(args.get("cut")))
             size = box.Max - box.Min
             info.update({"source": src.Name, "sourceType": u"{0}".format(src.ViewType),
                          "view3d": v3d.box_view_name(doc),
                          "exists": v3d.find_box_view(doc) is not None,
                          "sizeMm": [int(round(c / v3d.MM)) for c in (size.X, size.Y, size.Z)]})
             return info
-        view3d, info = v3d.apply(doc, src)
+        view3d, info = v3d.apply(doc, src, bool(args.get("cut")))
     except v3d.View3DError as ex:
         raise TaskError(u"{0}".format(ex))
     if args.get("activate", True):
