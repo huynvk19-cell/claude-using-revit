@@ -1,0 +1,7 @@
+title: "3D\ntheo view"
+tooltip: >-
+  Mở view 3D riêng của bạn ("3D Box - <tên Revit>", dùng lại mỗi lần, không tạo thêm)
+  với section box ôm đúng phần view đang mở thể hiện. Mặt bằng / mặt bằng trần: crop x
+  view range. Mặt cắt / mặt đứng: crop x far clip. Trên sheet: chọn 1 viewport rồi bấm.
+  Phase theo view gốc. Không sửa gì khác trong model.
+author: claude-using-revit

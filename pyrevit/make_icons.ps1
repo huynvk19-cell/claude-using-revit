@@ -15,7 +15,8 @@ $icons = @(
     @('Untagged.panel\Remove Untagged.pushbutton',         '#A1A1AA', '#4B4B52', [char]0xE75C, '#FFA23A', ''),
     @('PrintSet.panel\Print Set Sync.pushbutton',          '#4FA8FF', '#0062DB', [char]0xE749, '#FFFFFF', ''),
     @('PrintSet.panel\Sheet List Columns.pushbutton',      '#7D7BFF', '#3F3CC4', [char]0xE80A, '#FFFFFF', ''),
-    @('PrintSet.panel\Export PDF.pushbutton',              '#FF6259', '#C4161C', '',           '#FFFFFF', 'PDF')
+    @('PrintSet.panel\Export PDF.pushbutton',              '#FF6259', '#C4161C', '',           '#FFFFFF', 'PDF'),
+    @('View3D.panel\3D From View.pushbutton',              '#3DDCC0', '#0A8F7E', [char]0xF158, '#FFFFFF', '')
 )
 
 # superellipse |x|^5 + |y|^5 = 1 (the iOS icon shape), centred in 96 x 96 with a 4 px margin
