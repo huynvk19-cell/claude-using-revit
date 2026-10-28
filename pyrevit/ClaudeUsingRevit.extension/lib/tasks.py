@@ -202,8 +202,8 @@ def print_set_sync(doc, uidoc, args):
 # ---- PDF export (Xuất PDF) -----------------------------------------------------
 
 @task(u"Sheets of a sheet-list schedule to PDF: paper from title block, 100%, centred, "
-      u"heavy sheets in parts, one joined file. args: schedule, sheets (numbers), folder, "
-      u"dryRun (plan only), limit, forget (clear the crash memory of this model).")
+      u"heavy sheets in parts, one PDF per sheet (never joined). args: schedule, sheets, folder, "
+      u"groupBy (browser | sheet param name: sub-folders), dryRun, limit, forget (crash memory).")
 def pdf_export(doc, uidoc, args):
     # Blocks Revit until done (minutes on a big set). A run cut short (RAM, crash)
     # carries on where it stopped when called again with the same sheets the same day.
@@ -230,16 +230,34 @@ def pdf_export(doc, uidoc, args):
                                   for r in sorted(rows, key=lambda r: -r["weight"])], args),
                 "split": _cut([u"{0}: {1} parts {2}".format(r["sheet"].SheetNumber, r["parts"],
                                                              r["note"]) for r in heavy], args),
-                "crashMemory": pe.crash_memory(doc)}
+                "crashMemory": pe.crash_memory(doc),
+                "groupBy": [l for l, spec, _ in pe.group_options(doc, sheets) if spec][:12]}
     folder = args.get("folder") or pe.default_folder()
-    r = pe.run(doc, sheets, folder, pe.title_for(vs, sheets, total), limit=limit)
-    return {"folder": r["folder"], "joined": r["joined"], "joinError": r["join_error"],
+    group = _pdf_group(doc, sheets, args.get("groupBy"))
+    r = pe.run(doc, sheets, folder, group, limit=limit)
+    return {"folder": r["folder"], "subfolders": _cut(r["subfolders"], args),
             "exported": len(r["done"]) - len(r["skipped"]), "resumedSkipped": len(r["skipped"]),
             "total": r["total"], "stopped": r["stopped"], "learnt": r["learnt"],
             "viewsLeftOut": [u"{0}: {1}".format(s.SheetNumber, u", ".join(v))
                              for s, v in r["missing_views"]],
             "split": _cut([u"{0}: {1} parts".format(s.SheetNumber, n) for s, n in r["split"]], args),
             "failed": _cut([u"{0}: {1}".format(s.SheetNumber, e) for s, e in r["failed"]], args)}
+
+
+def _pdf_group(doc, sheets, by):
+    """groupBy: none / "browser" / a sheet parameter name -> the run's group spec."""
+    if not by:
+        return None
+    if by == "browser":
+        if not pe.browser_levels(doc):
+            raise TaskError(u"the Project Browser does not group sheets into folders")
+        return {"browser": True}
+    opts = [(label, spec) for label, spec, _ in pe.group_options(doc, sheets)
+            if spec and "param" in spec]
+    for label, spec in opts:
+        if label == by:
+            return spec
+    raise TaskError(u"groupBy: browser or one of: " + u", ".join(l for l, _ in opts))
 
 
 # ---- sheet-list columns (Chuẩn cột danh mục) -----------------------------------
