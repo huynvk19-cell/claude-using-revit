@@ -142,16 +142,17 @@ class SheetPicker(lg.GlassWindow):
         return [cb for _, cb in self.boxes if cb.Visibility == Visibility.Visible]
 
     def show_left_out(self):
-        """Warn before export when the crash memory leaves views / sheets out."""
-        lo = pe.left_out(doc, self.sheets)
+        """Tell before export which views Revit died on (they go out alone or in tiles)."""
+        lo = pe.crash_notes(doc, self.sheets)
         if not lo:
             self.warn_box.Visibility = Visibility.Collapsed
             return
-        lines = [u"{0}: {1}".format(s.SheetNumber, u"cả sheet" if v is None else u", ".join(v))
-                 for s, v in lo[:4]] + ([u"…"] if len(lo) > 4 else [])
-        self.warn_text.Text = (u"Lần trước Revit văng khi vẽ các view này nên chúng sẽ bị bỏ khỏi "
-                               u"PDF:\n" + u"\n".join(lines) +
-                               u"\nĐã sửa model, hoặc lúc đó chỉ là đóng Revit? Bấm Thử lại.")
+        lines = [u"{0}: {1}".format(s.SheetNumber, u", ".join(
+            v if n == 1 else u"{0} (chia {1}x{1} ô)".format(v, n) for v, n in rows))
+            for s, rows in lo[:4]] + ([u"…"] if len(lo) > 4 else [])
+        self.warn_text.Text = (u"Lần trước Revit văng khi vẽ các view này; lần này tool xuất riêng "
+                               u"hoặc chia ô để vẫn ra đủ view:\n" + u"\n".join(lines) +
+                               u"\nĐã sửa model? Bấm Thử lại để xuất như bình thường.")
         self.warn_box.Visibility = Visibility.Visible
 
     def on_retry(self, sender, args):
@@ -273,7 +274,7 @@ class SheetPicker(lg.GlassWindow):
 
 
 if __shiftclick__ and pe.crash_memory(doc):  # noqa: F821 (pyRevit global)
-    if lg.alert(u"Thử lại các view / sheet đã bị bỏ vì làm Revit văng (model đã sửa)?",
+    if lg.alert(u"Xoá trí nhớ văng của model này (model đã sửa) để xuất mọi view như bình thường?",
                 title=u"Xuất PDF", icon=lg.ICON_PDF, yes=True, no=True):
         pe.forget(doc)
 
@@ -306,11 +307,13 @@ if res["split"]:
                  u", ".join(u"{0} ({1} phần)".format(sh.SheetNumber, n) for sh, n in res["split"]))
 for t in res["learnt"]:
     lines.append(u"Lần trước Revit văng: " + t)
-if res["missing_views"]:
-    lines.append(u"View làm Revit văng, đã bỏ khỏi PDF (sửa trong model rồi Shift+click để thử lại):")
-    lines += [u"  {0}: {1}".format(sh.SheetNumber, u", ".join(v)) for sh, v in res["missing_views"]]
+if res["tiled"]:
+    lines.append(u"View từng làm Revit văng, đã xuất từng ô vùng crop rồi ghép (đủ view, vector):")
+    lines += [u"  {0}: {1}".format(sh.SheetNumber, u", ".join(
+        u"{0} ({1}x{1})".format(v, n) for v, n in rows)) for sh, rows in res["tiled"]]
 if res["failed"]:
-    lines.append(u"Lỗi {0} sheet, bấm lại để thử lại:".format(len(res["failed"])))
+    lines.append(u"Chưa xuất được {0} sheet (không có file thiếu view), bấm lại để thử lại:".format(
+        len(res["failed"])))
     lines += [u"  {0}: {1}".format(sh.SheetNumber, e) for sh, e in res["failed"][:8]]
 if res["failed"] or res["learnt"]:
     lines.append(u"Nếu Revit văng giữa chừng: mở lại và bấm Xuất PDF lần nữa, tool nhớ "

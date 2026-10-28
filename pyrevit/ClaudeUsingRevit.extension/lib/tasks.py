@@ -238,8 +238,8 @@ def pdf_export(doc, uidoc, args):
     return {"folder": r["folder"], "subfolders": _cut(r["subfolders"], args),
             "exported": len(r["done"]) - len(r["skipped"]), "resumedSkipped": len(r["skipped"]),
             "total": r["total"], "stopped": r["stopped"], "learnt": r["learnt"],
-            "viewsLeftOut": [u"{0}: {1}".format(s.SheetNumber, u", ".join(v))
-                             for s, v in r["missing_views"]],
+            "viewsTiled": [u"{0}: {1}".format(s.SheetNumber, u", ".join(
+                u"{0} ({1}x{1})".format(v, n) for v, n in rows)) for s, rows in r["tiled"]],
             "split": _cut([u"{0}: {1} parts".format(s.SheetNumber, n) for s, n in r["split"]], args),
             "failed": _cut([u"{0}: {1}".format(s.SheetNumber, e) for s, e in r["failed"]], args)}
 

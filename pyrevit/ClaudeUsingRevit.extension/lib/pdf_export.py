@@ -20,8 +20,9 @@ A journal (journals\ next to the settings) records each sheet as started / done,
 a run cut short carries on where it stopped. Revit can also die inside its own
 drawing code on one bad view whatever the RAM (GeomUtil crash): the crash memory in
 pdf_export.json (%APPDATA%\\claude-using-revit) remembers the pass Revit died on and
-narrows it down run after run: sheet -> one view per part -> that view left out of
-the PDF (always vector, never raster), and the user is told which view it is.
+narrows it down run after run: sheet -> one view per part -> that view again alone ->
+that view in 2x2, 3x3, 4x4 crop tiles. No view is ever left out of a PDF (always
+vector, never raster); a sheet that cannot be drawn whole fails and is named.
 """
 import io
 import json
@@ -31,7 +32,8 @@ import time
 import zlib
 
 from Autodesk.Revit.DB import (
-    BrowserOrganization, BuiltInCategory, BuiltInParameter, CheckoutStatus, ElementId,
+    BoundingBoxXYZ, BrowserOrganization, BuiltInCategory, BuiltInParameter, CheckoutStatus,
+    Element, ElementId,
     ExportPaperFormat, FilteredElementCollector, PageOrientationType, PaperPlacementType,
     GraphicsStyleType, Line, PDFExportOptions, RevitLinkInstance,
     Transaction, TransactionGroup, FailureProcessingResult, FailureSeverity,
@@ -157,17 +159,18 @@ class LowPriority(object):
 # ---- crash memory ("black box") ---------------------------------------------------
 # Revit can die inside its own drawing code on one bad view (GeomUtil / hidden-line
 # crash), whatever the RAM. Before every export pass the views it draws are written
-# here; a pass still written down at the next run is the one Revit died on:
+# here; a pass still written down at the next run is the one Revit died on (only when
+# Windows logged Revit crashing / hanging; a Revit closed by hand teaches nothing):
 #   - a pass of several views -> that sheet is isolated: one view per part;
-#   - a pass of one view      -> that view is left out (vector only, never raster)
-#                                and named, so it can be fixed in the model;
-#   - died again on an isolated sheet that cannot be split -> sheet left out.
-# Kept per model (document title) across days and folders; forget() clears it once
-# the model is fixed.
+#   - a pass of one view      -> its crash count goes up: 1 = exported alone again,
+#                                2+ = cut into 2x2, 3x3, 4x4 tiles of its crop region.
+# No view is ever left out (vector only, never raster); a sheet that still cannot be
+# drawn fails and is named, so no PDF ever misses a view. Kept per model (document
+# title) across days and folders; forget() clears it once the model is fixed.
 
 def _doc_key(doc):
     # Title carries ".rvt" or not depending on the Windows "hide extensions" setting
-    return re.sub(u"(?i)\.rvt$", u"", doc.Title)
+    return re.sub(u"(?i)\\.rvt$", u"", doc.Title)
 
 
 def crash_memory(doc):
@@ -183,32 +186,42 @@ def _crash_save(doc, mem):
 def forget(doc):
     """Clear the crash memory of this model (after fixing the views); returns its size."""
     mem = crash_memory(doc)
-    n = len(mem.get("views", {})) + len(mem.get("sheets", [])) + len(mem.get("dead", []))
+    n = len(mem.get("views", {})) + len(mem.get("sheets", []))
     _crash_save(doc, {})
     return n
 
 
-def left_out(doc, sheets):
-    """[(sheet, [view names] or None for the whole sheet)] the crash memory leaves out."""
+def crashes(mem, view_id):
+    """How many times Revit died drawing this view alone ("skip" from older runs = 2)."""
+    v = mem.get("views", {}).get(str(view_id), 0)
+    return 2 if v == "skip" else int(v)
+
+
+def tiles_for(n):
+    """Tiles per side for a view Revit died on n times alone."""
+    return 1 if n <= 1 else min(n, 4)
+
+
+def crash_notes(doc, sheets):
+    """[(sheet, [(view name, tiles per side)])] for views the crash memory tiles."""
     mem = crash_memory(doc)
-    bad, dead = mem.get("views", {}), set(mem.get("dead", []))
     out = []
     for s in sheets:
-        if s.Id.IntegerValue in dead:
-            out.append((s, None))
-            continue
-        names = [doc.GetElement(i).Name for i in
-                 (doc.GetElement(v).ViewId for v in s.GetAllViewports())
-                 if bad.get(str(i.IntegerValue)) == "skip"]
-        if names:
-            out.append((s, names))
+        rows = []
+        for vpid in s.GetAllViewports():
+            vid = doc.GetElement(vpid).ViewId
+            n = tiles_for(crashes(mem, vid.IntegerValue))
+            if crashes(mem, vid.IntegerValue):
+                rows.append((doc.GetElement(vid).Name, n))
+        if rows:
+            out.append((s, rows))
     return out
 
 
-def mark_pass(doc, sheet, view_ids):
+def mark_pass(doc, sheet, view_ids, tiles=1):
     mem = crash_memory(doc)
     from System import DateTime
-    mem["pending"] = {"sheet": sheet.Id.IntegerValue, "views": list(view_ids),
+    mem["pending"] = {"sheet": sheet.Id.IntegerValue, "views": list(view_ids), "tiles": tiles,
                       "t": DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ")}
     _crash_save(doc, mem)
 
@@ -259,16 +272,19 @@ def recover(doc):
     sheets = mem.setdefault("sheets", [])
     if len(p["views"]) == 1 or (p["views"] and p["sheet"] in sheets):
         # one view, or one group of dependent views of an isolated sheet
-        names = []
+        names, n = [], 1
         for vid in p["views"]:
             v = doc.GetElement(ElementId(int(vid)))
-            mem.setdefault("views", {})[str(vid)] = "skip"
+            n = crashes(mem, vid) + 1
+            mem.setdefault("views", {})[str(vid)] = n
             names.append(v.Name if v is not None else str(vid))
-        line = u"{0}: Revit văng khi vẽ view \"{1}\", lần này bỏ ra khỏi PDF".format(
-            label, u"\", \"".join(names))
+        k = tiles_for(n)
+        line = u"{0}: Revit văng khi vẽ view \"{1}\" (lần {2}), lần này {3}".format(
+            label, u"\", \"".join(names), n,
+            u"xuất riêng lại view này" if k == 1 else
+            u"chia view thành {0}x{0} ô theo vùng crop rồi ghép lại".format(k))
     elif p["sheet"] in sheets:
-        mem.setdefault("dead", []).append(p["sheet"])
-        line = u"{0}: Revit văng cả khi tách view, lần này bỏ qua sheet này".format(label)
+        line = u"{0}: Revit văng khi vẽ khung tên / ghi chú của sheet, lần này thử lại".format(label)
     else:
         sheets.append(p["sheet"])
         line = u"{0}: Revit văng ở sheet này, lần này tách từng view để tìm view lỗi".format(label)
@@ -392,53 +408,49 @@ def viewports(doc, sheet):
 
 
 def assess(doc, sheet, weigher, limit, crash=None):
-    """Weight of the sheet and how to export it.
+    """Weight of the sheet and how to export it. No view is ever left out.
 
-    Returns {"weight", "views": [(viewport, weight, notes)], "mode": whole | parts | dead,
-             "parts": [[viewport ids]] (first = base part with the title block),
-             "skipped": [view names left out], "note"}.
+    Returns {"weight", "views": [(viewport, weight, notes)], "mode": whole | parts,
+             "parts": [{"vps": [viewport ids], "tiles": per side}] (first = base part
+             with the title block), "tiled": [(view name, tiles)], "note"}.
     """
     crash = crash or {}
-    bad = crash.get("views", {})
     rows = []
     for vp in viewports(doc, sheet):
         w, notes = weigher.view(doc.GetElement(vp.ViewId))
         rows.append((vp, w, notes))
     total = sum(w for _, w, _ in rows)
     out = {"weight": total, "views": rows, "mode": "whole", "parts": None,
-           "skipped": [], "note": u""}
+           "tiled": [], "note": u""}
     sid = sheet.Id.IntegerValue
-    if sid in crash.get("dead", []):
-        out["mode"] = "dead"
-        out["note"] = u"Revit văng cả khi tách view"
-        return out
     isolate = sid in crash.get("sheets", []) or any(
-        str(vp.ViewId.IntegerValue) in bad for vp, _, _ in rows)
+        crashes(crash, vp.ViewId.IntegerValue) for vp, _, _ in rows)
     if not isolate and (total <= limit or len(rows) < 2):
         if total > limit:
             out["note"] = u"một view nặng, không chia được"
         return out
     why = _cannot_split(doc, sheet, rows)
-    if why:
+    if why:                              # whole again (a crash on it is retried)
         out["note"] = why
-        if isolate:                      # Revit died on it and it cannot be split
-            out["mode"] = "dead"
-            out["note"] = u"Revit đã văng ở sheet này và không tách được: " + why
         return out
     out["mode"] = "parts"
     units = _units(doc, rows)
     if isolate:
         # base = title block + sheet notes only; each view (or dependent group) alone;
-        # a group with a view Revit died on is left out whole (blanking one dependent
-        # view blanks its siblings too)
-        parts = [[]]
+        # a view Revit died on alone is cut into tiles of its crop region
+        parts = [{"vps": [], "tiles": 1}]
         for unit in units:
-            if any(bad.get(str(vp.ViewId.IntegerValue)) == "skip" for vp, _ in unit):
-                out["skipped"] += [doc.GetElement(vp.ViewId).Name for vp, _ in unit]
-            else:
-                parts.append([vp.Id for vp, _ in unit])
+            n = max(tiles_for(crashes(crash, vp.ViewId.IntegerValue)) for vp, _ in unit)
+            if n > 1:
+                bad = [r for r in (_tile_blocker(doc.GetElement(vp.ViewId)) for vp, _ in unit) if r]
+                if bad:
+                    out["note"] = u"không chia ô được ({0}), xuất riêng lại".format(bad[0])
+                    n = 1
+                else:
+                    out["tiled"] += [(doc.GetElement(vp.ViewId).Name, n) for vp, _ in unit]
+            parts.append({"vps": [vp.Id for vp, _ in unit], "tiles": n})
         out["parts"] = parts
-        out["note"] = u"tách từng view (lần trước Revit văng)"
+        out["note"] = out["note"] or u"tách từng view (lần trước Revit văng)"
         return out
     if len(units) < 2:
         out["mode"] = "whole"
@@ -458,10 +470,22 @@ def assess(doc, sheet, weigher, limit, crash=None):
     if len(groups) < 2:
         groups = [[sum(x for _, x in u), [vp.Id for vp, _ in u]] for u in units]
     groups.sort(key=lambda g: g[0])          # lightest first = the base part
-    out["parts"] = [g[1] for g in groups]
+    out["parts"] = [{"vps": g[1], "tiles": 1} for g in groups]
     if any(w > limit for _, w, _ in rows):
         out["note"] = u"có view vượt ngưỡng một mình"
     return out
+
+
+def _tile_blocker(v):
+    """Why view v cannot be cut into crop tiles, or u""."""
+    if not v.CropBoxActive:
+        return u"view không bật crop"
+    try:
+        if v.GetCropRegionShapeManager().ShapeSet:
+            return u"vùng crop không phải hình chữ nhật"
+    except Exception:
+        pass
+    return u""
 
 
 def view_root(doc, view_id):
@@ -577,14 +601,54 @@ class _Quiet(IFailuresPreprocessor):
         return FailureProcessingResult.Continue
 
 
+def _tile_crop(v, i, j, n):
+    """Crop view v to tile (i, j) of an n x n grid of its own crop box. The model stays
+    where it is on the sheet; only what is drawn shrinks."""
+    bb = v.CropBox
+    mn, mx = bb.Min, bb.Max
+    w, h = (mx.X - mn.X) / n, (mx.Y - mn.Y) / n
+    nb = BoundingBoxXYZ()
+    nb.Transform = bb.Transform
+    nb.Min = XYZ(mn.X + i * w, mn.Y + j * h, mn.Z)
+    nb.Max = XYZ(mn.X + (i + 1) * w, mn.Y + (j + 1) * h, mx.Z)
+    v.CropBox = nb
+
+
+def _no_title(doc, vp, k):
+    """The viewport without its title for a tile pass (its box moves with the tile, the
+    title would move too); the title comes once from its own pass."""
+    t = doc.GetElement(vp.GetTypeId())
+    nt = t.Duplicate(u"{0} ({1})".format(Element.Name.__get__(t), k))
+    prm = nt.get_Parameter(BuiltInParameter.VIEWPORT_ATTR_SHOW_LABEL)
+    if prm is not None and not prm.IsReadOnly:
+        prm.Set(0)
+    vp.ChangeTypeId(nt.Id)
+
+
+def _passes(plan):
+    """[(kept viewport ids, kind, tile)] for the parts of a plan. kind: base / view /
+    title / tile. A tiled part = one pass for its title(s) + n x n tile passes."""
+    out = []
+    for k, part in enumerate(plan["parts"]):
+        n = part.get("tiles", 1)
+        if k == 0:
+            out.append((part["vps"], "base", None))
+        elif n <= 1:
+            out.append((part["vps"], "view", None))
+        else:
+            out.append((part["vps"], "title", None))
+            out += [(part["vps"], "tile", (i, j, n)) for i in range(n) for j in range(n)]
+    return out
+
+
 def export_sheet(doc, sheet, folder, plan, p, tidy_between=None):
     """Export one sheet to folder/<number - name>.pdf (parts joined into one page).
 
     Part 1 = the sheet minus the viewports of the other parts (title block, sheet
-    notes, schedules stay). Part 2.. = only their viewports + two corner anchors.
-    Removing / hiding / anchors happen in a transaction group that is rolled back,
-    so the model is left exactly as it was. Views left out (crash memory) are in no
-    part, so they are blanked in every pass.
+    notes, schedules stay). Part 2.. = only their viewports + two corner anchors; a
+    view Revit died on is drawn tile by tile (crop cut into n x n). Blanking / hiding /
+    anchors / crops happen in a transaction group that is rolled back, so the model is
+    left exactly as it was. Every view is drawn; nothing is left out.
     Each pass is written to the crash memory first (mark_pass / clear_pass).
     """
     name = file_name(sheet)
@@ -601,9 +665,9 @@ def export_sheet(doc, sheet, folder, plan, p, tidy_between=None):
         os.makedirs(PARTS_DIR)
     files = []
     try:
-        for k, part in enumerate(plan["parts"]):
-            keep = set(i.IntegerValue for i in part)
-            if k == 0:
+        for k, (vps, kind, tile) in enumerate(_passes(plan)):
+            keep = set(i.IntegerValue for i in vps)
+            if kind == "base":
                 drop = [e for e in on_sheet
                         if e.Id.IntegerValue in view_of and e.Id.IntegerValue not in keep]
             else:
@@ -617,7 +681,10 @@ def export_sheet(doc, sheet, folder, plan, p, tidy_between=None):
             blank = [doc.GetElement(ElementId(view_of[e.Id.IntegerValue]))
                      for e in drop if e.Id.IntegerValue in view_of and
                      view_root(doc, ElementId(view_of[e.Id.IntegerValue])) not in kept_roots]
-            mark_pass(doc, sheet, [view_of[i] for i in keep])
+            kept = [doc.GetElement(ElementId(i)) for i in keep]
+            if kind == "title":          # only the titles of the tiled views
+                blank += [doc.GetElement(vp.ViewId) for vp in kept]
+            mark_pass(doc, sheet, [view_of[i] for i in keep], tile[2] if tile else 1)
             tg = TransactionGroup(doc, u"PDF part")
             tg.Start()
             try:
@@ -630,8 +697,12 @@ def export_sheet(doc, sheet, folder, plan, p, tidy_between=None):
                     _blank(doc, v)
                 if hide:
                     sheet.HideElements(List[ElementId](hide))
-                if k > 0:
+                if kind != "base":
                     _anchors(doc, sheet, box)
+                if kind == "tile":
+                    for vp in kept:
+                        _no_title(doc, vp, k)
+                        _tile_crop(doc.GetElement(vp.ViewId), *tile)
                 t.Commit()
                 files.append(_export(doc, sheet, PARTS_DIR, u"{0}__part{1}".format(name, k + 1), p))
             finally:
@@ -789,7 +860,7 @@ def plan_sheets(doc, sheets, limit=None):
         a = assess(doc, s, wg, lim, crash)
         out.append({"sheet": s, "paper": paper(doc, s), "weight": a["weight"],
                     "mode": a["mode"], "parts": len(a["parts"] or [1]), "note": a["note"],
-                    "skipped": a["skipped"]})
+                    "tiled": a["tiled"]})
     return lim, out
 
 
@@ -809,7 +880,7 @@ def run(doc, sheets, folder, group=None, progress=None, cancelled=None, limit=No
     learnt = recover(doc)          # the pass Revit died on last time, if any
     crash = crash_memory(doc)
     wg = Weigher(doc)
-    done, skipped, failed, split, missing_views = [], [], [], [], []
+    done, skipped, failed, split, tiled = [], [], [], [], []
     subfolders = set()
     stopped = None
     with LowPriority():
@@ -829,10 +900,6 @@ def run(doc, sheets, folder, group=None, progress=None, cancelled=None, limit=No
                 break
             lim = limit or limit_now()
             plan = assess(doc, s, wg, lim, crash)
-            if plan["mode"] == "dead":
-                failed.append((s, plan["note"]))
-                jr.set(sid, state="failed", error=plan["note"])
-                continue
             p = paper(doc, s)
             sub = group_path(doc, s, group, levels)
             target = os.path.join(folder, *sub) if sub else folder
@@ -851,8 +918,8 @@ def run(doc, sheets, folder, group=None, progress=None, cancelled=None, limit=No
                 done.append((s, path))
                 if plan["mode"] == "parts":
                     split.append((s, len(plan["parts"])))
-                if plan["skipped"]:
-                    missing_views.append((s, plan["skipped"]))
+                if plan["tiled"]:
+                    tiled.append((s, plan["tiled"]))
             except Exception as ex:
                 clear_pass(doc)        # an error Revit survived is not a crash
                 jr.set(sid, state="failed", error=u"{0}".format(ex))
@@ -863,7 +930,7 @@ def run(doc, sheets, folder, group=None, progress=None, cancelled=None, limit=No
         jr.save()
     return {"folder": folder, "done": done, "skipped": skipped, "failed": failed,
             "split": split, "stopped": stopped, "resumed": resumed, "learnt": learnt,
-            "missing_views": missing_views, "subfolders": sorted(subfolders),
+            "tiled": tiled, "subfolders": sorted(subfolders),
             "total": len(sheets)}
 
 
