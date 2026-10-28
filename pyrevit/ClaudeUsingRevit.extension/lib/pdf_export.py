@@ -209,12 +209,15 @@ def recover(doc):
     sheet = doc.GetElement(ElementId(int(p["sheet"])))
     label = sheet.SheetNumber if isinstance(sheet, ViewSheet) else str(p["sheet"])
     sheets = mem.setdefault("sheets", [])
-    if len(p["views"]) == 1:
-        vid = str(p["views"][0])
-        v = doc.GetElement(ElementId(int(vid)))
-        mem.setdefault("views", {})[vid] = "skip"
-        line = u"{0}: Revit văng khi vẽ view \"{1}\", lần này bỏ view này ra khỏi PDF".format(
-            label, v.Name if v is not None else vid)
+    if len(p["views"]) == 1 or (p["views"] and p["sheet"] in sheets):
+        # one view, or one group of dependent views of an isolated sheet
+        names = []
+        for vid in p["views"]:
+            v = doc.GetElement(ElementId(int(vid)))
+            mem.setdefault("views", {})[str(vid)] = "skip"
+            names.append(v.Name if v is not None else str(vid))
+        line = u"{0}: Revit văng khi vẽ view \"{1}\", lần này bỏ ra khỏi PDF".format(
+            label, u"\", \"".join(names))
     elif p["sheet"] in sheets:
         mem.setdefault("dead", []).append(p["sheet"])
         line = u"{0}: Revit văng cả khi tách view, lần này bỏ qua sheet này".format(label)
@@ -375,34 +378,62 @@ def assess(doc, sheet, weigher, limit, crash=None):
             out["note"] = u"Revit đã văng ở sheet này và không tách được: " + why
         return out
     out["mode"] = "parts"
+    units = _units(doc, rows)
     if isolate:
-        # base = title block + sheet notes only; each view alone; bad views left out
+        # base = title block + sheet notes only; each view (or dependent group) alone;
+        # a group with a view Revit died on is left out whole (blanking one dependent
+        # view blanks its siblings too)
         parts = [[]]
-        for vp, _, _ in rows:
-            if bad.get(str(vp.ViewId.IntegerValue)) == "skip":
-                out["skipped"].append(doc.GetElement(vp.ViewId).Name)
+        for unit in units:
+            if any(bad.get(str(vp.ViewId.IntegerValue)) == "skip" for vp, _ in unit):
+                out["skipped"] += [doc.GetElement(vp.ViewId).Name for vp, _ in unit]
             else:
-                parts.append([vp.Id])
+                parts.append([vp.Id for vp, _ in unit])
         out["parts"] = parts
         out["note"] = u"tách từng view (lần trước Revit văng)"
         return out
+    if len(units) < 2:
+        out["mode"] = "whole"
+        out["note"] = u"các view cùng một view gốc, không chia được"
+        return out
     cap = limit if total > limit else max(1, total // 2)
     groups = []                      # [weight, [viewport ids]] first fit, heaviest first
-    for vp, w, _ in sorted(rows, key=lambda r: -r[1]):
+    for unit in sorted(units, key=lambda u: -sum(w for _, w in u)):
+        w = sum(x for _, x in unit)
         for g in groups:
             if g[0] + w <= cap:
                 g[0] += w
-                g[1].append(vp.Id)
+                g[1] += [vp.Id for vp, _ in unit]
                 break
         else:
-            groups.append([w, [vp.Id]])
+            groups.append([w, [vp.Id for vp, _ in unit]])
     if len(groups) < 2:
-        groups = [[w, [vp.Id]] for vp, w, _ in rows]
+        groups = [[sum(x for _, x in u), [vp.Id for vp, _ in u]] for u in units]
     groups.sort(key=lambda g: g[0])          # lightest first = the base part
     out["parts"] = [g[1] for g in groups]
     if any(w > limit for _, w, _ in rows):
         out["note"] = u"có view vượt ngưỡng một mình"
     return out
+
+
+def view_root(doc, view_id):
+    """Primary view of a dependent view, else the view itself (id as int). Dependent
+    views share their primary's Visibility/Graphics, so they are blanked together."""
+    v = doc.GetElement(view_id)
+    pid = v.GetPrimaryViewId()
+    return pid.IntegerValue if pid != ElementId.InvalidElementId else v.Id.IntegerValue
+
+
+def _units(doc, rows):
+    """Viewports grouped by root view, in sheet order: [[(viewport, weight)]]."""
+    order, by_root = [], {}
+    for vp, w, _ in rows:
+        r = view_root(doc, vp.ViewId)
+        if r not in by_root:
+            by_root[r] = []
+            order.append(r)
+        by_root[r].append((vp, w))
+    return [by_root[r] for r in order]
 
 
 def _cannot_split(doc, sheet, rows):
@@ -533,8 +564,11 @@ def export_sheet(doc, sheet, folder, plan, p, tidy_between=None):
             # it off the sheet would drop the tags that point at it (unreferenced). So
             # its view is blanked for the pass: every category hidden, nothing drawn.
             hide = [e.Id for e in drop]
+            # never blank a view of the same root as a kept one (it would blank both)
+            kept_roots = set(view_root(doc, ElementId(view_of[i])) for i in keep)
             blank = [doc.GetElement(ElementId(view_of[e.Id.IntegerValue]))
-                     for e in drop if e.Id.IntegerValue in view_of]
+                     for e in drop if e.Id.IntegerValue in view_of and
+                     view_root(doc, ElementId(view_of[e.Id.IntegerValue])) not in kept_roots]
             mark_pass(doc, sheet, [view_of[i] for i in keep])
             tg = TransactionGroup(doc, u"PDF part")
             tg.Start()
