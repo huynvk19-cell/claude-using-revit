@@ -16,6 +16,7 @@ from pyrevit import forms, revit, script
 from System.Windows import (FontWeights, GridLength, GridUnitType, TextTrimming,
                             Thickness, Visibility)
 from System.Windows.Controls import CheckBox, ColumnDefinition, Grid, TextBlock
+from System.Windows.Input import Key, Keyboard, ModifierKeys, Mouse, MouseButtonState
 
 import liquid_glass as lg
 import pdf_export as pe
@@ -57,15 +58,21 @@ class SheetPicker(lg.GlassWindow):
         self.close_btn.Click += lambda s, e: self.Close()
         want = set(picked_ids or [])
         self.boxes = []
-        for sh in sheets:
+        self.anchor, self.dragging, self.paint, self.before, self.bulk = None, False, True, [], False
+        for k, sh in enumerate(sheets):
             cb = CheckBox()
             cb.Style = self.FindResource("PickCheck")
             cb.Content = self._row(sh)
             cb.IsChecked = not want or sh.Id.IntegerValue in want
             cb.Checked += self.refresh
             cb.Unchecked += self.refresh
+            cb.PreviewMouseLeftButtonDown += self._press(k)
+            cb.MouseEnter += self._enter(k)
             self.sheet_list.Children.Add(cb)
             self.boxes.append((sh, cb))
+        self.PreviewMouseLeftButtonUp += self._release
+        self.PreviewKeyDown += self._key
+        self.scroller.PreviewMouseMove += self._autoscroll
         # sub-folders: no / Project Browser / one sheet parameter (browser ones suggested)
         self.groups = pe.group_options(doc, sheets)
         self.levels = pe.browser_levels(doc)
@@ -131,7 +138,79 @@ class SheetPicker(lg.GlassWindow):
     def visible(self):
         return [cb for _, cb in self.boxes if cb.Visibility == Visibility.Visible]
 
+    # ---- Photos-style picking: press = toggle and start a drag; dragging over rows sets
+    # them all like the first one (moving back gives rows back their state); Shift+click
+    # = the whole range from the last clicked row; Ctrl+A = every row shown.
+
+    @staticmethod
+    def _mod(m):
+        return (Keyboard.Modifiers & m) == m
+
+    @staticmethod
+    def _held():
+        return Mouse.LeftButton == MouseButtonState.Pressed
+
+    def _set(self, states):
+        """{row index: checked} in one go, one refresh."""
+        self.bulk = True
+        try:
+            for i, v in states.items():
+                cb = self.boxes[i][1]
+                if cb.Visibility == Visibility.Visible and bool(cb.IsChecked) != v:
+                    cb.IsChecked = v
+        finally:
+            self.bulk = False
+        self.refresh()
+
+    def _press(self, k):
+        def handler(sender, e):
+            e.Handled = True        # the row is toggled here, not by the CheckBox
+            if self._mod(ModifierKeys.Shift) and self.anchor is not None:
+                v = bool(self.boxes[self.anchor][1].IsChecked)
+                lo, hi = sorted((self.anchor, k))
+                self._set(dict((i, v) for i in range(lo, hi + 1)))
+                return
+            self.anchor = k
+            self.paint = not bool(self.boxes[k][1].IsChecked)
+            self.before = [bool(cb.IsChecked) for _, cb in self.boxes]
+            self.dragging = True
+            self._set({k: self.paint})
+        return handler
+
+    def _enter(self, k):
+        def handler(sender, e):
+            if not self.dragging:
+                return
+            if not self._held():
+                self.dragging = False
+                return
+            lo, hi = sorted((self.anchor, k))
+            self._set(dict((i, self.paint if lo <= i <= hi else self.before[i])
+                           for i in range(len(self.boxes))))
+        return handler
+
+    def _release(self, sender, e):
+        self.dragging = False
+
+    def _key(self, sender, e):
+        if e.Key == Key.A and self._mod(ModifierKeys.Control) \
+                and not self.search.IsKeyboardFocusWithin:
+            self._set(dict((i, True) for i in range(len(self.boxes))))
+            e.Handled = True
+
+    def _autoscroll(self, sender, e):
+        """Dragging near the top / bottom edge of the list scrolls it."""
+        if not self.dragging:
+            return
+        y = e.GetPosition(self.scroller).Y
+        if y < 28:
+            self.scroller.LineUp()
+        elif y > self.scroller.ActualHeight - 28:
+            self.scroller.LineDown()
+
     def refresh(self, sender=None, args=None):
+        if self.bulk:
+            return
         picked = self.picked()
         n = len(picked)
         self.big_count.Text = str(n)
@@ -152,10 +231,7 @@ class SheetPicker(lg.GlassWindow):
         self.refresh()
 
     def on_all(self, sender, args):
-        state = bool(self.pick_all.IsChecked)
-        for cb in self.visible():
-            cb.IsChecked = state
-        self.refresh()
+        self._set(dict((i, bool(self.pick_all.IsChecked)) for i in range(len(self.boxes))))
 
     def on_folder(self, sender=None, args=None):
         f = forms.pick_folder(title=u"Thư mục lưu PDF")

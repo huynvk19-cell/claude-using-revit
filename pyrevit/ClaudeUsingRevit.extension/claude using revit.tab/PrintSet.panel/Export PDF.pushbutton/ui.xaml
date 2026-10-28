@@ -42,10 +42,12 @@
                         Content="Chọn hết" ToolTip="Chọn / bỏ chọn mọi sheet đang hiện trong danh sách"/>
         </Grid>
         <Border Style="{StaticResource Well}">
-          <ScrollViewer MaxHeight="420" VerticalScrollBarVisibility="Auto">
+          <ScrollViewer x:Name="scroller" MaxHeight="420" VerticalScrollBarVisibility="Auto">
             <StackPanel x:Name="sheet_list"/>
           </ScrollViewer>
         </Border>
+        <TextBlock Text="Kéo lướt qua các sheet để chọn / bỏ chọn nhiều · Shift+click: cả một dải · Ctrl+A: chọn hết"
+                   Foreground="{StaticResource Ink3}" FontSize="11.5" Margin="6,8,0,0" TextWrapping="Wrap"/>
 
         <TextBlock Text="CHIA THƯ MỤC CON THEO" Style="{StaticResource Caption}" Margin="6,18,0,8"/>
         <ComboBox x:Name="group_box" Height="34" VerticalContentAlignment="Center"
