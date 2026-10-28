@@ -6,5 +6,5 @@ tooltip: >-
   theo một tham số của sheet (gợi ý theo Project Browser), bấm Xuất. Khổ giấy theo khung tên,
   zoom 100%, căn giữa, luôn vector. Sheet nặng được xuất từng phần rồi ghép lại thành một trang
   để Revit không văng; giữa các sheet giải phóng bộ nhớ và kiểm tra RAM, thiếu RAM thì dừng an
-  toàn, bấm lại là xuất tiếp. Shift+click: thử lại view / sheet đã bị bỏ vì làm Revit văng.
+  toàn, bấm lại là xuất tiếp. Không bao giờ bỏ view: view từng làm Revit văng được xuất riêng hoặc chia ô vùng crop rồi ghép. Shift+click: xoá trí nhớ văng (sau khi sửa model).
 author: claude-using-revit
