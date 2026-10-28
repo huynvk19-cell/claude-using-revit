@@ -89,6 +89,9 @@ class SheetPicker(lg.GlassWindow):
         self.pick_all.Click += self.on_all
         self.folder_btn.Click += self.on_folder
         self.export_btn.Click += self.on_export
+        self.retry_btn.Click += self.on_retry
+        self.sheets = sheets
+        self.show_left_out()
         self.refresh()
 
     @property
@@ -137,6 +140,23 @@ class SheetPicker(lg.GlassWindow):
 
     def visible(self):
         return [cb for _, cb in self.boxes if cb.Visibility == Visibility.Visible]
+
+    def show_left_out(self):
+        """Warn before export when the crash memory leaves views / sheets out."""
+        lo = pe.left_out(doc, self.sheets)
+        if not lo:
+            self.warn_box.Visibility = Visibility.Collapsed
+            return
+        lines = [u"{0}: {1}".format(s.SheetNumber, u"cả sheet" if v is None else u", ".join(v))
+                 for s, v in lo[:4]] + ([u"…"] if len(lo) > 4 else [])
+        self.warn_text.Text = (u"Lần trước Revit văng khi vẽ các view này nên chúng sẽ bị bỏ khỏi "
+                               u"PDF:\n" + u"\n".join(lines) +
+                               u"\nĐã sửa model, hoặc lúc đó chỉ là đóng Revit? Bấm Thử lại.")
+        self.warn_box.Visibility = Visibility.Visible
+
+    def on_retry(self, sender, args):
+        pe.forget(doc)
+        self.show_left_out()
 
     # ---- Photos-style picking: press = toggle and start a drag; dragging over rows sets
     # them all like the first one (moving back gives rows back their state); Shift+click
