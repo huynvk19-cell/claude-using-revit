@@ -188,10 +188,53 @@ def forget(doc):
     return n
 
 
+def left_out(doc, sheets):
+    """[(sheet, [view names] or None for the whole sheet)] the crash memory leaves out."""
+    mem = crash_memory(doc)
+    bad, dead = mem.get("views", {}), set(mem.get("dead", []))
+    out = []
+    for s in sheets:
+        if s.Id.IntegerValue in dead:
+            out.append((s, None))
+            continue
+        names = [doc.GetElement(i).Name for i in
+                 (doc.GetElement(v).ViewId for v in s.GetAllViewports())
+                 if bad.get(str(i.IntegerValue)) == "skip"]
+        if names:
+            out.append((s, names))
+    return out
+
+
 def mark_pass(doc, sheet, view_ids):
     mem = crash_memory(doc)
-    mem["pending"] = {"sheet": sheet.Id.IntegerValue, "views": list(view_ids)}
+    from System import DateTime
+    mem["pending"] = {"sheet": sheet.Id.IntegerValue, "views": list(view_ids),
+                      "t": DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ")}
     _crash_save(doc, mem)
+
+
+def revit_died_since(utc_iso):
+    """True when Windows logged Revit crashing / hanging (Application Error, WER,
+    Application Hang: events 1000 / 1001 / 1002) after that UTC time. None when the
+    log cannot be read. A Revit closed by the user mid-export leaves no such event."""
+    try:
+        from System import DateTime
+        from System.Diagnostics import EventLog
+        since = DateTime.Parse(utc_iso).ToUniversalTime()
+        log = EventLog(u"Application")
+        entries = log.Entries
+        i = entries.Count - 1
+        while i >= 0:                       # newest first, stop at the pass start
+            e = entries[i]
+            if e.TimeGenerated.ToUniversalTime() < since:
+                break
+            if e.InstanceId & 0xFFFF in (1000, 1001, 1002) and \
+                    u"revit.exe" in (e.Message or u"").lower():
+                return True
+            i -= 1
+        return False
+    except Exception:
+        return None
 
 
 def clear_pass(doc):
@@ -208,6 +251,11 @@ def recover(doc):
         return []
     sheet = doc.GetElement(ElementId(int(p["sheet"])))
     label = sheet.SheetNumber if isinstance(sheet, ViewSheet) else str(p["sheet"])
+    if p.get("t") and revit_died_since(p["t"]) is False:
+        # Revit was closed, not crashed: nothing to learn, export it as usual
+        _crash_save(doc, mem)
+        return [u"{0}: lần trước Revit bị đóng giữa lúc xuất sheet này (không văng), "
+                u"lần này xuất lại bình thường".format(label)]
     sheets = mem.setdefault("sheets", [])
     if len(p["views"]) == 1 or (p["views"] and p["sheet"] in sheets):
         # one view, or one group of dependent views of an isolated sheet

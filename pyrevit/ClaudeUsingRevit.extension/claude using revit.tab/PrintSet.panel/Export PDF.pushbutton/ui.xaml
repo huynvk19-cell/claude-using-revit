@@ -48,6 +48,19 @@
         </Border>
         <TextBlock Text="Kéo lướt qua các sheet để chọn / bỏ chọn nhiều · Shift+click: cả một dải · Ctrl+A: chọn hết"
                    Foreground="{StaticResource Ink3}" FontSize="11.5" Margin="6,8,0,0" TextWrapping="Wrap"/>
+        <Border x:Name="warn_box" Style="{StaticResource WarnNote}" Visibility="Collapsed">
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*"/>
+              <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Name="warn_text" Foreground="#8A5A00" FontSize="12" TextWrapping="Wrap"
+                       VerticalAlignment="Center"/>
+            <Button x:Name="retry_btn" Grid.Column="1" Style="{StaticResource Ghost}" Margin="8,0,0,0"
+                    Foreground="#8A5A00" Content="Thử lại"
+                    ToolTip="Xoá trí nhớ văng của model này: lần xuất này vẽ lại các view / sheet đó"/>
+          </Grid>
+        </Border>
 
         <TextBlock Text="CHIA THƯ MỤC CON THEO" Style="{StaticResource Caption}" Margin="6,18,0,8"/>
         <ComboBox x:Name="group_box" Height="34" VerticalContentAlignment="Center"
