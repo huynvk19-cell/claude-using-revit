@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 """Sheets of a drawing list to PDF without bringing Revit down.
 
+Output: one vector PDF per sheet in the chosen folder, optionally in sub-folders by a
+sheet parameter or by the Project Browser's sheet folders; never one joined file.
+
 Per sheet:
   - paper from the title block (ISO / ANSI / ARCH size it matches, else the sheet
     size), zoom 100 %, centred, vector;
@@ -9,11 +12,11 @@ Per sheet:
   - heavy sheet (weight over the limit) -> exported in parts: each part is the sheet
     with only some views drawn (the others blanked inside a transaction group
     that is rolled back, so the model is left as it was), then the parts are drawn
-    over each other into one page (pdf_merge);
+    over each other into one page (pdf_merge; parts sit in %TEMP% meanwhile);
   - between sheets: .NET garbage collection + released API objects purged, free RAM
     checked; too little left -> stop cleanly, the next run carries on from there.
 
-A journal (.export.json) in the run folder records each sheet as started / done, so
+A journal (journals\ next to the settings) records each sheet as started / done, so
 a run cut short carries on where it stopped. Revit can also die inside its own
 drawing code on one bad view whatever the RAM (GeomUtil crash): the crash memory in
 pdf_export.json (%APPDATA%\\claude-using-revit) remembers the pass Revit died on and
@@ -25,15 +28,16 @@ import json
 import os
 import re
 import time
+import zlib
 
 from Autodesk.Revit.DB import (
-    BuiltInCategory, BuiltInParameter, CheckoutStatus, ElementId,
+    BrowserOrganization, BuiltInCategory, BuiltInParameter, CheckoutStatus, ElementId,
     ExportPaperFormat, FilteredElementCollector, PageOrientationType, PaperPlacementType,
     GraphicsStyleType, Line, PDFExportOptions, RevitLinkInstance,
     Transaction, TransactionGroup, FailureProcessingResult, FailureSeverity,
     IFailuresPreprocessor,
     ViewDetailLevel, XYZ,
-    Viewport, ViewSheet, ViewType, WorksharingUtils, ZoomType)
+    StorageType, Viewport, ViewSheet, ViewType, WorksharingUtils, ZoomType)
 from System import GC
 from System.Collections.Generic import List
 
@@ -42,6 +46,7 @@ import pdf_merge
 MM = 304.8
 LIMIT = 250000          # weight one export pass may carry on a PC with 8 GB free
 MIN_FREE_MB = 1500      # stop before the next sheet below this much free RAM
+PARTS_DIR = os.path.join(os.environ.get("TEMP", u"C:\\Temp"), u"claude-using-revit", u"pdf-parts")
 SETTINGS = os.path.join(os.environ.get("APPDATA", u""), u"claude-using-revit", u"pdf_export.json")
 
 # (format, long side mm, short side mm)
@@ -513,6 +518,8 @@ def export_sheet(doc, sheet, folder, plan, p, tidy_between=None):
     on_sheet = [e for e in FilteredElementCollector(doc, sheet.Id).WhereElementIsNotElementType()
                 if e.Category is not None and e.CanBeHidden(sheet) and not e.IsHidden(sheet)]
     box = titleblock(doc, sheet).get_BoundingBox(sheet)
+    if not os.path.isdir(PARTS_DIR):
+        os.makedirs(PARTS_DIR)
     files = []
     try:
         for k, part in enumerate(plan["parts"]):
@@ -544,7 +551,7 @@ def export_sheet(doc, sheet, folder, plan, p, tidy_between=None):
                 if k > 0:
                     _anchors(doc, sheet, box)
                 t.Commit()
-                files.append(_export(doc, sheet, folder, u"{0}__part{1}".format(name, k + 1), p))
+                files.append(_export(doc, sheet, PARTS_DIR, u"{0}__part{1}".format(name, k + 1), p))
             finally:
                 tg.RollBack()
             clear_pass(doc)
@@ -565,8 +572,12 @@ def export_sheet(doc, sheet, folder, plan, p, tidy_between=None):
 # ---- journal ----------------------------------------------------------------------
 
 class Journal(object):
+    """Which sheets of this run are done, so a run cut short carries on. Kept with the
+    settings (not in the user's folder), one file per folder + sheet list."""
+
     def __init__(self, folder, key):
-        self.path = os.path.join(folder, u".export.json")
+        name = u"{0:08x}.json".format(zlib.crc32((folder + u"|" + key).encode("utf-8")) & 0xffffffff)
+        self.path = os.path.join(os.path.dirname(SETTINGS), u"journals", name)
         self.data = {"key": key, "done": False, "sheets": {}}
         try:
             with io.open(self.path, encoding="utf-8") as f:
@@ -587,15 +598,104 @@ class Journal(object):
         self.save()
 
     def save(self):
+        d = os.path.dirname(self.path)
+        if not os.path.isdir(d):
+            os.makedirs(d)
         with io.open(self.path, "w", encoding="utf-8") as f:
             f.write(dumps(self.data))
 
 
+# ---- sub-folders by a sheet parameter ---------------------------------------------
+# group = None (all files in the folder), {"browser": True} (the Project Browser's
+# sheet folders, every level) or {"param": <parameter id>} (one sheet parameter).
+
+EMPTY = u"(trống)"
+
+
+def _value(sheet, pid):
+    for prm in sheet.Parameters:
+        if prm.Id.IntegerValue == pid:
+            v = prm.AsString() if prm.StorageType == StorageType.String else prm.AsValueString()
+            return v or u""
+    return u""
+
+
+def browser_levels(doc):
+    """[(parameter id, name)] the Project Browser groups sheets by, outer first."""
+    org = BrowserOrganization.GetCurrentBrowserOrganizationForSheets(doc)
+    if org is None:
+        return []
+    out = []
+    for s in FilteredElementCollector(doc).OfClass(ViewSheet):
+        try:
+            items = org.GetFolderItems(s.Id)
+        except Exception:
+            continue
+        if items and items.Count:
+            for it in items:
+                pid = it.ElementId.IntegerValue
+                out.append((pid, _param_name(doc, s, pid)))
+            break
+    return out
+
+
+def _param_name(doc, sheet, pid):
+    for prm in sheet.Parameters:
+        if prm.Id.IntegerValue == pid:
+            return prm.Definition.Name
+    return str(pid)
+
+
+def group_options(doc, sheets):
+    """[(label, group spec, suggested)] for the window: no sub-folder, the Project
+    Browser's folders, then the sheet parameters that actually split these sheets
+    (at least two different values; browser ones first, marked as suggested)."""
+    levels = browser_levels(doc)
+    out = [(u"Không chia, tất cả trong một thư mục", None, False)]
+    if levels:
+        out.append((u"Như Project Browser: " + u" › ".join(n for _, n in levels),
+                    {"browser": True}, True))
+    seen = set(pid for pid, _ in levels)
+    for pid, n in (levels if len(levels) > 1 else []):    # one level = the line above
+        out.append((n, {"param": pid}, True))
+    skip = set(int(b) for b in (
+        BuiltInParameter.SHEET_NUMBER, BuiltInParameter.SHEET_NAME,
+        BuiltInParameter.ELEM_FAMILY_PARAM, BuiltInParameter.ELEM_FAMILY_AND_TYPE_PARAM,
+        BuiltInParameter.ELEM_TYPE_PARAM, BuiltInParameter.SYMBOL_FAMILY_NAME_PARAM,
+        BuiltInParameter.SYMBOL_FAMILY_AND_TYPE_NAMES_PARAM, BuiltInParameter.VIEW_DEPENDENCY,
+        BuiltInParameter.SHEET_SCHEDULED))
+    names, values = {}, {}
+    for s in sheets:
+        for prm in s.Parameters:
+            pid = prm.Id.IntegerValue
+            if pid in seen or pid in skip or prm.StorageType not in (StorageType.String,
+                                                                     StorageType.Integer):
+                continue
+            v = prm.AsString() if prm.StorageType == StorageType.String else prm.AsValueString()
+            if v:
+                names[pid] = prm.Definition.Name
+                values.setdefault(pid, set()).add(v)
+    labels = set(l for l, _, _ in out)
+    for pid, n in sorted(names.items(), key=lambda x: x[1].lower()):
+        if len(values[pid]) >= 2 and n not in labels:
+            labels.add(n)
+            out.append((n, {"param": pid}, False))
+    return out
+
+
+def group_path(doc, sheet, group, levels=None):
+    """Sub-folder names for a sheet under the chosen grouping ([] = none)."""
+    if not group:
+        return []
+    if group.get("browser"):
+        levels = levels if levels is not None else browser_levels(doc)
+        pids = [pid for pid, _ in levels]
+    else:
+        pids = [int(group["param"])]
+    return [_BAD.sub(u"_", _value(sheet, pid)).strip(u" .") or EMPTY for pid in pids]
+
+
 # ---- the whole run ----------------------------------------------------------------
-
-def run_folder(base, title):
-    return os.path.join(base, _BAD.sub(u"_", title))
-
 
 def plan_sheets(doc, sheets, limit=None):
     """(RO) Paper + weight + mode of each sheet, nothing exported."""
@@ -611,25 +711,24 @@ def plan_sheets(doc, sheets, limit=None):
     return lim, out
 
 
-def run(doc, sheets, base_folder, title, progress=None, cancelled=None, limit=None,
-        min_free=MIN_FREE_MB, join_all=True):
-    """Export sheets (in this order) to base_folder/<title>/, then one joined PDF.
+def run(doc, sheets, folder, group=None, progress=None, cancelled=None, limit=None,
+        min_free=MIN_FREE_MB):
+    """Export sheets (in this order): one vector PDF per sheet, in folder or in its
+    sub-folders by `group`. Never joined into one file.
 
     progress(i, n, text) and cancelled() are optional callbacks.
-    Returns a summary dict (files, counts, stopped reason, journal notes).
+    Returns a summary dict (files, counts, stopped reason, crash notes).
     """
     app = doc.Application
-    folder = run_folder(base_folder, title)
-    sheet_dir = os.path.join(folder, u"sheets")
-    if not os.path.isdir(sheet_dir):
-        os.makedirs(sheet_dir)
-    key = u",".join(str(s.Id.IntegerValue) for s in sheets)
+    levels = browser_levels(doc) if group and group.get("browser") else None
+    key = u",".join(str(s.Id.IntegerValue) for s in sheets) + u"|" + dumps(group)
     jr = Journal(folder, key)
     resumed = jr.resumed()
     learnt = recover(doc)          # the pass Revit died on last time, if any
     crash = crash_memory(doc)
     wg = Weigher(doc)
     done, skipped, failed, split, missing_views = [], [], [], [], []
+    subfolders = set()
     stopped = None
     with LowPriority():
         for i, s in enumerate(sheets):
@@ -653,13 +752,19 @@ def run(doc, sheets, base_folder, title, progress=None, cancelled=None, limit=No
                 jr.set(sid, state="failed", error=plan["note"])
                 continue
             p = paper(doc, s)
+            sub = group_path(doc, s, group, levels)
+            target = os.path.join(folder, *sub) if sub else folder
+            if not os.path.isdir(target):
+                os.makedirs(target)
+            if sub:
+                subfolders.add(os.path.join(*sub))
             if progress:
                 progress(i, len(sheets), u"{0} - {1} · {2}{3}".format(
                     s.SheetNumber, s.Name, p["label"],
                     u" · {0} phần".format(len(plan["parts"])) if plan["mode"] == "parts" else u""))
             jr.set(sid, state="started", weight=plan["weight"], mode=plan["mode"])
             try:
-                path = export_sheet(doc, s, sheet_dir, plan, p, lambda: tidy(app))
+                path = export_sheet(doc, s, target, plan, p, lambda: tidy(app))
                 jr.set(sid, state="done", file=path)
                 done.append((s, path))
                 if plan["mode"] == "parts":
@@ -671,25 +776,13 @@ def run(doc, sheets, base_folder, title, progress=None, cancelled=None, limit=No
                 jr.set(sid, state="failed", error=u"{0}".format(ex))
                 failed.append((s, u"{0}".format(ex)))
             tidy(app)
-    out = {"folder": folder, "done": done, "skipped": skipped, "failed": failed,
-           "split": split, "stopped": stopped, "resumed": resumed, "learnt": learnt,
-           "missing_views": missing_views,
-           "joined": None, "join_error": None, "total": len(sheets)}
-    if stopped:
-        return out
-    if not failed:
+    if not stopped and not failed:
         jr.data["done"] = True
         jr.save()
-    if join_all and done:
-        joined = os.path.join(folder, _BAD.sub(u"_", title) + u".pdf")
-        try:
-            _remove(joined)
-            pdf_merge.join([(u"{0} - {1}".format(s.SheetNumber, s.Name), f, [])
-                            for s, f in done], joined, title)
-            out["joined"] = joined
-        except Exception as ex:
-            out["join_error"] = u"{0}".format(ex)
-    return out
+    return {"folder": folder, "done": done, "skipped": skipped, "failed": failed,
+            "split": split, "stopped": stopped, "resumed": resumed, "learnt": learnt,
+            "missing_views": missing_views, "subfolders": sorted(subfolders),
+            "total": len(sheets)}
 
 
 # ---- what to export ---------------------------------------------------------------
@@ -714,9 +807,3 @@ def sheets_of(doc, schedule, picked_ids=None):
         return allsheets, len(allsheets)
     want = set(int(i) for i in picked_ids)
     return [s for s in allsheets if s.Id.IntegerValue in want], len(allsheets)
-
-
-def title_for(schedule, sheets, total):
-    from System import DateTime
-    t = u"{0} {1}".format(schedule.Name, DateTime.Now.ToString("yyyyMMdd"))
-    return t if len(sheets) == total else t + u" ({0} sheet)".format(len(sheets))

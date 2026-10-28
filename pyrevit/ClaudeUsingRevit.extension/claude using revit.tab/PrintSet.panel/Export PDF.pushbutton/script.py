@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
-"""The drawing list (or the sheets ticked in it) to one PDF.
+"""The drawing list (or the sheets ticked in it) to PDF: one file per sheet.
 
 Which list: the sheet-list schedule open now, else the one picked. Then one glass
 window lists its sheets in schedule order: all ticked (or only the ones selected in
-Revit), filter by number / name, untick what is not wanted, Xuất. Shift+click: retry
+Revit), filter by number / name, untick what is not wanted, optionally sort the files
+into sub-folders by a sheet parameter (Project Browser grouping suggested), Xuất.
+Files are never joined into one PDF. Shift+click: retry
 the views / sheets left out after a crash (once the model is fixed). All the export
 logic is in lib/pdf_export.py (shared with Claude's pyrevit_task "pdf_export").
 """
@@ -64,11 +66,45 @@ class SheetPicker(lg.GlassWindow):
             cb.Unchecked += self.refresh
             self.sheet_list.Children.Add(cb)
             self.boxes.append((sh, cb))
+        # sub-folders: no / Project Browser / one sheet parameter (browser ones suggested)
+        self.groups = pe.group_options(doc, sheets)
+        self.levels = pe.browser_levels(doc)
+        self.paths = {}
+        last = pe.settings().get("group")
+        pick = 0
+        for k, (label, spec, suggested) in enumerate(self.groups):
+            self.group_box.Items.Add(label + (u"  · gợi ý" if suggested else u""))
+            if spec == last:
+                pick = k
+        self.group_box.SelectedIndex = pick
+        self.group_box.SelectionChanged += self.on_group
         self.search.TextChanged += self.on_search
         self.pick_all.Click += self.on_all
         self.folder_btn.Click += self.on_folder
         self.export_btn.Click += self.on_export
         self.refresh()
+
+    @property
+    def group(self):
+        return self.groups[max(0, self.group_box.SelectedIndex)][1]
+
+    def on_group(self, sender, args):
+        self.paths = {}
+        self.refresh()
+
+    def _preview(self, picked):
+        """One line: the sub-folders the ticked sheets go to."""
+        if not self.group:
+            return u"Tất cả file PDF nằm thẳng trong thư mục lưu."
+        names = []
+        for sh in picked:
+            sid = sh.Id.IntegerValue
+            if sid not in self.paths:
+                self.paths[sid] = u"\\".join(pe.group_path(doc, sh, self.group, self.levels))
+            if self.paths[sid] not in names:
+                names.append(self.paths[sid])
+        shown = u", ".join(names[:6]) + (u", …" if len(names) > 6 else u"")
+        return u"{0} thư mục con: {1}".format(len(names), shown) if names else u""
 
     def _row(self, sh):
         g = Grid()
@@ -96,11 +132,13 @@ class SheetPicker(lg.GlassWindow):
         return [cb for _, cb in self.boxes if cb.Visibility == Visibility.Visible]
 
     def refresh(self, sender=None, args=None):
-        n = len(self.picked())
+        picked = self.picked()
+        n = len(picked)
         self.big_count.Text = str(n)
-        self.summary.Text = u"sheet sẽ xuất · {0} sheet trong danh mục".format(len(self.boxes))
+        self.summary.Text = u"file PDF riêng · {0} sheet trong danh mục".format(len(self.boxes))
         self.folder_text.Text = self.folder or u"Chưa chọn thư mục lưu"
-        self.export_text.Text = u"Xuất {0} sheet".format(n) if n else u"Chưa chọn sheet"
+        self.group_preview.Text = self._preview(picked)
+        self.export_text.Text = u"Xuất {0} file".format(n) if n else u"Chưa chọn sheet"
         self.export_btn.IsEnabled = n > 0
         vis = self.visible()
         self.pick_all.IsChecked = bool(vis) and all(cb.IsChecked for cb in vis)
@@ -132,6 +170,9 @@ class SheetPicker(lg.GlassWindow):
             if not self.folder:
                 return
         self.result = self.picked()
+        s = pe.settings()
+        s["group"] = self.group
+        pe.save_settings(s)
         self.Close()
 
 
@@ -151,20 +192,19 @@ win = SheetPicker(vs, sheets, [i.IntegerValue for i in uidoc.Selection.GetElemen
 win.ShowDialog()
 if not win.result:
     script.exit()
-sheets = win.result
-base = win.folder
-title = pe.title_for(vs, sheets, total)
-
 with lg.Progress(u"Xuất PDF", cancellable=True) as pb:
     def progress(i, n, text):
         pb.title = u"Xuất PDF {0}/{1} · {2}".format(i + 1, n, text)
         pb.update_progress(i, n)
-    res = pe.run(doc, sheets, base, title, progress=progress, cancelled=lambda: pb.cancelled)
+    res = pe.run(doc, win.result, win.folder, win.group, progress=progress,
+                 cancelled=lambda: pb.cancelled)
 
 lines = []
-lines.append(u"Đã xuất {0}/{1} sheet{2}.".format(
+lines.append(u"Đã xuất {0}/{1} file PDF{2} vào {3}{4}.".format(
     len(res["done"]), res["total"],
-    u" ({0} sheet có sẵn từ lần trước)".format(len(res["skipped"])) if res["skipped"] else u""))
+    u" ({0} file có sẵn từ lần trước)".format(len(res["skipped"])) if res["skipped"] else u"",
+    res["folder"],
+    u", chia {0} thư mục con".format(len(res["subfolders"])) if res["subfolders"] else u""))
 if res["split"]:
     lines.append(u"Sheet nặng xuất từng phần rồi ghép: " +
                  u", ".join(u"{0} ({1} phần)".format(sh.SheetNumber, n) for sh, n in res["split"]))
@@ -181,13 +221,7 @@ if res["failed"] or res["learnt"]:
                  u"chỗ văng và tự né.")
 if res["stopped"]:
     lines.append(u"Đã dừng an toàn ({0}). Bấm lại để xuất tiếp phần còn lại.".format(res["stopped"]))
-if res["join_error"]:
-    lines.append(u"Chưa ghép được file chung: {0}. Các sheet lẻ vẫn ở thư mục sheets.".format(
-        res["join_error"]))
-target = res["joined"] or res["folder"]
-if res["joined"]:
-    lines.append(u"File: " + os.path.basename(res["joined"]))
 choice = lg.alert(u"\n".join(lines), title=u"Xuất PDF", icon=lg.ICON_PDF,
-                  options=[u"Mở PDF" if res["joined"] else u"Mở thư mục", u"Đóng"])
-if choice and choice.startswith(u"Mở"):
-    os.startfile(target)
+                  options=[u"Mở thư mục", u"Đóng"])
+if choice == u"Mở thư mục":
+    os.startfile(res["folder"])

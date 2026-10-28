@@ -47,6 +47,12 @@
           </ScrollViewer>
         </Border>
 
+        <TextBlock Text="CHIA THƯ MỤC CON THEO" Style="{StaticResource Caption}" Margin="6,18,0,8"/>
+        <ComboBox x:Name="group_box" Height="34" VerticalContentAlignment="Center"
+                  ToolTip="Mỗi sheet vẫn là một file PDF riêng; tuỳ chọn này chỉ xếp các file vào thư mục con theo tham số của sheet"/>
+        <TextBlock x:Name="group_preview" Foreground="{StaticResource Ink2}" FontSize="12" Margin="6,8,0,0"
+                   TextWrapping="Wrap"/>
+
         <Border Style="{StaticResource Stat}">
           <Grid>
             <Grid.ColumnDefinitions>
