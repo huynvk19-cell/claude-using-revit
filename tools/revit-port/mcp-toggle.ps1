@@ -31,22 +31,24 @@ $proc = Get-Process -Id $RevitPid -ErrorAction Stop
 $win = $AE::FromHandle($proc.MainWindowHandle)
 if (-not $win) { "Main window of PID $RevitPid not found."; return }
 
+# Look things up by AutomationId with a UIA condition (filtered inside Revit). Scanning every button of the window and
+# reading their names took over 90 s in a window with many ribbon tabs; this takes a few seconds.
+$panelId = "${TabName}_PanelBarScrollViewer"
+$buttonId = "CustomCtrl_%CustomCtrl_%$TabName%MCP Tools%MCPToggle"
 function Find-Button {
-    $cond = New-Object System.Windows.Automation.PropertyCondition($AE::ControlTypeProperty, [System.Windows.Automation.ControlType]::Button)
-    $win.FindAll($TS::Descendants, $cond) | Where-Object { $_.Current.AutomationId -match '%MCPToggle$' } | Select-Object -First 1
+    $panel = $win.FindFirst($TS::Children, (New-Object System.Windows.Automation.PropertyCondition($AE::AutomationIdProperty, $panelId)))
+    if (-not $panel) { return $null }
+    $panel.FindFirst($TS::Descendants, (New-Object System.Windows.Automation.PropertyCondition($AE::AutomationIdProperty, $buttonId)))
 }
 
 $btn = Find-Button
 if (-not $btn) {
-    $tabCond = New-Object System.Windows.Automation.PropertyCondition($AE::NameProperty, $TabName)
-    $tab = $win.FindAll($TS::Descendants, $tabCond) | Where-Object {
-        $_.Current.ControlType -eq [System.Windows.Automation.ControlType]::TabItem -or
-        $_.Current.ControlType -eq [System.Windows.Automation.ControlType]::ListItem -or
-        $_.Current.ControlType -eq [System.Windows.Automation.ControlType]::Button } | Select-Object -First 1
+    # Tab not shown yet: its header is a Button child of the main window with AutomationId = tab name.
+    $tab = $win.FindFirst($TS::Children, (New-Object System.Windows.Automation.PropertyCondition($AE::AutomationIdProperty, $TabName)))
     if (-not $tab) { "Ribbon tab '$TabName' not found in PID $RevitPid."; return }
     $p = $null
-    if ($tab.TryGetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern, [ref]$p)) { $p.Select() }
-    elseif ($tab.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$p)) { $p.Invoke() }
+    if ($tab.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$p)) { $p.Invoke() }
+    elseif ($tab.TryGetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern, [ref]$p)) { $p.Select() }
     Start-Sleep -Milliseconds 800
     $btn = Find-Button
 }
@@ -54,13 +56,14 @@ if (-not $btn) { "Button 'MCP 服務 (開/關)' not found on tab '$TabName' of P
 
 # Invoke can block while the command's modal box is open, so press it from a background job.
 $hwnd = [int64]$proc.MainWindowHandle
-$job = Start-Job -ArgumentList $hwnd -ScriptBlock {
-    param($h)
+$job = Start-Job -ArgumentList $hwnd, $panelId, $buttonId -ScriptBlock {
+    param($h, $panelId, $buttonId)
     Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes
     $AE = [System.Windows.Automation.AutomationElement]
+    $TS = [System.Windows.Automation.TreeScope]
     $w = $AE::FromHandle([IntPtr]$h)
-    $cond = New-Object System.Windows.Automation.PropertyCondition($AE::ControlTypeProperty, [System.Windows.Automation.ControlType]::Button)
-    $b = $w.FindAll([System.Windows.Automation.TreeScope]::Descendants, $cond) | Where-Object { $_.Current.AutomationId -match '%MCPToggle$' } | Select-Object -First 1
+    $panel = $w.FindFirst($TS::Children, (New-Object System.Windows.Automation.PropertyCondition($AE::AutomationIdProperty, $panelId)))
+    $b = $panel.FindFirst($TS::Descendants, (New-Object System.Windows.Automation.PropertyCondition($AE::AutomationIdProperty, $buttonId)))
     $b.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
 }
 
@@ -68,11 +71,11 @@ $job = Start-Job -ArgumentList $hwnd -ScriptBlock {
 # It is a TaskDialog (#32770 child of the Revit main window, title "Revit MCP Plugin - MCP 服務") whose button UIA
 # cannot see; WM_CLOSE closes it. Left open, it would block every MCP command in that window.
 Add-Type -Namespace RevitPort -Name User32 -MemberDefinition '[DllImport("user32.dll")] public static extern bool PostMessage(IntPtr h, uint m, IntPtr w, IntPtr l);' -ErrorAction SilentlyContinue
+$dialogCond = New-Object System.Windows.Automation.PropertyCondition($AE::ClassNameProperty, '#32770')
 $closed = $false
 for ($i = 0; $i -lt 30 -and -not $closed; $i++) {
     Start-Sleep -Milliseconds 500
-    $box = $win.FindAll($TS::Children, [System.Windows.Automation.Condition]::TrueCondition) |
-        Where-Object { $_.Current.ClassName -eq '#32770' -and $_.Current.Name -match 'MCP' } | Select-Object -First 1
+    $box = $win.FindAll($TS::Children, $dialogCond) | Where-Object { $_.Current.Name -match 'MCP' } | Select-Object -First 1
     if ($box) {
         [RevitPort.User32]::PostMessage([IntPtr]$box.Current.NativeWindowHandle, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero) | Out-Null
         $closed = $true
