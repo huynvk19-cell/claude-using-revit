@@ -48,8 +48,10 @@ if ($PyRevit) {
     New-Item -ItemType Directory -Force $ext | Out-Null
     Get-ChildItem (Join-Path $root 'pyrevit') -Directory -Filter '*.extension' | ForEach-Object {
         $dst = Join-Path $ext $_.Name
-        if (Test-Path $dst) { Remove-Item $dst -Recurse -Force }
-        Copy-Item $_.FullName -Destination $ext -Recurse -Force
+        # mirror (stale files removed); a file Revit holds open (ribbon icon) is skipped, not fatal
+        robocopy $_.FullName $dst /MIR /R:0 /W:0 /NFL /NDL /NJH /NJS /NP | Out-Null
+        if ($LASTEXITCODE -ge 8) { "pyrevit: some files were in use and not replaced (robocopy $LASTEXITCODE)" }
+        $global:LASTEXITCODE = 0
         "pyrevit -> $dst"
     }
 }
