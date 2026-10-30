@@ -12,7 +12,7 @@
       "region": { "type": "string", "description": "open cloud: region, default US" },
       "projectGuid": { "type": "string", "description": "open cloud: project GUID" },
       "modelGuid": { "type": "string", "description": "open cloud: model GUID" },
-      "worksets": { "type": "string", "enum": ["lastViewed", "all", "closeAll"], "description": "open: default lastViewed" },
+      "worksets": { "type": "string", "enum": ["lastViewed", "all", "closeAll"], "description": "open: default all (closed worksets print views incomplete)" },
       "activate": { "type": "boolean", "description": "open: show in the UI (default true); false = background" }
     }
   },
@@ -129,7 +129,7 @@ public static class RevitDocs
             mp = ModelPathUtils.ConvertCloudGUIDsToCloudPath(region, project, model);
         }
 
-        string ws = args.Value<string>("worksets") ?? "lastViewed";
+        string ws = args.Value<string>("worksets") ?? "all";   // lastViewed can leave worksets closed: views then print without their elements
         var opts = new OpenOptions { DetachFromCentralOption = DetachFromCentralOption.DoNotDetach };
         opts.SetOpenWorksetsConfiguration(new WorksetConfiguration(
             ws == "all" ? WorksetConfigurationOption.OpenAllWorksets :

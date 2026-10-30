@@ -23,6 +23,14 @@ pdf_export.json (%APPDATA%\\claude-using-revit) remembers the pass Revit died on
 narrows it down run after run: sheet -> one view per part -> that view again alone ->
 that view in 2x2, 3x3, 4x4 crop tiles. No view is ever left out of a PDF (always
 vector, never raster); a sheet that cannot be drawn whole fails and is named.
+Revit can also refuse a pass without dying (Export returns False): the same narrowing
+runs at once, in the same run, until the sheet goes out whole or the steps run out.
+
+A model opened with some of its worksets closed prints its views without the elements
+of those worksets (walls, grids, levels... gone, titles and tags still there), and a
+link that is not loaded prints nothing: the run stops before any sheet when a workset
+of the model is closed, and a sheet showing a link that is not loaded fails, unless the
+caller says it is on purpose (allow_incomplete).
 """
 import io
 import json
@@ -34,12 +42,13 @@ import zlib
 from Autodesk.Revit.DB import (
     BoundingBoxXYZ, BrowserOrganization, BuiltInCategory, BuiltInParameter, CheckoutStatus,
     Element, ElementId,
-    ExportPaperFormat, FilteredElementCollector, PageOrientationType, PaperPlacementType,
+    ExportPaperFormat, FilteredElementCollector, FilteredWorksetCollector,
+    PageOrientationType, PaperPlacementType,
     GraphicsStyleType, Line, PDFExportOptions, RevitLinkInstance,
     Transaction, TransactionGroup, FailureProcessingResult, FailureSeverity,
     IFailuresPreprocessor,
     ViewDetailLevel, XYZ,
-    StorageType, Viewport, ViewSheet, ViewType, WorksharingUtils, ZoomType)
+    StorageType, Viewport, ViewSheet, ViewType, WorksetKind, WorksharingUtils, ZoomType)
 from System import GC
 from System.Collections.Generic import List
 
@@ -269,27 +278,83 @@ def recover(doc):
         _crash_save(doc, mem)
         return [u"{0}: lần trước Revit bị đóng giữa lúc xuất sheet này (không văng), "
                 u"lần này xuất lại bình thường".format(label)]
+    line = _learn(doc, mem, p, label, u"Revit văng")
+    _crash_save(doc, mem)
+    return [line]
+
+
+def learn_failed(doc):
+    """The pending pass Revit refused (Export returned False, Revit alive) is learnt
+    like a crash, so the sheet can be retried at once in smaller passes. Returns the
+    line for the user, or None when no pass was pending."""
+    mem = crash_memory(doc)
+    p = mem.pop("pending", None)
+    if not p:
+        return None
+    sheet = doc.GetElement(ElementId(int(p["sheet"])))
+    label = sheet.SheetNumber if isinstance(sheet, ViewSheet) else str(p["sheet"])
+    # alone again would fail the same way in this session: straight to tiles
+    line = _learn(doc, mem, p, label, u"Revit không xuất được", first=2)
+    _crash_save(doc, mem)
+    return line
+
+
+def _learn(doc, mem, p, label, what, first=1):
+    """Narrow the crash memory one step for pass p; returns the line for the user."""
     sheets = mem.setdefault("sheets", [])
     if len(p["views"]) == 1 or (p["views"] and p["sheet"] in sheets):
         # one view, or one group of dependent views of an isolated sheet
         names, n = [], 1
         for vid in p["views"]:
             v = doc.GetElement(ElementId(int(vid)))
-            n = crashes(mem, vid) + 1
+            n = max(crashes(mem, vid) + 1, first)
             mem.setdefault("views", {})[str(vid)] = n
             names.append(v.Name if v is not None else str(vid))
         k = tiles_for(n)
-        line = u"{0}: Revit văng khi vẽ view \"{1}\" (lần {2}), lần này {3}".format(
-            label, u"\", \"".join(names), n,
+        return u"{0}: {1} view \"{2}\" (lần {3}), lần này {4}".format(
+            label, what, u"\", \"".join(names), n,
             u"xuất riêng lại view này" if k == 1 else
             u"chia view thành {0}x{0} ô theo vùng crop rồi ghép lại".format(k))
-    elif p["sheet"] in sheets:
-        line = u"{0}: Revit văng khi vẽ khung tên / ghi chú của sheet, lần này thử lại".format(label)
-    else:
-        sheets.append(p["sheet"])
-        line = u"{0}: Revit văng ở sheet này, lần này tách từng view để tìm view lỗi".format(label)
-    _crash_save(doc, mem)
-    return [line]
+    if p["sheet"] in sheets:
+        return u"{0}: {1} khung tên / ghi chú của sheet, lần này thử lại".format(label, what)
+    sheets.append(p["sheet"])
+    return u"{0}: {1} sheet này, lần này tách từng view để tìm view lỗi".format(label, what)
+
+
+# ---- model completeness -----------------------------------------------------------
+# Elements of a closed workset are not loaded at all: views print without them, with
+# nothing to say so (titles, tags, links still there). Same for a link not loaded.
+# Worksets closed inside a LINK are left alone: projects close them on purpose
+# (e.g. the link's shared levels and grids).
+
+def closed_worksets(doc):
+    """Names of this model's own user worksets that are closed."""
+    if not doc.IsWorkshared:
+        return []
+    return sorted(w.Name for w in FilteredWorksetCollector(doc).OfKind(WorksetKind.UserWorkset)
+                  if not w.IsOpen)
+
+
+def unloaded_links(doc, sheet):
+    """Names of the Revit links not loaded that a view of the sheet would show."""
+    lis = [li for li in FilteredElementCollector(doc).OfClass(RevitLinkInstance)
+           if li.GetLinkDocument() is None]
+    if not lis:
+        return []
+    cat = ElementId(BuiltInCategory.OST_RvtLinks)
+    out = set()
+    for vp in viewports(doc, sheet):
+        v = doc.GetElement(vp.ViewId)
+        try:
+            if v.GetCategoryHidden(cat):
+                continue
+        except Exception:
+            pass
+        for li in lis:
+            if not li.IsHidden(v):
+                t = doc.GetElement(li.GetTypeId())
+                out.add(Element.Name.__get__(t) if t is not None else li.Name)
+    return sorted(out)
 
 
 # ---- paper ------------------------------------------------------------------------
@@ -552,12 +617,16 @@ def _remove(path):
         os.remove(path)
 
 
+class ExportFailed(Exception):
+    """Revit refused one export pass (alive); the pass is still pending in the crash memory."""
+
+
 def _export(doc, sheet, folder, name, p):
     path = os.path.join(folder, name + u".pdf")
     _remove(path)
     ok = doc.Export(folder, List[ElementId]([sheet.Id]), options(p, name))
     if not ok or not os.path.exists(path):
-        raise Exception(u"Revit không xuất được {0}".format(name))
+        raise ExportFailed(u"Revit không xuất được {0}".format(name))
     return path
 
 
@@ -864,12 +933,21 @@ def plan_sheets(doc, sheets, limit=None):
     return lim, out
 
 
+RETRIES = 5    # sheet -> each view alone -> view alone again -> 2x2 -> 3x3 -> 4x4 tiles
+
+
+def _shape(plan):
+    return (plan["mode"], [(sorted(i.IntegerValue for i in pt["vps"]), pt.get("tiles", 1))
+                           for pt in plan["parts"] or []])
+
+
 def run(doc, sheets, folder, group=None, progress=None, cancelled=None, limit=None,
-        min_free=MIN_FREE_MB):
+        min_free=MIN_FREE_MB, allow_incomplete=False):
     """Export sheets (in this order): one vector PDF per sheet, in folder or in its
     sub-folders by `group`. Never joined into one file.
 
-    progress(i, n, text) and cancelled() are optional callbacks.
+    progress(i, n, text) and cancelled() are optional callbacks. allow_incomplete:
+    export even with worksets of the model closed / links not loaded (on purpose).
     Returns a summary dict (files, counts, stopped reason, crash notes).
     """
     app = doc.Application
@@ -883,8 +961,11 @@ def run(doc, sheets, folder, group=None, progress=None, cancelled=None, limit=No
     done, skipped, failed, split, tiled = [], [], [], [], []
     subfolders = set()
     stopped = None
+    closed = [] if allow_incomplete else closed_worksets(doc)
+    if closed:
+        stopped = u"workset của model đang đóng, view sẽ in thiếu phần tử: " + u", ".join(closed)
     with LowPriority():
-        for i, s in enumerate(sheets):
+        for i, s in enumerate([] if closed else sheets):
             sid = s.Id.IntegerValue
             st = jr.state(sid)
             if st.get("state") == "done" and os.path.exists(st.get("file", u"")):
@@ -898,6 +979,12 @@ def run(doc, sheets, folder, group=None, progress=None, cancelled=None, limit=No
             if free < min_free:
                 stopped = u"RAM còn {0:,} MB".format(free)
                 break
+            links = [] if allow_incomplete else unloaded_links(doc, s)
+            if links:
+                err = u"link chưa load, view sẽ in thiếu: " + u", ".join(links)
+                jr.set(sid, state="failed", error=err)
+                failed.append((s, err))
+                continue
             lim = limit or limit_now()
             plan = assess(doc, s, wg, lim, crash)
             p = paper(doc, s)
@@ -912,18 +999,35 @@ def run(doc, sheets, folder, group=None, progress=None, cancelled=None, limit=No
                     s.SheetNumber, s.Name, p["label"],
                     u" · {0} phần".format(len(plan["parts"])) if plan["mode"] == "parts" else u""))
             jr.set(sid, state="started", weight=plan["weight"], mode=plan["mode"])
-            try:
-                path = export_sheet(doc, s, target, plan, p, lambda: tidy(app))
-                jr.set(sid, state="done", file=path)
-                done.append((s, path))
-                if plan["mode"] == "parts":
-                    split.append((s, len(plan["parts"])))
-                if plan["tiled"]:
-                    tiled.append((s, plan["tiled"]))
-            except Exception as ex:
-                clear_pass(doc)        # an error Revit survived is not a crash
-                jr.set(sid, state="failed", error=u"{0}".format(ex))
-                failed.append((s, u"{0}".format(ex)))
+            for attempt in range(RETRIES + 1):
+                try:
+                    path = export_sheet(doc, s, target, plan, p, lambda: tidy(app))
+                    jr.set(sid, state="done", file=path)
+                    done.append((s, path))
+                    if plan["mode"] == "parts":
+                        split.append((s, len(plan["parts"])))
+                    if plan["tiled"]:
+                        tiled.append((s, plan["tiled"]))
+                    break
+                except ExportFailed as ex:
+                    # Revit refused a pass but lives: narrow it now, as after a crash
+                    line = learn_failed(doc) if attempt < RETRIES else None
+                    new = assess(doc, s, wg, lim, crash_memory(doc)) if line else None
+                    if new is None or _shape(new) == _shape(plan):
+                        clear_pass(doc)
+                        jr.set(sid, state="failed", error=u"{0}".format(ex))
+                        failed.append((s, u"{0}".format(ex)))
+                        break
+                    learnt.append(line)
+                    plan = new
+                    jr.set(sid, state="started", weight=plan["weight"], mode=plan["mode"])
+                    tidy(app)
+                except Exception as ex:
+                    clear_pass(doc)        # an error Revit survived is not a crash
+                    jr.set(sid, state="failed", error=u"{0}".format(ex))
+                    failed.append((s, u"{0}".format(ex)))
+                    break
+            crash = crash_memory(doc)
             tidy(app)
     if not stopped and not failed:
         jr.data["done"] = True
