@@ -1,4 +1,4 @@
-/* "Quét Lidar": black point-cloud field, every tool a wireframe solid. Everything is grey /
+/* "Quét Lidar": black point-cloud field, every tool a clear acrylic (mica) slab on a 3D board. Everything is grey /
    white; colour (laser orange) appears ONLY on a tool that has work left (status_board),
    with a laser line sweeping through it. */
 :root {
@@ -120,36 +120,83 @@ label.check { display: inline-flex; align-items: center; gap: 7px; cursor: point
 .busy::before { content: "▮"; margin-right: 6px; animation: blink 1s steps(2) infinite; color: var(--laser); }
 @keyframes blink { 50% { opacity: 0; } }
 
-/* ---- tools as wireframe solids ---- */
+/* ---- tools as clear acrylic (mica) slabs ----
+   Clear, colourless sheets: faint frost, bright cut edges, a visible thickness and a soft
+   shadow on the floor. A slab with work left is edge-lit in laser orange and floats higher. */
 main { position: relative; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 430px), 1fr)); gap: 34px 26px; align-items: start; }
 .card {
-  position: relative; padding: 18px 20px 20px; background: var(--solid); border: 1px solid var(--edge);
-  transform: perspective(1100px) rotateX(6deg); transform-origin: top center;
-  box-shadow: 0 16px 0 -7px #0e0e0e, 0 16px 0 -6px #262626;      /* the solid's lower face */
-  overflow: hidden; transition: border-color .3s, box-shadow .3s, opacity .3s;
+  --edge-lit: rgba(255, 255, 255, .55);
+  position: relative; padding: 18px 20px 20px; border-radius: 18px;
+  background:
+    linear-gradient(115deg, rgba(255, 255, 255, .13) 0%, rgba(255, 255, 255, .035) 38%, rgba(255, 255, 255, 0) 52%, rgba(255, 255, 255, .05) 100%),
+    rgba(150, 165, 185, .045);
+  border: 1px solid rgba(255, 255, 255, .26);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .55), inset 1px 0 0 rgba(255, 255, 255, .22), inset 0 -1px 0 rgba(255, 255, 255, .08),
+    0 1px 0 rgba(255, 255, 255, .16), 0 2px 0 rgba(255, 255, 255, .13), 0 3px 0 rgba(255, 255, 255, .11),
+    0 4px 0 rgba(255, 255, 255, .09), 0 5px 0 rgba(255, 255, 255, .08), 0 6px 0 rgba(255, 255, 255, .07),
+    0 7px 0 rgba(255, 255, 255, .06), 0 8px 0 rgba(255, 255, 255, .12),          /* the sheet's thickness */
+    0 34px 46px -14px rgba(0, 0, 0, .85);                                        /* its shadow on the floor */
+  -webkit-backdrop-filter: blur(2.5px) brightness(1.15); backdrop-filter: blur(2.5px) brightness(1.15);
+  overflow: hidden; transition: transform .45s cubic-bezier(.2, .8, .2, 1), box-shadow .3s, opacity .3s;
 }
-.card.idle { opacity: .55; border-style: dashed; }
-.card.idle:hover { opacity: .85; }
-.card.done { border-color: #4a4a4a; }
+.card::after {      /* polished sheen across the sheet */
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(160deg, rgba(255, 255, 255, .16), transparent 22%, transparent 70%, rgba(255, 255, 255, .05));
+}
+.card.idle { opacity: .5; }
+.card.idle:hover { opacity: .8; }
 .card.todo {
-  border-color: var(--laser);
-  box-shadow: 0 16px 0 -7px #1a0700, 0 16px 0 -6px rgba(255, 90, 31, .6), 0 0 0 1px var(--laser), 0 0 54px rgba(255, 90, 31, .26);
+  border-color: rgba(255, 90, 31, .85);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 170, 130, .8), inset 0 0 26px rgba(255, 90, 31, .12),
+    0 1px 0 rgba(255, 90, 31, .55), 0 2px 0 rgba(255, 90, 31, .45), 0 3px 0 rgba(255, 90, 31, .38),
+    0 4px 0 rgba(255, 90, 31, .32), 0 5px 0 rgba(255, 90, 31, .27), 0 6px 0 rgba(255, 90, 31, .23),
+    0 7px 0 rgba(255, 90, 31, .2), 0 8px 0 rgba(255, 90, 31, .5),
+    0 0 46px rgba(255, 90, 31, .28), 0 34px 46px -14px rgba(0, 0, 0, .85);
 }
-/* laser: a line sweeping down through the solid, with its fading trail */
+/* laser: a line sweeping down through an edge-lit sheet */
 .card .scan { position: absolute; left: 0; right: 0; top: 0; height: 100%; pointer-events: none; z-index: 1; display: none; }
 .card.todo .scan { display: block; animation: sweep 3.6s cubic-bezier(.45, 0, .55, 1) infinite; }
-.card .scan::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--laser);
-  box-shadow: 0 0 12px 2px var(--laser), 0 0 50px 10px rgba(255, 90, 31, .35); }
-.card .scan::after { content: ""; position: absolute; left: 0; right: 0; bottom: 100%; height: 90px; background: linear-gradient(transparent, rgba(255, 90, 31, .12)); }
+.card .scan::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1.5px; background: var(--laser);
+  box-shadow: 0 0 10px 1px var(--laser), 0 0 40px 8px rgba(255, 90, 31, .28); }
+.card .scan::after { content: ""; position: absolute; left: 0; right: 0; bottom: 100%; height: 80px; background: linear-gradient(transparent, rgba(255, 90, 31, .09)); }
 @keyframes sweep { 0% { transform: translateY(-8%); } 50% { transform: translateY(100%); } 100% { transform: translateY(-8%); } }
 @media (prefers-reduced-motion: reduce) { .card.todo .scan { animation: none; transform: translateY(46%); } }
+.card .close { display: none; }
+
+/* ---- 3D board: the grid lies on a tilted table, slabs float above it ---- */
+.mode-3d main { perspective: 2400px; perspective-origin: 50% -10%; overflow-x: clip; padding: 90px 0 140px; }
+.titleblock, .sheet-bar { position: relative; z-index: 5; }
+.mode-3d #view-tools {
+  grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 44px 40px;
+  transform: rotateX(46deg) rotateZ(-22deg) scale(.82); transform-origin: 50% 30%; transform-style: preserve-3d;
+}
+.mode-3d #view-tools .card { cursor: pointer; transform: translateZ(0); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.mode-3d #view-tools .card * { pointer-events: none; }
+.mode-3d #view-tools .card .body { display: none; }          /* the board shows the slab's face; a tap opens it */
+.mode-3d #view-tools .card.todo { transform: translateZ(46px); }
+.mode-3d #view-tools .card:hover { transform: translateZ(70px); opacity: 1; }
+.mode-3d #view-tools .card.todo:hover { transform: translateZ(96px); }
+.mode-3d #view-tools .card h3 { font-size: 16px; }
+.mode-3d #view-tools .card .status { font-size: 14.5px; }
+.holder { border-radius: 18px; border: 1px dashed rgba(255, 255, 255, .14); }
+
+/* a slab lifted out of the board: flat, full size, in front */
+.focus-layer { position: fixed; inset: 0; z-index: 15; overflow: auto; padding: 6vh 16px 40px; display: flex; justify-content: center; align-items: flex-start;
+  background: radial-gradient(1000px 700px at 50% 30%, rgba(0, 0, 0, .35), rgba(0, 0, 0, .82)); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
+.card.focus { width: min(760px, 100%); cursor: default; opacity: 1; background-color: rgba(18, 20, 24, .78); animation: lift .5s cubic-bezier(.2, .8, .2, 1); }
+.card.focus .close { display: block; position: relative; z-index: 3; background: transparent; border: 1px solid rgba(255, 255, 255, .3); color: var(--ink); width: 30px; height: 30px; border-radius: 50%; font-size: 13px; }
+@keyframes lift { from { opacity: 0; transform: perspective(1400px) translateY(60px) rotateX(38deg) scale(.86); } to { opacity: 1; transform: none; } }
+@media (max-width: 900px) { .mode-3d #view-tools { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .mode-3d #view-tools { grid-template-columns: 1fr; transform: rotateX(34deg) rotateZ(-14deg) scale(.92); } }
 
 .head { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 6px; position: relative; z-index: 2; }
 .head-text { flex: 1; min-width: 0; }
 .idx { display: block; font: 600 10px var(--mono); letter-spacing: .22em; text-transform: uppercase; color: var(--ink3); margin-bottom: 8px; }
 .sub { font-size: 12px; color: var(--ink2); margin-top: 3px; }
-.head img { width: 26px; height: 26px; filter: grayscale(1) brightness(.75) contrast(1.2); opacity: .55; }
+.head img { width: 26px; position: relative; height: 26px; filter: grayscale(1) brightness(.75) contrast(1.2); opacity: .55; }
 .count { font: 600 24px/1 var(--mono); color: var(--laser); text-shadow: 0 0 14px var(--laser); min-width: 0; }
 .count:empty { display: none; }
 .todo h3 { color: var(--laser2); }
@@ -214,10 +261,10 @@ main { position: relative; }
 .toast.err { border-color: var(--laser); color: var(--laser2); box-shadow: 0 0 24px var(--laser-glow); }
 
 @media (max-width: 760px) {
+  .tb-cell b { max-width: 200px; }
   .all { grid-template-columns: 1fr; }
   .list-pane { position: static; }
   .cmd-list { max-height: 40vh; }
   .tb-brand { flex-basis: 100%; }
   .tb-core { margin-left: 0; }
-  .card { transform: none; }
 }
