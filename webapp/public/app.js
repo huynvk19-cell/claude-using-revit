@@ -247,6 +247,8 @@ function applyStates() {
     if (st.level === "todo") todo++;
   }
   document.title = (todo ? `(${todo}) ` : "") + "claude using revit";
+  $("#core-n").textContent = b && !b.error ? String(todo) : "–";
+  $("#core").classList.toggle("todo", todo > 0);
   for (const f of S.onBoard) f(b);
 }
 
@@ -255,54 +257,25 @@ function setCardState(c, st) {
   c.classList.add(st.level);
   const s = c.querySelector(".status");
   s.className = "status " + st.level;
-  s.replaceChildren(...[st.level === "done" ? h("span", { class: "stamp" }, "✓ Đã khớp") : null,
-    st.note ? h("span", {}, st.level === "done" ? " " + st.note : st.note) : null].filter(Boolean));
-  c.querySelector(".cloud").innerHTML = "";
-  const d = c.querySelector(".delta");
-  d.classList.toggle("hidden", st.level !== "todo");
-  d.querySelector("text").textContent = st.count > 99 ? "99+" : String(st.count || "");
-  if (st.level === "todo") drawCloud(c);
+  s.replaceChildren(...[st.level === "done" ? h("span", { class: "ok" }, "[ OK ]") : null,
+    st.note ? h("span", {}, st.note) : null].filter(Boolean));
+  c.querySelector(".count").textContent = st.level === "todo" ? (st.count > 99 ? "99+" : String(st.count || "")) : "";
 }
 
-// revision cloud along the card's edge (clockwise, arcs bulging out)
-function drawCloud(c) {
-  const svg = c.querySelector(".cloud");
-  const w = c.offsetWidth + 18, ht = c.offsetHeight + 18, m = 5, step = 22, r = step * 0.62;
-  const pts = [];
-  const edge = (x1, y1, x2, y2) => {
-    const len = Math.hypot(x2 - x1, y2 - y1), n = Math.max(1, Math.round(len / step));
-    for (let i = 1; i <= n; i++) pts.push([x1 + (x2 - x1) * i / n, y1 + (y2 - y1) * i / n]);
-  };
-  edge(m, m, w - m, m); edge(w - m, m, w - m, ht - m); edge(w - m, ht - m, m, ht - m); edge(m, ht - m, m, m);
-  let d = `M${m},${m}`;
-  for (const [x, y] of pts) d += ` A${r},${r} 0 0 1 ${x.toFixed(1)},${y.toFixed(1)}`;
-  svg.setAttribute("viewBox", `0 0 ${w} ${ht}`);
-  svg.innerHTML = `<path d="${d}"/>`;
-}
-const cloudObserver = new ResizeObserver(entries => {
-  for (const e of entries) if (e.target.classList.contains("todo")) drawCloud(e.target);
-});
+// ---- tools: one solid per ribbon panel --------------------------------------------------------
+const GROUP_NAME = { IN: "In ấn", TAG: "Kiểm tra tag", HL: "Đánh dấu", XU: "Xuất", "3D": "3D" };
 
-// ---- tools: one viewport per ribbon panel ---------------------------------------------------
-// card(no, code, icon, title, subtitle, stateKey, ...body)
+// card(no, group code, icon, title, subtitle, stateKey, ...body)
 function card(no, code, icon, title, sub, stateKey, ...body) {
-  const svgNS = "http://www.w3.org/2000/svg";
-  const cloud = document.createElementNS(svgNS, "svg");
-  cloud.setAttribute("class", "cloud");
-  const delta = document.createElementNS(svgNS, "svg");
-  delta.setAttribute("class", "delta hidden");
-  delta.setAttribute("viewBox", "0 0 30 26");
-  delta.innerHTML = '<polygon points="15,1.5 28.5,24.5 1.5,24.5"/><text x="15" y="21"></text>';
-  const c = h("section", { class: "card idle", "data-state": stateKey },
-    h("div", { class: "vt" },
-      h("div", { class: "bubble" }, h("span", {}, no), h("span", {}, code)),
-      h("div", { class: "vt-text" }, h("h3", {}, title), h("div", { class: "vt-sub" }, sub)),
-      h("img", { src: "/icon/" + icon + ".png", alt: "" })),
+  return h("section", { class: "card idle", "data-state": stateKey },
+    h("i", { class: "scan", "aria-hidden": "true" }),
+    h("div", { class: "head" },
+      h("div", { class: "head-text" },
+        h("span", { class: "idx" }, `0${no} · ${GROUP_NAME[code] || code}`),
+        h("h3", {}, title), h("div", { class: "sub" }, sub)),
+      h("img", { src: "/icon/" + icon + ".png", alt: "" }),
+      h("span", { class: "count" })),
     h("div", { class: "status idle" }), ...body);
-  c.prepend(cloud);
-  c.append(delta);
-  cloudObserver.observe(c);
-  return c;
 }
 
 function renderTools() {

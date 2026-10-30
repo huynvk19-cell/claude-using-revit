@@ -4,30 +4,28 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="Revit">
-  <meta name="theme-color" content="#f3f2ec">
+  <meta name="theme-color" content="#000000">
   <title>claude using revit</title>
   <link rel="icon" href="/icon/Print Set Sync.png">
   <link rel="apple-touch-icon" href="/icon/Print Set Sync.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;500&family=Be+Vietnam+Pro:wght@300;400;600&family=JetBrains+Mono:wght@400;600&display=swap">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <div class="vignette" aria-hidden="true"></div>
   <div class="sheet-frame">
-    <!-- title block -->
     <header class="titleblock">
-      <div class="tb-cell tb-brand">
-        <span class="tb-label">Công cụ</span>
-        <b>CLAUDE USING REVIT</b>
-        <span class="tb-no">CUR-WEB-001</span>
-      </div>
+      <div class="tb-cell tb-brand"><b>CLAUDE USING REVIT</b><span class="tb-no">LIDAR · WEB</span></div>
       <div class="tb-cell tb-wide"><span class="tb-label">Model</span><b id="tb-model">—</b></div>
-      <div class="tb-cell"><span class="tb-label">View đang mở</span><b id="tb-view">—</b></div>
+      <div class="tb-cell"><span class="tb-label">View</span><b id="tb-view">—</b></div>
       <div class="tb-cell tb-narrow"><span class="tb-label">Đang chọn</span><b id="tb-sel">0</b></div>
       <div class="tb-cell tb-narrow"><span class="tb-label">Người dùng</span><b id="tb-user">—</b></div>
       <div class="tb-cell tb-narrow"><span class="tb-label">Ngày</span><b id="tb-date">—</b></div>
       <div class="tb-cell tb-windows"><span class="tb-label">Cửa sổ Revit</span><div id="windows" class="windows"></div></div>
+      <div class="tb-cell tb-core"><div id="core" class="core"><b id="core-n">–</b><small>việc còn</small></div></div>
       <div class="tb-cell tb-actions">
         <span id="busy" class="busy hidden"></span>
         <button class="btn" id="btn-access" title="Mở trên thiết bị khác">iPad / LAN</button>
@@ -43,10 +41,10 @@
         <button data-view="jobs"><i>03</i>Nhật ký</button>
       </nav>
       <div class="legend" id="legend">
-        <span class="lg lg-todo"><svg viewBox="0 0 34 14"><path d="M2 12 A6 6 0 0 1 12 6 A6 6 0 0 1 22 6 A6 6 0 0 1 32 12"/></svg>Cần làm</span>
-        <span class="lg lg-done"><i></i>Đã xong</span>
-        <span class="lg lg-idle"><i></i>Theo yêu cầu</span>
-        <button class="btn small" id="btn-board" title="Kiểm tra lại trạng thái">Kiểm tra lại</button>
+        <span class="lg lg-todo"><i></i>Màu = còn việc</span>
+        <span class="lg lg-done"><i></i>Đơn sắc = đã xong</span>
+        <span class="lg lg-idle"><i></i>Mờ = chạy khi bấm</span>
+        <button class="btn small" id="btn-board" title="Kiểm tra lại trạng thái">Quét lại</button>
       </div>
     </div>
 
