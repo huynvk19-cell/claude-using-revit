@@ -164,10 +164,10 @@ $("#btn-board").addEventListener("click", () => loadBoard());
 const KINDS = [["Room", "room"], ["Door", "cửa đi"], ["Window", "cửa sổ"], ["Wall", "tường"], ["Floor", "sàn"]];
 const KIND = Object.fromEntries(KINDS);
 
-// the drawing lists that count: the ones with a print set of their name (else all of them)
+// the drawing lists that count: the ones with a print set of their name (none = none)
 function officialLists(b) {
   const named = new Set(b.printSets.filter(r => r.setExists).map(r => r.schedule));
-  return b.columns.filter(r => !named.size || named.has(r.schedule));
+  return b.columns.filter(r => named.has(r.schedule));
 }
 
 // {level: work | done | idle, text, count}
@@ -181,7 +181,7 @@ const STATE = {
   columns(b) {
     const rows = officialLists(b), off = rows.filter(r => !r.inSync && !r.error);
     if (off.length) return { level: "work", count: off.length, text: off.length === 1 ? `${off[0].schedule} chưa đúng chuẩn` : `${off.length} danh mục chưa đúng chuẩn` };
-    return rows.length ? { level: "done", text: "Đúng chuẩn" } : { level: "idle", text: "Chưa có danh mục bản vẽ" };
+    return rows.length ? { level: "done", text: "Đúng chuẩn" } : { level: "idle", text: "Chưa có danh mục có print set cùng tên" };
   },
   untagged(b) {
     const u = b.untagged, left = u ? Object.entries(u.counts).filter(([, n]) => n) : [];
