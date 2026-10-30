@@ -7,9 +7,8 @@
 - Button: the highlight dot on the button that does the work (Print set theo DM, Chuẩn cột danh mục,
   Tìm chưa tag / Xoá vùng tô, Xoá highlight).
 Same rules as the web app; the data is the read-only task status_board, computed on Revit's Idling
-(never inside another command): the whole board when the active model changes, the untagged count when
-the active view changes, the lists and marks again a few seconds after the model was edited (at most
-once a minute, longer if the model is slow to check). Started by startup.py.
+(never inside another command) and kept light: once when another model becomes active, and after one of
+our own tools changed the model. Opening views and ordinary edits never trigger a check. Started by startup.py.
 Only AdWindows display properties and our own status items (ids "CUR_STATUS_*") are touched: panel and
 tab titles stay as pyRevit made them, so pyRevit > Reload finds them.
 """
@@ -31,8 +30,6 @@ ID = 'CUR_STATUS_'
 NO_HIGHLIGHT = Enum.Parse(HighlightMode, 'None')
 WORK_BAR = SolidColorBrush(Color.FromArgb(255, 255, 159, 10))
 KIND = {'Room': u'room', 'Door': u'cửa đi', 'Window': u'cửa sổ', 'Wall': u'tường', 'Floor': u'sàn'}
-EDIT_QUIET = 4.0          # seconds after the last relevant model change before checking again
-EDIT_EVERY = 30.0         # at most this often for the drawing lists (longer when they are slow to check)
 
 
 def _log(text=None):
@@ -193,15 +190,18 @@ def clear():
 # ---- when to check ---------------------------------------------------------------------------------
 
 class Watcher(object):
+    """Light on purpose: it never checks when a view opens or on ordinary edits.
+    Checks (on Revit's Idling, never inside another command):
+      - lists + marks once when another model becomes active;
+      - after one of OUR tools changed the model (its transaction name), the part that tool touches.
+    Untagged counts come only from the Tìm chưa tag run itself (its transaction) for the active view."""
+
     def __init__(self, uiapp):
         self.uiapp = uiapp
         self.board = {}
         self.doc_key = None
-        self.view_id = None
-        self.need = set(['lists', 'marks', 'untagged'])
-        self.edited = {}              # part -> time of the last model change that touches it
-        self.last_lists = 0
-        self.cost = 0.0               # seconds the last lists check took
+        self.need = set(['lists', 'marks'])
+        self.after = {}               # part -> time our tool changed it
         self.busy = False
         uiapp.ViewActivated += self.on_view
         uiapp.Application.DocumentChanged += self.on_change
@@ -221,65 +221,36 @@ class Watcher(object):
 
     def on_view(self, sender, e):
         doc = e.Document
-        key = (doc.Title if doc else None)
-        if key != self.doc_key:
+        key = doc.Title if doc else None
+        if key != self.doc_key:          # another model: its own status (views of the same model: nothing)
             self.doc_key = key
             self.board = {}
-            self.need = set(['lists', 'marks', 'untagged'])
-        view = e.CurrentActiveView
-        vid = view.Id.IntegerValue if view is not None else None
-        if vid != self.view_id:
-            self.view_id = vid
-            self.need.add('untagged')
+            self.need = set(['lists', 'marks'])
+        elif 'untagged' in self.board:   # that count was for the view left behind: drop it, no new check
+            del self.board['untagged']
+            try:
+                paint(self.board)
+            except Exception:
+                _log()
 
     def on_change(self, sender, e):
-        """Only changes that can move a status: sheets, schedules, print sets (lists); filled
-        regions (marks); tags, rooms, doors, windows, walls, floors (untagged); deletions: all."""
         try:
-            doc = e.GetDocument()
-            if doc.Title != self.doc_key:
+            if e.GetDocument().Title != self.doc_key:
                 return
-            from Autodesk.Revit.DB import (FilledRegion, IndependentTag, SpatialElementTag, SpotDimension,
-                                           ViewSchedule, ViewSheet, ViewSheetSet)
-            from Autodesk.Revit.DB import Architecture
-            parts = set()
-            if e.GetDeletedElementIds().Count:
-                parts.update(['lists', 'marks', 'untagged'])
-            ids = list(e.GetAddedElementIds()) + list(e.GetModifiedElementIds())
-            for i in ids[:300]:
-                el = doc.GetElement(i)
-                if isinstance(el, (ViewSheet, ViewSchedule, ViewSheetSet)):
-                    parts.add('lists')
-                elif isinstance(el, FilledRegion):
-                    parts.add('marks')
-                elif isinstance(el, (IndependentTag, SpatialElementTag, SpotDimension, Architecture.Room)):
-                    parts.add('untagged')
-                elif el is not None and el.Category is not None and el.Category.Name in self.tagged_cats(doc):
-                    parts.add('untagged')
             now = time.time()
-            for p in parts:
-                self.edited[p] = now
+            for name in e.GetTransactionNames():
+                for part in TOOL_TRANSACTIONS.get(_tx_key(name), ()):
+                    self.after[part] = now
         except Exception:
             _log()
-
-    def tagged_cats(self, doc):
-        if not hasattr(self, '_cats'):
-            from Autodesk.Revit.DB import BuiltInCategory, Category
-            self._cats = set()
-            for bic in (BuiltInCategory.OST_Doors, BuiltInCategory.OST_Windows, BuiltInCategory.OST_Walls, BuiltInCategory.OST_Floors):
-                try:
-                    self._cats.add(Category.GetCategory(doc, bic).Name)
-                except Exception:
-                    pass
-        return self._cats
 
     def on_idle(self, sender, e):
         if self.busy:
             return
         now = time.time()
-        for p, t in list(self.edited.items()):
-            if now - t > EDIT_QUIET and (p != 'lists' or now - self.last_lists > max(EDIT_EVERY, self.cost * 20)):
-                del self.edited[p]
+        for p, t in list(self.after.items()):
+            if now - t > 1.0:
+                del self.after[p]
                 self.need.add(p)
         if not self.need:
             return
@@ -293,16 +264,33 @@ class Watcher(object):
         self.busy = True
         parts, self.need = list(self.need), set()
         try:
-            t = time.time()
             res = web_bridge._tasks().run('status_board', {'parts': parts}, uidoc.Document, uidoc)
-            if 'lists' in parts:
-                self.last_lists, self.cost = time.time(), time.time() - t
             self.board.update(res)
             paint(self.board)
         except Exception:
             _log()
         finally:
             self.busy = False
+
+
+def _tx_key(name):
+    n = (name or u'').lower()
+    for k in sorted(TOOL_TRANSACTIONS, key=len, reverse=True):     # 'highlight untagged' before 'highlight'
+        if n.startswith(k):
+            return k
+    return None
+
+
+# transaction name (start, lower case) of our tools -> status parts to check again
+TOOL_TRANSACTIONS = {
+    u'print set ': ('lists',),
+    u'chuẩn cột danh mục': ('lists',),
+    u'đánh số no.': ('lists',),
+    u'highlight untagged': ('marks', 'untagged'),
+    u'remove untagged highlight': ('marks', 'untagged'),
+    u'highlight': ('marks',),
+    u'clear highlight': ('marks',),
+}
 
 
 def start(uiapp):
@@ -318,7 +306,6 @@ def start(uiapp):
         uidoc = uiapp.ActiveUIDocument
         if uidoc is not None:
             w.doc_key = uidoc.Document.Title
-            w.view_id = uidoc.Document.ActiveView.Id.IntegerValue if uidoc.Document.ActiveView else None
             w.on_idle(uiapp, None)        # first paint now (pyRevit load runs in API context)
     except Exception:
         _log()
