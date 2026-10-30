@@ -61,6 +61,9 @@ if ($WebApp) {
     Get-CimInstance Win32_Process -Filter "Name = 'node.exe'" |
         Where-Object { $_.CommandLine -like '*claude-using-revit\webapp\server.mjs*' } |
         ForEach-Object { Stop-Process -Id $_.ProcessId -Force; "web app: stopped old server (PID $($_.ProcessId))" }
+    $island = @(Get-CimInstance Win32_Process -Filter "Name = 'powershell.exe'" | Where-Object { $_.CommandLine -like '*claude-using-revit\webapp\desktop\island.ps1*' })
+    $island | ForEach-Object { Stop-Process -Id $_.ProcessId -Force; "island: stopped (PID $($_.ProcessId)), restarted below" }
+    if ($island) { Start-Sleep -Milliseconds 800 }     # its WebView2 dlls are released
     if (Test-Path $wa) { Remove-Item $wa -Recurse -Force }
     Copy-Item (Join-Path $root 'webapp') -Destination $wa -Recurse -Force
     Get-ChildItem (Join-Path $root 'revit-commands\*.cs') | ForEach-Object { $_.BaseName } |
@@ -93,4 +96,5 @@ if ($WebApp) {
         "web app -> $wa (started; address + access code: $env:APPDATA\claude-using-revit\webapp.json)"
     }
     else { "web app -> $wa (node not found; Revit starts it once node is installed)" }
+    if ($island) { Start-Process "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -ArgumentList "-STA -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$wa\desktop\island.ps1`"" -WindowStyle Hidden }
 }
