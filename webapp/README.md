@@ -1,6 +1,6 @@
 # Web app "claude using revit"
 
-Giao diện web cho mọi công cụ của tab pyRevit **claude using revit** và mọi lệnh Revit MCP, mở được trên máy tính hay iPad cùng mạng.
+Giao diện web (kiểu bản vẽ kiến trúc) cho mọi công cụ của tab pyRevit **claude using revit** và mọi lệnh Revit MCP, mở được trên máy tính hay iPad cùng mạng.
 
 ```
 Trình duyệt (PC, iPad)  ──HTTP 8780, mã truy cập──>  webapp/server.mjs (Node, không thư viện)
@@ -18,5 +18,6 @@ Trình duyệt (PC, iPad)  ──HTTP 8780, mã truy cập──>  webapp/server
 - **Khởi động:** `startup.py` của extension bật cầu nối mỗi lần pyRevit load (Reload thì thay cầu nối cũ trên cùng cổng) và bật máy chủ web nếu chưa chạy. `install.ps1 -WebApp` cài và khởi động lại máy chủ web.
 - **Truy cập:** `http://localhost:8780/?k=<mã>` một lần cho mỗi thiết bị (cookie SameSite=Strict). Mã và cài đặt nằm ở `%APPDATA%\claude-using-revit\webapp.json`: `host` `127.0.0.1` (mặc định, chỉ máy này) hoặc `0.0.0.0` (cả LAN / Tailscale), `port`, `token`, `commandsDir`, `mcpBuildDir`. Nút **iPad / LAN** trên trang hiện link cho thiết bị khác.
 - **An toàn:** mọi `/api` cần mã; Host phải là máy này (chống DNS rebinding); POST khác nguồn bị chặn; cầu nối chỉ nghe 127.0.0.1 và cần khoá trong file mà trang web không đọc được. Lệnh có thể sửa model hoặc ghi file luôn hỏi lại kèm tên model.
+- **Kiểu bản vẽ kiến trúc:** giấy kẻ lưới, viền sheet, khung tên (model, view, đang chọn, người dùng, ngày, cửa sổ Revit), mỗi công cụ là một viewport có title view (bubble số / mã). Màu chỉ dành cho việc cần làm: task `status_board` (chỉ đọc) cho biết từng công cụ còn gì; thẻ còn việc có mây sửa đổi đỏ + tam giác revision ghi số việc, thẻ đã xong nét đen + dấu ĐÃ KHỚP, thẻ chạy theo yêu cầu (Xuất, 3D) nét đứt xám. Kiểm tra lại khi đổi model / view và sau mỗi lệnh ghi.
 - **Màn hình:** *Công cụ* (một thẻ cho mỗi nhóm nút ribbon, Xuất PDF và DWG chung một danh sách sheet), *Tất cả lệnh* (task, lệnh claude-using-revit, lệnh dynamic khác, lệnh gốc MCP; form tự sinh từ `inputSchema`), *Nhật ký* (200 việc gần nhất, kết quả JSON).
 - Log máy chủ: `%APPDATA%\claude-using-revit\webapp.log`. Thử máy chủ từ repo: `node webapp/server.mjs` (đặt `CUR_WEBAPP_HOST=127.0.0.1` để chỉ mở trong máy).

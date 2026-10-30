@@ -7,7 +7,7 @@
 const $ = (s, el = document) => el.querySelector(s);
 const S = {
   windows: [], pid: null, info: null, busy: null,
-  catalog: null, tasks: null, filter: "all", picked: null, view: "tools",
+  catalog: null, tasks: null, filter: "all", picked: null, view: "tools", board: null, onBoard: [],
 };
 const store = {
   get(k, d) { try { const v = localStorage.getItem("cur." + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
@@ -79,7 +79,7 @@ async function run(kind, name, args = {}, label) {
 // run + show the result in a box + toast (reads: no "done" toast); never throws
 const READS = new Set(["print_sets_status", "schedule_sheets", "list_tasks"]);
 async function act(box, kind, name, args, label, after) {
-  box.replaceChildren(h("span", { class: "pill run" }, "Đang chạy " + (label || name) + "…"));
+  box.replaceChildren(h("span", { class: "busy" }, "Đang chạy " + (label || name) + "…"));
   try {
     const res = await run(kind, name, args, label);
     box.replaceChildren(after ? after(res) || resultView(res) : resultView(res));
@@ -102,7 +102,7 @@ function resultView(res) {
 function setBusy(label) {
   S.busy = label;
   const b = $("#busy");
-  b.className = label ? "pill run" : "pill hidden";
+  b.className = label ? "busy" : "busy hidden";
   b.textContent = label ? "Revit: " + label : "";
 }
 
@@ -111,7 +111,7 @@ function confirmRun(what) {
   return window.confirm(`${what}\n\nModel: ${doc}\nTiếp tục?`);
 }
 
-// ---- windows + context ------------------------------------------------------------------
+// ---- windows + title block ----------------------------------------------------------------
 async function loadWindows() {
   const { windows } = await api("/api/windows");
   S.windows = windows;
@@ -126,7 +126,7 @@ function renderWindows() {
   const el = $("#windows");
   el.replaceChildren();
   if (!S.windows.length) {
-    el.append(h("span", { class: "pill warn" }, "Không thấy cửa sổ Revit nào có cầu nối (mở Revit, hoặc pyRevit Reload sau khi cài)"));
+    el.append(h("span", { class: "tag todo" }, "Không có cửa sổ Revit nào có cầu nối"));
     return;
   }
   for (const w of S.windows) {
@@ -134,8 +134,8 @@ function renderWindows() {
     const title = info && info.doc ? info.doc.title : "(chưa mở model)";
     const run = w.ping && w.ping.running ? " · đang chạy " + w.ping.running.name : "";
     el.append(h("button", { class: "win" + (String(w.pid) === String(S.pid) ? " on" : ""),
-      onclick: () => { S.pid = w.pid; store.set("pid", w.pid); S.info = null; S.tasks = null; renderWindows(); refreshInfo(true); } },
-      h("b", {}, title), h("small", {}, `Revit ${w.revit} · PID ${w.pid}${run}`)));
+      onclick: () => { S.pid = w.pid; store.set("pid", w.pid); S.info = null; S.tasks = null; S.board = null; renderWindows(); refreshInfo(true); } },
+      title, h("small", {}, `Revit ${w.revit} · PID ${w.pid}${run}`)));
   }
 }
 
@@ -146,72 +146,274 @@ async function refreshInfo(rebuild) {
     try {
       const info = await api(`/api/w/${S.pid}/info`);
       if (info.error) throw new Error(info.error);
-      const changed = !S.info || !info.doc || !S.info.doc || S.info.doc.title !== info.doc.title
-        || String(S.info.schedules) !== String(info.schedules);
+      const prev = S.info;
+      const docChanged = !prev || !info.doc || !prev.doc || prev.doc.title !== info.doc.title
+        || String(prev.schedules) !== String(info.schedules);
+      const viewChanged = !prev || !prev.view || !info.view || prev.view.id !== info.view.id;
       S.info = info;
-      renderContext();
+      $("#context").classList.add("hidden");
+      renderTitleBlock();
       renderWindows();
-      if (rebuild || changed) renderTools();
+      if (rebuild || docChanged) { S.board = null; renderTools(); loadBoard(); }
+      else if (viewChanged) loadBoard();
+      else updateSelection();
     } catch (e) {
-      $("#context").replaceChildren(h("span", { class: "pill warn" }, "Revit đang bận hoặc có hộp thoại đang mở: " + e.message));
+      const n = $("#context");
+      n.textContent = "Revit đang bận hoặc có hộp thoại đang mở: " + e.message;
+      n.classList.remove("hidden");
     }
   }
   infoTimer = setTimeout(() => refreshInfo(false), 6000);
 }
 
-function renderContext() {
-  const i = S.info, el = $("#context");
-  el.replaceChildren();
-  if (!i) return;
-  const kv = (k, v) => h("span", {}, h("span", { class: "k" }, k), h("span", { class: "v" }, v));
-  el.append(kv("Model", i.doc ? i.doc.title + (i.doc.modified ? " •" : "") : "—"),
-    kv("View", i.view ? `${i.view.name} (${i.view.type})` : "—"),
-    kv("Đang chọn", String(i.selection.length)),
-    kv("Người dùng", i.user || "—"));
-  if (i.docs.length > 1) el.append(kv("Đang mở", i.docs.join(", ")));
-  $("#subtitle").textContent = i.doc ? i.doc.title : "web";
-  for (const n of document.querySelectorAll("[data-sel]")) n.textContent = String(i.selection.length);
+function renderTitleBlock() {
+  const i = S.info;
+  $("#tb-model").textContent = i && i.doc ? i.doc.title + (i.doc.modified ? " *" : "") : "—";
+  $("#tb-model").title = i && i.docs ? "Đang mở: " + i.docs.join(", ") : "";
+  $("#tb-view").textContent = i && i.view ? i.view.name : "—";
+  $("#tb-view").title = i && i.view ? i.view.type : "";
+  $("#tb-sel").textContent = i ? String(i.selection.length) : "0";
+  $("#tb-user").textContent = (i && i.user) || "—";
+  $("#tb-date").textContent = new Date().toLocaleDateString("vi-VN");
+  updateSelection();
 }
 
-// ---- tools (one card per ribbon panel) ---------------------------------------------------
-function card(icon, title, sub, ...body) {
-  return h("section", { class: "glass card" },
-    h("div", { class: "card-head" }, h("img", { src: "/icon/" + icon + ".png", alt: "" }),
-      h("div", {}, h("h3", {}, title), h("div", { class: "sub" }, sub))), ...body);
+function updateSelection() {
+  const n = S.info ? S.info.selection.length : 0;
+  $("#tb-sel").textContent = String(n);
+  for (const el of document.querySelectorAll("[data-sel]")) el.textContent = String(n);
+}
+
+// ---- status board: what each tool has left to do (read only, one call) ---------------------
+async function loadBoard() {
+  if (!S.pid || !S.info || !S.info.doc) return;
+  try {
+    S.board = await run("task", "status_board", {}, "Kiểm tra trạng thái", true);
+  } catch (e) {
+    S.board = { error: e.message };
+  }
+  applyStates();
+}
+$("#btn-board").addEventListener("click", () => loadBoard());
+
+// the drawing lists that count: the ones with a print set of their name (else all of them)
+function officialLists(b) {
+  const named = new Set(b.printSets.filter(r => r.setExists).map(r => r.schedule));
+  return b.columns.filter(r => !named.size || named.has(r.schedule));
+}
+
+// state of one card: {level: "todo" | "done" | "idle", note, count}
+const STATE = {
+  printSet(b) {
+    const sets = b.printSets.filter(r => r.setExists);
+    const off = sets.filter(r => !r.inSync);
+    if (off.length) return { level: "todo", count: off.length,
+      note: "Print set lệch danh mục: " + off.map(r => `${r.schedule} (+${r.add} −${r.remove})`).join(", ") };
+    if (sets.length) return { level: "done", note: `${sets.length} print set khớp danh mục` };
+    return { level: "idle", note: "Chưa có print set nào mang tên danh mục" };
+  },
+  columns(b) {
+    const rows = officialLists(b);
+    const off = rows.filter(r => !r.inSync && !r.error);
+    if (off.length) return { level: "todo", count: off.length,
+      note: "Chưa đúng chuẩn: " + off.map(r => `${r.schedule} (${r.addColumns} cột, ${r.numbersToWrite} số No.)`).join(", ") };
+    if (rows.length) return { level: "done", note: `${rows.length} danh mục đúng chuẩn cột` };
+    return { level: "idle", note: "Model chưa có schedule danh mục bản vẽ" };
+  },
+  untagged(b) {
+    const u = b.untagged;
+    const left = u ? Object.entries(u.counts).filter(([, n]) => n) : [];
+    if (left.length) return { level: "todo", count: left.reduce((s, [, n]) => s + n, 0),
+      note: `${u.view}: ` + left.map(([k, n]) => `${n} ${KIND_LABEL[k]}`).join(", ") + " chưa tag" };
+    if (u && b.untaggedMarks) return { level: "todo", count: b.untaggedMarks,
+      note: `View đã tag đủ, còn ${b.untaggedMarks} vùng tô cam của bạn trong model` };
+    if (u) return { level: "done", note: `${u.view}: đã tag đủ` };
+    return { level: "idle", note: "View đang mở không phải mặt bằng / mặt cắt / mặt đứng" };
+  },
+  highlight(b) {
+    if (b.highlights) return { level: "todo", count: b.highlights, note: `Còn ${b.highlights} vùng highlight đỏ của bạn trong model` };
+    return { level: "idle", note: "Không còn highlight nào của bạn" };
+  },
+  idle() { return { level: "idle" }; },
+};
+
+function applyStates() {
+  const b = S.board;
+  let todo = 0;
+  for (const c of document.querySelectorAll("#view-tools .card")) {
+    const fn = STATE[c.dataset.state] || STATE.idle;
+    const st = !b ? { level: "idle", note: "Đang kiểm tra…" } : b.error ? { level: "idle", note: "Không kiểm tra được: " + b.error } : fn(b);
+    setCardState(c, st);
+    if (st.level === "todo") todo++;
+  }
+  document.title = (todo ? `(${todo}) ` : "") + "claude using revit";
+  for (const f of S.onBoard) f(b);
+}
+
+function setCardState(c, st) {
+  c.classList.remove("todo", "done", "idle");
+  c.classList.add(st.level);
+  const s = c.querySelector(".status");
+  s.className = "status " + st.level;
+  s.replaceChildren(...[st.level === "done" ? h("span", { class: "stamp" }, "✓ Đã khớp") : null,
+    st.note ? h("span", {}, st.level === "done" ? " " + st.note : st.note) : null].filter(Boolean));
+  c.querySelector(".cloud").innerHTML = "";
+  const d = c.querySelector(".delta");
+  d.classList.toggle("hidden", st.level !== "todo");
+  d.querySelector("text").textContent = st.count > 99 ? "99+" : String(st.count || "");
+  if (st.level === "todo") drawCloud(c);
+}
+
+// revision cloud along the card's edge (clockwise, arcs bulging out)
+function drawCloud(c) {
+  const svg = c.querySelector(".cloud");
+  const w = c.offsetWidth + 18, ht = c.offsetHeight + 18, m = 5, step = 22, r = step * 0.62;
+  const pts = [];
+  const edge = (x1, y1, x2, y2) => {
+    const len = Math.hypot(x2 - x1, y2 - y1), n = Math.max(1, Math.round(len / step));
+    for (let i = 1; i <= n; i++) pts.push([x1 + (x2 - x1) * i / n, y1 + (y2 - y1) * i / n]);
+  };
+  edge(m, m, w - m, m); edge(w - m, m, w - m, ht - m); edge(w - m, ht - m, m, ht - m); edge(m, ht - m, m, m);
+  let d = `M${m},${m}`;
+  for (const [x, y] of pts) d += ` A${r},${r} 0 0 1 ${x.toFixed(1)},${y.toFixed(1)}`;
+  svg.setAttribute("viewBox", `0 0 ${w} ${ht}`);
+  svg.innerHTML = `<path d="${d}"/>`;
+}
+const cloudObserver = new ResizeObserver(entries => {
+  for (const e of entries) if (e.target.classList.contains("todo")) drawCloud(e.target);
+});
+
+// ---- tools: one viewport per ribbon panel ---------------------------------------------------
+// card(no, code, icon, title, subtitle, stateKey, ...body)
+function card(no, code, icon, title, sub, stateKey, ...body) {
+  const svgNS = "http://www.w3.org/2000/svg";
+  const cloud = document.createElementNS(svgNS, "svg");
+  cloud.setAttribute("class", "cloud");
+  const delta = document.createElementNS(svgNS, "svg");
+  delta.setAttribute("class", "delta hidden");
+  delta.setAttribute("viewBox", "0 0 30 26");
+  delta.innerHTML = '<polygon points="15,1.5 28.5,24.5 1.5,24.5"/><text x="15" y="21"></text>';
+  const c = h("section", { class: "card idle", "data-state": stateKey },
+    h("div", { class: "vt" },
+      h("div", { class: "bubble" }, h("span", {}, no), h("span", {}, code)),
+      h("div", { class: "vt-text" }, h("h3", {}, title), h("div", { class: "vt-sub" }, sub)),
+      h("img", { src: "/icon/" + icon + ".png", alt: "" })),
+    h("div", { class: "status idle" }), ...body);
+  c.prepend(cloud);
+  c.append(delta);
+  cloudObserver.observe(c);
+  return c;
 }
 
 function renderTools() {
   const g = $("#view-tools");
+  S.onBoard = [];
   g.replaceChildren();
   if (!S.pid) return;
-  if (S.info && !S.info.doc) { g.append(h("div", { class: "glass card" }, "Cửa sổ Revit này chưa mở model nào.")); return; }
-  g.append(highlightCard(), untaggedCard(), printSetCard(), columnsCard(), exportCard(), view3dCard());
+  if (S.info && !S.info.doc) { g.append(h("div", { class: "panel notice" }, "Cửa sổ Revit này chưa mở model nào.")); return; }
+  g.append(printSetCard(), columnsCard(), untaggedCard(), highlightCard(), exportCard(), view3dCard());
+  applyStates();
 }
 
-function highlightCard() {
-  const box = h("div");
-  const sel = () => (S.info ? S.info.selection : []);
-  return card("Highlight", "Highlight", "Vùng đỏ 50% quanh đối tượng đang chọn trong Revit",
+// after an action that may change the model: re-check the board
+async function actAndCheck(...a) {
+  const r = await act(...a);
+  loadBoard();
+  return r;
+}
+
+function printSetCard() {
+  const list = h("div"), box = h("div");
+  const draw = b => {
+    if (!b || b.error) return list.replaceChildren();
+    const t = h("table", { class: "table" }, h("tr", {}, h("th", {}, "Danh mục bản vẽ"), h("th", {}, "Sheet"), h("th", {}, "Print set"), h("th", {}, "")));
+    for (const r of b.printSets) {
+      const off = r.setExists && !r.inSync;
+      const st = !r.setExists ? h("span", { class: "tag" }, "chưa có")
+        : r.inSync ? h("span", { class: "tag ok" }, "khớp") : h("span", { class: "tag todo" }, `+${r.add} −${r.remove}`);
+      t.append(h("tr", { class: off ? "todo" : "" }, h("td", {}, r.schedule), h("td", { class: "num" }, r.sheets), h("td", {}, st),
+        h("td", {}, off ? h("button", { class: "btn primary small", onclick: () => sync(r.schedule, false) }, "Đồng bộ")
+          : !r.setExists ? h("button", { class: "btn small", onclick: () => sync(r.schedule, false) }, "Tạo") : null)));
+    }
+    list.replaceChildren(t);
+  };
+  S.onBoard.push(draw);
+  const sync = async (schedule, force) => {
+    const res = await actAndCheck(box, "task", "print_set_sync", { schedule, force, detail: true }, "Print set theo DM: " + schedule);
+    const row = res && res.schedules && res.schedules[0];
+    if (row && /someone else/.test(row.status || "")) {
+      box.append(h("div", { class: "row" }, h("span", { class: "tag todo" }, `Print set do ${row.lastChangedBy || "người khác"} sửa lần cuối`),
+        h("button", { class: "btn danger", onclick: () => confirmRun("Thay print set của người khác?") && sync(schedule, true) }, "Vẫn thay")));
+    }
+  };
+  return card("1", "IN", "Print Set Sync", "Print set theo danh mục", "Print set cùng tên = đúng các sheet của danh mục", "printSet",
+    list, h("div", { class: "row" },
+      h("button", { class: "btn primary", onclick: () => actAndCheck(box, "task", "print_set_sync", { all: true }, "Đồng bộ mọi print set") }, "Đồng bộ tất cả")),
+    box);
+}
+
+function scheduleChecks(key) {
+  const schedules = (S.info && S.info.schedules) || [];
+  const want = new Set(store.get(key, []));
+  const wrap = h("div", { class: "chips" });
+  const chips = {};
+  for (const s of schedules) {
+    const b = chips[s] = h("button", { class: "chip" + (want.has(s) ? " on" : ""), onclick: () => {
+      want.has(s) ? want.delete(s) : want.add(s); b.classList.toggle("on"); store.set(key, [...want]); } }, s);
+    wrap.append(b);
+  }
+  wrap.values = () => [...want].filter(s => schedules.includes(s));
+  wrap.mark = rows => {      // red = not standard yet; nothing picked yet = pick these lists
+    for (const r of rows) if (chips[r.schedule]) chips[r.schedule].classList.toggle("todo", !r.inSync && !r.error);
+    if (!want.size) for (const r of rows) if (chips[r.schedule]) { want.add(r.schedule); chips[r.schedule].classList.add("on"); }
+  };
+  return wrap;
+}
+
+function columnsCard() {
+  const scheds = scheduleChecks("columns.schedules"), box = h("div");
+  S.onBoard.push(b => b && !b.error && scheds.mark(officialLists(b)));
+  const force = h("input", { type: "checkbox" });
+  const pick = () => { const v = scheds.values(); if (!v.length) toast("Chọn ít nhất một danh mục", "err"); return v; };
+  const param = h("select", { class: "grow" }, h("option", { value: "" }, "— tham số —"));
+  const value = h("input", { class: "grow", placeholder: "giá trị (trống = xoá)" });
+  return card("2", "IN", "Sheet List Columns", "Chuẩn cột danh mục", "Cột chuẩn + đánh số No. cho schedule danh mục", "columns",
+    h("div", { class: "sect" }, "Danh mục"), scheds,
     h("div", { class: "row" },
-      h("button", { class: "primary", onclick: () => {
-        if (!sel().length) return toast("Chọn đối tượng trong Revit trước", "err");
-        act(box, "task", "highlight", { ids: sel(), detail: true }, "Highlight");
-      } }, "Highlight ", h("span", { "data-sel": "" }, String(sel().length)), " đối tượng"),
-      h("button", { class: "ghost", onclick: () => act(box, "task", "highlight_clear", {}, "Xoá highlight (cả model)") }, "Xoá highlight cả model"),
-      h("button", { class: "ghost", onclick: () => act(box, "task", "highlight_clear", { view: S.info.view.id }, "Xoá highlight (view này)") }, "Chỉ view đang mở")),
+      h("button", { class: "btn", onclick: () => { const s = pick(); s.length && act(box, "task", "sheet_list_columns", { schedules: s, dryRun: true }, "Xem trước cột chuẩn"); } }, "Xem trước"),
+      h("button", { class: "btn primary", onclick: () => { const s = pick(); s.length && confirmRun("Thêm cột chuẩn + đánh số No.?") && actAndCheck(box, "task", "sheet_list_columns", { schedules: s, force: force.checked }, "Chuẩn cột danh mục"); } }, "Áp dụng"),
+      h("label", { class: "check" }, force, "Cả danh mục người khác sửa")),
+    h("div", { class: "sect" }, "Cột người ký"),
+    h("div", { class: "row tight" },
+      h("button", { class: "btn", onclick: () => { const s = pick(); s.length && act(box, "task", "sheet_list_signers", { schedules: s, show: true }, "Hiện cột ký"); } }, "Hiện"),
+      h("button", { class: "btn", onclick: () => { const s = pick(); s.length && act(box, "task", "sheet_list_signers", { schedules: s, show: false }, "Ẩn cột ký"); } }, "Ẩn")),
+    h("div", { class: "sect" }, "Điền một giá trị cho mọi sheet"),
+    h("div", { class: "row tight" },
+      h("button", { class: "btn", onclick: async () => {
+        const s = pick(); if (!s.length) return;
+        const r = await act(box, "task", "sheet_list_fill", { schedules: s }, "Đọc tham số");
+        if (r && r.params) param.replaceChildren(h("option", { value: "" }, "— tham số —"), ...r.params.map(p => h("option", { value: p }, p)));
+      } }, "Tải tham số"), param),
+    h("div", { class: "row tight" }, value,
+      h("button", { class: "btn", onclick: () => { const s = pick(); s.length && param.value && act(box, "task", "sheet_list_fill", { schedules: s, param: param.value, dryRun: true }, "Giá trị hiện tại"); } }, "Xem"),
+      h("button", { class: "btn primary", onclick: () => { const s = pick(); s.length && param.value && confirmRun(`Ghi "${value.value}" vào ${param.value} của mọi sheet?`) && act(box, "task", "sheet_list_fill", { schedules: s, param: param.value, value: value.value }, "Điền tham số"); } }, "Ghi")),
     box);
 }
 
 const KINDS = [["Room", "Room"], ["Door", "Cửa đi"], ["Window", "Cửa sổ"], ["Wall", "Tường"], ["Floor", "Sàn (cao độ)"]];
+const KIND_LABEL = Object.fromEntries(KINDS.map(([k, l]) => [k, l.toLowerCase()]));
 
 function untaggedCard() {
   const box = h("div");
   let kinds = store.get("untagged.kinds", KINDS.map(k => k[0]));
   const chips = h("div", { class: "chips" });
   const drawChips = () => {
-    chips.replaceChildren(...KINDS.map(([k, l]) => h("button", { class: "chip" + (kinds.includes(k) ? " on" : ""),
-      onclick: () => { kinds = kinds.includes(k) ? kinds.filter(x => x !== k) : [...kinds, k]; store.set("untagged.kinds", kinds); drawChips(); } }, l)));
+    const counts = S.board && S.board.untagged ? S.board.untagged.counts : {};
+    chips.replaceChildren(...KINDS.map(([k, l]) => h("button", { class: "chip" + (kinds.includes(k) ? " on" : "") + (counts[k] ? " todo" : ""),
+      onclick: () => { kinds = kinds.includes(k) ? kinds.filter(x => x !== k) : [...kinds, k]; store.set("untagged.kinds", kinds); drawChips(); } },
+      l + (counts[k] ? ` · ${counts[k]}` : ""))));
   };
+  S.onBoard.push(drawChips);
   drawChips();
   const scope = h("select", {},
     h("option", { value: "active" }, "View đang mở"),
@@ -227,96 +429,39 @@ function untaggedCard() {
     return a;
   };
   const table = res => {
-    const rows = res.views || [];
     const t = h("table", { class: "table" }, h("tr", {}, h("th", {}, "View"), ...kinds.map(k => h("th", {}, KINDS.find(x => x[0] === k)[1])), h("th", {}, "")));
-    for (const r of rows) {
+    for (const r of res.views || []) {
       const ids = kinds.flatMap(k => r[k + "Ids"] || []);
-      t.append(h("tr", {}, h("td", {}, r.view), ...kinds.map(k => h("td", { class: "num" }, r[k] || "")),
-        h("td", {}, h("button", { class: "ghost", onclick: () => run("task", "show_elements", { view: r.id, ids }, "Mở view").catch(e => toast(e.message, "err")) }, "Mở"))));
+      t.append(h("tr", { class: ids.length ? "todo" : "" }, h("td", {}, r.view), ...kinds.map(k => h("td", { class: "num" }, r[k] || "")),
+        h("td", {}, ids.length ? h("button", { class: "btn small", onclick: () => run("task", "show_elements", { view: r.id, ids }, "Mở view").catch(e => toast(e.message, "err")) }, "Mở") : null)));
     }
-    return h("div", {}, h("div", { class: "small" }, "Tổng: " + JSON.stringify(res.total)), t);
+    return t;
   };
-  return card("Highlight Untagged", "Chưa tag", "Room, cửa, tường, sàn chưa có tag / cao độ",
+  return card("3", "TAG", "Highlight Untagged", "Chưa tag", "Room, cửa, tường, sàn chưa có tag / cao độ", "untagged",
     h("div", { class: "row" }, scope, sheets), h("div", { class: "row tight" }, chips),
     h("div", { class: "row" },
-      h("button", { class: "ghost", onclick: () => act(box, "task", "untagged_scan", { ...args(), detail: true }, "Đếm chưa tag", table) }, "Đếm"),
-      h("button", { class: "primary", onclick: () => act(box, "task", "untagged_highlight", args(), "Tô cam chỗ chưa tag") }, "Tô cam"),
-      h("button", { class: "ghost", onclick: () => {
-        const whole = window.confirm("Xoá vùng tô của bạn trong CẢ MODEL?\n(Cancel = chỉ phạm vi đang chọn)");
+      h("button", { class: "btn", onclick: () => act(box, "task", "untagged_scan", { ...args(), detail: true }, "Đếm chưa tag", table) }, "Đếm"),
+      h("button", { class: "btn primary", onclick: () => actAndCheck(box, "task", "untagged_highlight", args(), "Tô cam chỗ chưa tag") }, "Tô cam"),
+      h("button", { class: "btn", onclick: () => {
+        const whole = window.confirm("Xoá vùng tô cam của bạn trong CẢ MODEL?\n(Cancel = chỉ phạm vi đang chọn)");
         const a = whole ? {} : args();
         delete a.kinds;
-        act(box, "task", "untagged_remove", a, "Xoá vùng tô");
+        actAndCheck(box, "task", "untagged_remove", a, "Xoá vùng tô");
       } }, "Xoá vùng tô")),
     box);
 }
 
-function printSetCard() {
-  const list = h("div"), box = h("div");
-  const load = () => act(list, "task", "print_sets_status", {}, "Đọc danh mục", res => {
-    const t = h("table", { class: "table" }, h("tr", {}, h("th", {}, "Danh mục"), h("th", {}, "Sheet"), h("th", {}, "Print set"), h("th", {}, "")));
-    for (const r of res.schedules) {
-      const st = !r.setExists ? h("span", { class: "pill" }, "chưa có")
-        : r.inSync ? h("span", { class: "pill ok" }, "đã khớp")
-        : h("span", { class: "pill warn" }, `lệch +${r.add} −${r.remove}`);
-      t.append(h("tr", {}, h("td", {}, r.schedule), h("td", { class: "num" }, r.sheets), h("td", {}, st),
-        h("td", {}, h("button", { class: r.inSync ? "ghost" : "primary", onclick: () => sync(r.schedule, false) }, r.setExists ? "Đồng bộ" : "Tạo"))));
-    }
-    return t;
-  });
-  const sync = async (schedule, force) => {
-    const res = await act(box, "task", "print_set_sync", { schedule, force, detail: true }, "Print set theo DM: " + schedule);
-    const row = res && res.schedules && res.schedules[0];
-    if (row && /someone else/.test(row.status || "")) {
-      box.append(h("div", { class: "row" }, h("span", { class: "pill warn" }, `Print set do ${row.lastChangedBy || "người khác"} sửa lần cuối`),
-        h("button", { class: "danger", onclick: () => confirmRun("Thay print set của người khác?") && sync(schedule, true) }, "Vẫn thay")));
-    }
-    load();
-  };
-  setTimeout(load, 0);
-  return card("Print Set Sync", "Print set theo danh mục", "Print set cùng tên = đúng các sheet của schedule danh mục",
-    list, h("div", { class: "row" }, h("button", { class: "ghost", onclick: load }, "Tải lại"),
-      h("button", { class: "ghost", onclick: () => act(box, "task", "print_set_sync", { all: true }, "Đồng bộ mọi print set").then(load) }, "Đồng bộ tất cả")),
-    box);
-}
-
-function scheduleChecks(key) {
-  const want = new Set(store.get(key, []));
-  const wrap = h("div", { class: "chips" });
-  for (const s of (S.info && S.info.schedules) || []) {
-    const b = h("button", { class: "chip" + (want.has(s) ? " on" : ""), onclick: () => {
-      want.has(s) ? want.delete(s) : want.add(s); b.classList.toggle("on"); store.set(key, [...want]); } }, s);
-    wrap.append(b);
-  }
-  wrap.values = () => [...want].filter(s => ((S.info && S.info.schedules) || []).includes(s));
-  return wrap;
-}
-
-function columnsCard() {
-  const scheds = scheduleChecks("columns.schedules"), box = h("div");
-  const force = h("input", { type: "checkbox" });
-  const pick = () => { const v = scheds.values(); if (!v.length) toast("Chọn ít nhất một danh mục", "err"); return v; };
-  const param = h("select", { class: "grow" }, h("option", { value: "" }, "— tham số —"));
-  const value = h("input", { class: "grow", placeholder: "giá trị (trống = xoá)" });
-  return card("Sheet List Columns", "Chuẩn cột danh mục", "Cột chuẩn + đánh số No. cho schedule danh mục",
-    h("div", { class: "sect" }, "Danh mục"), scheds,
+function highlightCard() {
+  const box = h("div");
+  const sel = () => (S.info ? S.info.selection : []);
+  return card("4", "HL", "Highlight", "Highlight", "Vùng đỏ 50% quanh đối tượng đang chọn trong Revit", "highlight",
     h("div", { class: "row" },
-      h("button", { class: "ghost", onclick: () => { const s = pick(); s.length && act(box, "task", "sheet_list_columns", { schedules: s, dryRun: true }, "Xem trước cột chuẩn"); } }, "Xem trước"),
-      h("button", { class: "primary", onclick: () => { const s = pick(); s.length && confirmRun("Thêm cột chuẩn + đánh số No.?") && act(box, "task", "sheet_list_columns", { schedules: s, force: force.checked }, "Chuẩn cột danh mục"); } }, "Áp dụng"),
-      h("label", { class: "check" }, force, "Cả danh mục người khác sửa")),
-    h("div", { class: "sect" }, "Cột người ký"),
-    h("div", { class: "row tight" },
-      h("button", { class: "ghost", onclick: () => { const s = pick(); s.length && act(box, "task", "sheet_list_signers", { schedules: s, show: true }, "Hiện cột ký"); } }, "Hiện"),
-      h("button", { class: "ghost", onclick: () => { const s = pick(); s.length && act(box, "task", "sheet_list_signers", { schedules: s, show: false }, "Ẩn cột ký"); } }, "Ẩn")),
-    h("div", { class: "sect" }, "Điền một giá trị cho mọi sheet"),
-    h("div", { class: "row tight" },
-      h("button", { class: "ghost", onclick: async () => {
-        const s = pick(); if (!s.length) return;
-        const r = await act(box, "task", "sheet_list_fill", { schedules: s }, "Đọc tham số");
-        if (r && r.params) param.replaceChildren(h("option", { value: "" }, "— tham số —"), ...r.params.map(p => h("option", { value: p }, p)));
-      } }, "Tải tham số"), param),
-    h("div", { class: "row tight" }, value,
-      h("button", { class: "ghost", onclick: () => { const s = pick(); s.length && param.value && act(box, "task", "sheet_list_fill", { schedules: s, param: param.value, dryRun: true }, "Giá trị hiện tại"); } }, "Xem"),
-      h("button", { class: "primary", onclick: () => { const s = pick(); s.length && param.value && confirmRun(`Ghi "${value.value}" vào ${param.value} của mọi sheet?`) && act(box, "task", "sheet_list_fill", { schedules: s, param: param.value, value: value.value }, "Điền tham số"); } }, "Ghi")),
+      h("button", { class: "btn", onclick: () => {
+        if (!sel().length) return toast("Chọn đối tượng trong Revit trước", "err");
+        actAndCheck(box, "task", "highlight", { ids: sel(), detail: true }, "Highlight");
+      } }, "Highlight ", h("span", { "data-sel": "" }, String(sel().length)), " đối tượng"),
+      h("button", { class: "btn primary", onclick: () => actAndCheck(box, "task", "highlight_clear", {}, "Xoá highlight (cả model)") }, "Xoá highlight cả model"),
+      h("button", { class: "btn", onclick: () => actAndCheck(box, "task", "highlight_clear", { view: S.info.view.id }, "Xoá highlight (view này)") }, "Chỉ view đang mở")),
     box);
 }
 
@@ -335,17 +480,16 @@ function exportCard() {
   const count = h("span", { class: "small" });
   let sheets = [], ticked = new Set();
 
+  const counter = () => { count.textContent = `${ticked.size}/${sheets.length} sheet được chọn`; };
   const draw = () => {
     const q = filter.value.trim().toLowerCase();
     list.replaceChildren(...sheets.filter(s => !q || (s.number + " " + s.name).toLowerCase().includes(q)).map(s => {
       const cb = h("input", { type: "checkbox", checked: ticked.has(s.number) });
-      const row = h("label", { class: "sheet-row" }, cb, h("span", { class: "no" }, s.number), h("span", { class: "nm" }, s.name));
       cb.addEventListener("change", () => { cb.checked ? ticked.add(s.number) : ticked.delete(s.number); counter(); });
-      return row;
+      return h("label", { class: "sheet-row" }, cb, h("span", { class: "no" }, s.number), h("span", { class: "nm" }, s.name));
     }));
     counter();
   };
-  const counter = () => { count.textContent = `${ticked.size}/${sheets.length} sheet được chọn`; };
   const load = async () => {
     if (!sched.value) return;
     store.set("export.schedule", sched.value);
@@ -371,38 +515,39 @@ function exportCard() {
     return a;
   };
   setTimeout(load, 0);
-  return card("Export PDF", "Xuất PDF / DWG", "Sheet của danh mục, mỗi sheet một file (không gộp)",
-    h("div", { class: "row" }, sched, h("button", { class: "ghost", onclick: load }, "Tải")),
+  return card("5", "XU", "Export PDF", "Xuất PDF / DWG", "Sheet của danh mục, mỗi sheet một file (không gộp)", "idle",
+    h("div", { class: "row" }, sched, h("button", { class: "btn", onclick: load }, "Tải")),
     h("div", { class: "row tight" }, filter,
-      h("button", { class: "ghost", onclick: () => { sheets.forEach(s => ticked.add(s.number)); draw(); } }, "Chọn hết"),
-      h("button", { class: "ghost", onclick: () => { ticked.clear(); draw(); } }, "Bỏ hết")),
+      h("button", { class: "btn small", onclick: () => { sheets.forEach(s => ticked.add(s.number)); draw(); } }, "Chọn hết"),
+      h("button", { class: "btn small", onclick: () => { ticked.clear(); draw(); } }, "Bỏ hết")),
     list, h("div", { class: "row tight" }, count),
-    h("div", { class: "row" }, folder, h("button", { class: "ghost", onclick: () => pickFolder(folder.value, p => { folder.value = p; store.set("export.folder", p); }) }, "Duyệt…")),
+    h("div", { class: "row" }, folder, h("button", { class: "btn", onclick: () => pickFolder(folder.value, p => { folder.value = p; store.set("export.folder", p); }) }, "Duyệt…")),
     h("div", { class: "sect" }, "PDF"),
     h("div", { class: "row tight" }, groupBy,
-      h("button", { class: "ghost", onclick: () => chosen().length && act(box, "task", "pdf_export", pdfArgs({ dryRun: true }), "Kiểm tra trước khi xuất PDF") }, "Kiểm tra"),
-      h("button", { class: "primary", onclick: () => chosen().length && confirmRun(`Xuất ${chosen().length} sheet ra PDF vào\n${folder.value}?\nRevit sẽ bận đến khi xong.`) && act(box, "task", "pdf_export", pdfArgs({}), "Xuất PDF") }, "Xuất PDF"),
-      h("button", { class: "ghost", title: "Xoá bộ nhớ các view / sheet từng làm Revit crash (khi model đã sửa)", onclick: () => act(box, "task", "pdf_export", { schedule: sched.value, forget: true }, "Quên bộ nhớ crash") }, "Thử lại view từng crash")),
+      h("button", { class: "btn", onclick: () => chosen().length && act(box, "task", "pdf_export", pdfArgs({ dryRun: true }), "Kiểm tra trước khi xuất PDF") }, "Kiểm tra"),
+      h("button", { class: "btn primary", onclick: () => chosen().length && confirmRun(`Xuất ${chosen().length} sheet ra PDF vào\n${folder.value}?\nRevit sẽ bận đến khi xong.`) && act(box, "task", "pdf_export", pdfArgs({}), "Xuất PDF") }, "Xuất PDF"),
+      h("button", { class: "btn small", title: "Xoá bộ nhớ các view / sheet từng làm Revit crash (khi model đã sửa)", onclick: () => act(box, "task", "pdf_export", { schedule: sched.value, forget: true }, "Quên bộ nhớ crash") }, "Thử lại view từng crash")),
     h("div", { class: "sect" }, "DWG"),
     h("div", { class: "row tight" }, setup,
-      h("button", { class: "ghost", onclick: async () => {
+      h("button", { class: "btn small", onclick: async () => {
         const r = await act(box, "command", "export_sheets_dwg", { list: true }, "Đọc setup DWG");
         if (r && r.DwgSetups) setup.replaceChildren(h("option", { value: "" }, "Setup DWG mặc định"), ...r.DwgSetups.map(s => h("option", { value: s }, s)));
       } }, "Tải setup"),
       h("label", { class: "check" }, merged, "Gộp view, không xref"),
-      h("button", { class: "primary", onclick: () => chosen().length && folder.value && confirmRun(`Xuất ${chosen().length} sheet ra DWG vào\n${folder.value}?`) && act(box, "command", "export_sheets_dwg",
+      h("button", { class: "btn primary", onclick: () => chosen().length && folder.value && confirmRun(`Xuất ${chosen().length} sheet ra DWG vào\n${folder.value}?`) && act(box, "command", "export_sheets_dwg",
         { sheetNumbers: chosen(), folder: folder.value, setupName: setup.value || undefined, mergedViews: merged.checked }, "Xuất DWG") }, "Xuất DWG")),
     box);
 }
 
 function view3dCard() {
   const box = h("div"), cut = h("input", { type: "checkbox" });
-  return card("3D From View", "3D theo view", "View 3D riêng của bạn, hộp cắt theo plan / mặt cắt / mặt đứng đang mở",
+  return card("6", "3D", "3D From View", "3D theo view", "View 3D riêng, hộp cắt theo view đang mở", "idle",
     h("div", { class: "row" },
-      h("button", { class: "primary", onclick: () => act(box, "task", "view_3d_from_view", { cut: cut.checked }, "3D theo view") }, "Mở 3D theo view đang mở"),
+      h("button", { class: "btn primary", onclick: () => act(box, "task", "view_3d_from_view", { cut: cut.checked }, "3D theo view") }, "Mở 3D theo view đang mở"),
       h("label", { class: "check" }, cut, "Plan: dừng ở mặt cắt")),
     box);
 }
+
 
 // ---- folder picker ---------------------------------------------------------------------
 async function pickFolder(start, done) {
@@ -415,8 +560,8 @@ async function pickFolder(start, done) {
           r.parent !== null ? h("div", { class: "dir", onclick: () => go(r.parent) }, "↑ ..") : null,
           ...r.dirs.map(d => h("div", { class: "dir", onclick: () => go(r.path ? r.path.replace(/\\$/, "") + "\\" + d : d) }, "📁 " + d))),
         h("div", { class: "row" },
-          h("button", { class: "primary", disabled: !r.path, onclick: () => { close(); done(r.path); } }, "Chọn thư mục này"),
-          h("button", { class: "ghost", onclick: close }, "Huỷ")));
+          h("button", { class: "btn primary", disabled: !r.path, onclick: () => { close(); done(r.path); } }, "Chọn thư mục này"),
+          h("button", { class: "btn", onclick: close }, "Huỷ")));
     } catch (e) { if (p) go(""); else toast(e.message, "err"); }
   };
   const close = () => $("#modal").classList.add("hidden");
@@ -458,7 +603,7 @@ function renderAll() {
     && (!q || (it.name + " " + it.description).toLowerCase().includes(q)));
   $("#cmd-list").replaceChildren(...list.slice(0, 400).map(it => h("div", {
     class: "cmd" + (S.picked === it ? " on" : ""), onclick: () => { S.picked = it; renderAll(); renderDetail(); } },
-    h("b", {}, it.name), " ", h("span", { class: "pill" + (it.readOnly ? " ok" : "") }, it.readOnly ? "chỉ đọc" : GROUPS.find(g => g[0] === group(it))[1]),
+    h("b", {}, it.name), " ", h("span", { class: "tag" + (it.readOnly ? " ok" : "") }, it.readOnly ? "chỉ đọc" : GROUPS.find(g => g[0] === group(it))[1]),
     h("small", { class: "muted" }, it.description))));
   if (!list.length) $("#cmd-list").append(h("p", { class: "muted" }, S.catalog ? "Không có lệnh nào khớp." : "Đang tải…"));
 }
@@ -517,11 +662,11 @@ function renderDetail() {
   };
   d.replaceChildren(
     h("h2", {}, it.name),
-    h("div", { class: "row tight" }, h("span", { class: "pill" }, GROUPS.find(g => g[0] === group(it))[1]),
-      it.readOnly ? h("span", { class: "pill ok" }, "chỉ đọc") : h("span", { class: "pill warn" }, "có thể sửa model / ghi file")),
+    h("div", { class: "row tight" }, h("span", { class: "tag" }, GROUPS.find(g => g[0] === group(it))[1]),
+      it.readOnly ? h("span", { class: "tag ok" }, "chỉ đọc") : h("span", { class: "tag todo" }, "có thể sửa model / ghi file")),
     h("p", {}, it.description || h("span", { class: "muted" }, "(không có mô tả)")),
     ...fields.map(([, f]) => f.el), raw ? h("div", { class: "field" }, h("label", {}, "args (JSON)"), raw) : null,
-    h("div", { class: "row" }, h("button", { class: "primary", onclick: () => {
+    h("div", { class: "row" }, h("button", { class: "btn primary", onclick: () => {
       let a;
       try { a = args(); } catch (e) { return toast("JSON sai: " + e.message, "err"); }
       const safe = (it.readOnly && !/export/.test(it.name)) || a.dryRun === true || a.list === true;
@@ -538,8 +683,8 @@ async function renderJobs() {
   el.replaceChildren(...(jobs.length ? jobs : [null]).map(j => {
     if (!j) return h("p", { class: "muted" }, "Chưa chạy lệnh nào từ web app.");
     const secs = (((j.finished || Date.now()) - j.started) / 1000).toFixed(1);
-    const st = j.state === "running" ? h("span", { class: "pill run" }, "đang chạy")
-      : j.state === "error" ? h("span", { class: "pill err" }, "lỗi") : h("span", { class: "pill ok" }, "xong");
+    const st = j.state === "running" ? h("span", { class: "busy" }, "đang chạy")
+      : j.state === "error" ? h("span", { class: "tag err" }, "lỗi") : h("span", { class: "tag ok" }, "xong");
     const more = h("div");
     return h("div", { class: "job", onclick: async () => {
       if (more.childNodes.length) return more.replaceChildren();
@@ -558,8 +703,8 @@ $("#btn-access").addEventListener("click", async () => {
     r.lan ? h("p", { class: "muted" }, "Cùng mạng LAN (hoặc Tailscale). Mở một link dưới đây một lần trên thiết bị đó; link chứa mã truy cập, đừng gửi ra ngoài.")
       : h("p", { class: "muted" }, `Web app đang chỉ mở trong máy này. Để dùng từ iPad: trong ${r.config} đổi "host" thành "0.0.0.0", rồi chạy lại install.ps1 -WebApp để khởi động lại máy chủ web.`),
     ...r.urls.map(u => h("div", { class: "row tight" }, h("code", { class: "grow" }, u),
-      h("button", { class: "ghost", onclick: () => navigator.clipboard && navigator.clipboard.writeText(u).then(() => toast("Đã chép")) }, "Chép"))),
-    h("div", { class: "row" }, h("button", { class: "primary", onclick: () => $("#modal").classList.add("hidden") }, "Đóng")));
+      h("button", { class: "btn", onclick: () => navigator.clipboard && navigator.clipboard.writeText(u).then(() => toast("Đã chép")) }, "Chép"))),
+    h("div", { class: "row" }, h("button", { class: "btn primary", onclick: () => $("#modal").classList.add("hidden") }, "Đóng")));
   $("#modal").classList.remove("hidden");
 });
 $("#modal").addEventListener("click", e => { if (e.target.id === "modal") $("#modal").classList.add("hidden"); });

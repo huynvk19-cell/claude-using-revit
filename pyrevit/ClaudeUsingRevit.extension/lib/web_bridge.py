@@ -125,6 +125,25 @@ def _run_mcp(uiapp, name, args):
     return t['serialize'].Invoke(None, Array[Object]([resp]))
 
 
+_lib = {'mtime': 0}
+
+
+def _tasks():
+    """lib/tasks.py, re-imported (with the lib modules it uses) when a lib file changed since the
+    last job, so install.ps1 -PyRevit applies without pyRevit > Reload (like pyrevit_task)."""
+    import sys
+    lib = os.path.dirname(os.path.abspath(__file__))
+    newest = max(os.path.getmtime(os.path.join(lib, f)) for f in os.listdir(lib) if f.endswith('.py'))
+    if _lib['mtime'] and newest > _lib['mtime']:
+        for name, mod in list(sys.modules.items()):
+            f = getattr(mod, '__file__', None) if mod is not None else None
+            if f and name != 'web_bridge' and os.path.dirname(os.path.abspath(f)) == lib:
+                del sys.modules[name]
+    _lib['mtime'] = newest
+    import tasks
+    return tasks
+
+
 def _run(uiapp, job):
     try:
         if job.kind == 'info':
@@ -133,8 +152,7 @@ def _run(uiapp, job):
         if job.kind == 'task':
             if uidoc is None:
                 return _error(u'no open document')
-            import tasks
-            return tasks.run_json(job.name, json.dumps(job.data.get('args') or {}), uidoc.Document, uidoc)
+            return _tasks().run_json(job.name, json.dumps(job.data.get('args') or {}), uidoc.Document, uidoc)
         if job.kind == 'mcp':
             return _run_mcp(uiapp, job.name, job.data.get('args'))
         return _error(u'unknown kind: {0}'.format(job.kind))
