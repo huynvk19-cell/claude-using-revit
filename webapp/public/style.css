@@ -1,10 +1,10 @@
-/* visionOS-like: frosted glass windows floating over deep space (space.js draws it).
+/* visionOS-like: frosted glass windows floating in an exploration-ship cabin (space.js: the observation window onto the Milky Way).
    Glass is colourless; colour (system orange) appears only on a tool that has work left. */
 :root {
   --text: rgba(255, 255, 255, .96);
   --dim: rgba(255, 255, 255, .58);
   --faint: rgba(255, 255, 255, .34);
-  --glass: rgba(110, 110, 120, .26);
+  --glass: rgba(80, 88, 105, .2);
   --glass-strong: rgba(70, 70, 80, .42);
   --fill: rgba(255, 255, 255, .1);
   --fill-hover: rgba(255, 255, 255, .18);
@@ -31,7 +31,7 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 
 .glass {
   background: var(--glass);
-  -webkit-backdrop-filter: blur(40px) saturate(1.6) brightness(1.08); backdrop-filter: blur(40px) saturate(1.6) brightness(1.08);
+  -webkit-backdrop-filter: blur(16px) saturate(1.5) brightness(1.1); backdrop-filter: blur(16px) saturate(1.5) brightness(1.1);
   border-radius: 34px;
   box-shadow: inset 0 1px 1px rgba(255, 255, 255, .32), inset 0 0 0 1px rgba(255, 255, 255, .07), 0 24px 60px rgba(0, 0, 0, .45);
 }
