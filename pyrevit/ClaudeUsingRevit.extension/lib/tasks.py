@@ -473,7 +473,9 @@ def status_board(doc, uidoc, args):
                              "numbersToWrite": len(p["numbers"])})
             except Exception as ex:
                 cols.append({"schedule": vs.Name, "error": u"{0}".format(ex)})
-        out.update({"printSets": sets, "columns": cols})
+        names = set(r["schedule"] for r in sets)
+        out.update({"printSets": sets, "columns": cols,
+                    "expected": [n for n in _expected_lists() if n in names]})
         ms["lists"], t = int((time.time() - t) * 1000), time.time()
     if "marks" in parts:
         out.update({"highlights": len(hr.find_marked(doc, user=user)),
@@ -489,6 +491,32 @@ def status_board(doc, uidoc, args):
         ms["untagged"] = int((time.time() - t) * 1000)
     out["ms"] = ms
     return out
+
+
+def _expected_lists():
+    """The drawing lists this user works with: the schedule of their last 'Print set theo DM' and the
+    schedules of their last 'Chuẩn cột danh mục' (pyRevit button config). Each should have a print set
+    of its name and standard columns."""
+    import io
+    import json
+    import os
+    out = []
+    try:
+        path = os.path.join(os.environ.get("APPDATA", u""), u"pyRevit", u"pyRevit_config.ini")
+        section = None
+        with io.open(path, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith(u"[") and line.endswith(u"]"):
+                    section = line[1:-1]
+                elif u"=" in line and section in (u"Print Set Sync_config", u"Sheet List Columns_config"):
+                    key, val = [x.strip() for x in line.split(u"=", 1)]
+                    if key in (u"schedule", u"schedules"):
+                        v = json.loads(val)
+                        out += v if isinstance(v, list) else [v]
+    except Exception:
+        pass
+    return sorted(set(n for n in out if n))
 
 
 @task(u"(RO) Check now and repaint the status on the ribbon tab 'claude using revit' (tab dot, "

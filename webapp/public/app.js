@@ -164,15 +164,17 @@ $("#btn-board").addEventListener("click", () => loadBoard());
 const KINDS = [["Room", "room"], ["Door", "cửa đi"], ["Window", "cửa sổ"], ["Wall", "tường"], ["Floor", "sàn"]];
 const KIND = Object.fromEntries(KINDS);
 
-// the drawing lists that count: the ones with a print set of their name (none = none)
+// the drawing lists that count: the ones with a print set of their name + the ones this user works with
 function officialLists(b) {
-  const named = new Set(b.printSets.filter(r => r.setExists).map(r => r.schedule));
+  const named = new Set([...b.printSets.filter(r => r.setExists).map(r => r.schedule), ...(b.expected || [])]);
   return b.columns.filter(r => named.has(r.schedule));
 }
 
 // {level: work | done | idle, text, count}
 const STATE = {
   printSet(b) {
+    const missing = b.printSets.filter(r => !r.setExists && r.sheets && (b.expected || []).includes(r.schedule));
+    if (missing.length) return { level: "work", count: missing.length, text: missing.length === 1 ? `Chưa có print set ${missing[0].schedule}` : `Thiếu ${missing.length} print set` };
     const off = b.printSets.filter(r => r.setExists && !r.inSync);
     if (off.length) return { level: "work", count: off.length, text: off.length === 1 ? `${off[0].schedule} lệch danh mục` : `${off.length} print set lệch danh mục` };
     const n = b.printSets.filter(r => r.setExists).length;
