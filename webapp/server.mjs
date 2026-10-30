@@ -212,13 +212,13 @@ function unwrap(kind, r) {
 function startJob(pid, kind, name, args, label) {
     const b = bridgeOf(pid);
     let payload;
-    if (kind === "task") payload = { kind: "task", name, args };
-    else if (kind === "tool") payload = { kind: "mcp", name, args };
+    if (kind === "task") payload = { kind: "task", name, args, label };
+    else if (kind === "tool") payload = { kind: "mcp", name, args, label };
     else if (kind === "command") {
         if (!NAME_RE.test(name)) throw httpError(400, "bad command name");
         const file = path.join(cfg.commandsDir || "", name + ".cs");
         if (!fs.existsSync(file)) throw httpError(404, "command not found: " + name);
-        payload = { kind: "mcp", name: "run_dynamic_command",
+        payload = { kind: "mcp", name: "run_dynamic_command", label,
             args: { name, source: fs.readFileSync(file, "utf8"), args: args || {} } };
     } else throw httpError(400, "kind must be task, command or tool");
     const job = { id: nextJob++, pid: b.pid, kind, name, label: label || name, args: args || {},
@@ -383,7 +383,8 @@ const server = http.createServer(async (req, res) => {
         const ok = safeEqual(cookies(req).k, cfg.token);
         if (url.searchParams.has("k")) {
             if (!safeEqual(url.searchParams.get("k"), cfg.token)) return send(res, 403, { error: "wrong access code" });
-            res.writeHead(302, { location: "/", "set-cookie":
+            const open = /^[a-zA-Z0-9]{1,20}$/.test(url.searchParams.get("open") || "") ? "#" + url.searchParams.get("open") : "";
+            res.writeHead(302, { location: "/" + open, "set-cookie":
                 `k=${encodeURIComponent(cfg.token)}; Path=/; Max-Age=31536000; SameSite=Strict; HttpOnly` });
             return res.end();
         }
