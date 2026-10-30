@@ -48,9 +48,14 @@ def _log(text=None):
 # ---- what is left (same rules as webapp/public/app.js) -----------------------------------------
 
 def _official(b):
-    """The drawing lists that count: the ones with a print set of their name (none = none)."""
-    named = set(r['schedule'] for r in b.get('printSets', []) if r['setExists'])
+    """The drawing lists that count: the ones with a print set of their name, plus the ones this
+    user works with (status_board 'expected': last used in Print set theo DM / Chuẩn cột danh mục)."""
+    named = set(r['schedule'] for r in b.get('printSets', []) if r['setExists']) | set(b.get('expected') or [])
     return [r for r in b.get('columns', []) if r['schedule'] in named]
+
+
+def _short(text, n=38):
+    return text if len(text) <= n else text[:n - 1] + u'…'
 
 
 def lines_for(b):
@@ -60,12 +65,17 @@ def lines_for(b):
         return out
     sets = b.get('printSets', [])
     off = [r for r in sets if r['setExists'] and not r['inSync']]
+    missing = [r for r in sets if not r['setExists'] and r['schedule'] in (b.get('expected') or []) and r['sheets']]
+    if missing:
+        out[u'In ấn'].append(('work', _short(u'● Thiếu print set {0}'.format(missing[0]['schedule'])) if len(missing) == 1 else u'● Thiếu {0} print set'.format(len(missing)),
+                              u'\n'.join(u'Danh mục {0} chưa có print set cùng tên.'.format(r['schedule']) for r in missing)
+                              + u'\nBấm Print set theo DM để tạo.', ['printsetsync']))
     if off:
         r = off[0]
         short = u'● Print set lệch +{0} −{1}'.format(r['add'], r['remove']) if len(off) == 1 else u'● {0} print set lệch'.format(len(off))
         tip = u'\n'.join(u'{0}: +{1} sheet, −{2} sheet so với danh mục'.format(x['schedule'], x['add'], x['remove']) for x in off)
         out[u'In ấn'].append(('work', short, tip + u'\nBấm Print set theo DM để đồng bộ.', ['printsetsync']))
-    elif any(r['setExists'] for r in sets):
+    elif any(r['setExists'] for r in sets) and not missing:
         out[u'In ấn'].append(('done', u'✓ Print set khớp DM', u'Mọi print set mang tên danh mục đều khớp.', []))
     rows = _official(b)
     bad = [r for r in rows if not r.get('inSync') and not r.get('error')]
