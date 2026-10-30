@@ -36,6 +36,7 @@ WEBAPP_PORT = 8780
 PORTS = range(48990, 49010)
 SLOT = 'ClaudeUsingRevit.WebBridge'      # AppDomain slot: the live server survives pyRevit reloads
 MAX_BODY = 8 * 1024 * 1024
+BRIDGE = None                            # this window's job queue (lib/island.py submits to it too)
 
 
 class _Job(object):
@@ -212,7 +213,7 @@ class Bridge(object):
             out = {'pid': Process.GetCurrentProcess().Id, 'queue': len(self.queue),
                    'running': None}
             if cur is not None:
-                out['running'] = {'kind': cur.kind, 'name': cur.name,
+                out['running'] = {'kind': cur.kind, 'name': cur.data.get('label') or cur.name,
                                   'seconds': int(time.time() - (cur.started or time.time()))}
         return out
 
@@ -317,7 +318,8 @@ def start(uiapp):
             pass
         AppDomain.CurrentDomain.SetData(SLOT, None)
     key = '%032x' % random.SystemRandom().getrandbits(128)
-    bridge = Bridge()
+    global BRIDGE
+    bridge = BRIDGE = Bridge()
     server = None
     for port in ([prefer] if prefer else []) + [p for p in PORTS if p != prefer]:
         try:

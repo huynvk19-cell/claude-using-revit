@@ -225,6 +225,10 @@ function renderTiles() {
   pill.classList.toggle("hidden", !work);
   document.title = (work ? `(${work}) ` : "") + "claude using revit";
   if (S.open) refreshWindowState();
+  // /#export etc. (from the island in Revit): open that tool once
+  const want = location.hash.slice(1);
+  const t = want && TOOLS.find(x => x.key === want);
+  if (t && S.board) { history.replaceState(null, "", "/"); openTool(t); }
 }
 
 function openTool(t) {
