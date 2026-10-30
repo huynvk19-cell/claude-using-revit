@@ -61,14 +61,15 @@ if ($WebApp) {
     Get-CimInstance Win32_Process -Filter "Name = 'node.exe'" |
         Where-Object { $_.CommandLine -like '*claude-using-revit\webapp\server.mjs*' } |
         ForEach-Object { Stop-Process -Id $_.ProcessId -Force; "web app: stopped old server (PID $($_.ProcessId))" }
-    $island = @(Get-CimInstance Win32_Process -Filter "Name = 'powershell.exe'" | Where-Object { $_.CommandLine -like '*claude-using-revit\webapp\desktop\island.ps1*' })
-    $island | ForEach-Object { Stop-Process -Id $_.ProcessId -Force; "island: stopped (PID $($_.ProcessId)), restarted below" }
-    if ($island) { Start-Sleep -Milliseconds 800 }     # its WebView2 dlls are released
+    $app = @(Get-CimInstance Win32_Process -Filter "Name = 'powershell.exe'" |
+        Where-Object { $_.CommandLine -like '*claude-using-revit\webapp\desktop\*.ps1*' })
+    $app | ForEach-Object { Stop-Process -Id $_.ProcessId -Force; "app: closed (PID $($_.ProcessId)), reopened below" }
+    if ($app) { Start-Sleep -Milliseconds 800 }        # its WebView2 dlls are released
     if (Test-Path $wa) { Remove-Item $wa -Recurse -Force }
     Copy-Item (Join-Path $root 'webapp') -Destination $wa -Recurse -Force
     Get-ChildItem (Join-Path $root 'revit-commands\*.cs') | ForEach-Object { $_.BaseName } |
         Set-Content (Join-Path $wa 'revit-commands.txt') -Encoding ascii
-    # desktop island (webapp\desktop\island.ps1): the WebView2 SDK dlls come from a local install, not this repo
+    # desktop app (webapp\desktop\app.ps1): the WebView2 SDK dlls come from a local install, not this repo
     $sdk = Get-ChildItem 'C:\Program Files\Autodesk', 'C:\Program Files (x86)\Microsoft', "$env:LOCALAPPDATA\Programs" -Recurse -Depth 6 `
         -Filter 'Microsoft.Web.WebView2.WinForms.dll' -ErrorAction SilentlyContinue | Sort-Object { [version]$_.VersionInfo.FileVersion } -Descending |
         Where-Object { Test-Path (Join-Path $_.DirectoryName 'Microsoft.Web.WebView2.Core.dll') } | Select-Object -First 1
@@ -81,20 +82,31 @@ if ($WebApp) {
         New-Item -ItemType Directory -Force $dl | Out-Null
         foreach ($f in 'Microsoft.Web.WebView2.Core.dll', 'Microsoft.Web.WebView2.WinForms.dll') { Copy-Item (Join-Path $sdk.DirectoryName $f) $dl -Force }
         Copy-Item $loader $dl -Force
-        $lnk = Join-Path ([Environment]::GetFolderPath('Programs')) 'Revit Island.lnk'
+        $programs = [Environment]::GetFolderPath('Programs')
+        Remove-Item (Join-Path $programs 'Revit Island.lnk') -ErrorAction SilentlyContinue    # the earlier pill version
+        $lnk = Join-Path $programs 'claude using revit.lnk'
         $sh = (New-Object -ComObject WScript.Shell).CreateShortcut($lnk)
         $sh.TargetPath = "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe"
-        $sh.Arguments = "-STA -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$wa\desktop\island.ps1`""
+        $sh.Arguments = "-STA -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$wa\desktop\app.ps1`""
         $sh.WorkingDirectory = "$wa\desktop"
+        $png = Get-ChildItem (Join-Path $root 'pyrevit') -Recurse -Filter icon.png | Where-Object { $_.FullName -like '*Print Set Sync*' } | Select-Object -First 1
+        if ($png) {      # shortcut icon = the ribbon icon, saved as .ico
+            Add-Type -AssemblyName System.Drawing
+            $ico = Join-Path $wa 'desktop\app.ico'
+            $fs = [IO.File]::Create($ico)
+            [Drawing.Icon]::FromHandle((New-Object Drawing.Bitmap $png.FullName).GetHicon()).Save($fs)
+            $fs.Close()
+            $sh.IconLocation = $ico
+        }
         $sh.Save()
-        "island -> $lnk (WebView2 SDK from $($sdk.DirectoryName))"
+        "app -> $lnk (WebView2 SDK from $($sdk.DirectoryName))"
     }
-    else { "island: WebView2 SDK dlls not found on this PC; the desktop island is not installed" }
+    else { "app: WebView2 SDK dlls not found on this PC; the desktop app is not installed" }
     $node = (Get-Command node -ErrorAction SilentlyContinue).Source
     if ($node) {
         Start-Process $node -ArgumentList "`"$wa\server.mjs`"" -WorkingDirectory $wa -WindowStyle Hidden
         "web app -> $wa (started; address + access code: $env:APPDATA\claude-using-revit\webapp.json)"
     }
     else { "web app -> $wa (node not found; Revit starts it once node is installed)" }
-    if ($island) { Start-Process "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -ArgumentList "-STA -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$wa\desktop\island.ps1`"" -WindowStyle Hidden }
+    if ($app) { Start-Process "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -ArgumentList "-STA -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$wa\desktop\app.ps1`"" -WindowStyle Hidden }
 }

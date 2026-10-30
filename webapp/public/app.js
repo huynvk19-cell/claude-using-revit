@@ -93,29 +93,8 @@ function setBusy(label) {
   S.busy = label;
   $("#busy").className = label ? "busy" : "busy hidden";
   $("#busy").textContent = label || "";
-  renderPill();
 }
 
-// ---- desktop island: a pill-high window shows only one line -------------------------------------
-const islandMq = window.matchMedia("(max-height: 100px)");
-function renderPill() {
-  document.body.classList.toggle("island", islandMq.matches);
-  const bar = $("#pill"), doc = S.info && S.info.doc ? S.info.doc.title : "";
-  const work = S.work || 0;
-  let cls = "", main, sub = doc;
-  if (S.busy) { cls = "busy"; main = S.busy; }
-  else if (!S.windows.length) { main = "Revit chưa mở"; sub = ""; }
-  else if (!doc) { main = "Chưa mở model"; sub = ""; }
-  else if (!S.board || S.board.error) { main = doc; sub = ""; }
-  else if (work) { cls = "work"; main = work === 1 ? "1 việc còn" : `${work} việc còn`; }
-  else { cls = "done"; main = "Đã xong"; }
-  S.pill = { cls, main, sub };
-  bar.className = "pill-bar " + cls;
-  $("#pill-main").textContent = main;
-  $("#pill-sub").textContent = sub;
-}
-islandMq.addEventListener("change", renderPill);
-window.pillState = () => S.pill || null;     // read by the desktop island to draw its pill
 
 function confirmRun(what) {
   const doc = S.info && S.info.doc ? S.info.doc.title : "?";
@@ -163,7 +142,6 @@ async function refreshInfo(rebuild) {
       $("#notice").classList.add("hidden");
       $("#o-model").textContent = info.doc ? info.doc.title : "Chưa mở model";
       $("#o-view").textContent = info.view ? info.view.name : "";
-      renderPill();
       for (const el of document.querySelectorAll("[data-sel]")) el.textContent = String(info.selection.length);
       if (rebuild || docChanged) { closeTool(); S.board = null; renderTiles(); loadBoard(); }
       else if (viewChanged) loadBoard();
@@ -245,8 +223,6 @@ function renderTiles() {
       h("h3", {}, t.title), h("div", { class: "state" }, st.text),
       st.level === "work" ? h("span", { class: "count" }, st.count > 99 ? "99+" : String(st.count)) : null);
   }));
-  S.work = work;
-  renderPill();
   const pill = $("#o-todo");
   pill.textContent = work === 1 ? "1 việc" : `${work} việc`;
   pill.classList.toggle("hidden", !work);
@@ -632,7 +608,6 @@ for (const b of document.querySelectorAll("#nav button")) b.addEventListener("cl
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") refreshInfo(false); });
 
 async function boot() {
-  renderPill();
   try {
     await loadWindows();
     await refreshInfo(true);
