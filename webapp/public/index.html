@@ -4,78 +4,69 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Revit">
-  <meta name="theme-color" content="#000000">
+  <meta name="theme-color" content="#03040a">
   <title>claude using revit</title>
   <link rel="icon" href="/icon/Print Set Sync.png">
   <link rel="apple-touch-icon" href="/icon/Print Set Sync.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;500&family=Be+Vietnam+Pro:wght@300;400;600&family=JetBrains+Mono:wght@400;600&display=swap">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="vignette" aria-hidden="true"></div>
-  <div class="sheet-frame">
-    <header class="titleblock">
-      <div class="tb-cell tb-brand"><b>CLAUDE USING REVIT</b><span class="tb-no">LIDAR · WEB</span></div>
-      <div class="tb-cell tb-wide"><span class="tb-label">Model</span><b id="tb-model">—</b></div>
-      <div class="tb-cell"><span class="tb-label">View</span><b id="tb-view">—</b></div>
-      <div class="tb-cell tb-narrow"><span class="tb-label">Đang chọn</span><b id="tb-sel">0</b></div>
-      <div class="tb-cell tb-narrow"><span class="tb-label">Người dùng</span><b id="tb-user">—</b></div>
-      <div class="tb-cell tb-narrow"><span class="tb-label">Ngày</span><b id="tb-date">—</b></div>
-      <div class="tb-cell tb-windows"><span class="tb-label">Cửa sổ Revit</span><div id="windows" class="windows"></div></div>
-      <div class="tb-cell tb-core"><div id="core" class="core"><b id="core-n">–</b><small>việc còn</small></div></div>
-      <div class="tb-cell tb-actions">
-        <span id="busy" class="busy hidden"></span>
-        <button class="btn" id="btn-access" title="Mở trên thiết bị khác">iPad / LAN</button>
-      </div>
-    </header>
+  <canvas id="space" aria-hidden="true"></canvas>
 
-    <div id="context" class="notice hidden"></div>
+  <!-- top ornament: the Revit window, its model and view -->
+  <header class="ornament top">
+    <div id="where" class="where"><span class="dot"></span><b id="o-model">Đang kết nối…</b><span id="o-view" class="dim"></span></div>
+    <span id="o-todo" class="todo-pill hidden"></span>
+    <span id="busy" class="busy hidden"></span>
+    <button class="icon-btn" id="btn-board" title="Kiểm tra lại"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5"/></svg></button>
+    <button class="icon-btn" id="btn-access" title="Mở trên iPad / máy khác"><svg viewBox="0 0 24 24"><rect x="5" y="2.5" width="14" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg></button>
+  </header>
 
-    <div class="sheet-bar">
-      <nav class="tabs" id="nav">
-        <button data-view="tools" class="on"><i>01</i>Công cụ</button>
-        <button data-view="all"><i>02</i>Tất cả lệnh</button>
-        <button data-view="jobs"><i>03</i>Nhật ký</button>
-      </nav>
-      <div class="legend" id="legend">
-        <span class="lg lg-todo"><i></i>Màu = còn việc</span>
-        <span class="lg lg-done"><i></i>Đơn sắc = đã xong</span>
-        <span class="lg lg-idle"><i></i>Mờ = chạy khi bấm</span>
-        <button class="btn small" id="btn-mode" title="Mặt bàn 3D / lưới phẳng">Phẳng</button>
-        <button class="btn small" id="btn-board" title="Kiểm tra lại trạng thái">Quét lại</button>
+  <!-- side ornament: the three places -->
+  <nav class="ornament side" id="nav">
+    <button data-view="tools" class="on" title="Công cụ"><svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></svg><span>Công cụ</span></button>
+    <button data-view="all" title="Tất cả lệnh"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg><span>Lệnh</span></button>
+    <button data-view="jobs" title="Nhật ký"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span>Nhật ký</span></button>
+  </nav>
+
+  <main>
+    <div id="windows" class="window-picker hidden"></div>
+    <div id="notice" class="notice hidden"></div>
+    <div id="view-tools" class="tiles"></div>
+    <div id="view-all" class="all hidden">
+      <div class="glass list-pane">
+        <input id="search" type="search" placeholder="Tìm lệnh" autocomplete="off">
+        <div id="filters" class="seg"></div>
+        <div id="cmd-list" class="cmd-list"></div>
       </div>
+      <div class="glass detail-pane" id="cmd-detail"><p class="dim">Chọn một lệnh.</p></div>
     </div>
+    <div id="view-jobs" class="glass jobs hidden"></div>
+  </main>
 
-    <main>
-      <div id="view-tools" class="grid"></div>
-      <div id="view-all" class="all hidden">
-        <div class="panel list-pane">
-          <input id="search" type="search" placeholder="Tìm lệnh…" autocomplete="off">
-          <div id="filters" class="chips"></div>
-          <div id="cmd-list" class="cmd-list"></div>
-        </div>
-        <div class="panel detail-pane" id="cmd-detail"><p class="muted">Chọn một lệnh bên trái.</p></div>
-      </div>
-      <div id="view-jobs" class="panel jobs hidden"></div>
-    </main>
+  <!-- a tool opened as its own window -->
+  <div id="stage" class="stage hidden">
+    <div class="win-wrap">
+      <section id="win" class="glass window"></section>
+      <div class="window-bar"><button class="close" id="win-close" title="Đóng"><svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></svg></button><span class="grabber"></span></div>
+    </div>
   </div>
 
-  <div id="focus-layer" class="focus-layer hidden"></div>
-  <div id="modal" class="modal hidden"><div class="panel sheet" id="modal-body"></div></div>
+  <div id="modal" class="stage hidden"><div class="glass sheet" id="modal-body"></div></div>
   <div id="toasts" class="toasts"></div>
 
-  <div id="login" class="modal hidden">
-    <form class="panel sheet login" id="login-form">
+  <div id="login" class="stage hidden">
+    <form class="glass sheet login" id="login-form">
       <h2>Mã truy cập</h2>
-      <p class="muted">Mã nằm trong %APPDATA%\claude-using-revit\webapp.json (khoá "token"), hoặc mở link có <code>?k=</code> từ máy tính.</p>
+      <p class="dim">Mã nằm trong %APPDATA%\claude-using-revit\webapp.json (khoá "token").</p>
       <input id="login-code" autocomplete="one-time-code" placeholder="mã" required>
-      <button class="btn primary" type="submit">Vào</button>
+      <button class="pill primary" type="submit">Vào</button>
     </form>
   </div>
 
+  <script src="space.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
