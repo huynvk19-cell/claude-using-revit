@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 # On pyRevit load/reload: keep %APPDATA%\claude-using-revit\open-docs\<pid>.json current (lib/open_docs.py),
-# (re)start this window's web bridge and start the web app server if it is not running (lib/web_bridge.py),
-# and keep the status of each tool on the ribbon tab (lib/ribbon_status.py; errors in
-# %APPDATA%\claude-using-revit\ribbon_status.log).
+# (re)start this window's web bridge and start the web app server if it is not running (lib/web_bridge.py).
 import os
 import sys
 
@@ -17,13 +15,14 @@ for _n, _m in list(sys.modules.items()):
 
 from pyrevit import HOST_APP
 from System import AppDomain
-_island = AppDomain.CurrentDomain.GetData('ClaudeUsingRevit.Island')    # the removed island window, if still open
-if _island is not None:
-    try:
-        _island.close()
-    except Exception:
-        pass
-    AppDomain.CurrentDomain.SetData('ClaudeUsingRevit.Island', None)
+for _slot, _end in (('ClaudeUsingRevit.Island', 'close'), ('ClaudeUsingRevit.RibbonStatus', 'stop')):
+    _old = AppDomain.CurrentDomain.GetData(_slot)       # removed features (island, ribbon status) still running
+    if _old is not None:
+        try:
+            getattr(_old, _end)()
+        except Exception:
+            pass
+        AppDomain.CurrentDomain.SetData(_slot, None)
 import open_docs
 try:
     open_docs.write_state(HOST_APP.uiapp)
@@ -37,11 +36,3 @@ try:
 except Exception as ex:
     from pyrevit.coreutils.logger import get_logger
     get_logger('claude using revit').warning('web bridge not started: %s', ex)
-try:
-    import ribbon_status
-    reload(ribbon_status)   # noqa: F821
-    ribbon_status.start(HOST_APP.uiapp)
-except Exception:
-    import traceback
-    with open(os.path.join(os.environ.get('APPDATA', ''), 'claude-using-revit', 'ribbon_status.log'), 'a') as f:
-        f.write(traceback.format_exc() + '\n')
