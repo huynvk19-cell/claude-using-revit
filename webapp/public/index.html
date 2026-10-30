@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Revit">
+  <meta name="theme-color" content="#e9eef7">
+  <title>claude using revit</title>
+  <link rel="icon" href="/icon/Print Set Sync.png">
+  <link rel="apple-touch-icon" href="/icon/Print Set Sync.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="wallpaper" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+
+  <header class="glass bar">
+    <div class="brand"><span class="plate">R</span><div><b>claude using revit</b><small id="subtitle">web</small></div></div>
+    <div id="windows" class="windows"></div>
+    <div class="bar-right">
+      <span id="busy" class="pill hidden"></span>
+      <button class="ghost" id="btn-access" title="Mở trên thiết bị khác">iPad / LAN</button>
+    </div>
+  </header>
+
+  <section id="context" class="glass context"></section>
+
+  <nav class="glass seg" id="nav">
+    <button data-view="tools" class="on">Công cụ</button>
+    <button data-view="all">Tất cả lệnh</button>
+    <button data-view="jobs">Nhật ký</button>
+  </nav>
+
+  <main>
+    <div id="view-tools" class="grid"></div>
+    <div id="view-all" class="all hidden">
+      <div class="glass list-pane">
+        <input id="search" type="search" placeholder="Tìm lệnh…" autocomplete="off">
+        <div id="filters" class="chips"></div>
+        <div id="cmd-list" class="cmd-list"></div>
+      </div>
+      <div class="glass detail-pane" id="cmd-detail"><p class="muted">Chọn một lệnh bên trái.</p></div>
+    </div>
+    <div id="view-jobs" class="glass jobs hidden"></div>
+  </main>
+
+  <div id="modal" class="modal hidden"><div class="glass sheet" id="modal-body"></div></div>
+  <div id="toasts" class="toasts"></div>
+
+  <div id="login" class="modal hidden">
+    <form class="glass sheet login" id="login-form">
+      <h2>Mã truy cập</h2>
+      <p class="muted">Mã nằm trong %APPDATA%\claude-using-revit\webapp.json (khoá "token"), hoặc mở link có <code>?k=</code> từ máy tính.</p>
+      <input id="login-code" autocomplete="one-time-code" placeholder="mã" required>
+      <button class="primary" type="submit">Vào</button>
+    </form>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

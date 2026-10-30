@@ -5,7 +5,9 @@
 #   -DwgBindXref         : also install the DWG bind-xref tool + its Explorer right-click menu (HKCU, no admin)
 #   -PyRevit             : also install the pyRevit extension (ribbon tab "claude using revit") to
 #                          %APPDATA%\pyRevit\Extensions; then pyRevit > Reload in Revit
-param([string]$CommandsDir = $env:REVIT_MCP_COMMANDS, [switch]$WorkStatus, [switch]$DwgBindXref, [switch]$PyRevit)
+#   -WebApp              : also install the web app (webapp\: every tool from a browser, iPad on the LAN) to
+#                          %APPDATA%\claude-using-revit\webapp and (re)start its server; Revit side = the pyRevit extension
+param([string]$CommandsDir = $env:REVIT_MCP_COMMANDS, [switch]$WorkStatus, [switch]$DwgBindXref, [switch]$PyRevit, [switch]$WebApp)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $claude = Join-Path $env:USERPROFILE '.claude'
@@ -50,4 +52,21 @@ if ($PyRevit) {
         Copy-Item $_.FullName -Destination $ext -Recurse -Force
         "pyrevit -> $dst"
     }
+}
+if ($WebApp) {
+    # web app server (webapp\server.mjs); the pyRevit startup starts it with Revit, here it is restarted on the new copy
+    $wa = Join-Path $env:APPDATA 'claude-using-revit\webapp'
+    Get-CimInstance Win32_Process -Filter "Name = 'node.exe'" |
+        Where-Object { $_.CommandLine -like '*claude-using-revit\webapp\server.mjs*' } |
+        ForEach-Object { Stop-Process -Id $_.ProcessId -Force; "web app: stopped old server (PID $($_.ProcessId))" }
+    if (Test-Path $wa) { Remove-Item $wa -Recurse -Force }
+    Copy-Item (Join-Path $root 'webapp') -Destination $wa -Recurse -Force
+    Get-ChildItem (Join-Path $root 'revit-commands\*.cs') | ForEach-Object { $_.BaseName } |
+        Set-Content (Join-Path $wa 'revit-commands.txt') -Encoding ascii
+    $node = (Get-Command node -ErrorAction SilentlyContinue).Source
+    if ($node) {
+        Start-Process $node -ArgumentList "`"$wa\server.mjs`"" -WorkingDirectory $wa -WindowStyle Hidden
+        "web app -> $wa (started; address + access code: $env:APPDATA\claude-using-revit\webapp.json)"
+    }
+    else { "web app -> $wa (node not found; Revit starts it once node is installed)" }
 }

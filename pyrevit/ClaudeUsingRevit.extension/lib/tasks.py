@@ -312,6 +312,8 @@ def sheet_list_fill(doc, uidoc, args):
     params = slc.fillable(doc, sheets)
     by_name = dict((n, pid) for pid, n in params)
     name = args.get("param")
+    if not name:
+        return {"sheets": len(sheets), "params": [n for _, n in params]}
     if name not in by_name:
         raise TaskError(u"param must be one of: " + u", ".join(n for _, n in params))
     pid = by_name[name]
@@ -430,6 +432,45 @@ def view_3d_from_view(doc, uidoc, args):
         v3d.show(uidoc, view3d)
         info["opened"] = True
     return info
+
+
+# ---- data for the web app screens (no windows) --------------------------------------
+
+@task(u"(RO) Sheets a sheet-list schedule shows, in its row order (id, number, name, selected), "
+      u"the PDF folder used last and the groupBy choices. args: schedule.")
+def schedule_sheets(doc, uidoc, args):
+    vs = _schedules(doc, uidoc, args)[0]
+    sheets, total = pe.sheets_of(doc, vs)
+    sel = set(i.IntegerValue for i in uidoc.Selection.GetElementIds())
+    group = [u"browser"] if pe.browser_levels(doc) else []
+    group += [l for l, spec, _ in pe.group_options(doc, sheets) if spec and "param" in spec]
+    return {"schedule": vs.Name, "total": total, "pdfFolder": pe.default_folder(),
+            "groupBy": group[:13],
+            "sheets": [{"id": s.Id.IntegerValue, "number": s.SheetNumber, "name": s.Name,
+                        "selected": s.Id.IntegerValue in sel} for s in sheets]}
+
+
+@task(u"Open a view and select elements in it; nothing in the model changes. "
+      u"args: view (id), ids.")
+def show_elements(doc, uidoc, args):
+    from System.Collections.Generic import List
+    view = doc.GetElement(ElementId(int(args["view"]))) if args.get("view") else None
+    if args.get("view") and not isinstance(view, View):
+        raise TaskError(u"view not found: {0}".format(args["view"]))
+    if view is not None:
+        try:
+            uidoc.ActiveView = view
+        except Exception:
+            uidoc.RequestViewChange(view)     # opens once Revit is idle again
+    ids = [ElementId(int(i)) for i in (args.get("ids") or [])]
+    ids = List[ElementId]([i for i in ids if doc.GetElement(i) is not None])
+    uidoc.Selection.SetElementIds(ids)
+    if ids.Count:
+        try:
+            uidoc.ShowElements(ids)
+        except Exception:
+            pass
+    return {"view": (view or doc.ActiveView).Name, "selected": ids.Count}
 
 
 @task(u"(RO) This list: every task with its args.")
