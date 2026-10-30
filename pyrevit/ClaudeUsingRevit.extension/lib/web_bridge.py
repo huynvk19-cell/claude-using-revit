@@ -136,9 +136,12 @@ def _tasks():
     newest = max(os.path.getmtime(os.path.join(lib, f)) for f in os.listdir(lib) if f.endswith('.py'))
     if _lib['mtime'] and newest > _lib['mtime']:
         for name, mod in list(sys.modules.items()):
-            f = getattr(mod, '__file__', None) if mod is not None else None
-            if f and name != 'web_bridge' and os.path.dirname(os.path.abspath(f)) == lib:
-                del sys.modules[name]
+            try:
+                f = getattr(mod, '__file__', None) if mod is not None else None
+                if f and name != 'web_bridge' and os.path.dirname(os.path.abspath(f)) == lib:
+                    del sys.modules[name]
+            except Exception:      # odd __file__ values of built-in / assembly modules
+                continue
     _lib['mtime'] = newest
     import tasks
     return tasks
