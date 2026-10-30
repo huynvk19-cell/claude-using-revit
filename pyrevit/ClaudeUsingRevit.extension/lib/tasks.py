@@ -450,6 +450,34 @@ def schedule_sheets(doc, uidoc, args):
                         "selected": s.Id.IntegerValue in sel} for s in sheets]}
 
 
+@task(u"(RO) What each tool has left to do in this model: print sets vs their sheet lists, "
+      u"standard columns, untagged in the active view, your highlight / untagged marks. args: none.")
+def status_board(doc, uidoc, args):
+    user = doc.Application.Username
+    psets = ps.print_sets(doc)
+    sets, cols = [], []
+    for vs in ps.sheet_schedules(doc):
+        c = ps.compare(doc, vs, psets)
+        sets.append({"schedule": vs.Name, "sheets": len(c["sheets"]), "setExists": c["set"] is not None,
+                     "inSync": c["in_sync"], "add": len(c["added"]), "remove": len(c["removed"])})
+        try:
+            p = slc.plan(doc, vs)
+            cols.append({"schedule": vs.Name, "inSync": p["in_sync"],
+                         "addColumns": len(p["add_visible"]) + len(p["add_hidden"]),
+                         "numbersToWrite": len(p["numbers"])})
+        except Exception as ex:
+            cols.append({"schedule": vs.Name, "error": u"{0}".format(ex)})
+    out = {"printSets": sets, "columns": cols,
+           "highlights": len(hr.find_marked(doc, user=user)),
+           "untaggedMarks": len(um.find_marked(doc, None, user)), "untagged": None}
+    v = doc.ActiveView
+    if v is not None and um.is_checkable(v):
+        found = um.scan(doc, [v], list(um.KINDS))[v.Id.IntegerValue]
+        out["untagged"] = {"view": v.Name, "id": v.Id.IntegerValue,
+                           "counts": dict((k, len(found[k])) for k in um.KINDS)}
+    return out
+
+
 @task(u"Open a view and select elements in it; nothing in the model changes. "
       u"args: view (id), ids.")
 def show_elements(doc, uidoc, args):
