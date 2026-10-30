@@ -451,31 +451,57 @@ def schedule_sheets(doc, uidoc, args):
 
 
 @task(u"(RO) What each tool has left to do in this model: print sets vs their sheet lists, "
-      u"standard columns, untagged in the active view, your highlight / untagged marks. args: none.")
+      u"standard columns, untagged in the active view, your highlight / untagged marks. args: parts "
+      u"(lists, marks, untagged; default all).")
 def status_board(doc, uidoc, args):
+    import time
+    parts = set(_names(args, "part", "parts") or ["lists", "marks", "untagged"])
     user = doc.Application.Username
-    psets = ps.print_sets(doc)
-    sets, cols = [], []
-    for vs in ps.sheet_schedules(doc):
-        c = ps.compare(doc, vs, psets)
-        sets.append({"schedule": vs.Name, "sheets": len(c["sheets"]), "setExists": c["set"] is not None,
-                     "inSync": c["in_sync"], "add": len(c["added"]), "remove": len(c["removed"])})
-        try:
-            p = slc.plan(doc, vs)
-            cols.append({"schedule": vs.Name, "inSync": p["in_sync"],
-                         "addColumns": len(p["add_visible"]) + len(p["add_hidden"]),
-                         "numbersToWrite": len(p["numbers"])})
-        except Exception as ex:
-            cols.append({"schedule": vs.Name, "error": u"{0}".format(ex)})
-    out = {"printSets": sets, "columns": cols,
-           "highlights": len(hr.find_marked(doc, user=user)),
-           "untaggedMarks": len(um.find_marked(doc, None, user)), "untagged": None}
-    v = doc.ActiveView
-    if v is not None and um.is_checkable(v):
-        found = um.scan(doc, [v], list(um.KINDS))[v.Id.IntegerValue]
-        out["untagged"] = {"view": v.Name, "id": v.Id.IntegerValue,
-                           "counts": dict((k, len(found[k])) for k in um.KINDS)}
+    out, ms = {}, {}
+    t = time.time()
+    if "lists" in parts:
+        psets = ps.print_sets(doc)
+        sets, cols = [], []
+        for vs in ps.sheet_schedules(doc):
+            c = ps.compare(doc, vs, psets)
+            sets.append({"schedule": vs.Name, "sheets": len(c["sheets"]), "setExists": c["set"] is not None,
+                         "inSync": c["in_sync"], "add": len(c["added"]), "remove": len(c["removed"])})
+            try:
+                p = slc.plan(doc, vs)
+                cols.append({"schedule": vs.Name, "inSync": p["in_sync"],
+                             "addColumns": len(p["add_visible"]) + len(p["add_hidden"]),
+                             "numbersToWrite": len(p["numbers"])})
+            except Exception as ex:
+                cols.append({"schedule": vs.Name, "error": u"{0}".format(ex)})
+        out.update({"printSets": sets, "columns": cols})
+        ms["lists"], t = int((time.time() - t) * 1000), time.time()
+    if "marks" in parts:
+        out.update({"highlights": len(hr.find_marked(doc, user=user)),
+                    "untaggedMarks": len(um.find_marked(doc, None, user))})
+        ms["marks"], t = int((time.time() - t) * 1000), time.time()
+    if "untagged" in parts:
+        out["untagged"] = None
+        v = doc.ActiveView
+        if v is not None and um.is_checkable(v):
+            found = um.scan(doc, [v], list(um.KINDS))[v.Id.IntegerValue]
+            out["untagged"] = {"view": v.Name, "id": v.Id.IntegerValue,
+                               "counts": dict((k, len(found[k])) for k in um.KINDS)}
+        ms["untagged"] = int((time.time() - t) * 1000)
+    out["ms"] = ms
     return out
+
+
+@task(u"(RO) Check now and repaint the status on the ribbon tab 'claude using revit' (tab dot, "
+      u"panel lines, button dots); returns what it shows. args: board (paint this board instead; preview).")
+def ribbon_status_now(doc, uidoc, args):
+    import ribbon_status as rs
+    from System import AppDomain
+    board = args.get("board") or status_board(doc, uidoc, {})
+    rs.paint(board)
+    tab = rs._tab()
+    return {"watching": AppDomain.CurrentDomain.GetData(rs.SLOT) is not None, "tab": tab is not None,
+            "tabs": [t.Title for t in rs.aw.ComponentManager.Ribbon.Tabs][:40] if tab is None else None,
+            "panels": dict((k, [l[1] for l in v]) for k, v in rs.lines_for(board).items()), "ms": board.get("ms")}
 
 
 @task(u"Open a view and select elements in it; nothing in the model changes. "
