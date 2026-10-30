@@ -289,12 +289,23 @@ win = SheetPicker(vs, sheets, [i.IntegerValue for i in uidoc.Selection.GetElemen
 win.ShowDialog()
 if not win.result:
     script.exit()
+incomplete = False
+closed = pe.closed_worksets(doc)
+if closed:
+    # views would print without the elements of these worksets
+    if lg.alert(u"Model đang đóng {0} workset, các view sẽ in THIẾU phần tử của chúng:\n  {1}\n\n"
+                u"Mở các workset này (Collaborate › Worksets) rồi xuất lại. Chỉ xuất tiếp nếu "
+                u"cố ý đóng.".format(len(closed), u"\n  ".join(closed)),
+                title=u"Xuất PDF", icon=lg.ICON_PDF,
+                options=[u"Dừng", u"Vẫn xuất (cố ý đóng)"]) != u"Vẫn xuất (cố ý đóng)":
+        script.exit()
+    incomplete = True
 with lg.Progress(u"Xuất PDF", cancellable=True) as pb:
     def progress(i, n, text):
         pb.title = u"Xuất PDF {0}/{1} · {2}".format(i + 1, n, text)
         pb.update_progress(i, n)
     res = pe.run(doc, win.result, win.folder, win.group, progress=progress,
-                 cancelled=lambda: pb.cancelled)
+                 cancelled=lambda: pb.cancelled, allow_incomplete=incomplete)
 
 lines = []
 lines.append(u"Đã xuất {0}/{1} file PDF{2} vào {3}{4}.".format(
@@ -306,7 +317,7 @@ if res["split"]:
     lines.append(u"Sheet nặng xuất từng phần rồi ghép: " +
                  u", ".join(u"{0} ({1} phần)".format(sh.SheetNumber, n) for sh, n in res["split"]))
 for t in res["learnt"]:
-    lines.append(u"Lần trước Revit văng: " + t)
+    lines.append(u"Tự tách nhỏ: " + t)
 if res["tiled"]:
     lines.append(u"View từng làm Revit văng, đã xuất từng ô vùng crop rồi ghép (đủ view, vector):")
     lines += [u"  {0}: {1}".format(sh.SheetNumber, u", ".join(

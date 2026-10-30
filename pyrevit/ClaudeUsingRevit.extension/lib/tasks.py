@@ -203,7 +203,8 @@ def print_set_sync(doc, uidoc, args):
 
 @task(u"Sheets of a sheet-list schedule to PDF: paper from title block, 100%, centred, "
       u"heavy sheets in parts, one PDF per sheet (never joined). args: schedule, sheets, folder, "
-      u"groupBy (browser | sheet param name: sub-folders), dryRun, limit, forget (crash memory).")
+      u"groupBy (browser | sheet param name: sub-folders), dryRun, limit, forget (crash memory), "
+      u"allowIncomplete (export with closed worksets / unloaded links on purpose).")
 def pdf_export(doc, uidoc, args):
     # Blocks Revit until done (minutes on a big set). A run cut short (RAM, crash)
     # carries on where it stopped when called again with the same sheets the same day.
@@ -231,10 +232,15 @@ def pdf_export(doc, uidoc, args):
                 "split": _cut([u"{0}: {1} parts {2}".format(r["sheet"].SheetNumber, r["parts"],
                                                              r["note"]) for r in heavy], args),
                 "crashMemory": pe.crash_memory(doc),
+                "closedWorksets": pe.closed_worksets(doc),
+                "unloadedLinks": _cut([u"{0}: {1}".format(r["sheet"].SheetNumber, u", ".join(l))
+                                       for r, l in ((r, pe.unloaded_links(doc, r["sheet"]))
+                                                    for r in rows) if l], args),
                 "groupBy": [l for l, spec, _ in pe.group_options(doc, sheets) if spec][:12]}
     folder = args.get("folder") or pe.default_folder()
     group = _pdf_group(doc, sheets, args.get("groupBy"))
-    r = pe.run(doc, sheets, folder, group, limit=limit)
+    r = pe.run(doc, sheets, folder, group, limit=limit,
+               allow_incomplete=bool(args.get("allowIncomplete")))
     return {"folder": r["folder"], "subfolders": _cut(r["subfolders"], args),
             "exported": len(r["done"]) - len(r["skipped"]), "resumedSkipped": len(r["skipped"]),
             "total": r["total"], "stopped": r["stopped"], "learnt": r["learnt"],
