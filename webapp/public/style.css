@@ -218,3 +218,16 @@ details[open] summary::before { transform: rotate(90deg); }
   .cmd-list { max-height: 40vh; }
   .toasts { bottom: 90px; }
 }
+
+/* ---- desktop island: the window is a pill (height < 100 px) ---- */
+.pill-bar { display: none; }
+body.island { background: #000; overflow: hidden; }
+body.island > :not(.pill-bar):not(script) { display: none !important; }
+body.island .pill-bar { display: flex; align-items: center; justify-content: center; gap: 10px; height: 100vh; padding: 0 18px;
+  background: #000; color: #fff; font: 600 14px var(--font); white-space: nowrap; cursor: pointer; user-select: none; }
+.pill-bar .pd { width: 9px; height: 9px; border-radius: 50%; background: #8e8e93; flex: 0 0 auto; }
+.pill-bar.work .pd { background: var(--work); box-shadow: 0 0 10px var(--work); }
+.pill-bar.work b { color: var(--work); }
+.pill-bar.done .pd { background: #fff; }
+.pill-bar.busy .pd { width: 12px; height: 12px; background: none; border: 2px solid rgba(255, 255, 255, .25); border-top-color: #fff; animation: spin .8s linear infinite; }
+.pill-bar #pill-sub { font-weight: 400; font-size: 13px; overflow: hidden; text-overflow: ellipsis; min-width: 0; }

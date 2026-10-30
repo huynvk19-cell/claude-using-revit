@@ -65,6 +65,28 @@ if ($WebApp) {
     Copy-Item (Join-Path $root 'webapp') -Destination $wa -Recurse -Force
     Get-ChildItem (Join-Path $root 'revit-commands\*.cs') | ForEach-Object { $_.BaseName } |
         Set-Content (Join-Path $wa 'revit-commands.txt') -Encoding ascii
+    # desktop island (webapp\desktop\island.ps1): the WebView2 SDK dlls come from a local install, not this repo
+    $sdk = Get-ChildItem 'C:\Program Files\Autodesk', 'C:\Program Files (x86)\Microsoft', "$env:LOCALAPPDATA\Programs" -Recurse -Depth 6 `
+        -Filter 'Microsoft.Web.WebView2.WinForms.dll' -ErrorAction SilentlyContinue | Sort-Object { [version]$_.VersionInfo.FileVersion } -Descending |
+        Where-Object { Test-Path (Join-Path $_.DirectoryName 'Microsoft.Web.WebView2.Core.dll') } | Select-Object -First 1
+    # the native loader must be x64 (PE machine 0x8664): runtimes\win-x64\native first
+    $loader = if ($sdk) { @((Join-Path $sdk.DirectoryName 'runtimes\win-x64\native\WebView2Loader.dll'), (Join-Path $sdk.DirectoryName 'WebView2Loader.dll')) |
+        Where-Object { (Test-Path $_) -and ($b = [IO.File]::ReadAllBytes($_)) -and [BitConverter]::ToUInt16($b, [BitConverter]::ToInt32($b, 0x3c) + 4) -eq 0x8664 } |
+        Select-Object -First 1 }
+    if ($sdk -and $loader) {
+        $dl = Join-Path $wa 'desktop\lib'
+        New-Item -ItemType Directory -Force $dl | Out-Null
+        foreach ($f in 'Microsoft.Web.WebView2.Core.dll', 'Microsoft.Web.WebView2.WinForms.dll') { Copy-Item (Join-Path $sdk.DirectoryName $f) $dl -Force }
+        Copy-Item $loader $dl -Force
+        $lnk = Join-Path ([Environment]::GetFolderPath('Programs')) 'Revit Island.lnk'
+        $sh = (New-Object -ComObject WScript.Shell).CreateShortcut($lnk)
+        $sh.TargetPath = "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe"
+        $sh.Arguments = "-STA -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$wa\desktop\island.ps1`""
+        $sh.WorkingDirectory = "$wa\desktop"
+        $sh.Save()
+        "island -> $lnk (WebView2 SDK from $($sdk.DirectoryName))"
+    }
+    else { "island: WebView2 SDK dlls not found on this PC; the desktop island is not installed" }
     $node = (Get-Command node -ErrorAction SilentlyContinue).Source
     if ($node) {
         Start-Process $node -ArgumentList "`"$wa\server.mjs`"" -WorkingDirectory $wa -WindowStyle Hidden
