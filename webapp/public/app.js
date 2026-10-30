@@ -240,7 +240,7 @@ const STATE = {
 function applyStates() {
   const b = S.board;
   let todo = 0;
-  for (const c of document.querySelectorAll("#view-tools .card")) {
+  for (const c of document.querySelectorAll(".card[data-state]")) {
     const fn = STATE[c.dataset.state] || STATE.idle;
     const st = !b ? { level: "idle", note: "Đang kiểm tra…" } : b.error ? { level: "idle", note: "Không kiểm tra được: " + b.error } : fn(b);
     setCardState(c, st);
@@ -267,18 +267,52 @@ const GROUP_NAME = { IN: "In ấn", TAG: "Kiểm tra tag", HL: "Đánh dấu", X
 
 // card(no, group code, icon, title, subtitle, stateKey, ...body)
 function card(no, code, icon, title, sub, stateKey, ...body) {
-  return h("section", { class: "card idle", "data-state": stateKey },
+  const c = h("section", { class: "card idle", "data-state": stateKey },
     h("i", { class: "scan", "aria-hidden": "true" }),
     h("div", { class: "head" },
       h("div", { class: "head-text" },
         h("span", { class: "idx" }, `0${no} · ${GROUP_NAME[code] || code}`),
         h("h3", {}, title), h("div", { class: "sub" }, sub)),
       h("img", { src: "/icon/" + icon + ".png", alt: "" }),
-      h("span", { class: "count" })),
-    h("div", { class: "status idle" }), ...body);
+      h("span", { class: "count" }),
+      h("button", { class: "close", title: "Đóng (Esc)", onclick: e => { e.stopPropagation(); unfocusCard(); } }, "✕")),
+    h("div", { class: "status idle" }), h("div", { class: "body" }, ...body));
+  // 3D board: a tap lifts the slab out of the board, flat and full size, to work in it
+  c.addEventListener("click", () => { if (document.body.classList.contains("mode-3d") && !c.classList.contains("focus")) focusCard(c); });
+  return c;
 }
 
+// ---- 3D board of acrylic slabs / flat grid --------------------------------------------------
+let focused = null, holder = null;
+function focusCard(c) {
+  unfocusCard();
+  holder = h("div", { class: "holder", style: `height:${c.offsetHeight}px` });
+  c.replaceWith(holder);
+  focused = c;
+  c.classList.add("focus");
+  $("#focus-layer").append(c);
+  $("#focus-layer").classList.remove("hidden");
+}
+function unfocusCard() {
+  if (!focused) return;
+  focused.classList.remove("focus");
+  if (holder && holder.isConnected) holder.replaceWith(focused);
+  focused = holder = null;
+  $("#focus-layer").classList.add("hidden");
+}
+function setMode(mode) {
+  unfocusCard();
+  document.body.classList.toggle("mode-3d", mode === "3d");
+  $("#btn-mode").textContent = mode === "3d" ? "Phẳng" : "3D";
+  store.set("mode", mode);
+}
+$("#btn-mode").addEventListener("click", () => setMode(document.body.classList.contains("mode-3d") ? "flat" : "3d"));
+$("#focus-layer").addEventListener("click", e => { if (e.target.id === "focus-layer") unfocusCard(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") unfocusCard(); });
+setMode(store.get("mode", window.innerWidth > 900 ? "3d" : "flat"));
+
 function renderTools() {
+  unfocusCard();
   const g = $("#view-tools");
   S.onBoard = [];
   g.replaceChildren();
