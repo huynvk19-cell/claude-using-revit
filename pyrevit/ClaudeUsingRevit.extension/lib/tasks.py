@@ -519,22 +519,6 @@ def _expected_lists():
     return sorted(set(n for n in out if n))
 
 
-@task(u"(RO) Check now and repaint the status on the ribbon tab 'claude using revit' (tab dot, "
-      u"panel lines, button dots); returns what it shows. args: board (paint this board instead; preview), "
-      u"restart (swap in the installed watcher without pyRevit Reload).")
-def ribbon_status_now(doc, uidoc, args):
-    import ribbon_status as rs
-    from System import AppDomain
-    if args.get("restart"):
-        rs.start(uidoc.Application)
-    board = args.get("board") or status_board(doc, uidoc, {"parts": ["lists", "marks"]})
-    rs.paint(board)
-    tab = rs._tab()
-    return {"watching": AppDomain.CurrentDomain.GetData(rs.SLOT) is not None, "tab": tab is not None,
-            "tabs": [t.Title for t in rs.aw.ComponentManager.Ribbon.Tabs][:40] if tab is None else None,
-            "panels": dict((k, [l[1] for l in v]) for k, v in rs.lines_for(board).items()), "ms": board.get("ms")}
-
-
 @task(u"Open a view and select elements in it; nothing in the model changes. "
       u"args: view (id), ids.")
 def show_elements(doc, uidoc, args):
