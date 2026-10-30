@@ -12,7 +12,6 @@
       "region": { "type": "string", "description": "open cloud: region, default US" },
       "projectGuid": { "type": "string", "description": "open cloud: project GUID" },
       "modelGuid": { "type": "string", "description": "open cloud: model GUID" },
-      "worksets": { "type": "string", "enum": ["lastViewed", "all", "closeAll"], "description": "open: default all (closed worksets print views incomplete)" },
       "activate": { "type": "boolean", "description": "open: show in the UI (default true); false = background" }
     }
   },
@@ -26,8 +25,13 @@
 //    bridge PID via Get-NetTCPConnection -LocalPort), every non-linked document with IsModified / Active / path, and
 //    the number of loaded links. Read-only.
 //  open: cloud model (projectGuid + modelGuid [+ region]) or local path. activate=true (default) opens it in the UI
-//    and makes it active (OpenAndActivateDocument); false opens it in the background (closes again with close). A
-//    document already open is only activated. Never detaches from central. Never syncs.
+//    and makes it active (OpenAndActivateDocument); false opens it in the background (closes again with close).
+//    Never detaches from central. Never syncs. Always opens ALL worksets (closed worksets print views incomplete).
+//    Never opens a model twice: open in this window -> only activated; open in ANOTHER Revit window -> refused with
+//    that window's PID (work there instead). The other windows' documents come from
+//    %APPDATA%\claude-using-revit\open-docs\<pid>.json, written by the pyRevit extension (startup + doc open/close
+//    hooks) and by this command for its own window. A live Revit window without that file has unknown documents, so
+//    open is refused until it has one (pyRevit Reload there, or run revit_docs list while it holds the port).
 //  close: closes the non-linked document whose Title equals title. Refuses when it has unsaved changes unless
 //    discardChanges=true (ask the user first; changes are lost). The API cannot close the active document: pass
 //    switchTo (another open document's title) to activate that one first. The last open document cannot be closed
@@ -52,16 +56,91 @@ public static class RevitDocs
         app.DialogBoxShowing += onDialog;
         try
         {
+            WriteSnapshot(app);
             object result;
             if (action == "open") result = Open(app, args);
             else if (action == "close") result = Close(app, args);
             else result = null;
+            if (result != null) WriteSnapshot(app);
             return new { Action = action, Result = result, DialogsSeen = dialogs.Count > 0 ? dialogs : null, State = List(app) };
         }
         finally
         {
             app.DialogBoxShowing -= onDialog;
         }
+    }
+
+    static string SnapshotFolder => System.IO.Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "claude-using-revit", "open-docs");
+
+    // Same file and shape as pyrevit lib/open_docs.py.
+    static void WriteSnapshot(UIApplication app)
+    {
+        try
+        {
+            var p = Process.GetCurrentProcess();
+            Document active = app.ActiveUIDocument?.Document;
+            var docs = new JArray();
+            foreach (Document d in app.Application.Documents)
+            {
+                if (d.IsLinked) continue;
+                docs.Add(new JObject
+                {
+                    ["title"] = d.Title,
+                    ["path"] = PathOf(d),
+                    ["modelGuid"] = GuidOf(d),
+                    ["modified"] = d.IsModified,
+                    ["active"] = active != null && d.Equals(active)
+                });
+            }
+            var state = new JObject
+            {
+                ["pid"] = p.Id,
+                ["updatedUtc"] = DateTime.UtcNow.ToString("o"),
+                ["source"] = "revit_docs",
+                ["window"] = p.MainWindowTitle,
+                ["docs"] = docs
+            };
+            System.IO.Directory.CreateDirectory(SnapshotFolder);
+            string target = System.IO.Path.Combine(SnapshotFolder, p.Id + ".json");
+            System.IO.File.WriteAllText(target + ".tmp", state.ToString());
+            if (System.IO.File.Exists(target)) System.IO.File.Delete(target);
+            System.IO.File.Move(target + ".tmp", target);
+        }
+        catch { }
+    }
+
+    static string GuidOf(Document d)
+    {
+        try { return d.IsModelInCloud ? d.GetCloudModelPath().GetModelGUID().ToString() : ""; }
+        catch { return ""; }
+    }
+
+    // Who else has this model open? Returns a refusal reason, or null when it is safe to open here.
+    static string OpenElsewhere(string modelGuid, string path)
+    {
+        int self = Process.GetCurrentProcess().Id;
+        var unknown = new List<string>();
+        foreach (var rp in Process.GetProcessesByName("Revit"))
+        {
+            if (rp.Id == self) continue;
+            string file = System.IO.Path.Combine(SnapshotFolder, rp.Id + ".json");
+            if (!System.IO.File.Exists(file)) { unknown.Add($"PID {rp.Id} ({rp.MainWindowTitle})"); continue; }
+            JObject st;
+            try { st = JObject.Parse(System.IO.File.ReadAllText(file)); }
+            catch { unknown.Add($"PID {rp.Id} (unreadable open-docs file)"); continue; }
+            foreach (JObject d in (st["docs"] as JArray ?? new JArray()).OfType<JObject>())
+            {
+                bool same = !string.IsNullOrEmpty(modelGuid)
+                    ? string.Equals((string)d["modelGuid"], modelGuid, StringComparison.OrdinalIgnoreCase)
+                    : string.Equals((string)d["path"], path, StringComparison.OrdinalIgnoreCase);
+                if (same) return $"already open in Revit window PID {rp.Id} as '{d["title"]}': work there, do not open it again";
+            }
+        }
+        if (unknown.Count > 0)
+            return "documents of these Revit windows are unknown (no open-docs file; pyRevit Reload there or revit_docs list while it holds the port): "
+                + string.Join("; ", unknown);
+        return null;
     }
 
     static object List(UIApplication app)
@@ -119,6 +198,7 @@ public static class RevitDocs
     {
         ModelPath mp;
         string path = args.Value<string>("path");
+        string modelGuid = null;
         if (!string.IsNullOrEmpty(path))
             mp = ModelPathUtils.ConvertUserVisiblePathToModelPath(path);
         else
@@ -126,15 +206,27 @@ public static class RevitDocs
             string region = args.Value<string>("region") ?? ModelPathUtils.CloudRegionUS;
             Guid project = Guid.Parse(args.Value<string>("projectGuid") ?? throw new ArgumentException("projectGuid or path is required"));
             Guid model = Guid.Parse(args.Value<string>("modelGuid") ?? throw new ArgumentException("modelGuid is required"));
+            modelGuid = model.ToString();
             mp = ModelPathUtils.ConvertCloudGUIDsToCloudPath(region, project, model);
         }
 
-        string ws = args.Value<string>("worksets") ?? "all";   // lastViewed can leave worksets closed: views then print without their elements
+        // Already open in this window: activate it, never open it again.
+        Document mine = app.Application.Documents.Cast<Document>().FirstOrDefault(d => !d.IsLinked &&
+            (modelGuid != null ? string.Equals(GuidOf(d), modelGuid, StringComparison.OrdinalIgnoreCase)
+                               : string.Equals(d.PathName, path, StringComparison.OrdinalIgnoreCase)));
+        if (mine != null)
+        {
+            bool isActive = app.ActiveUIDocument != null && app.ActiveUIDocument.Document.Equals(mine);
+            if (!isActive && (args.Value<bool?>("activate") ?? true))
+                app.OpenAndActivateDocument(mine.IsModelInCloud ? mine.GetCloudModelPath() : mp, new OpenOptions(), false);
+            return new { Opened = (string)null, AlreadyOpen = mine.Title, Active = isActive || (args.Value<bool?>("activate") ?? true) };
+        }
+
+        string refuse = OpenElsewhere(modelGuid, path);
+        if (refuse != null) return new { Opened = (string)null, Refused = refuse };
+
         var opts = new OpenOptions { DetachFromCentralOption = DetachFromCentralOption.DoNotDetach };
-        opts.SetOpenWorksetsConfiguration(new WorksetConfiguration(
-            ws == "all" ? WorksetConfigurationOption.OpenAllWorksets :
-            ws == "closeAll" ? WorksetConfigurationOption.CloseAllWorksets :
-            WorksetConfigurationOption.OpenLastViewed));
+        opts.SetOpenWorksetsConfiguration(new WorksetConfiguration(WorksetConfigurationOption.OpenAllWorksets));
 
         var sw = Stopwatch.StartNew();
         if (args.Value<bool?>("activate") ?? true)

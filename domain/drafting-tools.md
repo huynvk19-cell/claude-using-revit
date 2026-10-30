@@ -43,7 +43,7 @@ Việc mà user làm bằng nút trên tab pyRevit **claude using revit** thì C
 | Lệnh | Việc |
 |---|---|
 | `hello_revit` | Phiên bản Revit, document đang mở, active view. |
-| `revit_docs` | Cửa sổ Revit đang giữ cổng MCP: `list` (PID, client giữ khoá, document chưa lưu / active / đường dẫn) · `open` (cloud GUID hoặc path, `activate`) · `close` (`title`; từ chối khi chưa lưu trừ khi `discardChanges` sau khi user đồng ý; doc đang active cần `switchTo`). Ai giữ cổng / nhả cổng: `tools/revit-port/revit-port.ps1`. |
+| `revit_docs` | Cửa sổ Revit đang giữ cổng MCP: `list` (PID, client giữ khoá, document chưa lưu / active / đường dẫn) · `open` (cloud GUID hoặc path, `activate`; luôn mở **mọi workset**; **không bao giờ mở lại** model đã mở: đang mở ở cửa sổ này → chỉ kích hoạt, đang mở ở cửa sổ khác → từ chối kèm PID; cửa sổ chưa rõ document → từ chối. Danh sách mọi cửa sổ: `%APPDATA%\claude-using-revit\open-docs\<pid>.json`, do hook pyRevit + chính lệnh này ghi; xem bằng `revit-port.ps1 status`) · `close` (`title`; từ chối khi chưa lưu trừ khi `discardChanges` sau khi user đồng ý; doc đang active cần `switchTo`). Ai giữ cổng / nhả cổng: `tools/revit-port/revit-port.ps1`. |
 | `work_status` | Cửa sổ "Đang xử lý": show / update / close. |
 | `export_sheet_images` | Xuất PNG sheet `{sheetNumbers, folder, pixelWidth}`. |
 | `view_region_image` | Xuất PNG một vùng của view. |
