@@ -36,7 +36,7 @@ WEBAPP_PORT = 8780
 PORTS = range(48990, 49010)
 SLOT = 'ClaudeUsingRevit.WebBridge'      # AppDomain slot: the live server survives pyRevit reloads
 MAX_BODY = 8 * 1024 * 1024
-BRIDGE = None                            # this window's job queue (lib/island.py submits to it too)
+BRIDGE = None                            # this window's job queue
 
 
 class _Job(object):
