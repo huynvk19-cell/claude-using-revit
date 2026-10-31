@@ -108,5 +108,5 @@ if ($WebApp) {
         "web app -> $wa (started; address + access code: $env:APPDATA\claude-using-revit\webapp.json)"
     }
     else { "web app -> $wa (node not found; Revit starts it once node is installed)" }
-    if ($app) { Start-Process "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -ArgumentList "-STA -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$wa\desktop\app.ps1`"" -WindowStyle Hidden }
+    if ($app) { Start-Process "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -ArgumentList "-STA -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$wa\desktop\app.ps1`"" }   # no -WindowStyle on Start-Process: the form would take it as its first show state
 }
