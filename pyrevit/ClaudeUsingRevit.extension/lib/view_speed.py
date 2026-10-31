@@ -21,7 +21,7 @@ import json
 import os
 
 from Autodesk.Revit.DB import (
-    BuiltInCategory, BuiltInParameter, CheckoutStatus, DisplayStyle, ElementId,
+    BuiltInCategory, BuiltInParameter, CheckoutStatus, DisplayStyle, Element, ElementId,
     FilteredElementCollector, FilteredWorksetCollector, Family, FamilyInstance,
     FamilyInstanceFilter, Group, ImportInstance, ModelPathUtils, RevitLinkInstance,
     RevitLinkType, TemporaryViewMode, Transaction, View, ViewDetailLevel, ViewSheet,
@@ -407,7 +407,7 @@ def check_model(doc, top=10):
             for sid in f.GetFamilySymbolIds():
                 n += FilteredElementCollector(doc).WherePasses(
                     FamilyInstanceFilter(doc, sid)).GetElementCount()
-            inplace.append({"family": f.Name, "category": f.FamilyCategory.Name
+            inplace.append({"family": Element.Name.__get__(f), "category": f.FamilyCategory.Name
                             if f.FamilyCategory else u"?", "instances": n})
     out["inPlace"] = sorted(inplace, key=lambda r: -r["instances"])
 
@@ -415,7 +415,7 @@ def check_model(doc, top=10):
     for g in FilteredElementCollector(doc).OfClass(Group):
         if g.Category is None or g.Category.Id.IntegerValue != int(BuiltInCategory.OST_IOSModelGroups):
             continue
-        name = g.GroupType.Name if g.GroupType else g.Name
+        name = Element.Name.__get__(g.GroupType or g)
         r = groups.setdefault(name, {"group": name, "instances": 0, "members": 0})
         r["instances"] += 1
         r["members"] = max(r["members"], g.GetMemberIds().Count)
@@ -431,7 +431,7 @@ def check_model(doc, top=10):
     for lt in FilteredElementCollector(doc).OfClass(RevitLinkType):
         n = FilteredElementCollector(doc).OfClass(RevitLinkInstance).WhereElementIsNotElementType()
         n = len([i for i in n if i.GetTypeId() == lt.Id])
-        links.append({"link": lt.Name, "loaded": bool(RevitLinkType.IsLoaded(doc, lt.Id)),
+        links.append({"link": Element.Name.__get__(lt), "loaded": bool(RevitLinkType.IsLoaded(doc, lt.Id)),
                       "instances": n})
     out["links"] = links
     if doc.IsWorkshared:
@@ -532,16 +532,17 @@ def tips(machine, model, view):
         if model.get("cadImported3d"):
             t.append(u"{0} file CAD import (không link) vào model 3D: nặng nhất là loại này, nên "
                      u"link thay vì import, hoặc đặt Current view only.".format(model["cadImported3d"]))
+        imported = len([c for c in model.get("cad", []) if isinstance(c, dict) and not c["linked"]])
+        if imported > 50:
+            t.append(u"{0} CAD import trong các view: view nào có CAD thì mở / in chậm hơn; xoá "
+                     u"CAD không còn dùng (Manage > Manage Links > CAD Formats chỉ thấy CAD link, "
+                     u"CAD import xem ở bảng dưới).".format(imported))
         if model.get("warnings", 0) > 500:
             t.append(u"{0} warnings: Manage > Warnings, dọn bớt (warnings nhiều làm chậm "
                      u"sync / mở file).".format(model["warnings"]))
         if len(model.get("inPlace", [])) > 20:
             t.append(u"{0} in-place family: chậm khi vẽ lại; family thường nhẹ hơn.".format(
                 len(model["inPlace"])))
-        ws = model.get("worksets")
-        if ws and ws["open"] == ws["total"] and ws["total"] > 3:
-            t.append(u"Mở model chỉ với worksets cần làm (Open > Worksets: Specify) cho nhẹ; nhớ "
-                     u"mở đủ trước khi xuất PDF.")
         if model.get("lightViews"):
             t.append(u"Đang ở chế độ nhẹ: {0}. Tắt trước khi in / xuất PDF.".format(
                 u", ".join(model["lightViews"])))
