@@ -454,7 +454,10 @@ function view3dWindow() {
   const box = h("div"), cut = h("input", { type: "checkbox" });
   return [h("div", { class: "row" },
     h("button", { class: "pill primary", onclick: () => act(box, "task", "view_3d_from_view", { cut: cut.checked }, "Mở 3D", r => `Đã mở ${r.view3d || "view 3D"}`) }, "Mở 3D theo view đang mở"),
-    h("label", { class: "switch" }, cut, h("i"), "Mặt bằng: dừng ở mặt cắt")), box];
+    h("label", { class: "switch" }, cut, h("i"), "Mặt bằng: dừng ở mặt cắt")),
+    h("div", { class: "row" },
+      h("button", { class: "pill", onclick: () => window.open(`/viewer.html?pid=${S.pid}`, "_blank") }, "Xem bằng GPU"),
+      h("span", { class: "dim" }, "Viewer 3D vẽ bằng card màn hình: bấm Lấy từ Revit khi đang mở một view 3D")), box];
 }
 
 // ---- folder picker ---------------------------------------------------------------------
