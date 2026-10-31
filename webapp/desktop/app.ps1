@@ -16,16 +16,41 @@ Add-Type -AssemblyName System.Windows.Forms, System.Drawing
 Add-Type -Name Win -Namespace CUR -MemberDefinition @'
 [DllImport("user32.dll")] public static extern bool SetProcessDpiAwarenessContext(IntPtr v);
 [DllImport("kernel32.dll", CharSet = CharSet.Unicode)] public static extern bool SetDllDirectory(string p);
-[DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern IntPtr FindWindow(string cls, string title);
 [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr h, int cmd);
 [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
+public delegate bool EnumProc(IntPtr h, IntPtr l);
+[DllImport("user32.dll")] public static extern bool EnumWindows(EnumProc f, IntPtr l);
+[DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern int GetWindowText(IntPtr h, System.Text.StringBuilder s, int n);
+[DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern int GetClassName(IntPtr h, System.Text.StringBuilder s, int n);
+// our own window: title "claude using revit" AND a WinForms class (a terminal or browser tab can carry the same title)
+public static IntPtr FindApp() {
+    IntPtr found = IntPtr.Zero;
+    EnumWindows((h, l) => {
+        var t = new System.Text.StringBuilder(256); var c = new System.Text.StringBuilder(256);
+        GetWindowText(h, t, 256); GetClassName(h, c, 256);
+        if (t.ToString() == "claude using revit" && c.ToString().StartsWith("WindowsForms10.")) { found = h; return false; }
+        return true;
+    }, IntPtr.Zero);
+    return found;
+}
 '@
 
+function Show-App($h) { [CUR.Win]::ShowWindow($h, 9) | Out-Null; [CUR.Win]::ShowWindow($h, 5) | Out-Null; [CUR.Win]::SetForegroundWindow($h) | Out-Null }
 $mutex = New-Object Threading.Mutex($false, 'Local\ClaudeUsingRevitApp')
-if (-not $mutex.WaitOne(0)) {                  # already open: bring it to the front
-    $h = [CUR.Win]::FindWindow($null, 'claude using revit')
-    if ($h -ne [IntPtr]::Zero) { [CUR.Win]::ShowWindow($h, 9) | Out-Null; [CUR.Win]::SetForegroundWindow($h) | Out-Null }
-    return
+$owned = $false
+try { $owned = $mutex.WaitOne(0) } catch [Threading.AbandonedMutexException] { $owned = $true }
+if (-not $owned) {                             # already open: bring it to the front (restored, shown)
+    for ($i = 0; $i -lt 6; $i++) {
+        $h = [CUR.Win]::FindApp()
+        if ($h -ne [IntPtr]::Zero) { Show-App $h; return }
+        Start-Sleep -Milliseconds 500          # it may still be starting
+    }
+    # the mutex is held but no window ever came: a stuck copy; end it and start afresh
+    Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" |
+        Where-Object { $_.ProcessId -ne $PID -and $_.CommandLine -match 'desktop\\app\.ps1' } |
+        ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+    try { $owned = $mutex.WaitOne(3000) } catch [Threading.AbandonedMutexException] { $owned = $true }
+    if (-not $owned) { return }
 }
 
 if (-not $Url) {
@@ -95,6 +120,9 @@ $web = New-Object Microsoft.Web.WebView2.WinForms.WebView2
 $web.Dock = 'Fill'
 $web.DefaultBackgroundColor = $form.BackColor
 $form.Controls.Add($web)
+# the first ShowWindow of a process takes the launcher's show state (install.ps1 starts it with
+# -WindowStyle Hidden), so show it once more as wanted and bring it forward
+$form.add_Shown({ [CUR.Win]::ShowWindow($form.Handle, $(if ($max) { 3 } else { 9 })) | Out-Null; $form.Activate() })
 $form.add_Shown({ [CurWeb]::Start($web, (Join-Path $data 'app-webview'), $Url, (Join-Path $data 'app.log')) })
 [System.Windows.Forms.Application]::Run($form)
 $mutex.ReleaseMutex()
