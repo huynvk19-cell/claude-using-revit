@@ -23,6 +23,8 @@ const DATA = path.join(process.env.APPDATA || os.homedir(), "claude-using-revit"
 const BRIDGES = path.join(DATA, "web-bridge");
 const CONFIG = path.join(DATA, "webapp.json");
 const LOG = path.join(DATA, "webapp.log");
+const MESHES = path.join(DATA, "meshes");             // written by the pyRevit task view_mesh_export
+const MESH_RE = /^[0-9A-Za-z_-]{1,90}\.(json|bin)$/;
 const PUBLIC = path.join(HERE, "public");
 const EXT_TAB = path.join(process.env.APPDATA || "", "pyRevit", "Extensions", "ClaudeUsingRevit.extension",
     "claude using revit.tab");
@@ -327,6 +329,21 @@ function listDirs(p) {
     return { path: full, parent: parent === full ? "" : parent, dirs };
 }
 
+function listMeshes() {
+    // newest first: name, model, view, triangles, exported (from each <name>.json manifest)
+    let files = [];
+    try { files = fs.readdirSync(MESHES).filter(f => f.endsWith(".json")); } catch { return []; }
+    const out = [];
+    for (const f of files) {
+        try {
+            const m = JSON.parse(fs.readFileSync(path.join(MESHES, f), "utf8"));
+            out.push({ name: m.name, model: m.model, view: m.view, triangles: m.triangles,
+                truncated: m.truncated, exported: m.exported });
+        } catch { /* half written */ }
+    }
+    return out.sort((a, b) => String(b.exported).localeCompare(String(a.exported)));
+}
+
 function iconFile(name) {
     // /icon/<button name>.png -> the ribbon icon of that button
     if (!fs.existsSync(EXT_TAB)) return null;
@@ -349,6 +366,7 @@ async function api(req, res, url) {
         const lan = !["127.0.0.1", "localhost", "::1"].includes(listenHost);
         return send(res, 200, { lan, urls: lan ? lanUrls() : [], config: CONFIG, port: cfg.port });
     }
+    if (m === "GET" && parts[1] === "meshes") return send(res, 200, { meshes: listMeshes() });
     if (m === "GET" && parts[1] === "fs") return send(res, 200, listDirs(url.searchParams.get("path") || ""));
     if (m === "GET" && parts[1] === "jobs" && parts[2]) {
         const j = jobs.find(x => String(x.id) === parts[2]);
@@ -405,6 +423,12 @@ const server = http.createServer(async (req, res) => {
         if (url.pathname === "/bg") {      // the user's own background photo, kept outside the repo
             const f = [".jpg", ".jpeg", ".png", ".webp"].map(e => path.join(DATA, "background" + e)).find(p => fs.existsSync(p));
             return f ? sendFile(res, f) : send(res, 404, { error: "no background photo" });
+        }
+        if (url.pathname.startsWith("/mesh/")) {   // triangles of a 3D view (pyRevit task view_mesh_export)
+            if (!ok) return send(res, 401, { error: "login" });
+            const f = decodeURIComponent(url.pathname.slice(6));
+            if (!MESH_RE.test(f)) return send(res, 400, { error: "bad mesh name" });
+            return sendFile(res, path.join(MESHES, f));
         }
         if (url.pathname.startsWith("/icon/")) {
             const f = iconFile(decodeURIComponent(url.pathname.slice(6)).replace(/\.png$/, ""));

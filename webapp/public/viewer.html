@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>3D GPU</title>
+  <link rel="icon" href="/icon/3D From View.png">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    html, body { height: 100%; overflow: hidden; }
+    body { background: radial-gradient(ellipse at 50% 30%, #1d2230, #07080d 75%); }
+    #gl { position: fixed; inset: 0; width: 100%; height: 100%; touch-action: none; display: block; }
+    .bar { position: fixed; left: 16px; right: 16px; top: 14px; display: flex; gap: 10px; align-items: center;
+      padding: 8px 10px 8px 18px; border-radius: 26px; flex-wrap: wrap; }
+    .bar .t { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 40vw; }
+    .bar .dim { font-size: 13px; }
+    .bar .sp { flex: 1; }
+    .vbtn { border: 0; border-radius: 18px; padding: 7px 14px; background: var(--fill); color: var(--text); font: 500 14px var(--font); cursor: pointer; }
+    .vbtn:hover { background: var(--fill-hover); }
+    .vbtn.primary { background: rgba(255, 255, 255, .9); color: #111; }
+    .vbtn:disabled { opacity: .45; cursor: default; }
+    select.vbtn { max-width: 34vw; }
+    .side { position: fixed; left: 16px; top: 78px; bottom: 16px; width: 250px; padding: 14px; border-radius: 26px;
+      overflow: auto; font-size: 13px; }
+    .side label { display: flex; gap: 8px; align-items: center; padding: 3px 2px; cursor: pointer; }
+    .side label span:last-child { margin-left: auto; color: var(--faint); font-family: var(--mono); font-size: 11px; }
+    .pick { position: fixed; right: 16px; bottom: 16px; padding: 14px 16px; border-radius: 22px; min-width: 240px; font-size: 13px; }
+    .pick b { font-size: 15px; }
+    .busy-veil { position: fixed; inset: 0; display: grid; place-items: center; pointer-events: none; font: 500 17px var(--font); }
+    .help { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); font-size: 12px; color: var(--faint); white-space: nowrap; }
+    @media (max-width: 700px) { .side { display: none; } .help { display: none; } .bar .t { max-width: 60vw; } }
+  </style>
+</head>
+<body>
+  <canvas id="gl"></canvas>
+  <div class="bar glass">
+    <div><div class="t" id="title">3D GPU</div><div class="dim" id="sub">Đang tải…</div></div>
+    <div class="sp"></div>
+    <select class="vbtn" id="meshes" title="Các lần lấy trước"></select>
+    <button class="vbtn" id="cats-btn">Category</button>
+    <button class="vbtn" id="fit">Vừa khung</button>
+    <button class="vbtn primary" id="grab" title="Lấy lại hình của view 3D đang mở trong Revit">Lấy từ Revit</button>
+  </div>
+  <div class="side glass hidden" id="cats"></div>
+  <div class="pick glass hidden" id="pick"></div>
+  <div class="busy-veil hidden" id="veil"></div>
+  <div class="help">Kéo trái: xoay · kéo phải / Shift: dời · lăn: zoom · bấm: chọn · bấm đúp: xoay quanh phần tử</div>
+  <script src="viewer.js"></script>
+</body>
+</html>

@@ -19,6 +19,7 @@ import print_set_sync as ps
 import sheet_list_columns as slc
 import untagged_marks as um
 import view_3d as v3d
+import view_mesh as vm
 import view_speed as vsp
 
 TASKS = {}     # name -> (function, help)
@@ -494,6 +495,23 @@ def speed_check(doc, uidoc, args):
         out["model"] = model
     if view:
         out["view"] = view
+    return out
+
+
+@task(u"(RO) Triangles of a 3D view (section box, hidden categories, links as shown) to "
+      u"%APPDATA%/claude-using-revit/meshes for the web app GPU viewer (/viewer.html?mesh=<name>). "
+      u"args: view (id; default active 3D view, else your '3D Box' view), maxTriangles.")
+def view_mesh_export(doc, uidoc, args):
+    view = doc.GetElement(ElementId(int(args["view"]))) if args.get("view") else None
+    if args.get("view") and not isinstance(view, View):
+        raise TaskError(u"view not found: {0}".format(args["view"]))
+    try:
+        man = vm.export(doc, vm.target_view(doc, uidoc, view), args.get("maxTriangles"))
+    except vm.MeshError as ex:
+        raise TaskError(u"{0}".format(ex))
+    out = dict((k, man[k]) for k in ("name", "view", "viewId", "vertices", "triangles",
+                                     "truncated", "seconds"))
+    out.update({"elements": len(man["elements"]), "categories": len(man["categories"])})
     return out
 
 
