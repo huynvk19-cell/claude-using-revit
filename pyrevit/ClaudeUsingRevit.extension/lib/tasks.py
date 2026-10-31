@@ -20,7 +20,6 @@ import sheet_list_columns as slc
 import untagged_marks as um
 import view_3d as v3d
 import view_mesh as vm
-import view_speed as vsp
 
 TASKS = {}     # name -> (function, help)
 
@@ -436,66 +435,7 @@ def view_3d_from_view(doc, uidoc, args):
     return info
 
 
-# ---- faster views (Chế độ nhẹ / Kiểm tra tốc độ) -----------------------------------
-
-def _speed_view(doc, uidoc, args):
-    view = doc.GetElement(ElementId(int(args["view"]))) if args.get("view") else None
-    if args.get("view") and not isinstance(view, View):
-        raise TaskError(u"view not found: {0}".format(args["view"]))
-    try:
-        return vsp.target_view(doc, uidoc, view)
-    except vsp.SpeedError as ex:
-        raise TaskError(u"{0}".format(ex))
-
-
-@task(u"Light mode on a view, saved to be undone: Coarse, no anti-aliasing / silhouettes / "
-      u"sketchy / depth cueing, Realistic -> Shading (view's own settings only), CAD / Planting / "
-      u"Entourage / point clouds temporarily hidden. Toggles. args: view (id; default active), "
-      u"links (also hide Revit links), dryRun.")
-def view_light(doc, uidoc, args):
-    view = _speed_view(doc, uidoc, args)
-    try:
-        if vsp.is_light(doc, view):
-            if args.get("dryRun"):
-                return {"view": view.Name, "would": "restore"}
-            return vsp.restore(doc, [view])
-        return vsp.apply_light(doc, view, bool(args.get("links")), bool(args.get("dryRun")))
-    except vsp.SpeedError as ex:
-        raise TaskError(u"{0}".format(ex))
-
-
-@task(u"Every view of this model in light mode back as it was. args: dryRun.")
-def view_light_restore_all(doc, uidoc, args):
-    names = [e.get("name") for e in vsp.light_views(doc).values()]
-    if args.get("dryRun") or not names:
-        return {"lightViews": names}
-    return vsp.restore(doc)
-
-
-@task(u"(RO) What slows Revit down here: machine (GPU Revit draws on, RAM, Revit.ini graphics), "
-      u"model (CAD imports, in-place, groups, links, warnings, worksets), the view (detail, style, "
-      u"far clip, elements shown) + tips. args: view (id), parts (machine, model, view), detail.")
-def speed_check(doc, uidoc, args):
-    parts = set(_names(args, "part", "parts") or ["machine", "model", "view"])
-    machine = vsp.check_machine(doc) if "machine" in parts else None
-    model = vsp.check_model(doc) if "model" in parts else None
-    view = None
-    if "view" in parts:
-        try:
-            view = vsp.check_view(doc, _speed_view(doc, uidoc, args))
-        except TaskError:
-            view = None
-    out = {"tips": vsp.tips(machine, model, view)}
-    if machine:
-        out["machine"] = machine
-    if model:
-        model = dict(model)
-        for k in ("cad", "inPlace", "modelGroups", "links"):
-            model[k] = _cut(model[k], args)
-        out["model"] = model
-    if view:
-        out["view"] = view
-    return out
+# ---- 3D GPU viewer (web app) ------------------------------------------------------
 
 
 @task(u"(RO) Triangles of a 3D view (section box, hidden categories, links as shown) to "

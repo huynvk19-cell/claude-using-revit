@@ -1,7 +1,0 @@
-title: "Kiểm tra\ntốc độ"
-tooltip: >-
-  Chỉ đọc, không sửa gì. Báo cái gì làm Revit chậm: máy (card màn hình Revit đang dùng, RAM,
-  anti-aliasing / Simplify display trong Options), model (CAD import, in-place family, model
-  group, link, warnings, worksets đang mở) và view đang mở (Detail Level, Visual Style, Far
-  Clipping, số phần tử, category nhiều nhất), kèm gợi ý làm gì. Bấm vào id để chọn đối tượng.
-author: claude-using-revit
