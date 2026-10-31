@@ -258,7 +258,8 @@ function send(res, status, obj, headers = {}) {
 }
 
 const MIME = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8",
-    ".css": "text/css; charset=utf-8", ".png": "image/png", ".svg": "image/svg+xml", ".json": "application/json" };
+    ".css": "text/css; charset=utf-8", ".png": "image/png", ".svg": "image/svg+xml", ".json": "application/json",
+    ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp" };
 
 function sendFile(res, file) {
     fs.readFile(file, (err, buf) => {
@@ -400,6 +401,10 @@ const server = http.createServer(async (req, res) => {
             if (req.method !== "GET" && origin && new URL(origin).host !== req.headers.host)
                 return send(res, 403, { error: "cross-site request" });
             return await api(req, res, url);
+        }
+        if (url.pathname === "/bg") {      // the user's own background photo, kept outside the repo
+            const f = [".jpg", ".jpeg", ".png", ".webp"].map(e => path.join(DATA, "background" + e)).find(p => fs.existsSync(p));
+            return f ? sendFile(res, f) : send(res, 404, { error: "no background photo" });
         }
         if (url.pathname.startsWith("/icon/")) {
             const f = iconFile(decodeURIComponent(url.pathname.slice(6)).replace(/\.png$/, ""));

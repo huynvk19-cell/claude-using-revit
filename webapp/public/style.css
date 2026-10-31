@@ -22,6 +22,10 @@ body {
   -webkit-font-smoothing: antialiased; overflow-x: hidden;
 }
 #space { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -1; }
+/* the user's photo as background: covers the window, dimmed towards the top and bottom so glass stays readable */
+body.photo::before { content: ""; position: fixed; inset: 0; z-index: -2; background: var(--photo) center / cover no-repeat; }
+body.photo::after { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: linear-gradient(rgba(0, 0, 0, .38), rgba(0, 0, 0, .12) 35%, rgba(0, 0, 0, .12) 65%, rgba(0, 0, 0, .45)); }
 .hidden { display: none !important; }
 .dim { color: var(--dim); }
 code, pre { font-family: var(--mono); font-size: 12px; }
@@ -219,3 +223,5 @@ details[open] summary::before { transform: rotate(90deg); }
   .toasts { bottom: 90px; }
 }
 
+/* on a bright photo the glass needs a darker tint to keep white text readable */
+body.photo .glass, body.photo .ornament { background: rgba(28, 30, 38, .42); }

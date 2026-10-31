@@ -166,7 +166,13 @@
     cabin(w, h);
   }
 
-  let t = null;
-  window.addEventListener("resize", () => { clearTimeout(t); t = setTimeout(draw, 150); });
-  draw();
+  // a photo of the user's own (server /bg) replaces the drawn cabin when there is one
+  const photo = new Image();
+  photo.onload = () => { document.body.classList.add("photo"); document.body.style.setProperty("--photo", "url(/bg)"); cv.remove(); };
+  photo.onerror = () => {
+    let t = null;
+    window.addEventListener("resize", () => { clearTimeout(t); t = setTimeout(draw, 150); });
+    draw();
+  };
+  photo.src = "/bg";
 })();
