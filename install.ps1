@@ -58,6 +58,11 @@ if ($PyRevit) {
 if ($WebApp) {
     # web app server (webapp\server.mjs); the pyRevit startup starts it with Revit, here it is restarted on the new copy
     $wa = Join-Path $env:APPDATA 'claude-using-revit\webapp'
+    # run from the Claude desktop app (an MSIX package), new folders under %APPDATA% land in the package's
+    # private store: Start Menu, Explorer and Revit never see them. The folder must exist outside first.
+    if (Test-Path (Join-Path $env:LOCALAPPDATA 'Packages\Claude_*\LocalCache\Roaming\claude-using-revit')) {
+        "web app: a copy sits in the Claude app's private store; run once from a normal terminal: tools\appdata-out-of-claude.ps1"
+    }
     Get-CimInstance Win32_Process -Filter "Name = 'node.exe'" |
         Where-Object { $_.CommandLine -like '*claude-using-revit\webapp\server.mjs*' } |
         ForEach-Object { Stop-Process -Id $_.ProcessId -Force; "web app: stopped old server (PID $($_.ProcessId))" }
