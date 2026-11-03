@@ -65,8 +65,11 @@ if ($WebApp) {
         Where-Object { $_.CommandLine -like '*claude-using-revit\webapp\desktop\*.ps1*' })
     $app | ForEach-Object { Stop-Process -Id $_.ProcessId -Force; "app: closed (PID $($_.ProcessId)), reopened below" }
     if ($app) { Start-Sleep -Milliseconds 800 }        # its WebView2 dlls are released
-    if (Test-Path $wa) { Remove-Item $wa -Recurse -Force }
-    Copy-Item (Join-Path $root 'webapp') -Destination $wa -Recurse -Force
+    # mirror in place (stale files removed): deleting the folder first left the Start Menu shortcut
+    # without app.vbs for a few seconds ("Can not find script file")
+    robocopy (Join-Path $root 'webapp') $wa /MIR /R:2 /W:1 /NFL /NDL /NJH /NJS /NP /XD lib | Out-Null
+    if ($LASTEXITCODE -ge 8) { "web app: some files were in use and not replaced (robocopy $LASTEXITCODE)" }
+    $global:LASTEXITCODE = 0
     Get-ChildItem (Join-Path $root 'revit-commands\*.cs') | ForEach-Object { $_.BaseName } |
         Set-Content (Join-Path $wa 'revit-commands.txt') -Encoding ascii
     # desktop app (webapp\desktop\app.ps1): the WebView2 SDK dlls come from a local install, not this repo
