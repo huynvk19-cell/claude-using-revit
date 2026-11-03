@@ -1,9 +1,9 @@
 # Draw the desktop app icon (macOS style: a squircle with depth, light from the top) with WPF and
 # write app.ico (16-256 px, PNG entries) + app.png (512 px) next to this script, and the page icon
-# public/app-icon.png. Designs: A sheet (drawing sheet on blue), B galaxy (schedule grid on glass over
+# public/app-icon.png. Designs: A sheet (drawing sheet; -Palette orange = the one in use, or blue), B galaxy (schedule grid on glass over
 # the galaxy, like the page), C tower (white building on warm orange).
-#   powershell -STA -File webapp\desktop\make_app_icon.ps1 [-Design B] [-Preview <png with all designs>]
-param([string]$Design = 'B', [string]$Preview)
+#   powershell -STA -File webapp\desktop\make_app_icon.ps1 [-Design A] [-Palette orange] [-Preview <png with all designs>]
+param([string]$Design = 'A', [ValidateSet('orange', 'blue')][string]$Palette = 'orange', [string]$Preview)
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -43,20 +43,22 @@ $inner
 "@
 }
 
-function Design-A {   # a drawing sheet (plan + title block) on blue
-    $fill = '<Rectangle.Fill><LinearGradientBrush StartPoint="0,0" EndPoint="0.4,1"><GradientStop Color="#4C8DFF" Offset="0"/><GradientStop Color="#1B3FB8" Offset="1"/></LinearGradientBrush></Rectangle.Fill>'
+function Design-A {   # a drawing sheet (plan + title block) on orange (Huy 2026-11-03: A with the colours of C) or blue
+    $p = if ($Palette -eq "blue") { @{ top = "#4C8DFF"; bottom = "#1B3FB8"; shadow = "#0A1A5C"; strip = "#E3E9F7"; mark = "#1B3FB8"; line = "#9DB0DC"; ink = "#1D2A4D"; accent = "#FF8A1F" } }
+         else { @{ top = "#FFC24A"; bottom = "#FF5A2E"; shadow = "#7A2000"; strip = "#FBE9DC"; mark = "#E8501F"; line = "#E9B99A"; ink = "#3A2416"; accent = "#FF6A1F" } }
+    $fill = "<Rectangle.Fill><LinearGradientBrush StartPoint='0,0' EndPoint='0.3,1'><GradientStop Color='$($p.top)' Offset='0'/><GradientStop Color='$($p.bottom)' Offset='1'/></LinearGradientBrush></Rectangle.Fill>"
     $inner = @"
     <Canvas>
       <Canvas.RenderTransform><RotateTransform Angle="-7" CenterX="512" CenterY="540"/></Canvas.RenderTransform>
       <Rectangle Canvas.Left="210" Canvas.Top="300" Width="604" Height="440" RadiusX="22" RadiusY="22" Fill="#FFFFFF">
-        <Rectangle.Effect><DropShadowEffect BlurRadius="40" ShadowDepth="16" Direction="270" Opacity="0.45" Color="#0A1A5C"/></Rectangle.Effect></Rectangle>
-      <Rectangle Canvas.Left="690" Canvas.Top="300" Width="124" Height="440" Fill="#E3E9F7"/>
-      <Rectangle Canvas.Left="708" Canvas.Top="640" Width="88" Height="12" RadiusX="6" RadiusY="6" Fill="#1B3FB8"/>
-      <Rectangle Canvas.Left="708" Canvas.Top="670" Width="60" Height="10" RadiusX="5" RadiusY="5" Fill="#9DB0DC"/>
-      <Rectangle Canvas.Left="708" Canvas.Top="694" Width="74" Height="10" RadiusX="5" RadiusY="5" Fill="#9DB0DC"/>
-      <Path Stroke="#1D2A4D" StrokeThickness="16" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+        <Rectangle.Effect><DropShadowEffect BlurRadius="40" ShadowDepth="16" Direction="270" Opacity="0.45" Color="$($p.shadow)"/></Rectangle.Effect></Rectangle>
+      <Rectangle Canvas.Left="690" Canvas.Top="300" Width="124" Height="440" Fill="$($p.strip)"/>
+      <Rectangle Canvas.Left="708" Canvas.Top="640" Width="88" Height="12" RadiusX="6" RadiusY="6" Fill="$($p.mark)"/>
+      <Rectangle Canvas.Left="708" Canvas.Top="670" Width="60" Height="10" RadiusX="5" RadiusY="5" Fill="$($p.line)"/>
+      <Rectangle Canvas.Left="708" Canvas.Top="694" Width="74" Height="10" RadiusX="5" RadiusY="5" Fill="$($p.line)"/>
+      <Path Stroke="$($p.ink)" StrokeThickness="16" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
             Data="M 260,350 L 640,350 L 640,690 L 260,690 Z M 450,350 L 450,560 M 260,560 L 400,560 M 490,560 L 640,560"/>
-      <Path Stroke="#FF8A1F" StrokeThickness="10" Data="M 330,630 L 380,630 M 540,450 L 590,450" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+      <Path Stroke="$($p.accent)" StrokeThickness="10" Data="M 330,630 L 380,630 M 540,450 L 590,450" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
     </Canvas>
 "@
     Body $fill $inner
