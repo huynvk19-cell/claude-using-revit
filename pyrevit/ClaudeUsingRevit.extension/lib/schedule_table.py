@@ -1,0 +1,486 @@
+# -*- coding: utf-8 -*-
+"""Any schedule as a plain table for the web app grid (Bảng): read it, write cells back.
+
+read(): one row per element the schedule shows (itemized, even when the schedule groups), in
+  the schedule's row order: the body rows are read and matched on the texts of all shown
+  parameter columns (else on one column unique per element: Sheet Number, Mark...); when fewer
+  than half match, the rows follow the schedule's sort / group fields (natural order).
+  Columns are the schedule fields in order (hidden ones flagged). A cell is editable when the
+  field is an instance or type parameter, the parameter is not read-only and holds text, a whole
+  number, yes/no or a measurement (an element id - Level, Phase... - stays read-only). Computed
+  fields (formula, count, room of a door...) take the text Revit shows in the matched row.
+  Locks: an element (or its type) borrowed by another user is locked; one created AND last
+  changed by others is flagged "others" and only written with force. In a cloud / workshared
+  model the first write to an element borrows it, and Revit may Reload Latest first (slow, and a
+  transaction group can no longer roll back what came before it: there is no "write and undo").
+write(): the cells in one transaction (undo in Revit = one Ctrl+Z); a type field writes the
+  type, so every row of that type changes. Numbers go through SetValueString (project units).
+add_sheets(): new sheets for a sheet-list schedule (title block = the one most of its sheets
+  use, a placeholder sheet when it has none), then the given cells.
+A sheet-list schedule with a print set of its own name gets that set synced after a write
+(print_set_sync: same rules, a set borrowed or last changed by someone else is left alone).
+"""
+import re
+
+from System import Enum
+
+from Autodesk.Revit.DB import (
+    BuiltInCategory, BuiltInParameter, Category, CheckoutStatus, ElementId, FamilyInstance,
+    FilteredElementCollector, ScheduleFieldType, SectionType, SpecTypeId, StorageType,
+    Transaction, ViewSchedule, ViewSheet, WorksharingUtils)
+
+import print_set_sync as ps
+
+SHEETS_CAT = int(BuiltInCategory.OST_Sheets)
+ROLES = {int(BuiltInParameter.SHEET_NUMBER): "sheetNumber", int(BuiltInParameter.SHEET_NAME): "sheetName"}
+PARAM_FIELDS = (ScheduleFieldType.Instance, ScheduleFieldType.ElementType)
+YES = (u"yes", u"y", u"1", u"true", u"có", u"x", u"✓")
+NO = (u"no", u"n", u"0", u"false", u"không", u"")
+
+
+def schedules(doc):
+    """Every schedule a user can open (no templates, revision tables or internal keynote lists)."""
+    out = []
+    for vs in FilteredElementCollector(doc).OfClass(ViewSchedule):
+        if vs.IsTemplate or vs.IsTitleblockRevisionSchedule or vs.IsInternalKeynoteSchedule:
+            continue
+        try:
+            d = vs.Definition
+            cat = Category.GetCategory(doc, d.CategoryId) if d.CategoryId.IntegerValue != -1 else None
+        except Exception:
+            continue
+        out.append({"id": vs.Id.IntegerValue, "name": vs.Name,
+                    "category": cat.Name if cat is not None else u"Nhiều loại",
+                    "sheetList": d.CategoryId.IntegerValue == SHEETS_CAT,
+                    "key": bool(d.IsKeySchedule)})
+    return sorted(out, key=lambda s: (s["category"].lower(), s["name"].lower()))
+
+
+def find(doc, name_or_id):
+    for vs in FilteredElementCollector(doc).OfClass(ViewSchedule):
+        if vs.Name == name_or_id or u"{0}".format(vs.Id.IntegerValue) == u"{0}".format(name_or_id):
+            return vs
+    return None
+
+
+# ---- parameters -----------------------------------------------------------------------
+
+class _Params(object):
+    """get(el, pid): the parameter pid of el, cached definition lookup (fast on thousands)."""
+    def __init__(self, doc):
+        self.doc, self.defs = doc, {}
+
+    def get(self, el, pid):
+        if el is None:
+            return None
+        if pid < 0:
+            try:
+                return el.get_Parameter(Enum.ToObject(BuiltInParameter, pid))
+            except Exception:
+                return None
+        if pid not in self.defs:
+            pe = self.doc.GetElement(ElementId(pid))
+            try:
+                self.defs[pid] = pe.GetDefinition() if pe is not None else None
+            except Exception:
+                self.defs[pid] = None
+        d = self.defs[pid]
+        return el.get_Parameter(d) if d is not None else None
+
+
+def _is_yes_no(p):
+    try:
+        return p.Definition.GetDataType() == SpecTypeId.Boolean.YesNo
+    except Exception:
+        return False
+
+
+def kind_of(p):
+    """text | int | yesno | number | id (read-only here)."""
+    st = p.StorageType
+    if st == StorageType.String:
+        return "text"
+    if st == StorageType.Integer:
+        return "yesno" if _is_yes_no(p) else "int"
+    if st == StorageType.Double:
+        return "number"
+    return "id"
+
+
+def text_of(p):
+    if p is None or not p.HasValue:
+        return u""
+    st = p.StorageType
+    if st == StorageType.String:
+        return p.AsString() or u""
+    if st == StorageType.Integer and _is_yes_no(p):
+        return u"Yes" if p.AsInteger() == 1 else u"No"
+    s = p.AsValueString()
+    if s is None and st == StorageType.Integer:
+        s = u"{0}".format(p.AsInteger())
+    return s or u""
+
+
+def set_text(p, value):
+    """Write the text the grid holds; raises ValueError with a short reason."""
+    value = (value or u"").strip() if p.StorageType != StorageType.String else (value or u"")
+    k = kind_of(p)
+    if k == "text":
+        return p.Set(value)
+    if k == "yesno":
+        v = value.lower()
+        if v in YES:
+            return p.Set(1)
+        if v in NO:
+            return p.Set(0)
+        raise ValueError(u"Yes / No")
+    if k == "int":
+        try:
+            return p.Set(int(value or u"0"))
+        except Exception:
+            raise ValueError(u"cần số nguyên")
+    if k == "number":
+        if not p.SetValueString(value or u"0"):
+            raise ValueError(u"không đọc được số")
+        return True
+    raise ValueError(u"tham số kiểu id, không sửa ở đây")
+
+
+# ---- who may change what --------------------------------------------------------------
+
+class _Locks(object):
+    def __init__(self, doc):
+        self.doc, self.cache, self.mine = doc, {}, set()
+        self.me = (doc.Application.Username or u"").lower()
+
+    def of(self, eid):
+        """None | ("busy", name) | ("others", name)."""
+        if not self.doc.IsWorkshared:
+            return None
+        if eid not in self.cache:
+            res = None
+            try:
+                i = ElementId(eid)
+                info = WorksharingUtils.GetWorksharingTooltipInfo(self.doc, i)
+                status = WorksharingUtils.GetCheckoutStatus(self.doc, i)
+                if status == CheckoutStatus.OwnedByOtherUser:
+                    res = ("busy", info.Owner or u"")
+                elif status == CheckoutStatus.OwnedByCurrentUser:
+                    self.mine.add(eid)
+                else:
+                    names = [n for n in (info.LastChangedBy, info.Creator) if n]
+                    if names and self.me not in [n.lower() for n in names]:
+                        res = ("others", info.LastChangedBy or info.Creator)
+            except Exception:
+                pass
+            self.cache[eid] = res
+        return self.cache[eid]
+
+
+# ---- read -----------------------------------------------------------------------------
+
+def _fields(doc, vs):
+    d = vs.Definition
+    out, col = [], 0
+    for i in range(d.GetFieldCount()):
+        f = d.GetField(i)
+        ft = f.FieldType
+        pid = f.ParameterId.IntegerValue
+        out.append({"key": u"f{0}".format(i), "index": i, "heading": f.ColumnHeading or f.GetName(),
+                    "name": f.GetName(), "hidden": bool(f.IsHidden),
+                    "source": "type" if ft == ScheduleFieldType.ElementType else
+                              "instance" if ft == ScheduleFieldType.Instance else u"{0}".format(ft).lower(),
+                    "param": pid if ft in PARAM_FIELDS and pid != -1 else None,
+                    "body": None if f.IsHidden else col})
+        if pid in ROLES and ft == ScheduleFieldType.Instance:
+            out[-1]["role"] = ROLES[pid]
+        if not f.IsHidden:
+            col += 1
+    return out
+
+
+def _body(vs):
+    """Body cell texts row by row (column headings included; matched rows are what counts)."""
+    try:
+        body = vs.GetTableData().GetSectionData(SectionType.Body)
+    except Exception:
+        return []
+    rows = []
+    for r in range(body.FirstRowNumber, body.LastRowNumber + 1):
+        rows.append([vs.GetCellText(SectionType.Body, r, c).strip()
+                     for c in range(body.FirstColumnNumber, body.LastColumnNumber + 1)])
+    return rows
+
+
+def _type_of(doc, el, cache):
+    tid = el.GetTypeId()
+    if tid is None or tid == ElementId.InvalidElementId:
+        return None
+    k = tid.IntegerValue
+    if k not in cache:
+        cache[k] = doc.GetElement(tid)
+    return cache[k]
+
+
+def _match(rows, body, key, shown):
+    """(rows in body order, rows not found) matching each body row on the key columns' texts;
+    the matched rows take the body's text for computed columns."""
+    pending = {}
+    for r in rows:
+        pending.setdefault(tuple(r["v"][f["index"]].strip() for f in key), []).append(r)
+    ordered = []
+    for cells in body:
+        if any(f["body"] >= len(cells) for f in key):
+            continue
+        hit = pending.get(tuple(cells[f["body"]] for f in key))
+        if not hit:
+            continue
+        r = hit.pop(0)
+        for g in shown:
+            if g["param"] is None and g["body"] < len(cells):
+                r["v"][g["index"]] = cells[g["body"]]
+        ordered.append(r)
+    left = [r for rs in pending.values() for r in rs]
+    return ordered, left
+
+
+def _natural(text):
+    return [(0, float(t), u"") if t[0].isdigit() else (1, 0, t.lower())
+            for t in re.findall(r"\d+(?:\.\d+)?|\D+", text or u"")]
+
+
+def _sorted(vs, rows):
+    """Rows by the schedule's sort / group fields (natural order), then id."""
+    d = vs.Definition
+    rules = []
+    for i in range(d.GetSortGroupFieldCount()):
+        sg = d.GetSortGroupField(i)
+        try:
+            rules.append((d.GetFieldIndex(sg.FieldId), u"{0}".format(sg.SortOrder) == u"Descending"))
+        except Exception:
+            continue
+    rows = sorted(rows, key=lambda r: r["id"])
+    for idx, desc in reversed(rules):
+        rows.sort(key=lambda r: _natural(r["v"][idx]), reverse=desc)
+    return rows
+
+
+def read(doc, vs, limit=20000):
+    fields = _fields(doc, vs)
+    params, locks, types = _Params(doc), _Locks(doc), {}
+    els = list(FilteredElementCollector(doc, vs.Id).WhereElementIsNotElementType())
+    truncated = len(els) > limit
+    els = els[:limit]
+
+    rows, kinds, editable = [], {}, {}
+    for el in els:
+        typ = None
+        vals = []
+        for f in fields:
+            if f["param"] is None:
+                vals.append(u"")
+                continue
+            target = el
+            if f["source"] == "type":
+                typ = typ or _type_of(doc, el, types)
+                target = typ
+            p = params.get(target, f["param"])
+            vals.append(text_of(p))
+            if p is not None:
+                k = kind_of(p)
+                kinds.setdefault(f["key"], k)
+                if not p.IsReadOnly and k != "id":
+                    editable[f["key"]] = True
+        row = {"id": el.Id.IntegerValue, "v": vals}
+        if typ is not None:
+            row["type"] = typ.Id.IntegerValue
+        lk = locks.of(el.Id.IntegerValue)
+        if lk:
+            row["lock"], row["by"] = lk
+        elif el.Id.IntegerValue in locks.mine:
+            row["mine"] = True          # borrowed by this user already: writing borrows nothing new
+        if typ is not None:
+            tl = locks.of(typ.Id.IntegerValue)
+            if tl:
+                row["typeLock"], row["typeBy"] = tl
+        if isinstance(el, ViewSheet) and el.IsPlaceholder:
+            row["placeholder"] = True
+        rows.append(row)
+
+    # row order + computed cells: match the schedule's body rows on the texts of shown parameter
+    # columns (all of them, else a single column unique per element), else its sort fields
+    shown = [f for f in fields if f["body"] is not None]
+    body = _body(vs) if rows else []
+    params_shown = [f for f in shown if f["param"] is not None]
+    keys = [params_shown] if params_shown else []
+    for f in params_shown:
+        texts = [r["v"][f["index"]].strip() for r in rows]
+        if all(texts) and len(set(texts)) == len(texts):
+            keys.append([f])
+    order = None
+    for key in keys:
+        ordered, left = _match(rows, body, key, shown)
+        if len(ordered) * 2 >= len(rows):
+            rows, order = ordered + _sorted(vs, left), u"schedule"
+            break
+    if order is None:
+        rows, order = _sorted(vs, rows), u"sort fields"
+    for f in fields:
+        f["kind"] = kinds.get(f["key"], "computed" if f["param"] is None else "text")
+        f["editable"] = bool(editable.get(f["key"]))
+        del f["body"]
+    return {"schedule": vs.Name, "id": vs.Id.IntegerValue,
+            "sheetList": vs.Definition.CategoryId.IntegerValue == SHEETS_CAT,
+            "itemized": bool(vs.Definition.IsItemized), "order": order,
+            "user": doc.Application.Username, "workshared": bool(doc.IsWorkshared),
+            "columns": fields, "rows": rows, "truncated": truncated}
+
+
+# ---- write ----------------------------------------------------------------------------
+
+def _field_by_key(vs, key):
+    d = vs.Definition
+    try:
+        i = int(u"{0}".format(key).lstrip(u"f"))
+        return d.GetField(i)
+    except Exception:
+        raise ValueError(u"không có cột {0}".format(key))
+
+
+def _targets(doc, vs, changes, types):
+    """[(target element, ScheduleField, value, change)] with type fields on the type."""
+    out = []
+    for c in changes:
+        el = doc.GetElement(ElementId(int(c["id"])))
+        f = _field_by_key(vs, c["col"])
+        if el is None:
+            out.append((None, f, c.get("value"), c))
+            continue
+        if f.FieldType == ScheduleFieldType.ElementType:
+            el = _type_of(doc, el, types)
+        elif f.FieldType != ScheduleFieldType.Instance:
+            el = None
+        out.append((el, f, c.get("value"), c))
+    return out
+
+
+def write(doc, vs, changes, force=False, dry_run=False, tname=None):
+    """changes: [{id, col: "f<i>", value}]. Returns counts + problems (short)."""
+    params, locks, types = _Params(doc), _Locks(doc), {}
+    res = {"written": 0, "same": 0, "errors": [], "locked": [], "others": [], "typeRows": 0}
+    plan, seen = [], {}
+    for el, f, value, c in _targets(doc, vs, changes, types):
+        where = {"id": c["id"], "col": c["col"]}
+        if el is None:
+            res["errors"].append(dict(where, error=u"không sửa được cột này"))
+            continue
+        p = params.get(el, f.ParameterId.IntegerValue)
+        if p is None or p.IsReadOnly or kind_of(p) == "id":
+            res["errors"].append(dict(where, error=u"tham số chỉ đọc"))
+            continue
+        lk = locks.of(el.Id.IntegerValue)
+        if lk and lk[0] == "busy":
+            res["locked"].append(dict(where, by=lk[1]))
+            continue
+        if lk and not force:
+            res["others"].append(dict(where, by=lk[1]))
+            continue
+        k = (el.Id.IntegerValue, f.ParameterId.IntegerValue)
+        if k in seen:          # a type cell edited on several rows: last value wins
+            plan[seen[k]] = (p, value, where)
+            continue
+        if text_of(p) == (value or u""):
+            res["same"] += 1
+            continue
+        seen[k] = len(plan)
+        plan.append((p, value, where))
+        if f.FieldType == ScheduleFieldType.ElementType:
+            res["typeRows"] += 1
+    if dry_run or not plan:
+        res["toWrite"] = len(plan)
+        return res
+    t = Transaction(doc, tname or u"Bảng {0}: sửa {1} ô".format(vs.Name, len(plan)))
+    t.Start()
+    try:
+        for p, value, where in plan:
+            try:
+                set_text(p, value)
+                res["written"] += 1
+            except Exception as ex:
+                res["errors"].append(dict(where, error=u"{0}".format(ex)))
+        t.Commit()
+    except Exception:
+        if t.HasStarted() and not t.HasEnded():
+            t.RollBack()
+        raise
+    return res
+
+
+def _title_block(doc, sheets):
+    """Most used title block type among the sheets, else any title block type, else None."""
+    count = {}
+    for s in sheets:
+        for tb in FilteredElementCollector(doc, s.Id).OfCategory(BuiltInCategory.OST_TitleBlocks) \
+                .WhereElementIsNotElementType():
+            if isinstance(tb, FamilyInstance):
+                k = tb.GetTypeId().IntegerValue
+                count[k] = count.get(k, 0) + 1
+    if count:
+        return ElementId(max(count, key=lambda k: count[k]))
+    any_tb = FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_TitleBlocks) \
+        .WhereElementIsElementType().FirstElementId()
+    return any_tb if any_tb != ElementId.InvalidElementId else None
+
+
+def add_sheets(doc, vs, rows, dry_run=False):
+    """rows: [{number, name, values: {"f<i>": text}}] -> new sheets, then their other cells."""
+    if vs.Definition.CategoryId.IntegerValue != SHEETS_CAT:
+        raise ValueError(u"chỉ thêm dòng được ở danh mục bản vẽ (schedule của Sheets)")
+    existing = set(s.SheetNumber for s in FilteredElementCollector(doc).OfClass(ViewSheet))
+    bad = [r.get("number") for r in rows if not (r.get("number") or u"").strip()
+           or r["number"].strip() in existing]
+    if bad:
+        raise ValueError(u"số sheet trống hoặc đã có: " + u", ".join(u"{0}".format(b) for b in bad))
+    if dry_run:
+        return {"toCreate": len(rows)}
+    sheets = ps.schedule_sheets(doc, vs)[0]
+    tb = _title_block(doc, sheets)
+    created, cells = [], []
+    t = Transaction(doc, u"Bảng {0}: thêm {1} sheet".format(vs.Name, len(rows)))
+    t.Start()
+    try:
+        for r in rows:
+            s = ViewSheet.Create(doc, tb) if tb is not None else ViewSheet.CreatePlaceholder(doc)
+            s.SheetNumber = r["number"].strip()
+            if r.get("name"):
+                s.Name = r["name"]
+            created.append({"id": s.Id.IntegerValue, "number": s.SheetNumber})
+            for k, v in (r.get("values") or {}).items():
+                cells.append({"id": s.Id.IntegerValue, "col": k, "value": v})
+        t.Commit()
+    except Exception:
+        if t.HasStarted() and not t.HasEnded():
+            t.RollBack()
+        raise
+    out = {"created": created, "titleBlock": tb.IntegerValue if tb is not None else None}
+    if cells:
+        out["cells"] = write(doc, vs, cells, force=True)
+    return out
+
+
+def sync_print_set(doc, vs):
+    """After a sheet-list change: the print set of the schedule's name follows its rows."""
+    if vs.Definition.CategoryId.IntegerValue != SHEETS_CAT:
+        return None
+    c = ps.compare(doc, vs)
+    if c["set"] is None:
+        return {"status": u"no print set named {0}".format(vs.Name)}
+    if c["in_sync"]:
+        return {"status": u"in sync", "sheets": len(c["sheets"])}
+    if ps.owner(doc, c["set"])[2]:
+        return {"status": u"skipped: print set borrowed by another user"}
+    if ps.is_others(doc, c["set"]):
+        return {"status": u"skipped: print set last changed by someone else"}
+    r = ps.sync(doc, c)
+    return {"status": u"updated", "sheets": r["count"], "added": len(c["added"]),
+            "removed": len(c["removed"]), "renumbered": r["renumbered"]}

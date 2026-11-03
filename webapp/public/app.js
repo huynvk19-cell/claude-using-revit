@@ -143,7 +143,7 @@ async function refreshInfo(rebuild) {
       $("#o-model").textContent = info.doc ? info.doc.title : "Chưa mở model";
       $("#o-view").textContent = info.view ? info.view.name : "";
       for (const el of document.querySelectorAll("[data-sel]")) el.textContent = String(info.selection.length);
-      if (rebuild || docChanged) { closeTool(); S.board = null; renderTiles(); loadBoard(); }
+      if (rebuild || docChanged) { closeTool(); S.board = null; renderTiles(); loadBoard(); if (typeof tableDocChanged === "function") tableDocChanged(); }
       else if (viewChanged) loadBoard();
     } catch (e) {
       $("#notice").textContent = "Revit đang bận hoặc có hộp thoại đang mở.";
@@ -600,9 +600,12 @@ $("#btn-access").addEventListener("click", async () => {
 // ---- navigation + boot -------------------------------------------------------------------
 let jobsTimer = null;
 function show(view) {
+  if (S.view === "table" && view !== "table" && !leaveOk()) return;     // unsaved grid edits
   S.view = view;
   for (const b of document.querySelectorAll("#nav button")) b.classList.toggle("on", b.dataset.view === view);
-  for (const v of ["tools", "all", "jobs"]) $("#view-" + v).classList.toggle("hidden", v !== view);
+  for (const v of ["tools", "all", "jobs", "table"]) $("#view-" + v).classList.toggle("hidden", v !== view);
+  document.body.classList.toggle("wide", view === "table");
+  if (view === "table") tableOpen();
   clearInterval(jobsTimer);
   if (view === "all") loadCatalog().catch(e => toast(e.message, "err"));
   if (view === "jobs") { renderJobs(); jobsTimer = setInterval(renderJobs, 2500); }
@@ -614,6 +617,7 @@ async function boot() {
   try {
     await loadWindows();
     await refreshInfo(true);
+    if (location.hash === "#table" || new URLSearchParams(location.search).get("open") === "table") show("table");
     setInterval(() => loadWindows().catch(() => {}), 10000);
   } catch (e) { if (!/mã truy cập/.test(e.message)) toast(e.message, "err"); }
 }
