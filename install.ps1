@@ -91,15 +91,7 @@ if ($WebApp) {
         $sh.TargetPath = "$env:WINDIR\System32\wscript.exe"
         $sh.Arguments = "`"$wa\desktop\app.vbs`""
         $sh.WorkingDirectory = "$wa\desktop"
-        $png = Get-ChildItem (Join-Path $root 'pyrevit') -Recurse -Filter icon.png | Where-Object { $_.FullName -like '*Print Set Sync*' } | Select-Object -First 1
-        if ($png) {      # shortcut icon = the ribbon icon, saved as .ico
-            Add-Type -AssemblyName System.Drawing
-            $ico = Join-Path $wa 'desktop\app.ico'
-            $fs = [IO.File]::Create($ico)
-            [Drawing.Icon]::FromHandle((New-Object Drawing.Bitmap $png.FullName).GetHicon()).Save($fs)
-            $fs.Close()
-            $sh.IconLocation = $ico
-        }
+        $sh.IconLocation = "$wa\desktop\app.ico"     # drawn by webapp\desktop\make_app_icon.ps1
         $sh.Save()
         "app -> $lnk (WebView2 SDK from $($sdk.DirectoryName))"
     }

@@ -160,9 +160,9 @@ $form.Text = 'claude using revit'
 $form.BackColor = [Drawing.Color]::FromArgb(2, 3, 10)
 $form.StartPosition = 'Manual'
 $form.MinimumSize = New-Object Drawing.Size 420, 480
-$iconPng = Get-ChildItem (Join-Path $env:APPDATA 'pyRevit\Extensions\ClaudeUsingRevit.extension') -Recurse -Filter icon.png -ErrorAction SilentlyContinue |
-    Where-Object { $_.FullName -like '*Print Set Sync*' } | Select-Object -First 1
-if ($iconPng) { $form.Icon = [Drawing.Icon]::FromHandle((New-Object Drawing.Bitmap $iconPng.FullName).GetHicon()) }
+# app.ico holds 16-256 px (make_app_icon.ps1): Windows takes the size the taskbar / Alt+Tab needs
+$ico = Join-Path $here 'app.ico'
+if (Test-Path $ico) { $form.Icon = New-Object Drawing.Icon $ico }
 
 # size and place of last time (only when that place is still on a screen)
 $state = Join-Path $data 'app.json'
