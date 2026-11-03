@@ -72,6 +72,7 @@ async function load(id, keep) {
   try {
     const d = await run("task", "schedule_table", { schedule: String(id) }, "Đọc bảng");
     G.data = d; G.name = d.schedule; G.cols = d.columns;
+    el.pick.value = String(d.id);
     G.rows = d.rows.map(r => ({ ...r, o: r.v.slice() }));
     G.undo = []; G.redo = []; G.edit = null;
     if (!keep) { G.sort = null; G.filters = {}; G.q = ""; el.q.value = ""; G.anchor = G.focus = { r: 0, c: 0 }; G.onlyChanged = false; }
