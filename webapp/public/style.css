@@ -225,3 +225,44 @@ details[open] summary::before { transform: rotate(90deg); }
 
 /* on a bright photo the glass needs a darker tint to keep white text readable */
 body.photo .glass, body.photo .ornament { background: rgba(28, 30, 38, .42); }
+
+/* ---- Bảng: a schedule as an Excel-like grid ---- */
+body.wide main { max-width: none; padding-right: 20px; }
+.table-view { display: flex; flex-direction: column; gap: 12px; height: calc(100vh - 124px); min-height: 420px; }
+.g-bar { padding: 4px 16px 14px; border-radius: 26px; }
+.g-bar .row { margin-top: 10px; }
+.g-bar select.grow { max-width: 460px; }
+.g-title { color: var(--dim); font-size: 13px; }
+.g-wrap { flex: 1; min-height: 0; border-radius: 22px; overflow: hidden; padding: 0; }
+.g-scroll { position: relative; height: 100%; overflow: auto; outline: none; }
+.g-status { font-size: 12.5px; color: var(--dim); padding: 0 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+table.grid { border-collapse: separate; border-spacing: 0; table-layout: fixed; width: max-content; font-size: 13px; user-select: none; -webkit-user-select: none; }
+table.grid th, table.grid td { height: 30px; padding: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+table.grid thead th { position: sticky; z-index: 2; background: rgba(38, 40, 50, .96); text-align: left; font-weight: 600; font-size: 12.5px; }
+table.grid thead tr:first-child th { top: 0; }
+table.grid thead tr.flt th { top: 30px; padding: 2px 4px; }
+table.grid tr.flt input { width: 100%; padding: 3px 7px; font-size: 12px; border-radius: 8px; background: rgba(0, 0, 0, .3); }
+table.grid th .hd { cursor: pointer; }
+table.grid th .hd em { font-style: normal; font-weight: 500; font-size: 10.5px; color: var(--dim); margin-left: 6px; padding: 1px 6px; border-radius: 999px; background: var(--fill); }
+table.grid th.ro .hd { color: var(--dim); font-weight: 500; }
+table.grid th.hid { font-style: italic; }
+table.grid th.sel, table.grid td.rn.sel { background: rgba(70, 74, 92, .98); color: #fff; }
+table.grid th { position: relative; }
+table.grid th .rz { position: absolute; right: 0; top: 0; bottom: 0; width: 7px; cursor: col-resize; }
+table.grid .rn { position: sticky; left: 0; z-index: 1; background: rgba(30, 32, 40, .96); color: var(--faint); text-align: right; font-size: 11.5px; font-variant-numeric: tabular-nums; cursor: default; }
+table.grid thead .rn { z-index: 3; }
+table.grid td { cursor: cell; position: relative; }
+table.grid td.ro { color: var(--dim); }
+table.grid tr.ph td:not(.rn) { font-style: italic; }
+table.grid tr.new td.rn { color: var(--work); }
+table.grid td.chg { background: rgba(255, 159, 10, .3); color: #ffd590; }
+table.grid td.sel { background: rgba(120, 160, 255, .2); }
+table.grid td.chg.sel { background: rgba(200, 160, 120, .38); }
+table.grid td.act { box-shadow: inset 0 0 0 2px rgba(150, 185, 255, .95); }
+table.grid td.fpv { box-shadow: inset 0 0 0 1px rgba(150, 185, 255, .7); }
+table.grid td .fh { position: absolute; right: 0; bottom: 0; width: 8px; height: 8px; background: rgba(150, 185, 255, 1); cursor: crosshair; border: 1px solid #000; }
+table.grid tr.pad td, table.grid tr.pad { padding: 0; border: 0; height: auto; }
+.g-edit { position: absolute; z-index: 4; border-radius: 0; padding: 0 7px; font-size: 13px; background: #1c1d24; box-shadow: inset 0 0 0 2px rgba(150, 185, 255, 1); }
+.g-pv { max-height: 46vh; }
+.g-pv .li { min-height: 0; padding: 6px 14px; font-size: 13px; }
+@media (max-width: 760px) { .table-view { height: calc(100vh - 200px); } }

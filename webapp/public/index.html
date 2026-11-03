@@ -27,6 +27,7 @@
   <!-- side ornament: the three places -->
   <nav class="ornament side" id="nav">
     <button data-view="tools" class="on" title="Công cụ"><svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></svg><span>Công cụ</span></button>
+    <button data-view="table" title="Bảng (schedule như Excel)"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M3.5 14.5h17M9.5 9.5v10"/></svg><span>Bảng</span></button>
     <button data-view="all" title="Tất cả lệnh"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg><span>Lệnh</span></button>
     <button data-view="jobs" title="Nhật ký"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span>Nhật ký</span></button>
   </nav>
@@ -44,6 +45,7 @@
       <div class="glass detail-pane" id="cmd-detail"><p class="dim">Chọn một lệnh.</p></div>
     </div>
     <div id="view-jobs" class="glass jobs hidden"></div>
+    <div id="view-table" class="table-view hidden"></div>
   </main>
 
   <!-- a tool opened as its own window -->
@@ -68,5 +70,6 @@
 
   <script src="space.js"></script>
   <script src="app.js"></script>
+  <script src="grid.js"></script>
 </body>
 </html>

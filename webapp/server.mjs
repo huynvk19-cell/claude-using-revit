@@ -31,7 +31,7 @@ const EXT_TAB = path.join(process.env.APPDATA || "", "pyRevit", "Extensions", "C
 const HEADER_RE = /\/\*\s*mcp-tool\s*([\s\S]*?)\*\//;
 const NAME_RE = /^[a-z][a-z0-9_]{0,63}$/;
 const MAX_JOBS = 200;
-const MAX_RESULT = 4 * 1024 * 1024;
+const MAX_RESULT = 12 * 1024 * 1024;   // a schedule table of a few thousand rows
 
 fs.mkdirSync(DATA, { recursive: true });
 
@@ -446,8 +446,9 @@ const server = http.createServer(async (req, res) => {
 
 server.on("error", e => { log("listen failed:", e.message); process.exit(1); });
 const listenHost = process.env.CUR_WEBAPP_HOST || cfg.host;    // 127.0.0.1 = this PC only
-server.listen(cfg.port, listenHost, () => {
-    log(`listening on ${listenHost}:${cfg.port}`);
-    console.log(`claude using revit web app: http://localhost:${cfg.port}/?k=${cfg.token}`);
+const listenPort = Number(process.env.CUR_WEBAPP_PORT) || cfg.port;    // a second copy from the repo, for tests
+server.listen(listenPort, listenHost, () => {
+    log(`listening on ${listenHost}:${listenPort}`);
+    console.log(`claude using revit web app: http://localhost:${listenPort}/?k=${cfg.token}`);
     for (const u of lanUrls()) console.log("  " + u);
 });

@@ -16,6 +16,7 @@ from Autodesk.Revit.DB import Element, ElementId, Transaction, View, ViewSheet
 import highlight_regions as hr
 import pdf_export as pe
 import print_set_sync as ps
+import schedule_table as st
 import sheet_list_columns as slc
 import untagged_marks as um
 import view_3d as v3d
@@ -324,6 +325,66 @@ def sheet_list_fill(doc, uidoc, args):
     written, skipped = slc.fill(doc, sheets, pid, args["value"] or u"")
     return {"sheets": len(sheets), "written": written,
             "skippedBorrowed": _cut([ps.sheet_label(s) for s in skipped], args)}
+
+
+# ---- schedule as a table (web app: Bảng) ---------------------------------------
+
+def _table(doc, args):
+    name = args.get("schedule")
+    if not name:
+        raise TaskError(u"pass schedule (name or id)")
+    vs = st.find(doc, name)
+    if vs is None:
+        raise TaskError(u"schedule not found: {0}".format(name))
+    return vs
+
+
+@task(u"(RO) Every schedule (id, name, category, sheetList, key).")
+def schedule_list(doc, uidoc, args):
+    return {"schedules": st.schedules(doc)}
+
+
+@task(u"(RO) A schedule as a table: columns (heading, kind, editable, hidden) and one row per "
+      u"element in schedule order (id, values, lock). args: schedule (name or id), limit.")
+def schedule_table(doc, uidoc, args):
+    return st.read(doc, _table(doc, args), int(args.get("limit", 20000)))
+
+
+@task(u"Write cells of a schedule table; sheet lists then sync their print set. args: schedule, "
+      u"changes [{id, col: f<i>, value}], add [{number, name, values}] (sheet lists: new sheets), "
+      u"force (elements created + last changed by others), dryRun.")
+def schedule_table_write(doc, uidoc, args):
+    from Autodesk.Revit.DB import TransactionGroup
+    vs = _table(doc, args)
+    changes, add = args.get("changes") or [], args.get("add") or []
+    if args.get("dryRun"):
+        out = st.write(doc, vs, changes, force=args.get("force"), dry_run=True)
+        if add:
+            try:
+                out["add"] = st.add_sheets(doc, vs, add, dry_run=True)
+            except ValueError as ex:
+                raise TaskError(u"{0}".format(ex))
+        return out
+    tg = TransactionGroup(doc, u"Bảng {0}".format(vs.Name))
+    tg.Start()
+    try:
+        out = st.write(doc, vs, changes, force=args.get("force")) if changes else {"written": 0}
+        if add:
+            try:
+                out["add"] = st.add_sheets(doc, vs, add)
+            except ValueError as ex:
+                raise TaskError(u"{0}".format(ex))
+        if out["written"] or add:
+            out["printSet"] = st.sync_print_set(doc, vs)
+        tg.Assimilate()
+    except Exception:
+        if tg.HasStarted() and not tg.HasEnded():
+            tg.RollBack()
+        raise
+    for k in ("errors", "locked", "others"):
+        if k in out:
+            out[k] = _cut(out[k], args)
+    return out
 
 
 # ---- untagged (Highlight Untagged / Remove Untagged) ---------------------------
