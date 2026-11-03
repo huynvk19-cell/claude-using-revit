@@ -96,6 +96,36 @@ if ($WebApp) {
         $sh.WorkingDirectory = "$wa\desktop"
         $sh.IconLocation = "$wa\desktop\app.ico"     # drawn by webapp\desktop\make_app_icon.ps1
         $sh.Save()
+        # the same AppUserModelID as the app's process (app.ps1): the taskbar then ties the window to this
+        # shortcut (its icon; a pin starts the app through it), not to powershell.exe (blank icon, a pin
+        # that cannot start the app)
+        Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+public static class CurLnkId
+{
+    [ComImport, Guid("886D8EEB-8CF2-4446-8D02-CDBA1DBDCF99"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    interface IPropertyStore
+    {
+        int GetCount(out uint c); int GetAt(uint i, out PROPERTYKEY k); int GetValue(ref PROPERTYKEY k, out PROPVARIANT v);
+        int SetValue(ref PROPERTYKEY k, ref PROPVARIANT v); int Commit();
+    }
+    [StructLayout(LayoutKind.Sequential, Pack = 4)] struct PROPERTYKEY { public Guid fmtid; public uint pid; }
+    [StructLayout(LayoutKind.Explicit, Size = 24)] struct PROPVARIANT { [FieldOffset(0)] public ushort vt; [FieldOffset(8)] public IntPtr p; }
+    [DllImport("shell32.dll")] static extern int SHGetPropertyStoreFromParsingName([MarshalAs(UnmanagedType.LPWStr)] string path, IntPtr bc, int flags, ref Guid riid, out IPropertyStore ps);
+    public static void Set(string lnk, string id)
+    {
+        var iid = typeof(IPropertyStore).GUID;
+        IPropertyStore ps;
+        Marshal.ThrowExceptionForHR(SHGetPropertyStoreFromParsingName(lnk, IntPtr.Zero, 2, ref iid, out ps));   // GPS_READWRITE
+        var key = new PROPERTYKEY { fmtid = new Guid("9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3"), pid = 5 };     // System.AppUserModel.ID
+        var v = new PROPVARIANT { vt = 31, p = Marshal.StringToCoTaskMemUni(id) };                             // VT_LPWSTR
+        try { Marshal.ThrowExceptionForHR(ps.SetValue(ref key, ref v)); Marshal.ThrowExceptionForHR(ps.Commit()); }
+        finally { Marshal.FreeCoTaskMem(v.p); Marshal.ReleaseComObject(ps); }
+    }
+}
+'@
+        [CurLnkId]::Set($lnk, 'ClaudeUsingRevit.App')
         "app -> $lnk (WebView2 SDK from $($sdk.DirectoryName))"
     }
     else { "app: WebView2 SDK dlls not found on this PC; the desktop app is not installed" }
