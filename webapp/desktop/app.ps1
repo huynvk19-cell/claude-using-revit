@@ -3,7 +3,8 @@
 # open window to the front. Hosts the page in WebView2 (Microsoft Edge runtime, part of Windows 11).
 # The WebView2 SDK dlls are not shipped in this repo: install.ps1 -WebApp copies them from a local
 # install (x64 loader) and adds the Start Menu shortcut "claude using revit".
-# Run: powershell -STA -WindowStyle Hidden -ExecutionPolicy Bypass -File app.ps1
+# Run: wscript app.vbs (the Start Menu shortcut does this; never a shortcut straight to powershell.exe,
+# which on Windows 11 opens a Windows Terminal window the app then depends on)
 param([string]$Url)
 $ErrorActionPreference = 'Stop'
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
