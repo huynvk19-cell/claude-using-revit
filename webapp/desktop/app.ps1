@@ -70,20 +70,84 @@ if (-not $Url) {
 [CUR.Win]::SetProcessDpiAwarenessContext([IntPtr](-4)) | Out-Null  # per-monitor v2: sharp text
 Add-Type -Path (Join-Path $lib 'Microsoft.Web.WebView2.Core.dll')
 Add-Type -Path (Join-Path $lib 'Microsoft.Web.WebView2.WinForms.dll')
-Add-Type -ReferencedAssemblies System.Windows.Forms, (Join-Path $lib 'Microsoft.Web.WebView2.Core.dll'), (Join-Path $lib 'Microsoft.Web.WebView2.WinForms.dll') -TypeDefinition @"
+Add-Type -ReferencedAssemblies System.Windows.Forms, System.Drawing, (Join-Path $lib 'Microsoft.Web.WebView2.Core.dll'), (Join-Path $lib 'Microsoft.Web.WebView2.WinForms.dll') -TypeDefinition @"
 using System;
+using System.Runtime.InteropServices;
+using System.Windows.Forms;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
+
+// A window without the Windows title bar (the page draws a macOS one: traffic lights, drag strip) that
+// keeps what the frame gives: resize borders, shadow, rounded corners (Windows 11), snap, taskbar button.
+public class CurForm : Form
+{
+    [StructLayout(LayoutKind.Sequential)] struct RECT { public int L, T, R, B; }
+    [StructLayout(LayoutKind.Sequential)] struct MARGINS { public int l, r, t, b; }
+    [DllImport("user32.dll")] static extern bool ReleaseCapture();
+    [DllImport("user32.dll")] static extern IntPtr SendMessage(IntPtr h, int m, IntPtr w, IntPtr l);
+    [DllImport("user32.dll")] static extern int GetSystemMetrics(int i);
+    [DllImport("dwmapi.dll")] static extern int DwmSetWindowAttribute(IntPtr h, int a, ref int v, int s);
+    [DllImport("dwmapi.dll")] static extern int DwmExtendFrameIntoClientArea(IntPtr h, ref MARGINS m);
+
+    protected override void WndProc(ref Message m)
+    {
+        if (m.Msg == 0x83 && m.WParam != IntPtr.Zero)      // WM_NCCALCSIZE: the client takes the title bar
+        {
+            int top = ((RECT)Marshal.PtrToStructure(m.LParam, typeof(RECT))).T;
+            base.WndProc(ref m);                           // side + bottom borders as Windows sizes them
+            var r = (RECT)Marshal.PtrToStructure(m.LParam, typeof(RECT));
+            // maximized windows hang over the screen edge by the frame: keep the page inside it
+            r.T = top + (WindowState == FormWindowState.Maximized ? GetSystemMetrics(33) + GetSystemMetrics(92) : 0);
+            Marshal.StructureToPtr(r, m.LParam, false);
+            m.Result = IntPtr.Zero;
+            return;
+        }
+        base.WndProc(ref m);
+    }
+    protected override void OnHandleCreated(EventArgs e)
+    {
+        base.OnHandleCreated(e);
+        int on = 1, round = 2;
+        DwmSetWindowAttribute(Handle, 20, ref on, 4);      // dark frame (DWMWA_USE_IMMERSIVE_DARK_MODE)
+        DwmSetWindowAttribute(Handle, 33, ref round, 4);   // rounded corners (DWMWA_WINDOW_CORNER_PREFERENCE)
+        var mg = new MARGINS { t = 1 };
+        DwmExtendFrameIntoClientArea(Handle, ref mg);      // keeps the drop shadow
+    }
+    // move / resize as if the title bar or a border were pressed (hit = HTCAPTION 2, HTTOP 12, ...)
+    public void Press(int hit) { ReleaseCapture(); SendMessage(Handle, 0xA1, (IntPtr)hit, IntPtr.Zero); }
+    public void Zoom() { WindowState = WindowState == FormWindowState.Maximized ? FormWindowState.Normal : FormWindowState.Maximized; }
+}
+
 public static class CurWeb
 {
-    // own data folder, then the page; a failure is written to the log next to it
-    public static async void Start(WebView2 web, string dataDir, string url, string log)
+    // own data folder, then the page; a failure is written to the log next to it.
+    // The page's title bar talks to the window: close, min, zoom, drag, size:<hit>; the window answers
+    // with its state (max / normal, active / inactive) so the traffic lights can grey out like macOS.
+    public static async void Start(WebView2 web, CurForm form, string dataDir, string url, string log)
     {
         try
         {
             var env = await CoreWebView2Environment.CreateAsync(null, dataDir);
             await web.EnsureCoreWebView2Async(env);
-            web.CoreWebView2.Navigate(url);
+            var core = web.CoreWebView2;
+            bool active = true;
+            Action tell = () => {
+                try { core.PostWebMessageAsString("window:" + (form.WindowState == FormWindowState.Maximized ? "max" : "normal") + (active ? ",active" : ",inactive")); } catch { }
+            };
+            core.WebMessageReceived += (s, a) => {
+                string m;
+                try { m = a.TryGetWebMessageAsString(); } catch { return; }
+                if (m == "close") form.Close();
+                else if (m == "min") form.WindowState = FormWindowState.Minimized;
+                else if (m == "zoom") form.Zoom();
+                else if (m == "drag") form.Press(2);
+                else if (m.StartsWith("size:")) { int hit; if (int.TryParse(m.Substring(5), out hit) && hit >= 10 && hit <= 17) form.Press(hit); }
+                else if (m == "hello") tell();
+            };
+            form.Resize += (s, a) => tell();
+            form.Activated += (s, a) => { active = true; tell(); };
+            form.Deactivate += (s, a) => { active = false; tell(); };
+            core.Navigate(url);
         }
         catch (Exception ex) { System.IO.File.AppendAllText(log, DateTime.Now + " " + ex + Environment.NewLine); }
     }
@@ -91,7 +155,7 @@ public static class CurWeb
 "@
 [System.Windows.Forms.Application]::EnableVisualStyles()
 
-$form = New-Object Windows.Forms.Form
+$form = New-Object CurForm
 $form.Text = 'claude using revit'
 $form.BackColor = [Drawing.Color]::FromArgb(2, 3, 10)
 $form.StartPosition = 'Manual'
@@ -124,6 +188,6 @@ $form.Controls.Add($web)
 # the first ShowWindow of a process takes the launcher's show state (install.ps1 starts it with
 # -WindowStyle Hidden), so show it once more as wanted and bring it forward
 $form.add_Shown({ [CUR.Win]::ShowWindow($form.Handle, $(if ($max) { 3 } else { 9 })) | Out-Null; $form.Activate() })
-$form.add_Shown({ [CurWeb]::Start($web, (Join-Path $data 'app-webview'), $Url, (Join-Path $data 'app.log')) })
+$form.add_Shown({ [CurWeb]::Start($web, $form, (Join-Path $data 'app-webview'), $Url, (Join-Path $data 'app.log')) })
 [System.Windows.Forms.Application]::Run($form)
 $mutex.ReleaseMutex()
