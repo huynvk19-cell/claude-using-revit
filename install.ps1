@@ -86,8 +86,10 @@ if ($WebApp) {
         Remove-Item (Join-Path $programs 'Revit Island.lnk') -ErrorAction SilentlyContinue    # the earlier pill version
         $lnk = Join-Path $programs 'claude using revit.lnk'
         $sh = (New-Object -ComObject WScript.Shell).CreateShortcut($lnk)
-        $sh.TargetPath = "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe"
-        $sh.Arguments = "-STA -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$wa\desktop\app.ps1`""
+        # through wscript + app.vbs: a shortcut straight to powershell.exe opens a console (Windows Terminal on
+        # Windows 11) that the app then lives in, and from Start the app often never showed
+        $sh.TargetPath = "$env:WINDIR\System32\wscript.exe"
+        $sh.Arguments = "`"$wa\desktop\app.vbs`""
         $sh.WorkingDirectory = "$wa\desktop"
         $png = Get-ChildItem (Join-Path $root 'pyrevit') -Recurse -Filter icon.png | Where-Object { $_.FullName -like '*Print Set Sync*' } | Select-Object -First 1
         if ($png) {      # shortcut icon = the ribbon icon, saved as .ico
@@ -108,5 +110,5 @@ if ($WebApp) {
         "web app -> $wa (started; address + access code: $env:APPDATA\claude-using-revit\webapp.json)"
     }
     else { "web app -> $wa (node not found; Revit starts it once node is installed)" }
-    if ($app) { Start-Process "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -ArgumentList "-STA -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$wa\desktop\app.ps1`"" }   # no -WindowStyle on Start-Process: the form would take it as its first show state
+    if ($app) { Start-Process "$env:WINDIR\System32\wscript.exe" -ArgumentList "`"$wa\desktop\app.vbs`"" }
 }
