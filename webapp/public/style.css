@@ -227,8 +227,8 @@ details[open] summary::before { transform: rotate(90deg); }
 body.photo .glass, body.photo .ornament { background: rgba(28, 30, 38, .42); }
 
 /* ---- Bảng: a schedule as an Excel-like grid ---- */
-body.wide main { max-width: none; padding-right: 20px; }
-.table-view { display: flex; flex-direction: column; gap: 12px; height: calc(100vh - 124px); min-height: 420px; }
+body.wide main { max-width: none; padding-right: 20px; padding-bottom: 16px; }
+.table-view { display: flex; flex-direction: column; gap: 12px; height: calc(100vh - 120px); min-height: 420px; }
 .g-bar { padding: 4px 16px 14px; border-radius: 26px; }
 .g-bar .row { margin-top: 10px; }
 .g-bar select.grow { max-width: 460px; }
@@ -266,3 +266,60 @@ table.grid tr.pad td, table.grid tr.pad { padding: 0; border: 0; height: auto; }
 .g-pv { max-height: 46vh; }
 .g-pv .li { min-height: 0; padding: 6px 14px; font-size: 13px; }
 @media (max-width: 760px) { .table-view { height: calc(100vh - 200px); } }
+
+/* ---- macOS touches: scroll bars, drop-down lists (msel.js), the desktop app title bar (macwin.js) ---- */
+::-webkit-scrollbar { width: 12px; height: 12px; background: transparent; }
+::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
+::-webkit-scrollbar-button { display: none; height: 0; width: 0; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .16); border-radius: 999px; border: 3.5px solid transparent; background-clip: padding-box; min-height: 40px; min-width: 40px; }
+:hover::-webkit-scrollbar-thumb { background-color: rgba(255, 255, 255, .3); }
+::-webkit-scrollbar-thumb:hover, ::-webkit-scrollbar-thumb:active { background-color: rgba(255, 255, 255, .55); border-width: 2.5px; }
+.g-scroll::-webkit-scrollbar-track:vertical { margin-top: 62px; }        /* below the sticky header rows */
+.g-scroll::-webkit-scrollbar-track:horizontal { margin-left: 56px; }
+
+select.msel-src { display: none !important; }
+.msel { display: inline-flex; align-items: center; gap: 10px; min-width: 0; max-width: 100%; text-align: left; cursor: default;
+  font: 14.5px var(--font); color: var(--text); background: rgba(255, 255, 255, .1); border: 0; border-radius: 10px; padding: 7px 7px 7px 13px;
+  box-shadow: inset 0 .5px 0 rgba(255, 255, 255, .22), 0 .5px 2px rgba(0, 0, 0, .35); transition: background .12s; }
+.msel:hover:not(:disabled) { background: rgba(255, 255, 255, .15); }
+.msel.open, .msel:active:not(:disabled) { background: rgba(255, 255, 255, .2); }
+.msel:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(255, 255, 255, .35); }
+.msel:disabled { opacity: .45; }
+.msel .v { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.msel .chev { flex: 0 0 auto; width: 20px; height: 20px; border-radius: 6px; display: grid; place-items: center; background: rgba(255, 255, 255, .16); }
+.msel .chev svg { width: 10px; height: 14px; stroke-width: 1.7; }
+.field .msel { width: 100%; }
+.g-bar .msel.grow { max-width: 460px; }
+.msel-menu { position: fixed; z-index: 50; display: flex; flex-direction: column; max-width: min(560px, calc(100vw - 16px)); padding: 5px; border-radius: 11px;
+  background: rgba(44, 44, 52, .78); -webkit-backdrop-filter: blur(34px) saturate(1.8); backdrop-filter: blur(34px) saturate(1.8);
+  box-shadow: inset 0 0 0 .5px rgba(255, 255, 255, .2), 0 0 0 .5px rgba(0, 0, 0, .6), 0 14px 40px rgba(0, 0, 0, .55); outline: none;
+  font-size: 13.5px; animation: menu-in .12s ease-out; }
+.msel-menu.up { animation-name: menu-up; }
+@keyframes menu-in { from { opacity: 0; transform: translateY(-4px); } }
+@keyframes menu-up { from { opacity: 0; transform: translateY(4px); } }
+.msel-menu .ml { overflow: auto; min-height: 0; }
+.msel-menu .mq { margin: 2px 2px 6px; padding: 5px 10px; font-size: 13px; border-radius: 7px; background: rgba(0, 0, 0, .25); }
+.msel-menu .mi { display: flex; align-items: center; gap: 6px; height: 26px; padding: 0 14px 0 6px; border-radius: 5px; white-space: nowrap; cursor: default; color: var(--text); }
+.msel-menu .mi span { overflow: hidden; text-overflow: ellipsis; }
+.msel-menu .mi .ck { width: 14px; height: 14px; flex: 0 0 auto; stroke-width: 1.9; visibility: hidden; }
+.msel-menu .mi.on .ck { visibility: visible; }
+.msel-menu .mi.hi { background: rgba(255, 255, 255, .2); }
+.msel-menu .mi.dis { color: var(--faint); }
+.msel-menu .mh { padding: 6px 10px 3px 26px; font-size: 11.5px; font-weight: 600; color: var(--dim); }
+.msel-menu .sep { height: 1px; margin: 5px 8px; background: rgba(255, 255, 255, .12); }
+.msel-menu .hide { display: none; }
+
+#titlebar { display: none; }
+body.in-app #titlebar { display: block; position: fixed; top: 0; left: 0; z-index: 60; padding: 20px 0 0 20px; }
+body.in-app .lights { display: flex; gap: 8px; }
+body.in-app .light { width: 13px; height: 13px; padding: 0; border-radius: 50%; border: 0; display: grid; place-items: center; cursor: default;
+  box-shadow: inset 0 0 0 .5px rgba(0, 0, 0, .25); }
+body.in-app .light svg { width: 9px; height: 9px; stroke: rgba(0, 0, 0, .6); stroke-width: 1.6; opacity: 0; }
+body.in-app .lights:hover svg { opacity: 1; }
+body.in-app .light.close { background: #ff5f57; }
+body.in-app .light.min { background: #febc2e; }
+body.in-app .light.zoom { background: #28c840; }
+body.in-app .light:active { filter: brightness(.8); }
+body.in-app.inactive .lights:not(:hover) .light { background: rgba(255, 255, 255, .22); box-shadow: none; }
+body.in-app.edge-n, body.in-app.edge-n * { cursor: ns-resize !important; }
+body.in-app .ornament.top { max-width: calc(100vw - 230px); }
