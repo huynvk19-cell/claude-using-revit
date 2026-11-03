@@ -19,6 +19,7 @@ Add-Type -Name Win -Namespace CUR -MemberDefinition @'
 [DllImport("kernel32.dll", CharSet = CharSet.Unicode)] public static extern bool SetDllDirectory(string p);
 [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr h, int cmd);
 [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
+[DllImport("shell32.dll", CharSet = CharSet.Unicode)] public static extern int SetCurrentProcessExplicitAppUserModelID(string id);
 public delegate bool EnumProc(IntPtr h, IntPtr l);
 [DllImport("user32.dll")] public static extern bool EnumWindows(EnumProc f, IntPtr l);
 [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern int GetWindowText(IntPtr h, System.Text.StringBuilder s, int n);
@@ -35,6 +36,10 @@ public static IntPtr FindApp() {
     return found;
 }
 '@
+
+# the Start Menu shortcut carries the same id (install.ps1): the taskbar shows this window under it, with
+# its icon, and a pin starts the app through it instead of pinning powershell.exe
+[CUR.Win]::SetCurrentProcessExplicitAppUserModelID('ClaudeUsingRevit.App') | Out-Null
 
 function Show-App($h) { [CUR.Win]::ShowWindow($h, 9) | Out-Null; [CUR.Win]::ShowWindow($h, 5) | Out-Null; [CUR.Win]::SetForegroundWindow($h) | Out-Null }
 $mutex = New-Object Threading.Mutex($false, 'Local\ClaudeUsingRevitApp')
