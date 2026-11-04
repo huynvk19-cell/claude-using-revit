@@ -28,6 +28,7 @@
             <Button x:Name="b_find" Content="Tìm &amp; thay" ToolTip="Ctrl+H"/>
             <Button x:Name="b_formula" Content="Công thức" ToolTip="Ghi theo mẫu cho vùng chọn"/>
             <Button x:Name="b_add" Content="+ Sheet" ToolTip="Thêm sheet mới (danh mục bản vẽ)"/>
+            <Button x:Name="b_filter" Content="Thêm vào filter" ToolTip="Đưa giá trị các ô đang chọn vào một filter của view template: Hide hoặc No hide"/>
             <Button x:Name="b_xlsx" Content="Xuất .xlsx"/>
             <Button x:Name="b_csv" Content="Xuất .csv"/>
             <Button x:Name="b_import" Content="Nhập file" ToolTip="Nhập .xlsx / .csv: khớp theo cột Id hoặc số sheet"/>
@@ -43,6 +44,7 @@
           </DockPanel>
         </StackPanel>
         <TextBlock x:Name="status" DockPanel.Dock="Bottom" Margin="1,3,1,0" Foreground="#5E5E5E" TextTrimming="CharacterEllipsis"/>
+        <Grid>
         <DataGrid x:Name="grid"
                   AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
                   SelectionUnit="CellOrRowHeader" SelectionMode="Extended" ClipboardCopyMode="ExcludeHeader"
@@ -50,6 +52,12 @@
                   EnableRowVirtualization="True" EnableColumnVirtualization="True"
                   GridLinesVisibility="All" HorizontalGridLinesBrush="#E1E1E1" VerticalGridLinesBrush="#E1E1E1"
                   Background="White" BorderBrush="#ADADAD"/>
+        <Canvas x:Name="over" ClipToBounds="True">
+          <Rectangle x:Name="fillbox" Stroke="#0078D4" StrokeThickness="1" StrokeDashArray="3 2" IsHitTestVisible="False" Visibility="Collapsed"/>
+          <Border x:Name="handle" Width="8" Height="8" Background="#0078D4" BorderBrush="White" BorderThickness="1" Cursor="Cross"
+                  Visibility="Collapsed" ToolTip="Kéo để fill / đánh số. Giữ Ctrl: chép nguyên"/>
+        </Canvas>
+        </Grid>
       </DockPanel>
     </TabItem>
     <TabItem Header="Công cụ">
