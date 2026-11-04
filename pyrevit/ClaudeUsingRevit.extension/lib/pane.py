@@ -49,7 +49,7 @@ from System.Windows.Media import BrushConverter, Visual, VisualTreeHelper
 from System.Windows.Threading import DispatcherTimer
 from Microsoft.Win32 import OpenFileDialog, SaveFileDialog
 
-from Autodesk.Revit.DB import Rectangle
+from Autodesk.Revit.DB import Rectangle, ViewSchedule
 from Autodesk.Revit.UI import DockablePaneId, DockablePanes, DockablePaneState, DockPosition, IDockablePaneProvider
 
 import table_ops as ops
@@ -215,6 +215,7 @@ class Table(object):
         self.sel_timer.Tick += self._send_selection
         self.f('q').TextChanged += lambda s, e: self.apply_filter()
         self.pick.SelectionChanged += self._picked
+        self.pick.DropDownOpened += lambda s, e: self.refresh_list()
         self.grid.PreviewKeyDown += self._key
         self.grid.BeginningEdit += self._begin_edit
         self.grid.CellEditEnding += self._end_edit
@@ -265,12 +266,57 @@ class Table(object):
         self.loading = False
         self.say(u'')
 
-    def _got_list(self, res):
-        self.list = sorted(res.get('schedules') or [], key=lambda s: (not s.get('sheetList'), (s.get('category') or u'').lower(), s['name'].lower()))
+    def refresh_list(self, then=None):
+        """Schedules come and go in the model: read the list again, keep what is open."""
+        title = self.doc_title
+        if not title:
+            return
+
+        def got(res):
+            if self.doc_title != title:  # another model came to the front meanwhile
+                return
+            self._fill_list(res)
+            if then is not None:
+                then()
+        self.host.run('task', 'schedule_list', {}, got)
+
+    def _fill_list(self, res):
+        schedules = sorted(res.get('schedules') or [], key=lambda s: (not s.get('sheetList'), (s.get('category') or u'').lower(), s['name'].lower()))
+        current = self.data.get('id') if self.data is not None else None
+        gone = current is not None and not [s for s in schedules if s['id'] == current]
+        if gone:
+            name = self.data.get('schedule')
+            self.clear()
+            self.say(u'Schedule "{0}" không còn trong model, chọn schedule khác.'.format(name))
+            current = None
+        same = [s['id'] for s in schedules] == [s['id'] for s in self.list] and [s['name'] for s in schedules] == [s['name'] for s in self.list]
+        self.list = schedules
+        if same:  # nothing new: leave the box alone, it may hold typed text
+            return
+        opened = self.pick.IsDropDownOpen
         labels = [(u'Danh mục bản vẽ' if s.get('sheetList') else s.get('category') or u'') + u' · ' + s['name'] for s in self.list]
         self.loading = True
         self.pick.ItemsSource = labels
+        self.pick.SelectedIndex = next((i for i, s in enumerate(self.list) if s['id'] == current), -1)
+        self.pick.IsDropDownOpen = opened
         self.loading = False
+
+    def follow_view(self, view_id):
+        """A schedule opened in Revit opens here too (not over unwritten edits)."""
+        if self.dirty_count() or (self.data is not None and self.data.get('id') == view_id):
+            return
+
+        def go():
+            idx = next((i for i, s in enumerate(self.list) if s['id'] == view_id), None)
+            if idx is not None:
+                self.pick.SelectedIndex = idx
+        if any(s['id'] == view_id for s in self.list):
+            go()
+        else:
+            self.refresh_list(go)
+
+    def _got_list(self, res):
+        self._fill_list(res)
         doc = self.host.uiapp.ActiveUIDocument
         try:
             active = doc.ActiveView.Id.IntegerValue
@@ -302,7 +348,12 @@ class Table(object):
 
     def reload(self):
         if self.data is not None and self.leave_ok():
-            self.load(self.data['id'], keep=True)
+            sid = self.data['id']
+
+            def again():
+                if self.data is not None and self.data.get('id') == sid:
+                    self.load(sid, keep=True)
+            self.refresh_list(again)
         elif self.data is None:
             self.doc_title = None
             self.refresh_doc()
@@ -1542,6 +1593,8 @@ class Host(object):
         except Exception as ex:
             self.error = u'{0}'.format(ex)
             return False
+        if self.table.list:
+            self.table.refresh_list()
         self.table.refresh_doc()
         return True
 
@@ -1563,8 +1616,13 @@ class Host(object):
             self.table.refresh_doc()
 
     def _on_view(self, sender, e):
-        if not self.closed and self._shown():
-            self.table.refresh_doc()
+        if self.closed or not self._shown():
+            return
+        view = e.CurrentActiveView
+        same = isinstance(view, ViewSchedule) and self.table.doc_title == view.Document.Title
+        self.table.refresh_doc()
+        if same:
+            self.table.follow_view(view.Id.IntegerValue)
 
     def _on_doc_closed(self, sender, e):
         if not self.closed and self.table.data is not None and not [d for d in self.uiapp.Application.Documents if not d.IsLinked]:
