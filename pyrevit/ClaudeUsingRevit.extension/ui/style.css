@@ -267,7 +267,7 @@ table.grid tr.pad td, table.grid tr.pad { padding: 0; border: 0; height: auto; }
 .g-pv .li { min-height: 0; padding: 6px 14px; font-size: 13px; }
 @media (max-width: 760px) { .table-view { height: calc(100vh - 200px); } }
 
-/* ---- macOS touches: scroll bars, drop-down lists (msel.js), the desktop app title bar (macwin.js) ---- */
+/* ---- macOS touches: scroll bars, drop-down lists (msel.js) ---- */
 ::-webkit-scrollbar { width: 12px; height: 12px; background: transparent; }
 ::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
 ::-webkit-scrollbar-button { display: none; height: 0; width: 0; }
@@ -309,17 +309,8 @@ select.msel-src { display: none !important; }
 .msel-menu .sep { height: 1px; margin: 5px 8px; background: rgba(255, 255, 255, .12); }
 .msel-menu .hide { display: none; }
 
-#titlebar { display: none; }
-body.in-app #titlebar { display: block; position: fixed; top: 0; left: 0; z-index: 60; padding: 20px 0 0 20px; }
-body.in-app .lights { display: flex; gap: 8px; }
-body.in-app .light { width: 13px; height: 13px; padding: 0; border-radius: 50%; border: 0; display: grid; place-items: center; cursor: default;
-  box-shadow: inset 0 0 0 .5px rgba(0, 0, 0, .25); }
-body.in-app .light svg { width: 9px; height: 9px; stroke: rgba(0, 0, 0, .6); stroke-width: 1.6; opacity: 0; }
-body.in-app .lights:hover svg { opacity: 1; }
-body.in-app .light.close { background: #ff5f57; }
-body.in-app .light.min { background: #febc2e; }
-body.in-app .light.zoom { background: #28c840; }
-body.in-app .light:active { filter: brightness(.8); }
-body.in-app.inactive .lights:not(:hover) .light { background: rgba(255, 255, 255, .22); box-shadow: none; }
-body.in-app.edge-n, body.in-app.edge-n * { cursor: ns-resize !important; }
-body.in-app .ornament.top { max-width: calc(100vw - 230px); }
+/* the GPU viewer over the page, in the Revit panel */
+.viewer-frame { position: fixed; inset: 0; z-index: 40; background: #07080d; }
+.viewer-frame iframe { width: 100%; height: 100%; border: 0; display: block; }
+.viewer-frame .close { position: fixed; right: 16px; bottom: 16px; width: 40px; height: 40px; border: 0; border-radius: 50%; cursor: pointer;
+  color: var(--text); background: var(--glass-strong); font-size: 15px; box-shadow: inset 0 1px 1px rgba(255, 255, 255, .28), 0 10px 30px rgba(0, 0, 0, .4); }

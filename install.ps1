@@ -5,8 +5,8 @@
 #   -DwgBindXref         : also install the DWG bind-xref tool + its Explorer right-click menu (HKCU, no admin)
 #   -PyRevit             : also install the pyRevit extension (ribbon tab "claude using revit") to
 #                          %APPDATA%\pyRevit\Extensions; then pyRevit > Reload in Revit
-#   -WebApp              : also install the web app (webapp\: every tool from a browser, iPad on the LAN) to
-#                          %APPDATA%\claude-using-revit\webapp and (re)start its server; Revit side = the pyRevit extension
+#   -WebApp              : optional, a web server for the same page from a browser or iPad on the LAN, to
+#                          %APPDATA%\claude-using-revit\webapp; inside Revit the panel of -PyRevit needs none of it
 param([string]$CommandsDir = $env:REVIT_MCP_COMMANDS, [switch]$WorkStatus, [switch]$DwgBindXref, [switch]$PyRevit, [switch]$WebApp)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -44,6 +44,8 @@ if ($WorkStatus) {
 }
 if ($DwgBindXref) { & (Join-Path $root 'tools\dwg-bind-xref\install-menu.ps1') }
 if ($PyRevit) {
+    # the separate desktop app is gone (everything is the panel inside Revit): remove its Start Menu shortcut
+    Remove-Item (Join-Path ([Environment]::GetFolderPath('Programs')) 'claude using revit.lnk') -ErrorAction SilentlyContinue
     $ext = Join-Path $env:APPDATA 'pyRevit\Extensions'
     New-Item -ItemType Directory -Force $ext | Out-Null
     Get-ChildItem (Join-Path $root 'pyrevit') -Directory -Filter '*.extension' | ForEach-Object {
@@ -52,93 +54,30 @@ if ($PyRevit) {
         robocopy $_.FullName $dst /MIR /R:0 /W:0 /NFL /NDL /NJH /NJS /NP | Out-Null
         if ($LASTEXITCODE -ge 8) { "pyrevit: some files were in use and not replaced (robocopy $LASTEXITCODE)" }
         $global:LASTEXITCODE = 0
+        # which dynamic commands are this repo's (the panel's command list groups them)
+        Get-ChildItem (Join-Path $root 'revit-commands\*.cs') | ForEach-Object { $_.BaseName } |
+            Set-Content (Join-Path $dst 'lib\revit-commands.txt') -Encoding ascii
         "pyrevit -> $dst"
     }
 }
 if ($WebApp) {
-    # web app server (webapp\server.mjs); the pyRevit startup starts it with Revit, here it is restarted on the new copy
+    # optional web server (webapp\server.mjs) to reach the same page from a browser or an iPad on the LAN. The panel
+    # inside Revit does not need it. Run this from a normal terminal: run by the Claude desktop app (an MSIX package),
+    # new folders under %APPDATA% land in the app's private store, where Revit and Explorer never see them.
     $wa = Join-Path $env:APPDATA 'claude-using-revit\webapp'
-    # run from the Claude desktop app (an MSIX package), new folders under %APPDATA% land in the package's
-    # private store: Start Menu, Explorer and Revit never see them. The folder must exist outside first.
-    if (Test-Path (Join-Path $env:LOCALAPPDATA 'Packages\Claude_*\LocalCache\Roaming\claude-using-revit')) {
-        "web app: a copy sits in the Claude app's private store; run once from a normal terminal: tools\appdata-out-of-claude.ps1"
-    }
     Get-CimInstance Win32_Process -Filter "Name = 'node.exe'" |
         Where-Object { $_.CommandLine -like '*claude-using-revit\webapp\server.mjs*' } |
         ForEach-Object { Stop-Process -Id $_.ProcessId -Force; "web app: stopped old server (PID $($_.ProcessId))" }
-    $app = @(Get-CimInstance Win32_Process -Filter "Name = 'powershell.exe'" |
-        Where-Object { $_.CommandLine -like '*claude-using-revit\webapp\desktop\*.ps1*' })
-    $app | ForEach-Object { Stop-Process -Id $_.ProcessId -Force; "app: closed (PID $($_.ProcessId)), reopened below" }
-    if ($app) { Start-Sleep -Milliseconds 800 }        # its WebView2 dlls are released
-    # mirror in place (stale files removed): deleting the folder first left the Start Menu shortcut
-    # without app.vbs for a few seconds ("Can not find script file")
-    robocopy (Join-Path $root 'webapp') $wa /MIR /R:2 /W:1 /NFL /NDL /NJH /NJS /NP /XD lib | Out-Null
+    robocopy (Join-Path $root 'webapp') $wa /MIR /R:2 /W:1 /NFL /NDL /NJH /NJS /NP /XD public | Out-Null
+    robocopy (Join-Path $root 'pyrevit\ClaudeUsingRevit.extension\ui') (Join-Path $wa 'public') /MIR /R:2 /W:1 /NFL /NDL /NJH /NJS /NP | Out-Null
     if ($LASTEXITCODE -ge 8) { "web app: some files were in use and not replaced (robocopy $LASTEXITCODE)" }
     $global:LASTEXITCODE = 0
     Get-ChildItem (Join-Path $root 'revit-commands\*.cs') | ForEach-Object { $_.BaseName } |
         Set-Content (Join-Path $wa 'revit-commands.txt') -Encoding ascii
-    # desktop app (webapp\desktop\app.ps1): the WebView2 SDK dlls come from a local install, not this repo
-    $sdk = Get-ChildItem 'C:\Program Files\Autodesk', 'C:\Program Files (x86)\Microsoft', "$env:LOCALAPPDATA\Programs" -Recurse -Depth 6 `
-        -Filter 'Microsoft.Web.WebView2.WinForms.dll' -ErrorAction SilentlyContinue | Sort-Object { [version]$_.VersionInfo.FileVersion } -Descending |
-        Where-Object { Test-Path (Join-Path $_.DirectoryName 'Microsoft.Web.WebView2.Core.dll') } | Select-Object -First 1
-    # the native loader must be x64 (PE machine 0x8664): runtimes\win-x64\native first
-    $loader = if ($sdk) { @((Join-Path $sdk.DirectoryName 'runtimes\win-x64\native\WebView2Loader.dll'), (Join-Path $sdk.DirectoryName 'WebView2Loader.dll')) |
-        Where-Object { (Test-Path $_) -and ($b = [IO.File]::ReadAllBytes($_)) -and [BitConverter]::ToUInt16($b, [BitConverter]::ToInt32($b, 0x3c) + 4) -eq 0x8664 } |
-        Select-Object -First 1 }
-    if ($sdk -and $loader) {
-        $dl = Join-Path $wa 'desktop\lib'
-        New-Item -ItemType Directory -Force $dl | Out-Null
-        foreach ($f in 'Microsoft.Web.WebView2.Core.dll', 'Microsoft.Web.WebView2.WinForms.dll') { Copy-Item (Join-Path $sdk.DirectoryName $f) $dl -Force }
-        Copy-Item $loader $dl -Force
-        $programs = [Environment]::GetFolderPath('Programs')
-        Remove-Item (Join-Path $programs 'Revit Island.lnk') -ErrorAction SilentlyContinue    # the earlier pill version
-        $lnk = Join-Path $programs 'claude using revit.lnk'
-        $sh = (New-Object -ComObject WScript.Shell).CreateShortcut($lnk)
-        # through wscript + app.vbs: a shortcut straight to powershell.exe opens a console (Windows Terminal on
-        # Windows 11) that the app then lives in, and from Start the app often never showed
-        $sh.TargetPath = "$env:WINDIR\System32\wscript.exe"
-        $sh.Arguments = "`"$wa\desktop\app.vbs`""
-        $sh.WorkingDirectory = "$wa\desktop"
-        $sh.IconLocation = "$wa\desktop\app.ico"     # drawn by webapp\desktop\make_app_icon.ps1
-        $sh.Save()
-        # the same AppUserModelID as the app's process (app.ps1): the taskbar then ties the window to this
-        # shortcut (its icon; a pin starts the app through it), not to powershell.exe (blank icon, a pin
-        # that cannot start the app)
-        Add-Type -TypeDefinition @'
-using System;
-using System.Runtime.InteropServices;
-public static class CurLnkId
-{
-    [ComImport, Guid("886D8EEB-8CF2-4446-8D02-CDBA1DBDCF99"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-    interface IPropertyStore
-    {
-        int GetCount(out uint c); int GetAt(uint i, out PROPERTYKEY k); int GetValue(ref PROPERTYKEY k, out PROPVARIANT v);
-        int SetValue(ref PROPERTYKEY k, ref PROPVARIANT v); int Commit();
-    }
-    [StructLayout(LayoutKind.Sequential, Pack = 4)] struct PROPERTYKEY { public Guid fmtid; public uint pid; }
-    [StructLayout(LayoutKind.Explicit, Size = 24)] struct PROPVARIANT { [FieldOffset(0)] public ushort vt; [FieldOffset(8)] public IntPtr p; }
-    [DllImport("shell32.dll")] static extern int SHGetPropertyStoreFromParsingName([MarshalAs(UnmanagedType.LPWStr)] string path, IntPtr bc, int flags, ref Guid riid, out IPropertyStore ps);
-    public static void Set(string lnk, string id)
-    {
-        var iid = typeof(IPropertyStore).GUID;
-        IPropertyStore ps;
-        Marshal.ThrowExceptionForHR(SHGetPropertyStoreFromParsingName(lnk, IntPtr.Zero, 2, ref iid, out ps));   // GPS_READWRITE
-        var key = new PROPERTYKEY { fmtid = new Guid("9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3"), pid = 5 };     // System.AppUserModel.ID
-        var v = new PROPVARIANT { vt = 31, p = Marshal.StringToCoTaskMemUni(id) };                             // VT_LPWSTR
-        try { Marshal.ThrowExceptionForHR(ps.SetValue(ref key, ref v)); Marshal.ThrowExceptionForHR(ps.Commit()); }
-        finally { Marshal.FreeCoTaskMem(v.p); Marshal.ReleaseComObject(ps); }
-    }
-}
-'@
-        [CurLnkId]::Set($lnk, 'ClaudeUsingRevit.App')
-        "app -> $lnk (WebView2 SDK from $($sdk.DirectoryName))"
-    }
-    else { "app: WebView2 SDK dlls not found on this PC; the desktop app is not installed" }
     $node = (Get-Command node -ErrorAction SilentlyContinue).Source
     if ($node) {
         Start-Process $node -ArgumentList "`"$wa\server.mjs`"" -WorkingDirectory $wa -WindowStyle Hidden
         "web app -> $wa (started; address + access code: $env:APPDATA\claude-using-revit\webapp.json)"
     }
     else { "web app -> $wa (node not found; Revit starts it once node is installed)" }
-    if ($app) { Start-Process "$env:WINDIR\System32\wscript.exe" -ArgumentList "`"$wa\desktop\app.vbs`"" }
 }

@@ -166,13 +166,15 @@
     cabin(w, h);
   }
 
-  // a photo of the user's own (server /bg) replaces the drawn cabin when there is one
+  // a photo of the user's own (background.jpg next to the settings) replaces the drawn cabin when there is one
+  const photos = ASSET.photo([".jpg", ".jpeg", ".png", ".webp"]);
   const photo = new Image();
-  photo.onload = () => { document.body.classList.add("photo"); document.body.style.setProperty("--photo", "url(/bg)"); cv.remove(); };
+  photo.onload = () => { document.body.classList.add("photo"); document.body.style.setProperty("--photo", `url("${photo.src}")`); cv.remove(); };
   photo.onerror = () => {
+    if (photos.length) { photo.src = photos.shift(); return; }
     let t = null;
     window.addEventListener("resize", () => { clearTimeout(t); t = setTimeout(draw, 150); });
     draw();
   };
-  photo.src = "/bg";
+  photo.src = photos.shift();
 })();
