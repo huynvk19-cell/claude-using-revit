@@ -5,7 +5,7 @@
 // Sorting and filters only change what the page shows, never the schedule.
 "use strict";
 
-const ROW_H = PANE ? 23 : 30;      // pane.css: 22 px + the line
+const ROW_H = PANE ? 22 : 30;      // pane.css
 const G = { list: null, name: null, data: null, rows: [], cols: [], view: [], shown: [], anchor: null, focus: null,
   edit: null, undo: [], redo: [], sort: null, filters: {}, q: "", onlyChanged: false, showHidden: store.get("grid.hidden", false),
   unlock: false, widths: {}, drag: null, fill: null, newId: 0, loading: false };

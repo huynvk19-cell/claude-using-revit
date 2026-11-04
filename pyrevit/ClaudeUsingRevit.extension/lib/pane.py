@@ -35,16 +35,16 @@ from System import Action, AppDomain, Environment, Guid
 from System.Diagnostics import Process
 from System.IO import DriveInfo
 from System.Windows import TextWrapping, Thickness
-from System.Windows.Controls import Grid, TextBlock
+from System.Windows.Controls import Grid, Page, TextBlock
 from System.Windows.Media import Brushes
 
 from Autodesk.Revit.DB import Rectangle
-from Autodesk.Revit.UI import DockablePaneId, DockablePaneState, DockPosition, IDockablePaneProvider
+from Autodesk.Revit.UI import DockablePaneId, DockablePanes, DockablePaneState, DockPosition, IDockablePaneProvider
 
 import web_bridge
 
 SLOT = 'ClaudeUsingRevit.Pane'
-PANE_ID = Guid('c3a94e17-2d6b-4f08-8e51-7a0b9d4c6e22')
+PANE_ID = Guid('c3a94e17-2d6b-4f08-8e51-7a0b9d4c6e30')
 TITLE = u'Bảng & công cụ'
 HERE = os.path.dirname(os.path.abspath(__file__))
 EXT = os.path.dirname(HERE)
@@ -185,15 +185,17 @@ def _sdk_folder():
 
 class _Provider(IDockablePaneProvider):
     def __init__(self, root):
-        self.root = root
+        self.page = Page()       # a Page, as pyRevit's own panels: Revit's dock expects it
+        self.page.Content = root
 
     def SetupDockablePane(self, data):
-        data.FrameworkElement = self.root
+        data.FrameworkElement = self.page
         data.VisibleByDefault = False
         state = DockablePaneState()
-        state.DockPosition = DockPosition.Bottom      # wide: a table reads best across the window
+        # a tab beside the Project Browser. Not a new dock side: Revit 2023 opens DockPosition.Bottom as a sliver
+        state.DockPosition = DockPosition.Tabbed
+        state.TabBehind = DockablePanes.BuiltInDockablePanes.ProjectBrowser
         state.SetFloatingRectangle(Rectangle(120, 80, 1500, 960))
-        state.MinimumHeight = 340
         data.InitialState = state
 
 
@@ -204,23 +206,26 @@ class Host(object):
         self.root.Children.Clear()
         self.root.Background = Brushes.WhiteSmoke
         self.root.Loaded += self._on_loaded
+        uiapp.Application.DocumentClosing += self._on_doc_closing
+        uiapp.Application.DocumentOpened += self._on_doc_opened
         self.web = None
         self.docked = False
         self.closed = False
+        self.closing = False
         self.debug_port = None
         self.error = None
 
     # -- showing ---------------------------------------------------------------------------------
     def show(self, debug_port=None):
-        self.debug_port = debug_port or self.debug_port
         """Show the pane. False when Revit has not created it yet (it does at its next start)."""
+        self.debug_port = debug_port or self.debug_port
+        self.closing = False
         try:
             self.uiapp.GetDockablePane(DockablePaneId(PANE_ID)).Show()
         except Exception as ex:
             self.error = u'{0}'.format(ex)
             return False
-        if self.root.IsLoaded:      # a reload kept the pane: its Loaded event will not come again
-            self._on_loaded(None, None)
+        self._ensure_web()
         return True
 
     def hide(self):
@@ -229,12 +234,41 @@ class Host(object):
         except Exception:
             pass
 
+    def _on_doc_closing(self, sender, e):
+        """Before the last model closes. Revit then hides every pane, and a WebView2 alive at that moment throws out
+        of the message loop: Revit ends with "unrecoverable error" (on exit too, which closes the models first)."""
+        if len([d for d in self.uiapp.Application.Documents if not d.IsLinked]) <= 1:
+            self.closing = True
+            self._drop_web()
+
+    def _on_doc_opened(self, sender, e):
+        self.closing = False
+        self._on_loaded(None, None)
+
+    def _drop_web(self):
+        web, self.web = self.web, None
+        try:
+            self.root.Children.Clear()
+            if web is not None:
+                web.Dispose()
+        except Exception:
+            pass
+
     def _on_loaded(self, sender, e):
-        if not self.closed and self.web is None:
-            try:
-                self._create_web()
-            except Exception as ex:
-                self._fail(ex)
+        """Revit loads a registered pane even while it is hidden: build the page only if it really shows."""
+        try:
+            if self.uiapp.GetDockablePane(DockablePaneId(PANE_ID)).IsShown():
+                self._ensure_web()
+        except Exception:
+            pass                    # not created yet
+
+    def _ensure_web(self):
+        if self.closed or self.closing or self.web is not None:
+            return
+        try:
+            self._create_web()
+        except Exception as ex:
+            self._fail(ex)
 
     def _create_web(self):
         sdk = _sdk_folder()
@@ -261,6 +295,8 @@ class Host(object):
         web.EnsureCoreWebView2Async(None)
 
     def _on_ready(self, sender, e):
+        if self.web is None:        # dropped while it was starting
+            return
         if not e.IsSuccess:
             return self._fail(e.InitializationException)
         try:
@@ -351,11 +387,11 @@ class Host(object):
         self.closed = True
         try:
             self.root.Loaded -= self._on_loaded
-            self.root.Children.Clear()
-            if self.web is not None:
-                self.web.Dispose()
+            self.uiapp.Application.DocumentClosing -= self._on_doc_closing
+            self.uiapp.Application.DocumentOpened -= self._on_doc_opened
         except Exception:
             pass
+        self._drop_web()
 
 
 def setup(uiapp, debug_port=None):
@@ -375,7 +411,7 @@ def setup(uiapp, debug_port=None):
         except Exception as ex:
             host.error = u'{0}'.format(ex)
     AppDomain.CurrentDomain.SetData(SLOT, host)
-    if host.root.IsLoaded and host.root.IsVisible:       # reloaded with the pane open
+    if host.root.IsLoaded:       # reloaded with the pane open
         host._on_loaded(None, None)
     return host
 
