@@ -1,5 +1,5 @@
 # Draw the panel icon (macOS style: a squircle with depth, light from the top) with WPF: the ribbon button
-# (icon.png, 96 px) and the page icon (ui/app-icon.png, 256 px). Designs: A sheet (drawing sheet; -Palette orange = the one in use, or blue), B galaxy (schedule grid on glass over
+# (icon.png, 96 px) and the web page icon (webapp/public/app-icon.png, 256 px). Designs: A sheet (drawing sheet; -Palette orange = the one in use, or blue), B galaxy (schedule grid on glass over
 # the galaxy, like the page), C tower (white building on warm orange).
 #   powershell -STA -File pyrevit\make_app_icon.ps1 [-Design A] [-Palette orange] [-Preview <png with all designs>]
 param([string]$Design = 'A', [ValidateSet('orange', 'blue')][string]$Palette = 'orange', [string]$Preview)
@@ -141,5 +141,5 @@ if ($Preview) {    # every design at 256, 64, 32 and 16 px on dark and light str
 $xaml = & "Design-$Design"
 $ext = Join-Path $here 'ClaudeUsingRevit.extension'
 [IO.File]::WriteAllBytes((Join-Path $ext 'claude using revit.tab\Panel.panel\Open Panel.pushbutton\icon.png'), (Render $xaml 96))
-[IO.File]::WriteAllBytes((Join-Path $ext 'ui\app-icon.png'), (Render $xaml 256))
-"design $Design -> icon.png, ui\app-icon.png"
+[IO.File]::WriteAllBytes((Join-Path (Split-Path $here) 'webapp\public\app-icon.png'), (Render $xaml 256))
+"design $Design -> icon.png, webapp\public\app-icon.png"

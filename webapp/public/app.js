@@ -34,7 +34,6 @@ function toast(msg, kind = "") {
 
 // ---- API ------------------------------------------------------------------------------
 async function api(path, opts = {}) {
-  if (PANE) return PANE.api(path, opts);
   const r = await fetch(path, { credentials: "same-origin", headers: { "content-type": "application/json" }, ...opts });
   if (r.status === 401) { $("#login").classList.remove("hidden"); $("#login-code").focus(); throw new Error("Cần mã truy cập"); }
   const j = await r.json().catch(() => ({ error: "bad response" }));
@@ -57,7 +56,7 @@ async function run(kind, name, args = {}, label) {
   setBusy(label || name);
   try {
     for (let i = 0; ; i++) {
-      await sleep(PANE ? 50 : i < 10 ? 400 : 1200);
+      await sleep(i < 10 ? 400 : 1200);
       const j = await api(`/api/jobs/${id}`);
       if (j.state === "running") continue;
       if (j.state === "error") throw Object.assign(new Error((j.result && j.result.error) || "lỗi"), { result: j.result });
@@ -220,7 +219,7 @@ function renderTiles() {
     const st = stateOf(t.key);
     if (st.level === "work") work++;
     return h("button", { class: `glass tile ${st.level}`, onclick: () => openTool(t) },
-      h("div", { class: "ico" }, h("img", { src: ASSET.icon(t.icon), alt: "" })),
+      h("div", { class: "ico" }, h("img", { src: "/icon/" + t.icon + ".png", alt: "" })),
       h("h3", {}, t.title), h("div", { class: "state" }, st.text),
       st.level === "work" ? h("span", { class: "count" }, st.count > 99 ? "99+" : String(st.count)) : null);
   }));
@@ -239,7 +238,7 @@ function openTool(t) {
   S.open = t;
   const win = $("#win");
   win.replaceChildren(
-    h("div", { class: "w-head" }, h("div", { class: "ico" }, h("img", { src: ASSET.icon(t.icon), alt: "" })),
+    h("div", { class: "w-head" }, h("div", { class: "ico" }, h("img", { src: "/icon/" + t.icon + ".png", alt: "" })),
       h("div", {}, h("h2", {}, t.title), h("div", { class: "w-state" }))),
     ...t.open());
   refreshWindowState();
@@ -450,14 +449,6 @@ function exportWindow() {
     pdfOpts, dwgOpts, h("div", { class: "row" }, go), box];
 }
 
-// the GPU viewer: its own tab in a browser, over the page in the Revit panel
-function openViewer() {
-  if (!PANE) return window.open(`/viewer.html?pid=${S.pid}`, "_blank");
-  const f = h("div", { class: "viewer-frame" }, h("iframe", { src: "viewer.html" }),
-    h("button", { class: "close", title: "Đóng", onclick: () => f.remove() }, "✕"));
-  document.body.append(f);
-}
-
 function view3dWindow() {
   S.onOpenBoard = [];
   const box = h("div"), cut = h("input", { type: "checkbox" });
@@ -465,7 +456,7 @@ function view3dWindow() {
     h("button", { class: "pill primary", onclick: () => act(box, "task", "view_3d_from_view", { cut: cut.checked }, "Mở 3D", r => `Đã mở ${r.view3d || "view 3D"}`) }, "Mở 3D theo view đang mở"),
     h("label", { class: "switch" }, cut, h("i"), "Mặt bằng: dừng ở mặt cắt")),
     h("div", { class: "row" },
-      h("button", { class: "pill", onclick: openViewer }, "Xem bằng GPU"),
+      h("button", { class: "pill", onclick: () => window.open(`/viewer.html?pid=${S.pid}`, "_blank") }, "Xem bằng GPU"),
       h("span", { class: "dim" }, "Viewer 3D vẽ bằng card màn hình: bấm Lấy từ Revit khi đang mở một view 3D")), box];
 }
 
@@ -623,11 +614,10 @@ for (const b of document.querySelectorAll("#nav button")) b.addEventListener("cl
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") refreshInfo(false); });
 
 async function boot() {
-  if (PANE) $("#btn-access").classList.add("hidden");     // inside Revit: no other device to open it from
   try {
     await loadWindows();
     await refreshInfo(true);
-    if (PANE || location.hash === "#table" || new URLSearchParams(location.search).get("open") === "table") show("table");
+    if (location.hash === "#table" || new URLSearchParams(location.search).get("open") === "table") show("table");
     setInterval(() => loadWindows().catch(() => {}), 10000);
   } catch (e) { if (!/mã truy cập/.test(e.message)) toast(e.message, "err"); }
 }

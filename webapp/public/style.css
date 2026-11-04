@@ -309,8 +309,3 @@ select.msel-src { display: none !important; }
 .msel-menu .sep { height: 1px; margin: 5px 8px; background: rgba(255, 255, 255, .12); }
 .msel-menu .hide { display: none; }
 
-/* the GPU viewer over the page, in the Revit panel */
-.viewer-frame { position: fixed; inset: 0; z-index: 40; background: #07080d; }
-.viewer-frame iframe { width: 100%; height: 100%; border: 0; display: block; }
-.viewer-frame .close { position: fixed; right: 16px; bottom: 16px; width: 40px; height: 40px; border: 0; border-radius: 50%; cursor: pointer;
-  color: var(--text); background: var(--glass-strong); font-size: 15px; box-shadow: inset 0 1px 1px rgba(255, 255, 255, .28), 0 10px 30px rgba(0, 0, 0, .4); }
