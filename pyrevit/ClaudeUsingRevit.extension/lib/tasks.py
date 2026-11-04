@@ -394,11 +394,12 @@ def schedule_filter_options(doc, uidoc, args):
 
 @task(u"Chosen rows of a schedule into a filter of a view template: values of the chosen columns, a new "
       u"filter or a wider one of that name, hide or not. args: schedule, ids, cols [f<i>], template (id), "
-      u"filter (name), hide (bool), force (template / filter of someone else), dryRun.")
+      u"filter (name), hide (bool), linked {f<i>: [texts]} (rows from linked files), force (template / filter of "
+      u"someone else), dryRun.")
 def schedule_filter_add(doc, uidoc, args):
     try:
         return st.add_to_filter(doc, _table(doc, args), args.get("ids") or [], args.get("cols") or [], args.get("template"),
-                                args.get("filter") or u"", bool(args.get("hide")), bool(args.get("force")), bool(args.get("dryRun")))
+                                args.get("filter") or u"", bool(args.get("hide")), bool(args.get("force")), bool(args.get("dryRun")), args.get("linked"))
     except ValueError as ex:
         raise TaskError(u"{0}".format(ex))
 

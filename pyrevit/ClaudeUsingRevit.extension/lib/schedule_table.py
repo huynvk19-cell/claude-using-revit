@@ -29,7 +29,7 @@ from System.Collections.Generic import List
 
 from Autodesk.Revit.DB import (
     BuiltInCategory, BuiltInParameter, Category, CheckoutStatus, ElementFilter, ElementId, ElementParameterFilter,
-    FamilyInstance, FilteredElementCollector, LogicalAndFilter, LogicalOrFilter, ParameterFilterElement,
+    FamilyInstance, FilteredElementCollector, FilterRule, LogicalAndFilter, LogicalOrFilter, ParameterFilterElement,
     ParameterFilterRuleFactory, ParameterFilterUtilities, ScheduleFieldType, SectionType, SpecTypeId, StorageType,
     RevitLinkInstance, Transaction, View, ViewSchedule, ViewSheet, WorksharingUtils)
 
@@ -577,11 +577,42 @@ def _value_key(p):
     return p.AsElementId().IntegerValue
 
 
-def add_to_filter(doc, vs, ids, cols, template_id, filter_name, hide, force=False, dry_run=False):
-    """A filter from the values the chosen elements hold in the chosen columns, added to a view template.
-    Values of one column are alternatives (OR), columns narrow each other (AND). An existing filter of that
-    name is widened with them (OR); a new one is made. Hide = filter off in the template (V/G: Visibility
-    unticked), no hide = on. Nothing else in the template changes."""
+# Family, Type and "Family and Type" hold element ids, which mean nothing across models: filter them by name
+FAMILY_NAMES = (BuiltInParameter.ALL_MODEL_FAMILY_NAME, BuiltInParameter.SYMBOL_FAMILY_NAME_PARAM)
+TYPE_NAMES = (BuiltInParameter.ALL_MODEL_TYPE_NAME, BuiltInParameter.SYMBOL_NAME_PARAM)
+NAME_FIELDS = {int(BuiltInParameter.ELEM_FAMILY_PARAM): FAMILY_NAMES, int(BuiltInParameter.ELEM_TYPE_PARAM): TYPE_NAMES,
+               int(BuiltInParameter.ELEM_FAMILY_AND_TYPE_PARAM): None}
+
+
+def _name_param(choices, filterable):
+    for bip in choices:
+        if int(bip) in filterable:
+            return ElementId(bip)
+    raise ValueError(u"Revit không cho lọc theo tên này ở category của schedule")
+
+
+def _text_filter(pid, text, filterable):
+    """An element filter for a value known only as text: a row from a linked file, or a name."""
+    k = pid.IntegerValue
+    if k not in NAME_FIELDS:
+        return ElementParameterFilter(ParameterFilterRuleFactory.CreateEqualsRule(pid, text, False))
+    if NAME_FIELDS[k] is not None:
+        return ElementParameterFilter(ParameterFilterRuleFactory.CreateEqualsRule(_name_param(NAME_FIELDS[k], filterable), text, False))
+    family, _, typ = text.partition(u": ")          # "Family and Type" shows "family: type"
+    rules = [ParameterFilterRuleFactory.CreateEqualsRule(_name_param(FAMILY_NAMES, filterable), family, False)]
+    if typ:
+        rules.append(ParameterFilterRuleFactory.CreateEqualsRule(_name_param(TYPE_NAMES, filterable), typ, False))
+    return ElementParameterFilter(List[FilterRule](rules))
+
+
+def add_to_filter(doc, vs, ids, cols, template_id, filter_name, hide, force=False, dry_run=False, linked=None):
+    """A filter from the values the chosen rows hold in the chosen columns, added to a view template. Rows of the
+    open model use the value their element holds; rows from linked files (linked: {"f<i>": [texts]}) use the text
+    Revit shows, so only text columns and names work for them. Values of one column are alternatives (OR), columns
+    narrow each other (AND). An existing filter of that name is widened with them (OR); a new one is made.
+    Hide = filter off in the template (V/G: Visibility unticked), no hide = on. Nothing else in the template changes.
+    Linked elements follow a host filter only where the view shows the link By Host View."""
+    linked = linked or {}
     params, types = _Params(doc), {}
     fields = []
     for key in cols:
@@ -591,7 +622,7 @@ def add_to_filter(doc, vs, ids, cols, template_id, filter_name, hide, force=Fals
         fields.append(f)
     elements = [doc.GetElement(ElementId(int(i))) for i in ids]
     elements = [e for e in elements if e is not None]
-    if not elements or not fields:
+    if not fields or not (elements or any(linked.get(k) for k in cols)):
         raise ValueError(u"Chọn ít nhất một ô")
     allowed = ParameterFilterUtilities.GetAllFilterableCategories()
     cats = set()
@@ -599,19 +630,37 @@ def add_to_filter(doc, vs, ids, cols, template_id, filter_name, hide, force=Fals
         if e.Category is None or not allowed.Contains(e.Category.Id):
             raise ValueError(u"Category {0} không dùng được cho filter".format(e.Category.Name if e.Category else u"?"))
         cats.add(e.Category.Id.IntegerValue)
+    if any(linked.get(k) for k in cols):
+        cid = vs.Definition.CategoryId
+        if cid.IntegerValue == -1 or not allowed.Contains(cid):
+            raise ValueError(u"Category của schedule này không dùng được cho filter")
+        cats.add(cid.IntegerValue)
     cat_ids = List[ElementId]([ElementId(c) for c in cats])
     filterable = set(i.IntegerValue for i in ParameterFilterUtilities.GetFilterableParametersInCommon(doc, cat_ids))
     groups, values = [], {}
-    for f in fields:
+    for f, key in zip(fields, cols):
         pid = f.ParameterId
         name = f.ColumnHeading or f.GetName()
-        if pid.IntegerValue not in filterable:
+        by_name = pid.IntegerValue in NAME_FIELDS
+        if not by_name and pid.IntegerValue not in filterable:
             raise ValueError(u"Cột {0}: tham số này Revit không cho dùng trong filter".format(name))
         rules, seen = [], set()
+        for text in linked.get(key) or []:
+            if text and text.lower() not in seen:
+                seen.add(text.lower())
+                if not by_name and pid.IntegerValue < 0 and doc.get_TypeOfStorage(Enum.ToObject(BuiltInParameter, pid.IntegerValue)) != StorageType.String:
+                    raise ValueError(u"Cột {0}: dòng từ file link chỉ lọc được theo cột chữ hoặc tên".format(name))
+                rules.append(_text_filter(pid, text, filterable))
         for e in elements:
             target = _type_of(doc, e, types) if f.FieldType == ScheduleFieldType.ElementType else e
             p = params.get(target, pid.IntegerValue)
             if p is None:
+                continue
+            if by_name:
+                text = text_of(p)
+                if text and text.lower() not in seen:
+                    seen.add(text.lower())
+                    rules.append(_text_filter(pid, text, filterable))
                 continue
             k = _value_key(p)
             if k in seen:
@@ -619,12 +668,11 @@ def add_to_filter(doc, vs, ids, cols, template_id, filter_name, hide, force=Fals
             seen.add(k)
             r = _rule(p, pid)
             if r is not None:
-                rules.append(r)
+                rules.append(ElementParameterFilter(r))
         if not rules:
             raise ValueError(u"Cột {0}: không có giá trị để lọc".format(name))
         values[name] = len(rules)
-        one = [ElementParameterFilter(r) for r in rules]
-        groups.append(one[0] if len(one) == 1 else LogicalOrFilter(List[ElementFilter](one)))
+        groups.append(rules[0] if len(rules) == 1 else LogicalOrFilter(List[ElementFilter](rules)))
     built = groups[0] if len(groups) == 1 else LogicalAndFilter(List[ElementFilter](groups))
     template = doc.GetElement(ElementId(int(template_id)))
     if not isinstance(template, View) or not template.IsTemplate:
@@ -642,7 +690,8 @@ def add_to_filter(doc, vs, ids, cols, template_id, filter_name, hide, force=Fals
             blocked.append(u"Filter {0}: {1}".format(filter_name, ps.owner(doc, existing)[0]))
     res = {"filter": filter_name, "template": template.Name, "hide": bool(hide), "values": values,
            "categories": [Category.GetCategory(doc, ElementId(c)).Name for c in cats],
-           "newFilter": existing is None, "elements": len(elements)}
+           "newFilter": existing is None, "elements": len(elements),
+           "linkedRows": max([len(v) for v in linked.values()] or [0])}
     if blocked and not force:
         res["blocked"] = blocked
         return res

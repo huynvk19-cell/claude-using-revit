@@ -1092,9 +1092,9 @@ class Table(object):
         if self.data is None:
             return
         rows, cols = self.block()
-        rows = [i for i in rows if not self.rows[i].get('new') and not self.rows[i].get('linked')]
+        rows = [i for i in rows if not self.rows[i].get('new')]
         if not rows:
-            return self.say(u'Chọn các ô cần đưa vào filter (dòng từ file link thì phần tử nằm ở model khác, không đưa vào được)')
+            return self.say(u'Chọn các ô cần đưa vào filter')
         bad = [self.cols[ci]['heading'] for ci in cols if self.cols[ci]['param'] is None]
         if bad:
             return self.say(u'Cột {0}: Revit tính ra, không lọc được'.format(u', '.join(bad)))
@@ -1133,7 +1133,9 @@ class Table(object):
                 info.Text = u'Chọn view template và đặt tên filter'
                 return
             t = temps[tp.SelectedIndex]
-            args = {'schedule': u'{0}'.format(self.data['id']), 'ids': sorted(set(self.rows[i]['id'] for i in rows)),
+            args = {'schedule': u'{0}'.format(self.data['id']),
+                    'ids': sorted(set(self.rows[i]['id'] for i in rows if not self.rows[i].get('linked'))),
+                    'linked': dict((self.cols[ci]['key'], sorted(set(self.rows[i]['v'][ci] for i in rows if self.rows[i].get('linked')))) for ci in cols),
                     'cols': [self.cols[ci]['key'] for ci in cols], 'template': t['id'], 'filter': fl.Text.strip(),
                     'hide': bool(hide.IsChecked)}
             st = load_settings()
@@ -1156,7 +1158,8 @@ class Table(object):
                 return
             self.say(u'{0} filter {1} · view template {2} · {3} · {4} giá trị'.format(
                 u'Đã tạo' if r.get('newFilter') else u'Đã mở rộng', r['filter'], r['template'],
-                u'Hide' if r['hide'] else u'No hide', sum(r['values'].values())))
+                u'Hide' if r['hide'] else u'No hide', sum(r['values'].values())) +
+                (u' · phần tử trong link chỉ theo filter ở view để link By Host View' if r.get('linkedRows') else u''))
         self.say(u'Đang ghi filter…')
         self.host.run('task', 'schedule_filter_add', args, done, lambda err: MessageBox.Show(u'Chưa thêm được: {0}'.format(err), TITLE))
 
