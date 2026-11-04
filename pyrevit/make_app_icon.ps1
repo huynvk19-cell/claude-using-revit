@@ -1,8 +1,7 @@
-# Draw the desktop app icon (macOS style: a squircle with depth, light from the top) with WPF and
-# write app.ico (16-256 px, PNG entries) + app.png (512 px) next to this script, and the page icon
-# public/app-icon.png. Designs: A sheet (drawing sheet; -Palette orange = the one in use, or blue), B galaxy (schedule grid on glass over
+# Draw the panel icon (macOS style: a squircle with depth, light from the top) with WPF: the ribbon button
+# (icon.png, 96 px) and the page icon (ui/app-icon.png, 256 px). Designs: A sheet (drawing sheet; -Palette orange = the one in use, or blue), B galaxy (schedule grid on glass over
 # the galaxy, like the page), C tower (white building on warm orange).
-#   powershell -STA -File webapp\desktop\make_app_icon.ps1 [-Design A] [-Palette orange] [-Preview <png with all designs>]
+#   powershell -STA -File pyrevit\make_app_icon.ps1 [-Design A] [-Palette orange] [-Preview <png with all designs>]
 param([string]$Design = 'A', [ValidateSet('orange', 'blue')][string]$Palette = 'orange', [string]$Preview)
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase
@@ -139,21 +138,8 @@ if ($Preview) {    # every design at 256, 64, 32 and 16 px on dark and light str
     return
 }
 
-# app.ico: PNG entries 16..256 (Windows picks the size it needs: taskbar, Start, Alt+Tab)
 $xaml = & "Design-$Design"
-$sizes = 16, 20, 24, 32, 40, 48, 64, 128, 256
-$imgs = foreach ($s in $sizes) { , (Render $xaml $s) }
-$ms = New-Object IO.MemoryStream; $w = New-Object IO.BinaryWriter $ms
-$w.Write([uint16]0); $w.Write([uint16]1); $w.Write([uint16]$sizes.Count)
-$off = 6 + 16 * $sizes.Count
-for ($i = 0; $i -lt $sizes.Count; $i++) {
-    $s = $sizes[$i]; $b = [byte]$(if ($s -ge 256) { 0 } else { $s })
-    $w.Write($b); $w.Write($b); $w.Write([byte]0); $w.Write([byte]0); $w.Write([uint16]1); $w.Write([uint16]32)
-    $w.Write([uint32]$imgs[$i].Length); $w.Write([uint32]$off); $off += $imgs[$i].Length
-}
-foreach ($img in $imgs) { $w.Write($img) }
-$w.Flush()
-[IO.File]::WriteAllBytes((Join-Path $here 'app.ico'), $ms.ToArray())
-[IO.File]::WriteAllBytes((Join-Path $here 'app.png'), (Render $xaml 512))
-[IO.File]::WriteAllBytes((Join-Path (Split-Path $here) 'public\app-icon.png'), (Render $xaml 256))
-"design $Design -> app.ico, app.png, public\app-icon.png"
+$ext = Join-Path $here 'ClaudeUsingRevit.extension'
+[IO.File]::WriteAllBytes((Join-Path $ext 'claude using revit.tab\Panel.panel\Open Panel.pushbutton\icon.png'), (Render $xaml 96))
+[IO.File]::WriteAllBytes((Join-Path $ext 'ui\app-icon.png'), (Render $xaml 256))
+"design $Design -> icon.png, ui\app-icon.png"

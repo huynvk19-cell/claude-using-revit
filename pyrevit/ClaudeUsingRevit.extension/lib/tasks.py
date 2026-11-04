@@ -624,6 +624,18 @@ def show_elements(doc, uidoc, args):
     return {"view": (view or doc.ActiveView).Name, "selected": ids.Count}
 
 
+@task(u"Show the panel in this Revit window (dockable; a floating window until Revit restarts after "
+      u"a first install). Nothing in the model changes. args: fresh (rebuild it on the installed "
+      u"code), hide, debugPort (remote debugging, for tests).")
+def pane_open(doc, uidoc, args):
+    import pane
+    host = pane.setup(uidoc.Application, args.get("debugPort")) if args.get("fresh") else pane.current(uidoc.Application)
+    if args.get("hide"):
+        host.hide()
+        return {"hidden": True}
+    return {"shown": host.show(args.get("debugPort")), "registerError": host.error}
+
+
 @task(u"(RO) This list: every task with its args.")
 def list_tasks(doc, uidoc, args):
     return {"tasks": [{"task": n, "help": TASKS[n][1]} for n in sorted(TASKS)]}

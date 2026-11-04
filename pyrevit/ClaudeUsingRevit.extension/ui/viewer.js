@@ -8,6 +8,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const TEX_W = 4096;                      // element -> category lookup texture width
 
 async function api(url, opt = {}) {
+  if (PANE) return PANE.api(url, opt);
   const r = await fetch(url, { credentials: "same-origin", headers: { "content-type": "application/json" }, ...opt });
   if (r.status === 401) { location.href = "/"; throw new Error("login"); }
   const j = await r.json().catch(() => ({}));
@@ -363,8 +364,10 @@ $("#fit").addEventListener("click", () => fit());
 async function load(name) {
   veil("Đang tải hình…");
   try {
-    const man = await api(`/mesh/${encodeURIComponent(name)}.json`);
-    const r = await fetch(`/mesh/${encodeURIComponent(name)}.bin`, { credentials: "same-origin" });
+    const m = await fetch(ASSET.mesh(encodeURIComponent(name) + ".json"), { credentials: "same-origin" });
+    if (!m.ok) throw new Error("không tải được " + name + ".json");
+    const man = await m.json();
+    const r = await fetch(ASSET.mesh(encodeURIComponent(name) + ".bin"), { credentials: "same-origin" });
     if (!r.ok) throw new Error("không tải được " + name + ".bin");
     upload(man, await r.arrayBuffer());
     $("#title").textContent = `${man.view} · ${man.model}`;

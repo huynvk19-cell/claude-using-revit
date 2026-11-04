@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # On pyRevit load/reload: keep %APPDATA%\claude-using-revit\open-docs\<pid>.json current (lib/open_docs.py),
-# (re)start this window's web bridge and start the web app server if it is not running (lib/web_bridge.py).
+# (re)start this window's web bridge, start the web app server if it is installed and not running (lib/web_bridge.py),
+# register the panel (lib/pane.py).
 import os
 import sys
 
@@ -33,6 +34,9 @@ try:
     reload(web_bridge)      # noqa: F821 (IronPython 2)
     web_bridge.start(HOST_APP.uiapp)
     web_bridge.ensure_webapp()
+    import pane
+    reload(pane)            # noqa: F821
+    pane.setup(HOST_APP.uiapp)
 except Exception as ex:
     from pyrevit.coreutils.logger import get_logger
-    get_logger('claude using revit').warning('web bridge not started: %s', ex)
+    get_logger('claude using revit').warning('web bridge / panel not started: %s', ex)

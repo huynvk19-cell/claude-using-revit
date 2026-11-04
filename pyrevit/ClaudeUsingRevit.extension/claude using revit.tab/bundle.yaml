@@ -1,4 +1,5 @@
 layout:
+  - Panel
   - Highlight
   - Untagged
   - PrintSet
