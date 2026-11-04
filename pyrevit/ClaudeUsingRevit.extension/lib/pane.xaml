@@ -39,6 +39,7 @@
               <CheckBox x:Name="c_hidden" Content="Cột ẩn"/>
               <CheckBox x:Name="c_only" Content="Chỉ dòng đã sửa"/>
               <CheckBox x:Name="c_unlock" Content="Sửa phần tử người khác"/>
+              <CheckBox x:Name="c_select" Content="Chọn theo trong Revit" ToolTip="Chọn dòng trong bảng thì Revit chọn phần tử đó, kể cả phần tử trong file link, để dùng tiếp các công cụ khác như Tô đối tượng"/>
               <TextBox x:Name="q" Width="170" Margin="0,0,3,3" ToolTip="Lọc mọi cột (Ctrl+F)"/>
             </WrapPanel>
           </DockPanel>

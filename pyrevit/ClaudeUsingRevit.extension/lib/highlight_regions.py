@@ -152,6 +152,18 @@ def element_points(elem, view):
     return pts
 
 
+def linked_points(elem, transform):
+    """3D points of an element of a linked model, in the host's coordinates."""
+    pts = []
+    try:
+        _collect(elem.get_Geometry(Options()), pts)
+    except Exception:
+        pts = []
+    if len(pts) < 2:
+        pts = _bbox_points(elem, None)
+    return [transform.OfPoint(p) for p in pts]
+
+
 def _cross(o, a, b):
     return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
 
@@ -213,8 +225,9 @@ def owner_view(doc, elem, active_view):
     return active_view
 
 
-def highlight(doc, elems, active_view):
-    """Create one region per element in its owner view. Call inside a transaction.
+def highlight(doc, elems, active_view, linked=()):
+    """Create one region per element in its owner view; linked = [(element of a linked model, link transform)]
+    in the active view. Call inside a transaction.
 
     Returns (created_count, {view name: count}, [skip messages]).
     """
@@ -226,15 +239,15 @@ def highlight(doc, elems, active_view):
     ogs.SetSurfaceTransparency(TRANSPARENCY)
     ogs.SetProjectionLineColor(RED)
     created, per_view, skipped = 0, {}, []
-    for e in elems:
+    for e, link in [(x, None) for x in elems] + list(linked):
         if isinstance(e, FilledRegion) and marked_by(e, schema):
             continue  # already a highlight
-        view = owner_view(doc, e, active_view)
+        view = active_view if link is not None else owner_view(doc, e, active_view)
         if view is None or view.ViewType in NO_REGION_VIEWS or view.IsTemplate:
             skipped.append(u"{0}: view does not take filled regions".format(e.Id))
             continue
         offset = OFFSET_PAPER_MM / 304.8 * max(view.Scale, 1)
-        pts = element_points(e, view)
+        pts = linked_points(e, link) if link is not None else element_points(e, view)
         if not pts:
             skipped.append(u"{0}: no geometry in the view".format(e.Id))
             continue

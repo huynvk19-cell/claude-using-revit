@@ -248,10 +248,39 @@ def _match(rows, body, key, shown):
     return ordered, left
 
 
-def _with_linked(rows, body, key, shown, fields):
+def _linked_elements(doc, vs, key):
+    """{texts of the key columns: [[link instance id, element id], ...]} for the schedule's category in every
+    loaded link. A project or shared parameter has another id in the link, so it goes by its name."""
+    out = {}
+    cat = vs.Definition.CategoryId
+    if cat.IntegerValue == -1:
+        return out
+    for inst in FilteredElementCollector(doc).OfClass(RevitLinkInstance):
+        ld = inst.GetLinkDocument()
+        if ld is None:
+            continue
+        params, types = _Params(ld), {}
+        for el in FilteredElementCollector(ld).OfCategoryId(cat).WhereElementIsNotElementType():
+            texts = []
+            for f in key:
+                target = _type_of(ld, el, types) if f["source"] == "type" else el
+                if target is None:
+                    p = None
+                elif f["param"] is not None and f["param"] < 0:
+                    p = params.get(target, f["param"])
+                else:
+                    p = target.LookupParameter(f["name"])
+                texts.append(text_of(p).strip())
+            out.setdefault(tuple(texts), []).append([inst.Id.IntegerValue, el.Id.IntegerValue])
+    return out
+
+
+def _with_linked(doc, vs, rows, body, key, shown, fields):
     """A schedule that includes elements in links: its rows in body order, host elements as usual, the others
-    (their elements live in another model) as read-only rows holding the text Revit shows. Headings, blank rows,
-    group headers and totals (one filled cell) are left out."""
+    (their elements live in another model) as read-only rows holding the text Revit shows, each with the linked
+    elements it stands for (refs). Headings, blank rows, group headers and totals (one filled cell) are left out."""
+    found = _linked_elements(doc, vs, [f for f in key if f["param"] is not None])
+    itemized = bool(vs.Definition.IsItemized)
     pending = {}
     for r in rows:
         pending.setdefault(tuple(r["v"][f["index"]].strip() for f in key), []).append(r)
@@ -273,7 +302,12 @@ def _with_linked(rows, body, key, shown, fields):
         for g in shown:
             if g["body"] < len(cells):
                 v[g["index"]] = cells[g["body"]]
-        out.append({"id": None, "linked": True, "v": v})
+        row = {"id": None, "linked": True, "v": v}
+        texts = tuple(cells[f["body"]] if f["body"] < len(cells) else u"" for f in key if f["param"] is not None)
+        refs = found.get(texts) or []
+        if refs:
+            row["refs"] = [refs.pop(0)] if itemized else refs
+        out.append(row)
     return out + [r for rs in pending.values() for r in rs]
 
 
@@ -355,7 +389,7 @@ def read(doc, vs, limit=20000):
             keys.append([f])
     order = None
     if linked:
-        rows, order = _with_linked(rows, body, params_shown or shown, shown, fields), u"schedule"
+        rows, order = _with_linked(doc, vs, rows, body, params_shown or shown, shown, fields), u"schedule"
     for key in keys if not linked else []:
         ordered, left = _match(rows, body, key, shown)
         if len(ordered) * 2 >= len(rows):

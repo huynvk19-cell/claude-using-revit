@@ -11,7 +11,8 @@ doc = revit.doc
 uidoc = revit.uidoc
 
 ids = list(uidoc.Selection.GetElementIds())
-if not ids:
+linked = tasks._selected_in_links(doc, uidoc)
+if not ids and not linked:
     try:
         refs = uidoc.Selection.PickObjects(
             ObjectType.Element, u"Chọn đối tượng cần highlight rồi bấm Finish")
@@ -19,15 +20,16 @@ if not ids:
     except OperationCanceledException:
         ids = []
 
-if ids:
+if ids or linked:
     try:
-        res = tasks.run("highlight", {"ids": [i.IntegerValue for i in ids], "detail": True},
+        # no ids: the task takes the selection, elements inside links included
+        res = tasks.run("highlight", {"detail": True} if linked else {"ids": [i.IntegerValue for i in ids], "detail": True},
                         doc, uidoc)
     except Exception as ex:
         lg.alert(u"Không tạo được highlight:\n{0}".format(ex), exitscript=True)
 
     per_view, skipped = res["perView"], res["skipped"]
-    lines = [u"Đã highlight {0}/{1} đối tượng.".format(res["created"], len(ids))]
+    lines = [u"Đã highlight {0}/{1} đối tượng.".format(res["created"], len(ids) + len(linked))]
     lines += [u"  {0}: {1}".format(n, c) for n, c in sorted(per_view.items())]
     if skipped:
         lines.append(u"Bỏ qua {0}:".format(len(skipped)))

@@ -207,6 +207,12 @@ class Table(object):
         self.f('c_hidden').Click += lambda s, e: self._hidden_changed()
         self.f('c_only').Click += lambda s, e: self.apply_filter()
         self.f('c_unlock').Click += lambda s, e: self._unlock_changed()
+        self.f('c_select').IsChecked = bool(load_settings().get('selectInRevit', True))
+        self.f('c_select').Click += lambda s, e: self._select_option()
+        self.sel_sent, self.sel_busy, self.sel_again = None, False, False
+        self.sel_timer = DispatcherTimer()
+        self.sel_timer.Interval = TimeSpan.FromMilliseconds(250)
+        self.sel_timer.Tick += self._send_selection
         self.f('q').TextChanged += lambda s, e: self.apply_filter()
         self.pick.SelectionChanged += self._picked
         self.grid.PreviewKeyDown += self._key
@@ -786,6 +792,45 @@ class Table(object):
             self.box = None
         self._place_handle()
         self._status()
+        if self.f('c_select').IsChecked and self.dv is not None:
+            self.sel_timer.Stop()
+            self.sel_timer.Start()      # waits for the end of a drag over the cells
+
+    def _select_option(self):
+        st = load_settings()
+        st['selectInRevit'] = bool(self.f('c_select').IsChecked)
+        save_settings(st)
+        self.sel_sent = None
+        if self.f('c_select').IsChecked and self.dv is not None:
+            self._send_selection(None, None)
+
+    def _send_selection(self, sender, e):
+        """What the chosen rows stand for becomes the selection in Revit, one job at a time."""
+        self.sel_timer.Stop()
+        if self.sel_busy:
+            self.sel_again = True
+            return
+        rows = self.block()[0] if self.dv is not None else []
+        ids, refs = [], []
+        for i in rows:
+            r = self.rows[i]
+            if r.get('new'):
+                continue
+            if r.get('linked'):
+                refs.extend(r.get('refs') or [])
+            else:
+                ids.append(r['id'])
+        key = (tuple(sorted(ids)), tuple(sorted(tuple(x) for x in refs)))
+        if key == self.sel_sent or not (ids or refs):
+            return
+        self.sel_sent = key
+        self.sel_busy, self.sel_again = True, False
+
+        def finished(res=None):
+            self.sel_busy = False
+            if self.sel_again:
+                self._send_selection(None, None)
+        self.host.run('task', 'schedule_select', {'ids': ids, 'refs': refs}, finished, lambda err: (self.say(u'Không chọn được trong Revit: {0}'.format(err)), finished()))
 
     def _column_at(self, c):
         return sorted(self.grid.Columns, key=lambda x: x.DisplayIndex)[c]
@@ -1368,6 +1413,9 @@ class Table(object):
         linked = len([r for r in self.rows if r.get('linked')])
         if linked:
             parts.append(u'{0} dòng từ file link (chỉ đọc, sửa ở model đó)'.format(linked))
+            lost = len([r for r in self.rows if r.get('linked') and not r.get('refs')])
+            if lost:
+                parts.append(u'{0} dòng link không tìm được phần tử để chọn'.format(lost))
         if busy:
             parts.append(u'{0} dòng đang bị người khác mượn'.format(busy))
         if oth:
