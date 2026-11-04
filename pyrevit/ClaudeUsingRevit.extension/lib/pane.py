@@ -4,8 +4,9 @@
 Bảng: any schedule as an Excel-like DataGrid. Each cell is a text column f<i> of a DataTable with a state column
 s<i> (chg, ro, lock) that only a style trigger reads, so colours cost no Python per cell. Edits stay in the panel
 until "Ghi vào Revit". Keys: Enter / Tab / arrows, F2 or typing edits, Delete clears, Ctrl+C / V (TSV, to and from
-Excel), Ctrl+D / R fill, Ctrl+Z / Y, Ctrl+H find & replace, Ctrl+F filter, Ctrl+S write. Sort and filters only
-change what the panel shows. Công cụ: what the tab's tools have left to do (task status_board).
+Excel), Ctrl+D / R fill, Ctrl+Z / Y, Ctrl+H find & replace, Ctrl+F filter, Ctrl+S write. The square at the corner of
+the selection drags a fill or a number series down, up or sideways (Ctrl: plain copy); it sits on a canvas over the
+grid and follows the selected cells. Sort and filters only change what the panel shows. Công cụ: what the tab's tools have left to do (task status_board).
 
 Revit work goes through web_bridge's ExternalEvent queue as tasks (schedule_list, schedule_table,
 schedule_table_write, status_board): a pane is outside any API context. A thread waits for the job, the answer
@@ -32,15 +33,20 @@ clr.AddReference('WindowsBase')
 
 from System import Action, AppDomain, DBNull, Guid, Int32, String
 from System.Data import DataTable
-from System.Windows import (DataTrigger, MessageBox, MessageBoxButton, MessageBoxResult, Setter, SizeToContent, Style,
-                            TextWrapping, Thickness, Trigger, Visibility, Window, WindowStartupLocation)
-from System.Windows.Controls import (Button, CheckBox, DataGridCell, DataGridEditAction, DataGridEditingUnit, DataGridLength,
-                                     DataGridTextColumn, ListBox, Page, StackPanel, TextBlock, TextBox, WrapPanel)
+from System import TimeSpan
+from System.Windows import (ContentElement, DataTrigger, LogicalTreeHelper, MessageBox, MessageBoxButton, MessageBoxResult,
+                            Point, Setter, SizeToContent, Style, TextWrapping, Thickness, Trigger, Visibility, Window,
+                            WindowStartupLocation)
+from System.Windows.Controls import (Button, Canvas, CheckBox, ComboBox, DataGridCell, DataGridCellInfo, DataGridEditAction,
+                                     DataGridEditingUnit, DataGridLength, DataGridRow, DataGridTextColumn, ListBox, Page,
+                                     RadioButton, ScrollViewer, StackPanel, TextBlock, TextBox, WrapPanel)
+from System.Windows.Controls.Primitives import DataGridColumnHeadersPresenter
 from System.Windows.Data import Binding, BindingMode, UpdateSourceTrigger
 from System.Windows.Input import Key, Keyboard, ModifierKeys
 from System.Windows.Interop import WindowInteropHelper
 from System.Windows.Markup import XamlReader
-from System.Windows.Media import BrushConverter
+from System.Windows.Media import BrushConverter, Visual, VisualTreeHelper
+from System.Windows.Threading import DispatcherTimer
 from Microsoft.Win32 import OpenFileDialog, SaveFileDialog
 
 from Autodesk.Revit.DB import Rectangle
@@ -59,6 +65,24 @@ _bc = BrushConverter()
 
 def brush(c):
     return _bc.ConvertFrom(c)
+
+
+def find_child(node, kind):
+    """The first element of a type under node in the visual tree."""
+    for k in range(VisualTreeHelper.GetChildrenCount(node)):
+        c = VisualTreeHelper.GetChild(node, k)
+        if isinstance(c, kind):
+            return c
+        hit = find_child(c, kind)
+        if hit is not None:
+            return hit
+    return None
+
+
+def find_parent(node, kind):
+    while node is not None and not isinstance(node, kind):
+        node = LogicalTreeHelper.GetParent(node) if isinstance(node, ContentElement) or not isinstance(node, Visual) else VisualTreeHelper.GetParent(node)
+    return node
 
 
 def load_settings():
@@ -165,9 +189,18 @@ class Table(object):
         self.undo_stack, self.redo_stack = [], []
         self.unlock, self.busy, self.editing, self.loading = False, False, False, False
         self.doc_title = None
+        self.over, self.handle, self.fillbox = self.f('over'), self.f('handle'), self.f('fillbox')
+        self.box, self.drag = None, None
+        self.timer = DispatcherTimer()
+        self.timer.Interval = TimeSpan.FromMilliseconds(60)
+        self.timer.Tick += self._drag_tick
+        self.handle.MouseLeftButtonDown += self._handle_down
+        self.handle.MouseMove += self._handle_move
+        self.handle.MouseLeftButtonUp += self._handle_up
+        self.grid.LayoutUpdated += lambda s, e: self._place_handle()
         for name, fn in (('b_reload', self.reload), ('b_undo', self.undo), ('b_redo', self.redo), ('b_series', self.series),
                          ('b_fill', self.fill_down), ('b_find', self.find_replace), ('b_formula', self.formula),
-                         ('b_add', self.add_rows), ('b_xlsx', lambda: self.export('xlsx')), ('b_csv', lambda: self.export('csv')),
+                         ('b_add', self.add_rows), ('b_filter', self.to_filter), ('b_xlsx', lambda: self.export('xlsx')), ('b_csv', lambda: self.export('csv')),
                          ('b_import', self.import_file), ('b_save', self.save)):
             self.f(name).Click += self._clicked(fn)
         self.f('c_hidden').IsChecked = bool(load_settings().get('hidden'))
@@ -181,7 +214,7 @@ class Table(object):
         self.grid.CellEditEnding += self._end_edit
         self.grid.Sorting += self._sorting
         self.grid.LoadingRow += self._row_loading
-        self.grid.SelectedCellsChanged += lambda s, e: self._status()
+        self.grid.SelectedCellsChanged += self._selection_changed
 
     def _clicked(self, fn):
         def go(sender, e):
@@ -738,6 +771,201 @@ class Table(object):
                 self.set_cell(rows[len(seeds) + k], ci, v, batch, sk)
         self.commit(batch, sk)
 
+    # -- the square at the corner of the selection: drag to fill ------------------------------------------------
+    def _selection_changed(self, sender, e):
+        rows, cols = self.block() if self.dv is not None else ([], [])
+        if rows:
+            all_rows, all_cols = self._view_rows(), self._display_cols()
+            p, c = all_rows.index(rows[0]), all_cols.index(cols[0])
+            self.box = (p, p + len(rows) - 1, c, c + len(cols) - 1)
+        else:
+            self.box = None
+        self._place_handle()
+        self._status()
+
+    def _column_at(self, c):
+        return sorted(self.grid.Columns, key=lambda x: x.DisplayIndex)[c]
+
+    def _cell_at(self, p, c):
+        """The cell on screen at view row p, display column c; None when it is scrolled away."""
+        row = self.grid.ItemContainerGenerator.ContainerFromIndex(p)
+        if row is None:
+            return None
+        content = self._column_at(c).GetCellContent(row)
+        return content.Parent if content is not None else None
+
+    def _head(self):
+        """Height of the column headers, width of the row headers: the handle hides under them."""
+        h = find_child(self.grid, DataGridColumnHeadersPresenter)
+        return (h.ActualHeight if h is not None else 0), self.grid.RowHeaderActualWidth
+
+    def _hide_handle(self):
+        if self.handle.Visibility != Visibility.Collapsed:
+            self.handle.Visibility = Visibility.Collapsed
+
+    def _place_handle(self):
+        if self.drag is not None:
+            return
+        try:
+            if self.box is None or self.editing or self.dv is None or not self.grid.IsVisible:
+                return self._hide_handle()
+            cell = self._cell_at(self.box[1], self.box[3])
+            if cell is None:
+                return self._hide_handle()
+            pt = cell.TranslatePoint(Point(cell.ActualWidth, cell.ActualHeight), self.over)
+            top, left = self._head()
+            if pt.Y <= top or pt.X <= left or pt.Y > self.over.ActualHeight or pt.X > self.over.ActualWidth:
+                return self._hide_handle()
+            x, y = pt.X - 5, pt.Y - 5
+            if Canvas.GetLeft(self.handle) != x or Canvas.GetTop(self.handle) != y:
+                Canvas.SetLeft(self.handle, x)
+                Canvas.SetTop(self.handle, y)
+            if self.handle.Visibility != Visibility.Visible:
+                self.handle.Visibility = Visibility.Visible
+        except Exception:
+            self._hide_handle()
+
+    def _handle_down(self, sender, e):
+        if self.box is None:
+            return
+        e.Handled = True
+        self.begin_fill()
+        self.handle.CaptureMouse()
+        self.timer.Start()
+
+    def begin_fill(self):
+        self.drag = {'p': self.box[1], 'c': self.box[3]}
+
+    def _handle_move(self, sender, e):
+        if self.drag is not None:
+            self.drag_to(e.GetPosition(self.grid))
+
+    def _handle_up(self, sender, e):
+        if self.drag is None:
+            return
+        e.Handled = True
+        self.timer.Stop()
+        self.handle.ReleaseMouseCapture()
+        self.drag_to(e.GetPosition(self.grid))
+        self.finish_fill(bool(Keyboard.Modifiers & ModifierKeys.Control))
+
+    def _drag_tick(self, sender, e):
+        """Scroll while the mouse is held at or past an edge of the grid."""
+        if self.drag is None:
+            return self.timer.Stop()
+        from System.Windows.Input import Mouse
+        p = Mouse.GetPosition(self.grid)
+        top, left = self._head()
+        sv = find_child(self.grid, ScrollViewer)
+        if sv is None:
+            return
+        moved = True
+        if p.Y >= self.grid.ActualHeight - 6:
+            sv.LineDown()
+        elif p.Y <= top + 6:
+            sv.LineUp()
+        elif p.X >= self.grid.ActualWidth - 6:
+            sv.LineRight()
+        elif p.X <= left + 6:
+            sv.LineLeft()
+        else:
+            moved = False
+        if moved:
+            self.drag_to(p)
+
+    def drag_to(self, point):
+        """The view row / display column under a grid point, kept inside the grid; the dashed box follows."""
+        top, left = self._head()
+        x = max(left + 2, min(point.X, self.grid.ActualWidth - 20))
+        y = max(top + 2, min(point.Y, self.grid.ActualHeight - 20))
+        hit = self.grid.InputHitTest(Point(x, y))
+        cell = find_parent(hit, DataGridCell) if hit is not None else None
+        if cell is None:
+            return
+        row = find_parent(cell, DataGridRow)
+        self.drag['p'] = self.grid.ItemContainerGenerator.IndexFromContainer(row)
+        self.drag['c'] = cell.Column.DisplayIndex
+        self._draw_fill()
+
+    def fill_range(self):
+        """('rows' or 'cols', new end) of the drag, or None when it stays inside the selection. The direction
+        with the longer way out wins, measured in row and column sizes."""
+        p0, p1, c0, c1 = self.box
+        p, c = self.drag['p'], self.drag['c']
+        dr = p - p1 if p > p1 else p0 - p if p < p0 else 0
+        dc = c - c1 if c > c1 else c0 - c if c < c0 else 0
+        if not dr and not dc:
+            return None
+        return ('rows', p) if dr * 22 >= dc * 90 else ('cols', c)
+
+    def _draw_fill(self):
+        fr = self.fill_range()
+        if fr is None:
+            self.fillbox.Visibility = Visibility.Collapsed
+            return
+        p0, p1, c0, c1 = self.box
+        if fr[0] == 'rows':
+            p0, p1 = min(p0, fr[1]), max(p1, fr[1])
+        else:
+            c0, c1 = min(c0, fr[1]), max(c1, fr[1])
+        a, b = self._cell_at(p0, c0), self._cell_at(p1, c1)
+        top, left = self._head()
+        pa = a.TranslatePoint(Point(0, 0), self.over) if a is not None else Point(left, top)
+        pb = b.TranslatePoint(Point(b.ActualWidth, b.ActualHeight), self.over) if b is not None else Point(self.over.ActualWidth, self.over.ActualHeight)
+        Canvas.SetLeft(self.fillbox, pa.X)
+        Canvas.SetTop(self.fillbox, pa.Y)
+        self.fillbox.Width = max(0, pb.X - pa.X)
+        self.fillbox.Height = max(0, pb.Y - pa.Y)
+        self.fillbox.Visibility = Visibility.Visible
+
+    def finish_fill(self, copy=False):
+        """The selection repeated to the new end: numbers count on (A-009, A-010), Ctrl copies as it is."""
+        fr = self.fill_range()
+        p0, p1, c0, c1 = self.box
+        self.drag = None
+        self.fillbox.Visibility = Visibility.Collapsed
+        if fr is None:
+            return self._place_handle()
+        rows, cols = self._view_rows(), self._display_cols()
+        batch, sk = [], [0, 0]
+
+        def values(seeds, n):
+            return [seeds[k % len(seeds)] for k in range(n)] if copy else ops.series_values(seeds, n)
+        if fr[0] == 'rows':
+            end = fr[1]
+            for c in range(c0, c1 + 1):
+                ci = cols[c]
+                seeds = [self.rows[rows[p]]['v'][ci] for p in range(p0, p1 + 1)]
+                if end > p1:
+                    for k, v in enumerate(values(seeds, end - p1)):
+                        self.set_cell(rows[p1 + 1 + k], ci, v, batch, sk)
+                else:
+                    for k, v in enumerate(values(seeds[::-1], p0 - end)):
+                        self.set_cell(rows[p0 - 1 - k], ci, v, batch, sk)
+            p0, p1 = min(p0, end), max(p1, end)
+        else:
+            end = fr[1]
+            for p in range(p0, p1 + 1):
+                i = rows[p]
+                seeds = [self.rows[i]['v'][cols[c]] for c in range(c0, c1 + 1)]
+                if end > c1:
+                    for k, v in enumerate(values(seeds, end - c1)):
+                        self.set_cell(i, cols[c1 + 1 + k], v, batch, sk)
+                else:
+                    for k, v in enumerate(values(seeds[::-1], c0 - end)):
+                        self.set_cell(i, cols[c0 - 1 - k], v, batch, sk)
+            c0, c1 = min(c0, end), max(c1, end)
+        self.commit(batch, sk)
+        self._select(p0, p1, c0, c1)
+
+    def _select(self, p0, p1, c0, c1):
+        self.grid.SelectedCells.Clear()
+        columns = sorted(self.grid.Columns, key=lambda x: x.DisplayIndex)
+        for p in range(p0, p1 + 1):
+            item = self.dv[p]
+            for c in range(c0, c1 + 1):
+                self.grid.SelectedCells.Add(DataGridCellInfo(item, columns[c]))
+
     # -- dialogs --------------------------------------------------------------------------------------------
     def find_replace(self):
         if self.data is None:
@@ -798,7 +1026,6 @@ class Table(object):
         rows = self._view_rows()
         if i not in rows or ci not in self.columns_by_ci:
             return
-        from System.Windows.Controls import DataGridCellInfo
         item = self.dv[rows.index(i)]
         col = self.columns_by_ci[ci]
         self.grid.SelectedCells.Clear()
@@ -855,6 +1082,79 @@ class Table(object):
                      _row(_button(u'Áp dụng', go), _button(u'Huỷ', lambda: w.Close()))])
         box.Focus()
         w.ShowDialog()
+
+    def to_filter(self):
+        """The chosen cells into a filter of a view template (task schedule_filter_add)."""
+        if self.data is None:
+            return
+        rows, cols = self.block()
+        rows = [i for i in rows if not self.rows[i].get('new')]
+        if not rows:
+            return self.say(u'Chọn các ô cần đưa vào filter')
+        bad = [self.cols[ci]['heading'] for ci in cols if self.cols[ci]['param'] is None]
+        if bad:
+            return self.say(u'Cột {0}: Revit tính ra, không lọc được'.format(u', '.join(bad)))
+        self.say(u'Đang đọc view template…')
+        self.host.run('task', 'schedule_filter_options', {}, lambda o: self._filter_dialog(rows, cols, o))
+
+    def _filter_dialog(self, rows, cols, opts):
+        self._status()
+        temps, filters = opts['templates'], opts['filters']
+        tp = ComboBox()
+        tp.IsEditable = True
+        tp.ItemsSource = [t['name'] + (u'  (của {0})'.format(t['lastChangedBy']) if t['others'] else u'') for t in temps]
+        last = load_settings().get('filterTemplate')
+        tp.SelectedIndex = next((k for k, t in enumerate(temps) if t['name'] == last), 0 if temps else -1)
+        fl = ComboBox()
+        fl.IsEditable = True
+        fl.ItemsSource = [f['name'] for f in filters]
+        first = cols[0]
+        vals = sorted(set(self.rows[i]['v'][first] for i in rows))
+        fl.Text = (self.data['schedule'] + u' - ' + vals[0]) if len(vals) == 1 else self.data['schedule']
+        hide, show = RadioButton(), RadioButton()
+        hide.Content, show.Content = u'Hide', u'No hide'
+        hide.IsChecked = bool(load_settings().get('filterHide', True))
+        show.IsChecked = not hide.IsChecked
+        hide.Margin = Thickness(0, 0, 14, 0)
+        modes = WrapPanel()
+        modes.Margin = Thickness(0, 6, 0, 0)
+        modes.Children.Add(hide)
+        modes.Children.Add(show)
+        heads = u', '.join(self.cols[ci]['heading'] for ci in cols)
+        shown = u', '.join(v or u'(trống)' for v in vals[:8]) + (u' …' if len(vals) > 8 else u'')
+        info = _text(u'', dim=True)
+
+        def apply_filter():
+            if tp.SelectedIndex < 0 or not (fl.Text or u'').strip():
+                info.Text = u'Chọn view template và đặt tên filter'
+                return
+            t = temps[tp.SelectedIndex]
+            args = {'schedule': u'{0}'.format(self.data['id']), 'ids': sorted(set(self.rows[i]['id'] for i in rows)),
+                    'cols': [self.cols[ci]['key'] for ci in cols], 'template': t['id'], 'filter': fl.Text.strip(),
+                    'hide': bool(hide.IsChecked)}
+            st = load_settings()
+            st['filterTemplate'], st['filterHide'] = t['name'], bool(hide.IsChecked)
+            save_settings(st)
+            w.Close()
+            self._send_filter(args)
+        w = _dialog(self.host, u'Thêm vào filter của view template',
+                    [_text(u'{0} dòng · cột {1}: {2}'.format(len(rows), heads, shown)),
+                     _text(u'View template', dim=True), tp, _text(u'Filter (có sẵn thì mở rộng thêm các giá trị này, chưa có thì tạo mới)', dim=True), fl, modes, info,
+                     _row(_button(u'Thêm', apply_filter), _button(u'Huỷ', lambda: w.Close()))], 520)
+        w.ShowDialog()
+
+    def _send_filter(self, args):
+        def done(r):
+            if r.get('blocked'):
+                msg = u'Của người khác:\n{0}\n\nVẫn sửa?'.format(u'\n'.join(r['blocked']))
+                if MessageBox.Show(msg, TITLE, MessageBoxButton.YesNo) == MessageBoxResult.Yes:
+                    self._send_filter(dict(args, force=True))
+                return
+            self.say(u'{0} filter {1} · view template {2} · {3} · {4} giá trị'.format(
+                u'Đã tạo' if r.get('newFilter') else u'Đã mở rộng', r['filter'], r['template'],
+                u'Hide' if r['hide'] else u'No hide', sum(r['values'].values())))
+        self.say(u'Đang ghi filter…')
+        self.host.run('task', 'schedule_filter_add', args, done, lambda err: MessageBox.Show(u'Chưa thêm được: {0}'.format(err), TITLE))
 
     def add_rows(self):
         if self.data is None or not self.data.get('sheetList'):

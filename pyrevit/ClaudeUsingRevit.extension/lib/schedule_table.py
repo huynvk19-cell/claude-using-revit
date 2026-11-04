@@ -24,10 +24,13 @@ import re
 
 from System import Enum
 
+from System.Collections.Generic import List
+
 from Autodesk.Revit.DB import (
-    BuiltInCategory, BuiltInParameter, Category, CheckoutStatus, ElementId, FamilyInstance,
-    FilteredElementCollector, ScheduleFieldType, SectionType, SpecTypeId, StorageType,
-    Transaction, ViewSchedule, ViewSheet, WorksharingUtils)
+    BuiltInCategory, BuiltInParameter, Category, CheckoutStatus, ElementFilter, ElementId, ElementParameterFilter,
+    FamilyInstance, FilteredElementCollector, LogicalAndFilter, LogicalOrFilter, ParameterFilterElement,
+    ParameterFilterRuleFactory, ParameterFilterUtilities, ScheduleFieldType, SectionType, SpecTypeId, StorageType,
+    Transaction, View, ViewSchedule, ViewSheet, WorksharingUtils)
 
 import print_set_sync as ps
 
@@ -484,3 +487,151 @@ def sync_print_set(doc, vs):
     r = ps.sync(doc, c)
     return {"status": u"updated", "sheets": r["count"], "added": len(c["added"]),
             "removed": len(c["removed"]), "renumbered": r["renumbered"]}
+
+
+# ---- selected rows into a filter of a view template ------------------------------------
+
+def filter_options(doc):
+    """View templates that take filters (others = someone else made and last changed it) + the filters of the model."""
+    templates = []
+    for v in _filterable_views(doc):
+        templates.append({"id": v.Id.IntegerValue, "name": v.Name, "kind": u"{0}".format(v.ViewType),
+                          "others": ps.is_others(doc, v), "lastChangedBy": ps.owner(doc, v)[0]})
+    filters = [{"id": f.Id.IntegerValue, "name": f.Name} for f in FilteredElementCollector(doc).OfClass(ParameterFilterElement)]
+    return {"templates": sorted(templates, key=lambda t: t["name"].lower()),
+            "filters": sorted(filters, key=lambda f: f["name"].lower())}
+
+
+def _filterable_views(doc):
+    out = []
+    for v in FilteredElementCollector(doc).OfClass(View):
+        try:
+            if v.IsTemplate and v.AreGraphicsOverridesAllowed():
+                out.append(v)
+        except Exception:
+            continue
+    return out
+
+
+def _rule(p, pid):
+    """An equals rule on the value this parameter really holds; None when it has none to compare."""
+    st = p.StorageType
+    if not p.HasValue:
+        return ParameterFilterRuleFactory.CreateHasNoValueParameterRule(pid)
+    if st == StorageType.String:
+        return ParameterFilterRuleFactory.CreateEqualsRule(pid, p.AsString() or u"", False)
+    if st == StorageType.Integer:
+        return ParameterFilterRuleFactory.CreateEqualsRule(pid, p.AsInteger())
+    if st == StorageType.Double:
+        return ParameterFilterRuleFactory.CreateEqualsRule(pid, p.AsDouble(), 1e-6)
+    if st == StorageType.ElementId:
+        return ParameterFilterRuleFactory.CreateEqualsRule(pid, p.AsElementId())
+    return None
+
+
+def _value_key(p):
+    st = p.StorageType
+    if not p.HasValue:
+        return None
+    if st == StorageType.String:
+        return (p.AsString() or u"").lower()
+    if st == StorageType.Integer:
+        return p.AsInteger()
+    if st == StorageType.Double:
+        return round(p.AsDouble(), 6)
+    return p.AsElementId().IntegerValue
+
+
+def add_to_filter(doc, vs, ids, cols, template_id, filter_name, hide, force=False, dry_run=False):
+    """A filter from the values the chosen elements hold in the chosen columns, added to a view template.
+    Values of one column are alternatives (OR), columns narrow each other (AND). An existing filter of that
+    name is widened with them (OR); a new one is made. Hide = filter off in the template (V/G: Visibility
+    unticked), no hide = on. Nothing else in the template changes."""
+    params, types = _Params(doc), {}
+    fields = []
+    for key in cols:
+        f = _field_by_key(vs, key)
+        if f.FieldType not in PARAM_FIELDS or f.ParameterId.IntegerValue == -1:
+            raise ValueError(u"Cột {0}: Revit tính ra, không lọc được".format(f.ColumnHeading or f.GetName()))
+        fields.append(f)
+    elements = [doc.GetElement(ElementId(int(i))) for i in ids]
+    elements = [e for e in elements if e is not None]
+    if not elements or not fields:
+        raise ValueError(u"Chọn ít nhất một ô")
+    allowed = ParameterFilterUtilities.GetAllFilterableCategories()
+    cats = set()
+    for e in elements:
+        if e.Category is None or not allowed.Contains(e.Category.Id):
+            raise ValueError(u"Category {0} không dùng được cho filter".format(e.Category.Name if e.Category else u"?"))
+        cats.add(e.Category.Id.IntegerValue)
+    cat_ids = List[ElementId]([ElementId(c) for c in cats])
+    filterable = set(i.IntegerValue for i in ParameterFilterUtilities.GetFilterableParametersInCommon(doc, cat_ids))
+    groups, values = [], {}
+    for f in fields:
+        pid = f.ParameterId
+        name = f.ColumnHeading or f.GetName()
+        if pid.IntegerValue not in filterable:
+            raise ValueError(u"Cột {0}: tham số này Revit không cho dùng trong filter".format(name))
+        rules, seen = [], set()
+        for e in elements:
+            target = _type_of(doc, e, types) if f.FieldType == ScheduleFieldType.ElementType else e
+            p = params.get(target, pid.IntegerValue)
+            if p is None:
+                continue
+            k = _value_key(p)
+            if k in seen:
+                continue
+            seen.add(k)
+            r = _rule(p, pid)
+            if r is not None:
+                rules.append(r)
+        if not rules:
+            raise ValueError(u"Cột {0}: không có giá trị để lọc".format(name))
+        values[name] = len(rules)
+        one = [ElementParameterFilter(r) for r in rules]
+        groups.append(one[0] if len(one) == 1 else LogicalOrFilter(List[ElementFilter](one)))
+    built = groups[0] if len(groups) == 1 else LogicalAndFilter(List[ElementFilter](groups))
+    template = doc.GetElement(ElementId(int(template_id)))
+    if not isinstance(template, View) or not template.IsTemplate:
+        raise ValueError(u"Không thấy view template")
+    existing = next((x for x in FilteredElementCollector(doc).OfClass(ParameterFilterElement) if x.Name == filter_name), None)
+    blocked = []
+    if ps.owner(doc, template)[2]:
+        raise ValueError(u"View template {0} đang bị người khác mượn".format(template.Name))
+    if ps.is_others(doc, template):
+        blocked.append(u"View template {0}: {1}".format(template.Name, ps.owner(doc, template)[0]))
+    if existing is not None:
+        if ps.owner(doc, existing)[2]:
+            raise ValueError(u"Filter {0} đang bị người khác mượn".format(filter_name))
+        if ps.is_others(doc, existing):
+            blocked.append(u"Filter {0}: {1}".format(filter_name, ps.owner(doc, existing)[0]))
+    res = {"filter": filter_name, "template": template.Name, "hide": bool(hide), "values": values,
+           "categories": [Category.GetCategory(doc, ElementId(c)).Name for c in cats],
+           "newFilter": existing is None, "elements": len(elements)}
+    if blocked and not force:
+        res["blocked"] = blocked
+        return res
+    if dry_run:
+        return res
+    t = Transaction(doc, u"Bảng: filter {0}".format(filter_name))
+    t.Start()
+    try:
+        if existing is None:
+            pf = ParameterFilterElement.Create(doc, filter_name, cat_ids, built)
+        else:
+            pf = existing
+            cur = set(i.IntegerValue for i in pf.GetCategories())
+            if not cats.issubset(cur):
+                pf.SetCategories(List[ElementId]([ElementId(c) for c in cur | cats]))
+            old = pf.GetElementFilter()
+            pf.SetElementFilter(built if old is None else LogicalOrFilter(List[ElementFilter]([old, built])))
+        if not template.IsFilterApplied(pf.Id):
+            template.AddFilter(pf.Id)
+        template.SetFilterVisibility(pf.Id, not hide)
+        t.Commit()
+    except Exception:
+        if t.HasStarted() and not t.HasEnded():
+            t.RollBack()
+        raise
+    res["id"] = pf.Id.IntegerValue
+    return res

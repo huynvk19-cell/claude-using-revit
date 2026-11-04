@@ -387,6 +387,22 @@ def schedule_table_write(doc, uidoc, args):
     return out
 
 
+@task(u"(RO) View templates that take filters + the model's filters, for schedule_filter_add.")
+def schedule_filter_options(doc, uidoc, args):
+    return st.filter_options(doc)
+
+
+@task(u"Chosen rows of a schedule into a filter of a view template: values of the chosen columns, a new "
+      u"filter or a wider one of that name, hide or not. args: schedule, ids, cols [f<i>], template (id), "
+      u"filter (name), hide (bool), force (template / filter of someone else), dryRun.")
+def schedule_filter_add(doc, uidoc, args):
+    try:
+        return st.add_to_filter(doc, _table(doc, args), args.get("ids") or [], args.get("cols") or [], args.get("template"),
+                                args.get("filter") or u"", bool(args.get("hide")), bool(args.get("force")), bool(args.get("dryRun")))
+    except ValueError as ex:
+        raise TaskError(u"{0}".format(ex))
+
+
 # ---- untagged (Highlight Untagged / Remove Untagged) ---------------------------
 
 @task(u"(RO) Rooms / doors / windows / walls / floors a view shows without their tag. "
