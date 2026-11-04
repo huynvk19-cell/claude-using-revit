@@ -387,6 +387,30 @@ def schedule_table_write(doc, uidoc, args):
     return out
 
 
+@task(u"Select in Revit what chosen rows stand for, also elements inside links; the model does not change. "
+      u"args: ids, refs [[link instance id, element id]].")
+def schedule_select(doc, uidoc, args):
+    from Autodesk.Revit.DB import Reference
+    from System.Collections.Generic import List
+    ids, refs = args.get("ids") or [], args.get("refs") or []
+    if not refs:
+        uidoc.Selection.SetElementIds(List[ElementId]([ElementId(int(i)) for i in ids if doc.GetElement(ElementId(int(i))) is not None]))
+        return {"selected": uidoc.Selection.GetElementIds().Count}
+    out = List[Reference]()
+    for i in ids:
+        el = doc.GetElement(ElementId(int(i)))
+        if el is not None:
+            out.Add(Reference(el))
+    for link, i in refs:
+        inst = doc.GetElement(ElementId(int(link)))
+        ld = inst.GetLinkDocument() if inst is not None else None
+        el = ld.GetElement(ElementId(int(i))) if ld is not None else None
+        if el is not None:
+            out.Add(Reference(el).CreateLinkReference(inst))
+    uidoc.Selection.SetReferences(out)
+    return {"selected": out.Count}
+
+
 @task(u"(RO) View templates that take filters + the model's filters, for schedule_filter_add.")
 def schedule_filter_options(doc, uidoc, args):
     return st.filter_options(doc)
@@ -443,11 +467,13 @@ def untagged_remove(doc, uidoc, args):
 # ---- highlight (Highlight / Clear Highlight) ------------------------------------
 
 @task(u"Red 50% region around elements (annotations: in their own view; model elements: "
-      u"in view). args: ids (default: selection), view (id; default: active view).")
+      u"in view). args: ids (default: selection, also elements selected inside links), view (id; "
+      u"default: active view).")
 def highlight(doc, uidoc, args):
     ids = [ElementId(int(i)) for i in (args.get("ids") or [])] or \
         list(uidoc.Selection.GetElementIds())
-    if not ids:
+    linked = [] if args.get("ids") else _selected_in_links(doc, uidoc)
+    if not ids and not linked:
         raise TaskError(u"pass ids or select elements")
     view = doc.GetElement(ElementId(int(args["view"]))) if args.get("view") else doc.ActiveView
     if not isinstance(view, View):
@@ -456,12 +482,26 @@ def highlight(doc, uidoc, args):
     t = Transaction(doc, "Highlight")
     t.Start()
     try:
-        created, per_view, skipped = hr.highlight(doc, elems, view)
+        created, per_view, skipped = hr.highlight(doc, elems, view, linked)
         t.Commit()
     except Exception:
         t.RollBack()
         raise
     return {"created": created, "perView": per_view, "skipped": _cut(skipped, args)}
+
+
+def _selected_in_links(doc, uidoc):
+    """[(element of a linked model, link transform)] of the current selection."""
+    out = []
+    for r in uidoc.Selection.GetReferences():
+        if r.LinkedElementId == ElementId.InvalidElementId:
+            continue
+        inst = doc.GetElement(r.ElementId)
+        ld = inst.GetLinkDocument() if inst is not None and hasattr(inst, "GetLinkDocument") else None
+        el = ld.GetElement(r.LinkedElementId) if ld is not None else None
+        if el is not None:
+            out.append((el, inst.GetTotalTransform()))
+    return out
 
 
 @task(u"Delete your highlight regions. args: view (id; default: whole model).")
