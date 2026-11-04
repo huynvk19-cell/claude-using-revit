@@ -6,6 +6,9 @@ window.PANE = (() => {
   try { if (window.parent !== window && window.parent.PANE) return window.parent.PANE; } catch { /* other origin */ }
   const wv = window.chrome && window.chrome.webview;
   if (!wv) return null;
+  // in Revit it looks like a Revit palette (pane.css), not the glass page of the browser
+  document.documentElement.classList.add("in-pane");
+  document.head.append(Object.assign(document.createElement("link"), { rel: "stylesheet", href: "pane.css" }));
   const waiting = new Map();
   let nextMsg = 1, nextJob = 1, infoNow = null;
   const jobs = [];

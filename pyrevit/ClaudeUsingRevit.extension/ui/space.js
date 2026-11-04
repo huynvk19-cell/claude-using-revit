@@ -5,6 +5,7 @@
 "use strict";
 (function () {
   const cv = document.getElementById("space");
+  if (PANE) { cv.remove(); return; }     // a plain palette in the Revit panel
   const ctx = cv.getContext("2d");
   let seed = 11;
   const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);

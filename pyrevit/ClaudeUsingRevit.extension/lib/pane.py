@@ -8,8 +8,10 @@ virtual host names: ui.cur.example = ui/, tab.cur.example = the ribbon tab (icon
 
 Revit lets a dockable pane register only while starting up (or with no model open), so setup() runs from
 startup.py and costs nothing more: WebView2 loads when the pane first shows. After a pyRevit reload with a
-model open, or a first install, there is no pane until Revit restarts: show() then uses a floating window
-owned by Revit with the same content.
+model open, or a first install, Revit accepts the registration but creates the pane only at its next start:
+show() then says so (no floating window: the panel belongs inside the Revit window). The page looks like a
+Revit palette here (ui/pane.css). Revit remembers a pane's place by its id, so PANE_ID changes when the first
+place has to change.
 
 WebView2 SDK: the dlls Revit ships (Revit 2024 folder, Revit 2023 AddIns\\DynamoForRevit). Runtime: Edge
 WebView2, part of Windows 11. The startup engine stays alive, so its event handlers keep working.
@@ -32,10 +34,9 @@ clr.AddReference('System.Drawing')
 from System import Action, AppDomain, Environment, Guid
 from System.Diagnostics import Process
 from System.IO import DriveInfo
-from System.Windows import TextWrapping, Thickness, Window, WindowStartupLocation
+from System.Windows import TextWrapping, Thickness
 from System.Windows.Controls import Grid, TextBlock
-from System.Windows.Interop import WindowInteropHelper
-from System.Windows.Media import Color, SolidColorBrush
+from System.Windows.Media import Brushes
 
 from Autodesk.Revit.DB import Rectangle
 from Autodesk.Revit.UI import DockablePaneId, DockablePaneState, DockPosition, IDockablePaneProvider
@@ -43,15 +44,15 @@ from Autodesk.Revit.UI import DockablePaneId, DockablePaneState, DockPosition, I
 import web_bridge
 
 SLOT = 'ClaudeUsingRevit.Pane'
-PANE_ID = Guid('5b1c7c2e-8f0a-4c55-9a34-1d2e6f7a9c10')
-TITLE = 'claude using revit'
+PANE_ID = Guid('c3a94e17-2d6b-4f08-8e51-7a0b9d4c6e22')
+TITLE = u'Bảng & công cụ'
 HERE = os.path.dirname(os.path.abspath(__file__))
 EXT = os.path.dirname(HERE)
 DATA = os.path.join(os.environ.get('APPDATA', ''), 'claude-using-revit')
 HEADER_RE = re.compile(r'/\*\s*mcp-tool\s*([\s\S]*?)\*/')
 NAME_RE = re.compile(r'^[a-z][a-z0-9_]{0,63}$')
 NODE_ONLY = ('stop_mcp_service', 'list_dynamic_commands', 'run_dynamic_command')
-BACKGROUND = (0x02, 0x03, 0x0A)
+BACKGROUND = (0xF0, 0xF0, 0xF0)
 
 
 # ---- what the page can ask without the Revit API ----------------------------------------------
@@ -190,8 +191,9 @@ class _Provider(IDockablePaneProvider):
         data.FrameworkElement = self.root
         data.VisibleByDefault = False
         state = DockablePaneState()
-        state.DockPosition = DockPosition.Floating
+        state.DockPosition = DockPosition.Bottom      # wide: a table reads best across the window
         state.SetFloatingRectangle(Rectangle(120, 80, 1500, 960))
+        state.MinimumHeight = 340
         data.InitialState = state
 
 
@@ -200,10 +202,9 @@ class Host(object):
         self.uiapp = uiapp
         self.root = root if root is not None else Grid()
         self.root.Children.Clear()
-        self.root.Background = SolidColorBrush(Color.FromRgb(*BACKGROUND))
+        self.root.Background = Brushes.WhiteSmoke
         self.root.Loaded += self._on_loaded
         self.web = None
-        self.window = None
         self.docked = False
         self.closed = False
         self.debug_port = None
@@ -212,39 +213,21 @@ class Host(object):
     # -- showing ---------------------------------------------------------------------------------
     def show(self, debug_port=None):
         self.debug_port = debug_port or self.debug_port
-        if self.docked and self.window is None:
-            try:
-                self.uiapp.GetDockablePane(DockablePaneId(PANE_ID)).Show()
-                if self.root.IsLoaded:      # a reload kept the pane: its Loaded event will not come again
-                    self._on_loaded(None, None)
-                return u'pane'
-            except Exception as ex:    # registered with a model open: Revit accepts it, but creates it next start
-                self.error = u'{0}'.format(ex)
-        if self.window is None:
-            w = Window()
-            w.Title = TITLE
-            w.Width, w.Height = 1400, 880
-            w.WindowStartupLocation = WindowStartupLocation.CenterScreen
-            w.Content = self.root
-            WindowInteropHelper(w).Owner = self.uiapp.MainWindowHandle
-            w.Closing += self._keep_window
-            self.window = w
-        self.window.Show()
-        self.window.Activate()
-        return u'window'
+        """Show the pane. False when Revit has not created it yet (it does at its next start)."""
+        try:
+            self.uiapp.GetDockablePane(DockablePaneId(PANE_ID)).Show()
+        except Exception as ex:
+            self.error = u'{0}'.format(ex)
+            return False
+        if self.root.IsLoaded:      # a reload kept the pane: its Loaded event will not come again
+            self._on_loaded(None, None)
+        return True
 
     def hide(self):
-        if self.window is not None:
-            self.window.Hide()
-        elif self.docked:
-            try:
-                self.uiapp.GetDockablePane(DockablePaneId(PANE_ID)).Hide()
-            except Exception:
-                pass
-
-    def _keep_window(self, sender, e):
-        e.Cancel = True
-        sender.Hide()
+        try:
+            self.uiapp.GetDockablePane(DockablePaneId(PANE_ID)).Hide()
+        except Exception:
+            pass
 
     def _on_loaded(self, sender, e):
         if not self.closed and self.web is None:
@@ -302,7 +285,7 @@ class Host(object):
         t = TextBlock()
         t.Text = u'Không mở được panel (WebView2): ' + self.error
         t.Margin = Thickness(16)
-        t.Foreground = SolidColorBrush(Color.FromRgb(255, 255, 255))
+        t.Foreground = Brushes.Black
         t.TextWrapping = TextWrapping.Wrap
         self.root.Children.Add(t)
 
@@ -371,10 +354,6 @@ class Host(object):
             self.root.Children.Clear()
             if self.web is not None:
                 self.web.Dispose()
-            if self.window is not None:
-                self.window.Closing -= self._keep_window
-                self.window.Content = None
-                self.window.Close()
         except Exception:
             pass
 
@@ -393,7 +372,7 @@ def setup(uiapp, debug_port=None):
         try:
             uiapp.RegisterDockablePane(DockablePaneId(PANE_ID), TITLE, _Provider(host.root))
             host.docked = True
-        except Exception as ex:      # a model is open: floating window until Revit restarts
+        except Exception as ex:
             host.error = u'{0}'.format(ex)
     AppDomain.CurrentDomain.SetData(SLOT, host)
     if host.root.IsLoaded and host.root.IsVisible:       # reloaded with the pane open
