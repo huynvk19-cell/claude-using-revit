@@ -255,6 +255,7 @@ class Table(object):
         self.f('q').TextChanged += lambda s, e: self.apply_filter()
         self.pick.SelectionChanged += self._picked
         self.pick.DropDownOpened += lambda s, e: self.refresh_list()
+        native_blur.combo(self.pick)
         self.grid.PreviewKeyDown += self._key
         self.grid.BeginningEdit += self._begin_edit
         self.grid.CellEditEnding += self._end_edit
@@ -478,7 +479,7 @@ class Table(object):
 
     def _cell_style(self, ci):
         s = Style(clr.GetClrType(DataGridCell))
-        for value, back, fore in ((u'chg', '#FFE9C9', '#1C1C1C'), (u'ro', '#FAFAFA', '#7A7A7A'), (u'lock', '#F2F2F2', '#9A9A9A')):
+        for value, back, fore in ((u'chg', '#80FFB347', '#1C1C1C'), (u'ro', '#0F000000', '#555555'), (u'lock', '#26000000', '#6E6E6E')):
             t = DataTrigger()
             t.Binding = Binding('s{0}'.format(ci))
             t.Value = value
@@ -488,9 +489,9 @@ class Table(object):
         sel = Trigger()
         sel.Property = DataGridCell.IsSelectedProperty
         sel.Value = True
-        sel.Setters.Add(Setter(DataGridCell.BackgroundProperty, brush('#CCE4F7')))
+        sel.Setters.Add(Setter(DataGridCell.BackgroundProperty, brush('#660A84FF')))
         sel.Setters.Add(Setter(DataGridCell.ForegroundProperty, brush('#1C1C1C')))
-        sel.Setters.Add(Setter(DataGridCell.BorderBrushProperty, brush('#CCE4F7')))
+        sel.Setters.Add(Setter(DataGridCell.BorderBrushProperty, brush('#660A84FF')))
         s.Triggers.Add(sel)
         foc = Trigger()
         foc.Property = DataGridCell.IsFocusedProperty
@@ -1656,7 +1657,7 @@ class Host(object):
         if w.WindowState == WindowState.Minimized:
             w.WindowState = WindowState.Normal
         w.Activate()
-        w.Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, Action(w.Activate))  # a ribbon click takes it back
+        w.Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, Action(lambda: w.Activate()))  # a ribbon click takes it back
         if self.table.list:
             self.table.refresh_list()
         self.table.refresh_doc()

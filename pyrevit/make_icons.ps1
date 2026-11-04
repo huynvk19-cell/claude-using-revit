@@ -1,6 +1,5 @@
-﻿# Draw the Liquid Glass ribbon icons (96 x 96 icon.png) of the "claude using revit" tab with WPF.
-# Same look as the windows (lib/liquid_glass.xaml): a superellipse in the tool colour, a frosted
-# glass plate, a white glyph floating on it, a specular rim lit from the top left.
+﻿# Draw the ribbon icons (96 x 96 icon.png) of the "claude using revit" tab with WPF: a raised slab of mica in the tool
+# colour, straight edges with a small radius, its side showing below, a frosted top face, a white glyph set square on it.
 #   powershell -STA -File pyrevit\make_icons.ps1 [-Preview <png>]   then install.ps1 -PyRevit + pyRevit > Reload
 param([string]$Preview)
 $ErrorActionPreference = 'Stop'
@@ -9,6 +8,7 @@ $tab = Join-Path $PSScriptRoot 'ClaudeUsingRevit.extension\claude using revit.ta
 
 # button folder, colour top, colour bottom, glyph (Segoe Fluent Icons), plate tint, text label on plate
 $icons = @(
+    @('Panel.panel\Open Panel.pushbutton',                '#FFB84A', '#F0612A', [char]0xE80A, '#FFFFFF', ''),
     @('Highlight.panel\Highlight.pushbutton',              '#FF6B6B', '#E0243A', [char]0xE7E6, '#FFFFFF', ''),
     @('Highlight.panel\Clear Highlight.pushbutton',        '#A1A1AA', '#4B4B52', [char]0xE75C, '#FF6B6B', ''),
     @('Filter.panel\Add To Filter.pushbutton',            '#34D1B6', '#0B8F7E', [char]0xE71C, '#FFFFFF', ''),
@@ -20,20 +20,6 @@ $icons = @(
     @('View3D.panel\3D From View.pushbutton',              '#3DDCC0', '#0A8F7E', [char]0xF158, '#FFFFFF', '')
 )
 
-# superellipse |x|^5 + |y|^5 = 1 (the iOS icon shape), centred in 96 x 96 with a 4 px margin
-function Squircle([double]$cx, [double]$cy, [double]$r, [double]$n = 5) {
-    $pts = for ($i = 0; $i -lt 160; $i++) {
-        $t = 2 * [Math]::PI * $i / 160
-        $c = [Math]::Cos($t); $s = [Math]::Sin($t)
-        $x = $cx + $r * [Math]::Sign($c) * [Math]::Pow([Math]::Abs($c), 2 / $n)
-        $y = $cy + $r * [Math]::Sign($s) * [Math]::Pow([Math]::Abs($s), 2 / $n)
-        '{0:0.##},{1:0.##}' -f $x, $y
-    }
-    'M ' + ($pts -join ' L ') + ' Z'
-}
-$shape = Squircle 48 48 44
-$plate = Squircle 0 0 1   # unit plate, scaled per icon
-
 function Icon($bundle, $top, $bottom, $glyph, $plateTint, $label) {
     # the Fluent glyphs are hairline outlines: stack a few 0.8 px shifts so they read at 32 px
     $bold = foreach ($m in '0,0', '0.8,0', '-0.8,0', '0,0.8', '0,-0.8') {
@@ -41,67 +27,60 @@ function Icon($bundle, $top, $bottom, $glyph, $plateTint, $label) {
     }
     $glyphXaml = if ($label) {
 @"
-      <Grid Width="50" Height="60" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,2,0,0">
-        <Path Data="M 4,0 L 34,0 L 50,16 L 50,56 Q 50,60 46,60 L 4,60 Q 0,60 0,56 L 0,4 Q 0,0 4,0 Z" Fill="#E6FFFFFF">
-          <Path.Effect><DropShadowEffect Color="$bottom" BlurRadius="8" ShadowDepth="2" Direction="270" Opacity="0.55"/></Path.Effect>
+      <Grid Width="46" Height="56" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <Path Data="M 2,0 L 32,0 L 46,14 L 46,54 Q 46,56 44,56 L 2,56 Q 0,56 0,54 L 0,2 Q 0,0 2,0 Z" Fill="#F2FFFFFF">
+          <Path.Effect><DropShadowEffect Color="#000000" BlurRadius="3" ShadowDepth="2" Direction="270" Opacity="0.35"/></Path.Effect>
         </Path>
-        <Path Data="M 34,0 L 34,12 Q 34,16 38,16 L 50,16 Z" Fill="#59FFFFFF"/>
-        <Border CornerRadius="5" Background="$bottom" Margin="-8,30,0,0" HorizontalAlignment="Left"
-                VerticalAlignment="Top" Padding="5,0,5,1">
+        <Path Data="M 32,0 L 32,14 L 46,14 Z" Fill="#40000000"/>
+        <Border CornerRadius="2" Background="$bottom" Margin="-7,27,0,0" HorizontalAlignment="Left"
+                VerticalAlignment="Top" Padding="4,0,4,1">
           <TextBlock Text="$label" FontFamily="Segoe UI Black" FontSize="15" Foreground="White"/>
         </Border>
       </Grid>
 "@
     } else {
 @"
-      <Grid HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,2,0,0">
-        <Grid.Effect><DropShadowEffect Color="$bottom" BlurRadius="7" ShadowDepth="2" Direction="270" Opacity="0.7"/></Grid.Effect>
+      <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+        <Grid.Effect><DropShadowEffect Color="#000000" BlurRadius="2" ShadowDepth="2" Direction="270" Opacity="0.4"/></Grid.Effect>
 $($bold -join "`n")
       </Grid>
 "@
     }
     $xaml = @"
 <Grid xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" Width="96" Height="96">
-  <Grid.Clip><PathGeometry Figures="$shape"/></Grid.Clip>
-  <Rectangle>
-    <Rectangle.Fill>
-      <LinearGradientBrush StartPoint="0,0" EndPoint="0.35,1">
-        <GradientStop Color="$top" Offset="0"/><GradientStop Color="$bottom" Offset="1"/>
-      </LinearGradientBrush>
-    </Rectangle.Fill>
-  </Rectangle>
-  <Ellipse Width="130" Height="90" Margin="-40,-58,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
-    <Ellipse.Fill>
-      <RadialGradientBrush><GradientStop Color="#73FFFFFF" Offset="0"/><GradientStop Color="#00FFFFFF" Offset="1"/></RadialGradientBrush>
-    </Ellipse.Fill>
-  </Ellipse>
-  <!-- frosted glass plate, tilted, behind the glyph -->
-  <Path Data="$plate" Stretch="Fill" Width="58" Height="58" Margin="22,26,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"
-        StrokeThickness="1.4" RenderTransformOrigin="0.5,0.5">
-    <Path.RenderTransform><RotateTransform Angle="-9"/></Path.RenderTransform>
-    <Path.Fill>
-      <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#66FFFFFF" Offset="0"/><GradientStop Color="#1F$($plateTint.Substring(1))" Offset="1"/>
-      </LinearGradientBrush>
-    </Path.Fill>
-    <Path.Stroke>
-      <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#E6FFFFFF" Offset="0"/><GradientStop Color="#26FFFFFF" Offset="0.55"/>
-        <GradientStop Color="#80FFFFFF" Offset="1"/>
-      </LinearGradientBrush>
-    </Path.Stroke>
-  </Path>
+  <!-- shadow on the ribbon, the side of the slab, then its top face -->
+  <Border CornerRadius="13" Margin="5,12,5,1" Background="#000000" Opacity="0.3">
+    <Border.Effect><BlurEffect Radius="5"/></Border.Effect>
+  </Border>
+  <Border CornerRadius="12" Margin="5,12,5,4" Background="$bottom"/>
+  <Border CornerRadius="12" Margin="5,12,5,4" Background="#66000000"/>
+  <Grid Margin="5,4,5,12">
+    <Border CornerRadius="12">
+      <Border.Background>
+        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+          <GradientStop Color="$top" Offset="0"/><GradientStop Color="$bottom" Offset="1"/>
+        </LinearGradientBrush>
+      </Border.Background>
+    </Border>
+    <!-- mica: a soft frost, lighter toward the top left -->
+    <Border CornerRadius="12">
+      <Border.Background>
+        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+          <GradientStop Color="#59FFFFFF" Offset="0"/><GradientStop Color="#1AFFFFFF" Offset="0.5"/>
+          <GradientStop Color="#00FFFFFF" Offset="1"/>
+        </LinearGradientBrush>
+      </Border.Background>
+    </Border>
+    <Border CornerRadius="12" BorderThickness="1.6">
+      <Border.BorderBrush>
+        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+          <GradientStop Color="#CCFFFFFF" Offset="0"/><GradientStop Color="#33FFFFFF" Offset="0.5"/>
+          <GradientStop Color="#1AFFFFFF" Offset="1"/>
+        </LinearGradientBrush>
+      </Border.BorderBrush>
+    </Border>
 $glyphXaml
-  <!-- specular rim of the icon itself -->
-  <Path Data="$shape" StrokeThickness="2.4">
-    <Path.Stroke>
-      <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#F2FFFFFF" Offset="0"/><GradientStop Color="#40FFFFFF" Offset="0.3"/>
-        <GradientStop Color="#00FFFFFF" Offset="0.55"/><GradientStop Color="#4DFFFFFF" Offset="0.9"/>
-        <GradientStop Color="#99FFFFFF" Offset="1"/>
-      </LinearGradientBrush>
-    </Path.Stroke>
-  </Path>
+  </Grid>
 </Grid>
 "@
     $el = [Windows.Markup.XamlReader]::Parse($xaml)

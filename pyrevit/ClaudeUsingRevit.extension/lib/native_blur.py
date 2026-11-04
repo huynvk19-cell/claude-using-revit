@@ -13,10 +13,10 @@ clr.AddReference('PresentationCore')
 clr.AddReference('PresentationFramework')
 clr.AddReference('WindowsBase')
 
-from System.Windows import CornerRadius, Thickness, WindowStyle
+from System.Windows import CornerRadius, PresentationSource, Thickness, WindowStyle
 from System.Windows.Input import Mouse, MouseButtonState
 from System.Windows.Interop import HwndSource, WindowInteropHelper
-from System.Windows.Media import Colors
+from System.Windows.Media import Brushes, Colors
 from System.Windows.Shell import WindowChrome
 
 # DwmSetWindowAttribute
@@ -45,6 +45,53 @@ def acrylic(hwnd):
         return _dwm_set(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, DWMSBT_TRANSIENTWINDOW) == 0
     except Exception:
         return False
+
+
+class _Accent(ctypes.Structure):
+    _fields_ = [('state', ctypes.c_int), ('flags', ctypes.c_int), ('color', ctypes.c_uint), ('animation', ctypes.c_int)]
+
+
+class _CompositionData(ctypes.Structure):
+    _fields_ = [('attribute', ctypes.c_int), ('data', ctypes.c_void_p), ('size', ctypes.c_size_t)]
+
+
+class _Margins(ctypes.Structure):
+    _fields_ = [('left', ctypes.c_int), ('right', ctypes.c_int), ('top', ctypes.c_int), ('bottom', ctypes.c_int)]
+
+
+ACCENT_ENABLE_ACRYLICBLURBEHIND = 4
+WCA_ACCENT_POLICY = 19
+POPUP_TINT = 0xB8F4F2F0         # AABBGGRR: light, like the window's body
+
+
+def blur_popup(hwnd):
+    """Blur behind a window that never takes focus, as the list of a combo box. False where it cannot."""
+    try:
+        accent = _Accent(ACCENT_ENABLE_ACRYLICBLURBEHIND, 0, POPUP_TINT, 0)
+        data = _CompositionData(WCA_ACCENT_POLICY, ctypes.cast(ctypes.pointer(accent), ctypes.c_void_p), ctypes.sizeof(accent))
+        ok = ctypes.windll.user32.SetWindowCompositionAttribute(ctypes.c_void_p(hwnd), ctypes.byref(data))
+        _dwm_set(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, DWMWCP_ROUND)
+        return bool(ok)
+    except Exception:
+        return False
+
+
+def combo(box):
+    """The drop-down list of this combo box (theme template, PART_Popup) on the blur."""
+    def opened(sender, args):
+        popup = sender
+        src = PresentationSource.FromVisual(popup.Child)
+        if src is None:
+            return
+        if blur_popup(src.Handle.ToInt64()):
+            src.CompositionTarget.BackgroundColor = Colors.Transparent
+            popup.Child.Background = Brushes.Transparent
+
+    def hook(sender, args):
+        popup = box.Template.FindName('PART_Popup', box) if box.Template is not None else None
+        if popup is not None:
+            popup.Opened += opened
+    box.Loaded += hook
 
 
 def drag(window):
