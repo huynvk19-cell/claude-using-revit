@@ -626,10 +626,13 @@ def show_elements(doc, uidoc, args):
 
 @task(u"Show the panel in this Revit window (dockable; a floating window until Revit restarts after "
       u"a first install). Nothing in the model changes. args: fresh (rebuild it on the installed "
-      u"code), debugPort (remote debugging, for tests).")
+      u"code), hide, debugPort (remote debugging, for tests).")
 def pane_open(doc, uidoc, args):
     import pane
-    host = pane.setup(uidoc.Application) if args.get("fresh") else pane.current(uidoc.Application)
+    host = pane.setup(uidoc.Application, args.get("debugPort")) if args.get("fresh") else pane.current(uidoc.Application)
+    if args.get("hide"):
+        host.hide()
+        return {"hidden": True}
     return {"shown": host.show(args.get("debugPort")), "registerError": host.error}
 
 

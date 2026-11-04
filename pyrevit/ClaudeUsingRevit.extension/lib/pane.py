@@ -215,6 +215,8 @@ class Host(object):
         if self.docked and self.window is None:
             try:
                 self.uiapp.GetDockablePane(DockablePaneId(PANE_ID)).Show()
+                if self.root.IsLoaded:      # a reload kept the pane: its Loaded event will not come again
+                    self._on_loaded(None, None)
                 return u'pane'
             except Exception as ex:    # registered with a model open: Revit accepts it, but creates it next start
                 self.error = u'{0}'.format(ex)
@@ -230,6 +232,15 @@ class Host(object):
         self.window.Show()
         self.window.Activate()
         return u'window'
+
+    def hide(self):
+        if self.window is not None:
+            self.window.Hide()
+        elif self.docked:
+            try:
+                self.uiapp.GetDockablePane(DockablePaneId(PANE_ID)).Hide()
+            except Exception:
+                pass
 
     def _keep_window(self, sender, e):
         e.Cancel = True
@@ -252,10 +263,12 @@ class Host(object):
         from Microsoft.Web.WebView2.Wpf import CoreWebView2CreationProperties, WebView2
         from System.Drawing import Color as DrawingColor
         props = CoreWebView2CreationProperties()
-        props.UserDataFolder = os.path.join(os.environ.get('LOCALAPPDATA', ''), 'claude-using-revit', 'pane-webview')
-        if self.debug_port:
-            Environment.SetEnvironmentVariable('WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS',
-                                               '--remote-debugging-port={0}'.format(self.debug_port))
+        # one folder for every Revit window (they share one browser process), which needs equal options:
+        # a test run with a debug port keeps its own
+        props.UserDataFolder = os.path.join(os.environ.get('LOCALAPPDATA', ''), 'claude-using-revit',
+                                            'pane-webview-{0}'.format(self.debug_port) if self.debug_port else 'pane-webview')
+        Environment.SetEnvironmentVariable('WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS',
+                                           '--remote-debugging-port={0}'.format(self.debug_port) if self.debug_port else None)
         web = WebView2()
         web.CreationProperties = props
         web.DefaultBackgroundColor = DrawingColor.FromArgb(*BACKGROUND)
@@ -366,7 +379,7 @@ class Host(object):
             pass
 
 
-def setup(uiapp):
+def setup(uiapp, debug_port=None):
     """Called by startup.py on every pyRevit load."""
     old = AppDomain.CurrentDomain.GetData(SLOT)
     docked = old is not None and old.docked
@@ -375,6 +388,7 @@ def setup(uiapp):
         old.close()
     host = Host(uiapp, root)
     host.docked = docked
+    host.debug_port = debug_port
     if not docked:
         try:
             uiapp.RegisterDockablePane(DockablePaneId(PANE_ID), TITLE, _Provider(host.root))
@@ -382,6 +396,8 @@ def setup(uiapp):
         except Exception as ex:      # a model is open: floating window until Revit restarts
             host.error = u'{0}'.format(ex)
     AppDomain.CurrentDomain.SetData(SLOT, host)
+    if host.root.IsLoaded and host.root.IsVisible:       # reloaded with the pane open
+        host._on_loaded(None, None)
     return host
 
 
