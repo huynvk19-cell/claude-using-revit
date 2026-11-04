@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""The panel "Bảng & công cụ": a native WPF dockable pane of the add-in, no web page inside.
+"""The window "Bảng & công cụ": a native WPF tool window of the add-in, owned by Revit and on Windows' blur.
 
 Bảng: any schedule as an Excel-like DataGrid. Each cell is a text column f<i> of a DataTable with a state column
 s<i> (chg, ro, lock) that only a style trigger reads, so colours cost no Python per cell. Edits stay in the panel
@@ -9,14 +9,12 @@ the selection drags a fill or a number series down, up or sideways (Ctrl: plain 
 grid and follows the selected cells. Sort and filters only change what the panel shows. Công cụ: what the tab's tools have left to do (task status_board).
 
 Revit work goes through web_bridge's ExternalEvent queue as tasks (schedule_list, schedule_table,
-schedule_table_write, status_board): a pane is outside any API context. A thread waits for the job, the answer
-comes back on the UI thread.
+schedule_table_write, status_board): this window is modeless, outside any API context. A thread waits for the job, the
+answer comes back on the UI thread.
 
-Revit lets a dockable pane register only while starting up (or with no model open), so setup() runs from
-startup.py and costs little. After a pyRevit reload with a model open, or a first install, Revit accepts the
-registration but creates the pane only at its next start: show() returns False and the button says so. Revit
-remembers a pane's place by its id, so PANE_ID changes when the first place has to change. The startup engine
-stays alive, so the event handlers keep working.
+It belongs to Revit like the other tools (stays above it, goes with it, no taskbar button) but stays open while Revit
+is used. Closing hides it and keeps the table. setup() runs from startup.py and costs little; the startup engine stays
+alive, so the event handlers keep working.
 """
 import io
 import json
@@ -31,15 +29,15 @@ clr.AddReference('System.Data')
 clr.AddReference('System.Xaml')
 clr.AddReference('WindowsBase')
 
-from System import Action, AppDomain, DBNull, Guid, Int32, String, Uri
+from System import Action, AppDomain, DBNull, Int32, String, Uri
 from System.Data import DataTable
 from System import TimeSpan
 from System.Windows import (ContentElement, DataTrigger, FrameworkElement, HorizontalAlignment, LogicalTreeHelper, Point,
-                            ResizeMode, ResourceDictionary, Setter, SizeToContent, Style, TextWrapping, Thickness, Trigger,
-                            VerticalAlignment, Visibility, Window, WindowStartupLocation)
+                            ResizeMode, ResourceDictionary, Setter, SizeToContent, Style, SystemParameters, TextWrapping, Thickness, Trigger,
+                            VerticalAlignment, Visibility, Window, WindowStartupLocation, WindowState)
 from System.Windows.Controls import (Button, Canvas, CheckBox, ComboBox, ContentControl, DataGridCell, DataGridCellInfo,
                                      DataGridEditAction, DataGridEditingUnit, DataGridLength, DataGridRow, DataGridTextColumn,
-                                     Dock, DockPanel, ListBox, Orientation, Page, RadioButton, ScrollViewer, StackPanel,
+                                     Dock, DockPanel, ListBox, Orientation, RadioButton, ScrollViewer, StackPanel,
                                      TextBlock, TextBox, WrapPanel)
 from System.Windows.Controls.Primitives import DataGridColumnHeadersPresenter
 from System.Windows.Data import Binding, BindingMode, UpdateSourceTrigger
@@ -47,18 +45,16 @@ from System.Windows.Input import Key, Keyboard, ModifierKeys
 from System.Windows.Interop import WindowInteropHelper
 from System.Windows.Markup import XamlReader
 from System.Windows.Media import BrushConverter, Brushes, TextFormattingMode, TextOptions, Visual, VisualTreeHelper
-from System.Windows.Threading import DispatcherTimer
+from System.Windows.Threading import DispatcherPriority, DispatcherTimer
 from Microsoft.Win32 import OpenFileDialog, SaveFileDialog
 
-from Autodesk.Revit.DB import Rectangle, ViewSchedule
-from Autodesk.Revit.UI import DockablePaneId, DockablePanes, DockablePaneState, DockPosition, IDockablePaneProvider
+from Autodesk.Revit.DB import ViewSchedule
 
 import native_blur
 import table_ops as ops
 import web_bridge
 
 SLOT = 'ClaudeUsingRevit.Pane'
-PANE_ID = Guid('c3a94e17-2d6b-4f08-8e51-7a0b9d4c6e30')
 TITLE = u'Bảng & công cụ'
 HERE = os.path.dirname(os.path.abspath(__file__))
 THEME = os.path.join(HERE, 'liquid_glass.xaml')
@@ -107,25 +103,10 @@ def save_settings(d):
         pass
 
 
-class _Provider(IDockablePaneProvider):
-    def __init__(self, element):
-        self.element = element
-
-    def SetupDockablePane(self, data):
-        data.FrameworkElement = self.element
-        data.VisibleByDefault = False
-        state = DockablePaneState()
-        # a tab beside the Project Browser. Not a new dock side: Revit 2023 opens DockPosition.Bottom as a sliver
-        state.DockPosition = DockPosition.Tabbed
-        state.TabBehind = DockablePanes.BuiltInDockablePanes.ProjectBrowser
-        state.SetFloatingRectangle(Rectangle(120, 80, 1500, 960))
-        data.InitialState = state
-
-
 # ---- small native dialogs ------------------------------------------------------------------
 
 def _dialog(host, title, content, width=460):
-    """A tool window on Windows' blur, with the theme of the other tools (a docked pane cannot have the blur)."""
+    """A tool window on Windows' blur, with the theme of the other tools."""
     w = Window()
     w.Title = title
     w.Width = width
@@ -167,7 +148,10 @@ def _dialog(host, title, content, width=460):
     body.SetResourceReference(FrameworkElement.StyleProperty, 'GlassPanel')
     body.Content = panel
     w.Content = body
-    WindowInteropHelper(w).Owner = host.uiapp.MainWindowHandle
+    if host.window.IsVisible:
+        w.Owner = host.window
+    else:
+        WindowInteropHelper(w).Owner = host.uiapp.MainWindowHandle
     w.PreviewKeyDown += lambda s, e: w.Close() if e.Key == Key.Escape else None
     native_blur.apply(w)
     return w
@@ -305,6 +289,7 @@ class Table(object):
         if title == self.doc_title:
             return
         self.doc_title = title
+        self.f('head_doc').Text = title or u'Chưa mở model'
         self.clear()
         if title:
             self.say(u'Đang đọc danh sách schedule…')
@@ -1592,24 +1577,49 @@ class Tools(object):
         self.host.run('task', 'print_set_sync', {'all': True}, lambda r: self.refresh(), lambda err: setattr(self.list, 'ItemsSource', [u'Lỗi: {0}'.format(err)]))
 
 
-# ---- the pane ----------------------------------------------------------------------------------------
+# ---- the window ----------------------------------------------------------------------------------
 
 class Host(object):
-    def __init__(self, uiapp, page=None):
+    def __init__(self, uiapp):
         self.uiapp = uiapp
-        self.page = page if page is not None else Page()
         with io.open(os.path.join(HERE, 'pane.xaml'), encoding='utf-8') as f:
             self.root = XamlReader.Parse(f.read().replace(u'__THEME__', Uri(THEME).AbsoluteUri))
-        self.page.Content = self.root
+        self.window = self._make_window()
         self.table = Table(self, self.root)
         self.tools = Tools(self, self.root)
-        self.docked = False
         self.closed = False
-        self.error = None
-        self.page.Loaded += self._on_loaded
-        self.page.IsVisibleChanged += self._on_loaded
+        self.root.FindName('b_close').Click += lambda s, e: self.hide()
         uiapp.ViewActivated += self._on_view
         uiapp.Application.DocumentClosed += self._on_doc_closed
+
+    def _make_window(self):
+        w = Window()
+        w.Title = TITLE
+        w.ShowInTaskbar = False
+        w.MinWidth, w.MinHeight = 560, 380
+        w.Width, w.Height = 1000, 680
+        w.WindowStartupLocation = WindowStartupLocation.CenterOwner
+        box = load_settings().get('window')
+        if box and box[0] >= SystemParameters.VirtualScreenLeft and box[1] >= SystemParameters.VirtualScreenTop and \
+                box[0] + 80 < SystemParameters.VirtualScreenLeft + SystemParameters.VirtualScreenWidth and \
+                box[1] + 40 < SystemParameters.VirtualScreenTop + SystemParameters.VirtualScreenHeight:
+            w.WindowStartupLocation = WindowStartupLocation.Manual
+            w.Left, w.Top, w.Width, w.Height = box
+        w.Background = Brushes.Transparent
+        w.Resources.MergedDictionaries.Add(self.root.Resources)
+        body = ContentControl()
+        body.Style = self.root.FindResource('GlassPanel')
+        body.Content = self.root
+        w.Content = body
+        WindowInteropHelper(w).Owner = self.uiapp.MainWindowHandle
+        native_blur.apply(w, resizable=True)
+        w.Closing += self._on_closing
+        return w
+
+    def _on_closing(self, sender, e):
+        if not self.closed:     # Alt+F4: same as the close button
+            e.Cancel = True
+            self.hide()
 
     def run(self, kind, name, args, done, fail=None):
         """A job on the API thread; done(result) or fail(error) back on the UI thread."""
@@ -1618,7 +1628,7 @@ class Host(object):
 
         def wait():
             job.done.wait()
-            self.page.Dispatcher.BeginInvoke(Action(lambda: self._deliver(job.result, done, fail)))
+            self.window.Dispatcher.BeginInvoke(Action(lambda: self._deliver(job.result, done, fail)))
         t = threading.Thread(target=wait)
         t.daemon = True
         t.start()
@@ -1641,33 +1651,27 @@ class Host(object):
 
     # -- showing ---------------------------------------------------------------------------------
     def show(self):
-        """Show the pane. False when Revit has not created it yet (it does at its next start)."""
-        try:
-            self.uiapp.GetDockablePane(DockablePaneId(PANE_ID)).Show()
-        except Exception as ex:
-            self.error = u'{0}'.format(ex)
-            return False
+        w = self.window
+        w.Show()
+        if w.WindowState == WindowState.Minimized:
+            w.WindowState = WindowState.Normal
+        w.Activate()
+        w.Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, Action(w.Activate))  # a ribbon click takes it back
         if self.table.list:
             self.table.refresh_list()
         self.table.refresh_doc()
         return True
 
     def hide(self):
-        try:
-            self.uiapp.GetDockablePane(DockablePaneId(PANE_ID)).Hide()
-        except Exception:
-            pass
+        w = self.window
+        if w.IsVisible:
+            st = load_settings()
+            st['window'] = [w.Left, w.Top, w.Width, w.Height]
+            save_settings(st)
+        w.Hide()
 
     def _shown(self):
-        try:
-            return self.uiapp.GetDockablePane(DockablePaneId(PANE_ID)).IsShown()
-        except Exception:
-            return False
-
-    def _on_loaded(self, sender, e):
-        # Revit loads a registered pane even while it is hidden: read the model only if it really shows
-        if not self.closed and self._shown():
-            self.table.refresh_doc()
+        return self.window.IsVisible
 
     def _on_view(self, sender, e):
         if self.closed or not self._shown():
@@ -1684,14 +1688,12 @@ class Host(object):
             self.table.clear()
 
     def close(self):
-        """A reload replaces this host (a registered pane keeps the same page)."""
+        """A reload replaces this host."""
         self.closed = True
         try:
-            self.page.Loaded -= self._on_loaded
-            self.page.IsVisibleChanged -= self._on_loaded
             self.uiapp.ViewActivated -= self._on_view
             self.uiapp.Application.DocumentClosed -= self._on_doc_closed
-            self.page.Content = None
+            self.window.Close()
         except Exception:
             pass
 
@@ -1699,21 +1701,10 @@ class Host(object):
 def setup(uiapp):
     """Called by startup.py on every pyRevit load."""
     old = AppDomain.CurrentDomain.GetData(SLOT)
-    docked = old is not None and getattr(old, 'docked', False)
-    page = getattr(old, 'page', None) if docked else None
     if old is not None:
         old.close()
-    host = Host(uiapp, page)
-    host.docked = docked
-    if not docked:
-        try:
-            uiapp.RegisterDockablePane(DockablePaneId(PANE_ID), TITLE, _Provider(host.page))
-            host.docked = True
-        except Exception as ex:
-            host.error = u'{0}'.format(ex)
+    host = Host(uiapp)
     AppDomain.CurrentDomain.SetData(SLOT, host)
-    if host.page.IsLoaded:       # reloaded with the pane open
-        host._on_loaded(None, None)
     return host
 
 

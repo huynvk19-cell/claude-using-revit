@@ -2,8 +2,8 @@
 """Windows' own blur for a WPF window: Windows 11's Acrylic backdrop (DWM).
 
 The blur is live, follows a drag and costs the window nothing. It only works on a top-level window that is not
-layered: no AllowsTransparency, a frame kept for DWM (corners, shadow) and hidden by WindowChrome. A docked pane sits
-inside Revit's own window, so it cannot have it. Where Windows has none (older than 11 22H2) the window stays opaque.
+layered: no AllowsTransparency, a frame kept for DWM (corners, shadow) and hidden by WindowChrome. Where Windows has
+none (older than 11 22H2) the window stays opaque.
 No pyRevit here: the startup engine and the button scripts both use it.
 """
 import ctypes
@@ -53,12 +53,12 @@ def drag(window):
         window.DragMove()
 
 
-def apply(window, done=None):
+def apply(window, done=None, resizable=False):
     """Call before the window shows. The theme's GlassBase is the plain body where there is no blur. done(has blur)."""
     window.WindowStyle = WindowStyle.SingleBorderWindow  # DWM blurs, rounds and shades a framed window
     chrome = WindowChrome()
     chrome.CaptionHeight = 0
-    chrome.ResizeBorderThickness = Thickness(0)
+    chrome.ResizeBorderThickness = Thickness(6 if resizable else 0)
     chrome.CornerRadius = CornerRadius(0)
     chrome.GlassFrameThickness = Thickness(-1)
     chrome.UseAeroCaptionButtons = False
