@@ -152,27 +152,30 @@
           </DockPanel>
         </StackPanel>
         <TextBlock x:Name="status" DockPanel.Dock="Bottom" Margin="1,3,1,0" Foreground="{StaticResource Ink2}" TextTrimming="CharacterEllipsis"/>
-        <Border CornerRadius="10" Padding="3" Background="White" BorderBrush="{StaticResource Hairline}" BorderThickness="1">
+        <Border CornerRadius="10" Padding="3" Background="#33FFFFFF" BorderBrush="{StaticResource Hairline}" BorderThickness="1">
         <Grid>
         <DataGrid x:Name="grid"
                   AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
                   SelectionUnit="CellOrRowHeader" SelectionMode="Extended" ClipboardCopyMode="ExcludeHeader"
                   HeadersVisibility="All" RowHeaderWidth="38" RowHeight="22"
                   EnableRowVirtualization="True" EnableColumnVirtualization="True"
-                  GridLinesVisibility="All" HorizontalGridLinesBrush="#E9E9EC" VerticalGridLinesBrush="#E9E9EC"
-                  Background="White" BorderThickness="0">
+                  GridLinesVisibility="All" HorizontalGridLinesBrush="#1A000000" VerticalGridLinesBrush="#1A000000"
+                  Background="Transparent" RowBackground="Transparent" BorderThickness="0">
           <DataGrid.Resources>
             <!-- cell editors and column filters stay plain boxes, not the theme's capsules -->
-            <Style TargetType="TextBox"/>
+            <Style TargetType="TextBox">
+              <Setter Property="Background" Value="#CCFFFFFF"/>
+              <Setter Property="BorderBrush" Value="#33000000"/>
+            </Style>
             <Style TargetType="DataGridColumnHeader">
-              <Setter Property="Background" Value="#F5F6F8"/>
-              <Setter Property="BorderBrush" Value="#E1E2E6"/>
+              <Setter Property="Background" Value="#40FFFFFF"/>
+              <Setter Property="BorderBrush" Value="#1F000000"/>
               <Setter Property="BorderThickness" Value="0,0,1,1"/>
               <Setter Property="Padding" Value="4,2"/>
             </Style>
             <Style TargetType="DataGridRowHeader">
-              <Setter Property="Background" Value="#F5F6F8"/>
-              <Setter Property="BorderBrush" Value="#E1E2E6"/>
+              <Setter Property="Background" Value="#40FFFFFF"/>
+              <Setter Property="BorderBrush" Value="#1F000000"/>
               <Setter Property="BorderThickness" Value="0,0,1,1"/>
             </Style>
           </DataGrid.Resources>
