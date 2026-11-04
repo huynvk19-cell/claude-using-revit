@@ -1,18 +1,121 @@
 <Grid xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      Background="#F0F0F0" TextElement.FontSize="12">
+      TextElement.FontSize="12" TextOptions.TextFormattingMode="Display">
+  <!-- same theme as the tool windows. The blur itself is Windows', for top-level windows only: inside Revit's window
+       there is nothing to see through, so this body is the plain frost of it -->
+  <Grid.Background>
+    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+      <GradientStop Color="#F3F4F7" Offset="0"/>
+      <GradientStop Color="#E7E9ED" Offset="1"/>
+    </LinearGradientBrush>
+  </Grid.Background>
   <Grid.Resources>
-    <Style TargetType="Button">
-      <Setter Property="Padding" Value="8,1"/>
-      <Setter Property="Margin" Value="0,0,3,3"/>
-      <Setter Property="MinHeight" Value="22"/>
-    </Style>
-    <Style TargetType="CheckBox">
-      <Setter Property="Margin" Value="0,0,10,3"/>
-      <Setter Property="VerticalAlignment" Value="Center"/>
-    </Style>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="__THEME__"/>
+      </ResourceDictionary.MergedDictionaries>
+      <Style TargetType="Button">
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Foreground" Value="{StaticResource Ink}"/>
+        <Setter Property="Margin" Value="0,0,4,4"/>
+        <Setter Property="Template">
+          <Setter.Value>
+            <ControlTemplate TargetType="Button">
+              <Border x:Name="b" CornerRadius="11" Padding="10,3" MinHeight="22" Background="{StaticResource TileFill}"
+                      BorderBrush="{StaticResource TileRim}" BorderThickness="1" RenderTransformOrigin="0.5,0.5">
+                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+              </Border>
+              <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                  <Setter TargetName="b" Property="Background" Value="{StaticResource TileHover}"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                  <Setter TargetName="b" Property="RenderTransform" Value="{StaticResource Press}"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                  <Setter TargetName="b" Property="Opacity" Value="0.45"/>
+                </Trigger>
+              </ControlTemplate.Triggers>
+            </ControlTemplate>
+          </Setter.Value>
+        </Setter>
+      </Style>
+      <Style x:Key="MainBtn" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Template">
+          <Setter.Value>
+            <ControlTemplate TargetType="Button">
+              <Grid x:Name="g" RenderTransformOrigin="0.5,0.5">
+                <Border CornerRadius="11" Background="{DynamicResource Accent}"/>
+                <Border x:Name="b" CornerRadius="11" Padding="12,3" MinHeight="22" Background="{StaticResource Gloss}"
+                        BorderBrush="{StaticResource TileRim}" BorderThickness="1">
+                  <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+              </Grid>
+              <ControlTemplate.Triggers>
+                <Trigger Property="IsPressed" Value="True">
+                  <Setter TargetName="g" Property="RenderTransform" Value="{StaticResource Press}"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                  <Setter TargetName="g" Property="Opacity" Value="0.45"/>
+                </Trigger>
+              </ControlTemplate.Triggers>
+            </ControlTemplate>
+          </Setter.Value>
+        </Setter>
+      </Style>
+      <Style TargetType="CheckBox" BasedOn="{StaticResource {x:Type CheckBox}}">
+        <Setter Property="Margin" Value="0,0,10,4"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+      </Style>
+      <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+        <Setter Property="MinHeight" Value="24"/>
+      </Style>
+      <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+        <Setter Property="MinHeight" Value="26"/>
+      </Style>
+      <Style TargetType="TabControl">
+        <Setter Property="Template">
+          <Setter.Value>
+            <ControlTemplate TargetType="TabControl">
+              <DockPanel>
+                <Border DockPanel.Dock="Top" HorizontalAlignment="Left" Margin="0,0,0,6" Padding="2" CornerRadius="13"
+                        Background="{StaticResource Fill2}">
+                  <TabPanel IsItemsHost="True"/>
+                </Border>
+                <ContentPresenter x:Name="PART_SelectedContentHost" ContentSource="SelectedContent"/>
+              </DockPanel>
+            </ControlTemplate>
+          </Setter.Value>
+        </Setter>
+      </Style>
+      <Style TargetType="TabItem">
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Foreground" Value="{StaticResource Ink2}"/>
+        <Setter Property="Template">
+          <Setter.Value>
+            <ControlTemplate TargetType="TabItem">
+              <Border x:Name="b" CornerRadius="11" Padding="16,3" Background="Transparent">
+                <ContentPresenter ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+              </Border>
+              <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                  <Setter TargetName="b" Property="Background" Value="#40FFFFFF"/>
+                </Trigger>
+                <Trigger Property="IsSelected" Value="True">
+                  <Setter TargetName="b" Property="Background" Value="White"/>
+                  <Setter Property="Foreground" Value="{StaticResource Ink}"/>
+                  <Setter Property="FontWeight" Value="SemiBold"/>
+                </Trigger>
+              </ControlTemplate.Triggers>
+            </ControlTemplate>
+          </Setter.Value>
+        </Setter>
+      </Style>
+    </ResourceDictionary>
   </Grid.Resources>
-  <TabControl Margin="2" Padding="3">
+  <TabControl Margin="6" FontFamily="{StaticResource Ui}" Foreground="{StaticResource Ink}">
     <TabItem Header="Bảng">
       <DockPanel LastChildFill="True">
         <StackPanel DockPanel.Dock="Top">
@@ -34,31 +137,49 @@
             <Button x:Name="b_import" Content="Nhập file" ToolTip="Nhập .xlsx / .csv: khớp theo cột Id hoặc số sheet"/>
           </WrapPanel>
           <DockPanel>
-            <Button x:Name="b_save" DockPanel.Dock="Right" VerticalAlignment="Bottom" Content="Ghi vào Revit" FontWeight="SemiBold" ToolTip="Ctrl+S"/>
+            <Button x:Name="b_save" DockPanel.Dock="Right" VerticalAlignment="Bottom" Content="Ghi vào Revit" Style="{StaticResource MainBtn}" Margin="4,0,0,4" ToolTip="Ctrl+S"/>
             <WrapPanel>
               <CheckBox x:Name="c_hidden" Content="Cột ẩn"/>
               <CheckBox x:Name="c_only" Content="Chỉ dòng đã sửa"/>
               <CheckBox x:Name="c_unlock" Content="Sửa phần tử người khác"/>
               <CheckBox x:Name="c_select" Content="Chọn theo trong Revit" ToolTip="Chọn dòng trong bảng thì Revit chọn phần tử đó, kể cả phần tử trong file link, để dùng tiếp các công cụ khác như Tô đối tượng"/>
-              <TextBox x:Name="q" Width="170" Margin="0,0,3,3" ToolTip="Lọc mọi cột (Ctrl+F)"/>
+              <TextBox x:Name="q" Width="170" Margin="0,0,3,4" ToolTip="Lọc mọi cột (Ctrl+F)"/>
             </WrapPanel>
           </DockPanel>
         </StackPanel>
-        <TextBlock x:Name="status" DockPanel.Dock="Bottom" Margin="1,3,1,0" Foreground="#5E5E5E" TextTrimming="CharacterEllipsis"/>
+        <TextBlock x:Name="status" DockPanel.Dock="Bottom" Margin="1,3,1,0" Foreground="{StaticResource Ink2}" TextTrimming="CharacterEllipsis"/>
+        <Border CornerRadius="10" Padding="3" Background="White" BorderBrush="{StaticResource Hairline}" BorderThickness="1">
         <Grid>
         <DataGrid x:Name="grid"
                   AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
                   SelectionUnit="CellOrRowHeader" SelectionMode="Extended" ClipboardCopyMode="ExcludeHeader"
                   HeadersVisibility="All" RowHeaderWidth="38" RowHeight="22"
                   EnableRowVirtualization="True" EnableColumnVirtualization="True"
-                  GridLinesVisibility="All" HorizontalGridLinesBrush="#E1E1E1" VerticalGridLinesBrush="#E1E1E1"
-                  Background="White" BorderBrush="#ADADAD"/>
+                  GridLinesVisibility="All" HorizontalGridLinesBrush="#E9E9EC" VerticalGridLinesBrush="#E9E9EC"
+                  Background="White" BorderThickness="0">
+          <DataGrid.Resources>
+            <!-- cell editors and column filters stay plain boxes, not the theme's capsules -->
+            <Style TargetType="TextBox"/>
+            <Style TargetType="DataGridColumnHeader">
+              <Setter Property="Background" Value="#F5F6F8"/>
+              <Setter Property="BorderBrush" Value="#E1E2E6"/>
+              <Setter Property="BorderThickness" Value="0,0,1,1"/>
+              <Setter Property="Padding" Value="4,2"/>
+            </Style>
+            <Style TargetType="DataGridRowHeader">
+              <Setter Property="Background" Value="#F5F6F8"/>
+              <Setter Property="BorderBrush" Value="#E1E2E6"/>
+              <Setter Property="BorderThickness" Value="0,0,1,1"/>
+            </Style>
+          </DataGrid.Resources>
+        </DataGrid>
         <Canvas x:Name="over" ClipToBounds="True">
           <Rectangle x:Name="fillbox" Stroke="#0078D4" StrokeThickness="1" StrokeDashArray="3 2" IsHitTestVisible="False" Visibility="Collapsed"/>
           <Border x:Name="handle" Width="8" Height="8" Background="#0078D4" BorderBrush="White" BorderThickness="1" Cursor="Cross"
                   Visibility="Collapsed" ToolTip="Kéo để fill / đánh số. Giữ Ctrl: chép nguyên"/>
         </Canvas>
         </Grid>
+        </Border>
       </DockPanel>
     </TabItem>
     <TabItem Header="Công cụ">
@@ -67,7 +188,7 @@
           <Button x:Name="t_refresh" Content="Kiểm tra lại"/>
           <Button x:Name="t_sync" Content="Đồng bộ print set" ToolTip="Mọi print set mang tên một danh mục bản vẽ theo đúng danh mục đó"/>
         </WrapPanel>
-        <ListBox x:Name="t_list" BorderBrush="#ADADAD"/>
+        <ListBox x:Name="t_list" Background="#80FFFFFF" BorderThickness="0"/>
       </DockPanel>
     </TabItem>
   </TabControl>
