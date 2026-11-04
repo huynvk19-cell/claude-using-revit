@@ -20,6 +20,7 @@ import schedule_table as st
 import sheet_list_columns as slc
 import untagged_marks as um
 import view_3d as v3d
+import view_filter as vf
 import view_mesh as vm
 
 TASKS = {}     # name -> (function, help)
@@ -424,6 +425,22 @@ def schedule_filter_add(doc, uidoc, args):
     try:
         return st.add_to_filter(doc, _table(doc, args), args.get("ids") or [], args.get("cols") or [], args.get("template"),
                                 args.get("filter") or u"", bool(args.get("hide")), bool(args.get("force")), bool(args.get("dryRun")), args.get("linked"))
+    except ValueError as ex:
+        raise TaskError(u"{0}".format(ex))
+
+
+@task(u"Elements selected in the view, inside links too, into a filter of a view template or of a view without one. "
+      u"No params: (RO) what they can be filtered by + where it can go. args: params [ids from choices], target (id), "
+      u"filter (name), hide (bool), force (template / filter of someone else), dryRun.")
+def filter_selection(doc, uidoc, args):
+    elements, whole = vf.selected(doc, uidoc)
+    if not elements:
+        raise TaskError(u"chọn phần tử trong view trước" + (u" (đang chọn cả file link: chọn từng phần tử trong đó)" if whole else u""))
+    try:
+        if not args.get("params"):
+            return vf.options(doc, elements)
+        return vf.add(doc, elements, args["params"], args.get("target"), args.get("filter") or u"", bool(args.get("hide")),
+                      bool(args.get("force")), bool(args.get("dryRun")))
     except ValueError as ex:
         raise TaskError(u"{0}".format(ex))
 

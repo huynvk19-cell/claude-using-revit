@@ -1,6 +1,7 @@
 layout:
   - Panel
   - Highlight
+  - Filter
   - Untagged
   - PrintSet
   - View3D

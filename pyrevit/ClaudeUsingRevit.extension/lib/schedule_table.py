@@ -708,9 +708,28 @@ def add_to_filter(doc, vs, ids, cols, template_id, filter_name, hide, force=Fals
         values[name] = len(rules)
         groups.append(rules[0] if len(rules) == 1 else LogicalOrFilter(List[ElementFilter](rules)))
     built = groups[0] if len(groups) == 1 else LogicalAndFilter(List[ElementFilter](groups))
-    template = doc.GetElement(ElementId(int(template_id)))
-    if not isinstance(template, View) or not template.IsTemplate:
+    return apply_filter(doc, built, cats, template_id, filter_name, hide, force, dry_run,
+                        {"values": values, "elements": len(elements),
+                         "linkedRows": max([len(v) for v in linked.values()] or [0])})
+
+
+def clean_filter_name(name):
+    """Revit refuses these in a filter's name, and "Family: Type" values hold one."""
+    return u" ".join(re.sub(u"[\\\\:{}\\[\\]|;<>?`~]", u" ", name or u"").split())
+
+
+def apply_filter(doc, built, cats, target_id, filter_name, hide, force=False, dry_run=False, info=None):
+    """Element filter built, on categories cats, into a filter of that name (an existing one is widened with it, OR)
+    in a view template or a view without template. Hide = off in V/G, no hide = on. Nothing else changes there."""
+    filter_name = clean_filter_name(filter_name)
+    if not filter_name:
+        raise ValueError(u"Đặt tên filter")
+    cat_ids = List[ElementId]([ElementId(c) for c in cats])
+    template = doc.GetElement(ElementId(int(target_id)))
+    if not isinstance(template, View):
         raise ValueError(u"Không thấy view template")
+    if not template.IsTemplate and template.ViewTemplateId != ElementId.InvalidElementId:
+        raise ValueError(u"View {0} do view template điều khiển: thêm vào template đó".format(template.Name))
     existing = next((x for x in FilteredElementCollector(doc).OfClass(ParameterFilterElement) if x.Name == filter_name), None)
     blocked = []
     if ps.owner(doc, template)[2]:
@@ -722,16 +741,20 @@ def add_to_filter(doc, vs, ids, cols, template_id, filter_name, hide, force=Fals
             raise ValueError(u"Filter {0} đang bị người khác mượn".format(filter_name))
         if ps.is_others(doc, existing):
             blocked.append(u"Filter {0}: {1}".format(filter_name, ps.owner(doc, existing)[0]))
-    res = {"filter": filter_name, "template": template.Name, "hide": bool(hide), "values": values,
-           "categories": [Category.GetCategory(doc, ElementId(c)).Name for c in cats],
-           "newFilter": existing is None, "elements": len(elements),
-           "linkedRows": max([len(v) for v in linked.values()] or [0])}
+    res = dict(info or {}, filter=filter_name, template=template.Name, hide=bool(hide), newFilter=existing is None,
+               categories=[Category.GetCategory(doc, ElementId(c)).Name for c in cats])
+    if template.IsTemplate:
+        try:
+            free = [i.IntegerValue for i in template.GetNonControlledTemplateParameterIds()]
+            res["notControlled"] = int(BuiltInParameter.VIS_GRAPHICS_FILTERS) in free
+        except Exception:
+            pass
     if blocked and not force:
         res["blocked"] = blocked
         return res
     if dry_run:
         return res
-    t = Transaction(doc, u"Bảng: filter {0}".format(filter_name))
+    t = Transaction(doc, u"Filter {0}".format(filter_name))
     t.Start()
     try:
         if existing is None:
