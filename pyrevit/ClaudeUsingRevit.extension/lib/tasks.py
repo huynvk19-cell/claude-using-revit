@@ -698,16 +698,15 @@ def show_elements(doc, uidoc, args):
     return {"view": (view or doc.ActiveView).Name, "selected": ids.Count}
 
 
-@task(u"Show the panel docked in this Revit window (Revit creates it at its next start after a first "
-      u"install). Nothing in the model changes. args: fresh (rebuild it on the installed code), hide.")
+@task(u"Show the window Bảng & công cụ of this Revit. Nothing in the model changes. args: fresh (rebuild it on the "
+      u"installed code), hide.")
 def pane_open(doc, uidoc, args):
     import pane
     host = pane.setup(uidoc.Application) if args.get("fresh") else pane.current(uidoc.Application)
     if args.get("hide"):
         host.hide()
         return {"hidden": True}
-    shown = host.show()
-    return {"shown": shown, "note": None if shown else u"Revit creates the panel at its next start", "error_detail": host.error}
+    return {"shown": host.show()}
 
 
 @task(u"(RO) This list: every task with its args.")
