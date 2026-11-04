@@ -11,6 +11,7 @@ $tab = Join-Path $PSScriptRoot 'ClaudeUsingRevit.extension\claude using revit.ta
 $icons = @(
     @('Highlight.panel\Highlight.pushbutton',              '#FF6B6B', '#E0243A', [char]0xE7E6, '#FFFFFF', ''),
     @('Highlight.panel\Clear Highlight.pushbutton',        '#A1A1AA', '#4B4B52', [char]0xE75C, '#FF6B6B', ''),
+    @('Filter.panel\Add To Filter.pushbutton',            '#34D1B6', '#0B8F7E', [char]0xE71C, '#FFFFFF', ''),
     @('Untagged.panel\Highlight Untagged.pushbutton',      '#FFB54A', '#FF6A1F', [char]0xE8EC, '#FFFFFF', ''),
     @('Untagged.panel\Remove Untagged.pushbutton',         '#A1A1AA', '#4B4B52', [char]0xE75C, '#FFA23A', ''),
     @('PrintSet.panel\Print Set Sync.pushbutton',          '#4FA8FF', '#0062DB', [char]0xE749, '#FFFFFF', ''),
