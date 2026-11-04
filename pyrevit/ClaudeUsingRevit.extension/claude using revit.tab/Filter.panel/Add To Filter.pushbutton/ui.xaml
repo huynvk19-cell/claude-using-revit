@@ -1,8 +1,8 @@
 <!-- Liquid Glass: styles come from lib/liquid_glass.xaml (loaded by liquid_glass.GlassWindow) -->
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Thêm vào filter" Width="540" SizeToContent="Height"
-        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        Title="Thêm vào filter" Width="496" SizeToContent="Height"
+        WindowStyle="None" Background="Transparent"
         ResizeMode="NoResize" WindowStartupLocation="CenterScreen" ShowInTaskbar="False"
         FontFamily="{StaticResource Ui}" FontSize="13" Foreground="{StaticResource Ink}"
         TextOptions.TextFormattingMode="Display">

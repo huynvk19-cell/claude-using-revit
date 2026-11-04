@@ -1,7 +1,7 @@
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="claude using revit" Width="520" SizeToContent="Height"
-        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        Title="claude using revit" Width="476" SizeToContent="Height"
+        WindowStyle="None" Background="Transparent"
         ResizeMode="NoResize" WindowStartupLocation="Manual" ShowInTaskbar="False" ShowActivated="False"
         FontFamily="{StaticResource Ui}" FontSize="13" Foreground="{StaticResource Ink}"
         TextOptions.TextFormattingMode="Display">

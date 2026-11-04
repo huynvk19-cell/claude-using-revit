@@ -26,24 +26,9 @@
   <!-- glass surfaces -->
   <SolidColorBrush x:Key="GlassBase" Color="#F4F5F8"/>
   <LinearGradientBrush x:Key="GlassFrost" StartPoint="0,0" EndPoint="0,1">
-    <GradientStop Color="#A6FFFFFF" Offset="0"/>
-    <GradientStop Color="#7AFFFFFF" Offset="0.55"/>
-    <GradientStop Color="#99F7F8FB" Offset="1"/>
-  </LinearGradientBrush>
-  <!-- specular rim: light from the top left, a weaker bounce on the bottom right -->
-  <LinearGradientBrush x:Key="GlassRim" StartPoint="0,0" EndPoint="1,1">
-    <GradientStop Color="#FFFFFFFF" Offset="0"/>
-    <GradientStop Color="#99FFFFFF" Offset="0.22"/>
-    <GradientStop Color="#33FFFFFF" Offset="0.5"/>
-    <GradientStop Color="#80FFFFFF" Offset="0.85"/>
-    <GradientStop Color="#E6FFFFFF" Offset="1"/>
-  </LinearGradientBrush>
-  <LinearGradientBrush x:Key="GlassSheen" StartPoint="0,0" EndPoint="0,1">
-    <GradientStop Color="#80FFFFFF" Offset="0"/>
-    <GradientStop Color="#1AFFFFFF" Offset="0.12"/>
-    <GradientStop Color="#00FFFFFF" Offset="0.3"/>
-    <GradientStop Color="#00FFFFFF" Offset="0.86"/>
-    <GradientStop Color="#14000000" Offset="1"/>
+    <GradientStop Color="#40FFFFFF" Offset="0"/>
+    <GradientStop Color="#14FFFFFF" Offset="0.55"/>
+    <GradientStop Color="#26F7F8FB" Offset="1"/>
   </LinearGradientBrush>
   <SolidColorBrush x:Key="Hairline" Color="#24000000"/>
 
@@ -65,24 +50,13 @@
 
   <ScaleTransform x:Key="Press" ScaleX="0.96" ScaleY="0.96"/>
 
-  <!-- ===== the window body: snapshot blur + frost + rim + sheen ===== -->
+  <!-- ===== the window body: a light frost over Windows' Acrylic (corners and shadow are DWM's) ===== -->
   <Style x:Key="GlassPanel" TargetType="ContentControl">
-    <Setter Property="Margin" Value="22"/>
     <Setter Property="Foreground" Value="{StaticResource Ink}"/>
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate TargetType="ContentControl">
-          <Grid>
-            <Border CornerRadius="30" Background="{DynamicResource GlassBase}">
-              <Border.Effect>
-                <DropShadowEffect BlurRadius="44" ShadowDepth="12" Direction="270" Opacity="0.26"/>
-              </Border.Effect>
-            </Border>
-            <Border x:Name="PART_Back" CornerRadius="30"/>
-            <Border CornerRadius="30" Background="{StaticResource GlassFrost}"
-                    BorderBrush="{StaticResource Hairline}" BorderThickness="1"/>
-            <Border CornerRadius="29" Margin="1" Background="{StaticResource GlassSheen}"
-                    BorderBrush="{StaticResource GlassRim}" BorderThickness="1.6" IsHitTestVisible="False"/>
+          <Grid Background="{StaticResource GlassFrost}">
             <ContentPresenter/>
           </Grid>
         </ControlTemplate>

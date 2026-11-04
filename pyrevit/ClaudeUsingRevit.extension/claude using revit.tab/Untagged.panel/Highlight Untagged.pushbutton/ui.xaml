@@ -2,8 +2,8 @@
      this tool overrides the accent with orange -->
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Untagged" Width="520" SizeToContent="Height"
-        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        Title="Untagged" Width="476" SizeToContent="Height"
+        WindowStyle="None" Background="Transparent"
         ResizeMode="NoResize" WindowStartupLocation="CenterScreen" ShowInTaskbar="False"
         FontFamily="{StaticResource Ui}" FontSize="13" Foreground="{StaticResource Ink}"
         TextOptions.TextFormattingMode="Display">

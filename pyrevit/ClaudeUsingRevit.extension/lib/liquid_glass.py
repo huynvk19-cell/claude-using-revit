@@ -2,102 +2,62 @@
 """Liquid Glass look for every window of the extension: one theme, one base window.
 
 - liquid_glass.xaml : the theme (glass panel, tiles, capsules, segmented control, fields).
-- GlassWindow       : forms.WPFWindow + the theme + the see-through body. A window's XAML puts
+- GlassWindow       : forms.WPFWindow + the theme + Windows' own blur. A window's XAML puts
                       its content in <ContentControl x:Name="glass" Style="{StaticResource GlassPanel}">.
 - alert / choose / Progress : glass versions of forms.alert, SelectFromList /
                       CommandSwitchWindow and forms.ProgressBar, same call shapes and results.
 
-Why a snapshot and not real blur-behind: the DWM accent blur and the Windows 11 backdrop
-both come out flat grey / milky with square corners for these layered WPF windows, so the
-screen behind is captured once just before the window opens, shrunk, made more vivid and
-blurred, then shown through the body (dragging pans it). Revit does not repaint under a
-modal window, so it stays true. If the capture fails the body is plain frosted white.
+The blur is Windows 11's Acrylic backdrop (DWM), so it is live, follows a drag and costs the window nothing.
+It only works on a window that is not layered: no AllowsTransparency, a frame kept for DWM (corners, shadow) and
+hidden by WindowChrome. Without it (older Windows) the body is plain frosted white.
 """
 import os
 
-import clr
-clr.AddReference("System.Drawing")
-clr.AddReference("System.Windows.Forms")
+import ctypes
 
 from pyrevit import forms, revit, script  # first: loads the WPF assemblies
 from pyrevit import HOST_APP
 
-from System import Action, Array, Single, Uri
-from System.Drawing import Bitmap, Graphics, GraphicsUnit, Rectangle
-from System.Drawing.Drawing2D import InterpolationMode
-from System.Drawing.Imaging import ColorMatrix, ImageAttributes, ImageFormat
-from System.IO import MemoryStream
-from System.Windows import (HorizontalAlignment, Point, PresentationSource, Rect,
-                            ResourceDictionary, Size, TextWrapping, Thickness, Visibility)
-from System.Windows.Controls import Button, Image, StackPanel, TextBlock
-from System.Windows.Forms import SystemInformation
-from System.Windows.Media import BrushMappingMode, ImageBrush, PixelFormats, Stretch
-from System.Windows.Media.Effects import BlurEffect, KernelType, RenderingBias
-from System.Windows.Media.Imaging import BitmapCacheOption, BitmapImage, RenderTargetBitmap
+from System import Action, Uri
+from System.Windows import (CornerRadius, HorizontalAlignment, ResourceDictionary, TextWrapping, Thickness, Visibility,
+                            WindowStyle)
+from System.Windows.Controls import Button, TextBlock
+from System.Windows.Input import Mouse, MouseButtonState
+from System.Windows.Interop import HwndSource, WindowInteropHelper
+from System.Windows.Media import Colors
+from System.Windows.Shell import WindowChrome
 from System.Windows.Threading import DispatcherPriority
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 THEME = os.path.join(HERE, "liquid_glass.xaml")
-SHRINK = 4        # snapshot kept at 1/4 size: cheaper blur, smoother look
-BLUR = 9          # px at 1/4 size (about 36 px on screen)
-VIVID = 1.45      # saturation of what shows through the glass
+# DwmSetWindowAttribute
+DWMWA_USE_IMMERSIVE_DARK_MODE = 20
+DWMWA_WINDOW_CORNER_PREFERENCE = 33
+DWMWA_SYSTEMBACKDROP_TYPE = 38
+DWMWCP_ROUND = 2
+DWMSBT_TRANSIENTWINDOW = 3      # Acrylic
+GWL_STYLE = -16
+WS_SYSMENU = 0x00080000         # DWM draws its own close button on the frame while this is on
 
 ICON_INFO, ICON_WARN, ICON_PDF, ICON_LIST = u"", u"", u"", u""
 
 
-def _vivid_matrix(s=VIVID, lift=0.035):
-    r, g, b = 0.3086 * (1 - s), 0.6094 * (1 - s), 0.0820 * (1 - s)
-    rows = [[r + s, r, r, 0, 0],
-            [g, g + s, g, 0, 0],
-            [b, b, b + s, 0, 0],
-            [0, 0, 0, 1, 0],
-            [lift, lift, lift, 0, 1]]
-    return ColorMatrix(Array[Array[Single]]([Array[Single](row) for row in rows]))
+def _dwm_set(hwnd, attr, value):
+    v = ctypes.c_int(value)
+    return ctypes.windll.dwmapi.DwmSetWindowAttribute(ctypes.c_void_p(hwnd), attr, ctypes.byref(v), 4)
 
 
-def snapshot():
-    """(blurred BitmapSource of all screens at 1/SHRINK, virtual screen rect) or (None, None)."""
+def acrylic(hwnd):
+    """Windows' own blur behind this window; False where Windows has none (older than 11 22H2)."""
     try:
-        vs = SystemInformation.VirtualScreen
-        full = Bitmap(vs.Width, vs.Height)
-        g = Graphics.FromImage(full)
-        g.CopyFromScreen(vs.Left, vs.Top, 0, 0, full.Size)
-        g.Dispose()
-        w, h = max(1, vs.Width // SHRINK), max(1, vs.Height // SHRINK)
-        small = Bitmap(w, h)
-        g = Graphics.FromImage(small)
-        g.InterpolationMode = InterpolationMode.HighQualityBilinear
-        ia = ImageAttributes()
-        ia.SetColorMatrix(_vivid_matrix())
-        g.DrawImage(full, Rectangle(0, 0, w, h), 0, 0, vs.Width, vs.Height, GraphicsUnit.Pixel, ia)
-        g.Dispose()
-        full.Dispose()
-        ms = MemoryStream()
-        small.Save(ms, ImageFormat.Bmp)
-        small.Dispose()
-        ms.Position = 0
-        src = BitmapImage()
-        src.BeginInit()
-        src.CacheOption = BitmapCacheOption.OnLoad
-        src.StreamSource = ms
-        src.EndInit()
-        src.Freeze()
-        img = Image()
-        img.Source = src
-        img.Stretch = Stretch.Fill
-        fx = BlurEffect()
-        fx.Radius = BLUR
-        fx.KernelType = KernelType.Gaussian
-        fx.RenderingBias = RenderingBias.Quality
-        img.Effect = fx
-        img.Measure(Size(w, h))
-        img.Arrange(Rect(0, 0, w, h))
-        out = RenderTargetBitmap(w, h, 96, 96, PixelFormats.Pbgra32)
-        out.Render(img)
-        out.Freeze()
-        return out, vs
+        user32 = ctypes.windll.user32
+        user32.SetWindowLongW(ctypes.c_void_p(hwnd), GWL_STYLE,
+                              user32.GetWindowLongW(ctypes.c_void_p(hwnd), GWL_STYLE) & ~WS_SYSMENU)
+        _dwm_set(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, 0)  # light: the theme's ink is dark
+        _dwm_set(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, DWMWCP_ROUND)
+        return _dwm_set(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, DWMSBT_TRANSIENTWINDOW) == 0
     except Exception:
-        return None, None
+        return False
 
 
 def load_theme(resources):
@@ -107,48 +67,35 @@ def load_theme(resources):
 
 
 class GlassWindow(forms.WPFWindow):
-    """forms.WPFWindow with the Liquid Glass theme and a see-through body named "glass"."""
+    """forms.WPFWindow with the Liquid Glass theme on Windows' own blur; drag it by any empty part."""
 
     def __init__(self, xaml_source, literal_string=False, handle_esc=True):
         load_theme(self.Resources)  # before the XAML: its StaticResources need the theme
-        self._shot, self._screen = snapshot()  # before the window shows: the screen behind it
-        self._brush = self._back = None
+        self.backdrop = False
         forms.WPFWindow.__init__(self, xaml_source, literal_string=literal_string, handle_esc=handle_esc)
-        self.Loaded += self._glass_on
-        self.LocationChanged += self._glass_pan
-        self.SizeChanged += self._glass_pan
+        self.WindowStyle = WindowStyle.SingleBorderWindow  # DWM blurs, rounds and shades a framed window
+        chrome = WindowChrome()
+        chrome.CaptionHeight = 0
+        chrome.ResizeBorderThickness = Thickness(0)
+        chrome.CornerRadius = CornerRadius(0)
+        chrome.GlassFrameThickness = Thickness(-1)
+        chrome.UseAeroCaptionButtons = False
+        WindowChrome.SetWindowChrome(self, chrome)
+        self.SourceInitialized += self._backdrop_on
+        self.MouseLeftButtonDown += self.drag
 
-    def _glass_on(self, sender, args):
-        panel = getattr(self, "glass", None)
-        if panel is None or self._shot is None:
-            return
-        panel.ApplyTemplate()
-        self._back = panel.Template.FindName("PART_Back", panel)
-        if self._back is None:
-            return
-        self._brush = ImageBrush(self._shot)
-        self._brush.ViewboxUnits = BrushMappingMode.Absolute
-        self._brush.Stretch = Stretch.Fill
-        self._back.Background = self._brush
-        self._glass_pan(None, None)
-
-    def _glass_pan(self, sender, args):
-        """Show the part of the snapshot that is right behind the body."""
-        back = self._back
-        if self._brush is None or not back.IsVisible or back.ActualWidth <= 0:
-            return
-        src = PresentationSource.FromVisual(back)
-        if src is None:
-            return
-        k = src.CompositionTarget.TransformToDevice
-        p = back.PointToScreen(Point(0, 0))
-        vs = self._screen
-        self._brush.Viewbox = Rect((p.X - vs.Left) / float(SHRINK), (p.Y - vs.Top) / float(SHRINK),
-                                   back.ActualWidth * k.M11 / SHRINK, back.ActualHeight * k.M22 / SHRINK)
+    def _backdrop_on(self, sender, args):
+        hwnd = WindowInteropHelper(self).Handle
+        self.backdrop = acrylic(hwnd.ToInt64())
+        if self.backdrop:
+            HwndSource.FromHwnd(hwnd).CompositionTarget.BackgroundColor = Colors.Transparent
+        else:
+            self.Background = self.FindResource("GlassBase")
 
     def drag(self, sender, args):
-        """Header MouseLeftButtonDown handler: move the window."""
-        self.DragMove()
+        """Move the window. A header that moved it already comes here with the button up."""
+        if Mouse.LeftButton == MouseButtonState.Pressed:
+            self.DragMove()
 
 
 # ---- dialogs ---------------------------------------------------------------
