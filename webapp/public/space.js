@@ -5,7 +5,6 @@
 "use strict";
 (function () {
   const cv = document.getElementById("space");
-  if (PANE) { cv.remove(); return; }     // a plain palette in the Revit panel
   const ctx = cv.getContext("2d");
   let seed = 11;
   const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
@@ -167,15 +166,13 @@
     cabin(w, h);
   }
 
-  // a photo of the user's own (background.jpg next to the settings) replaces the drawn cabin when there is one
-  const photos = ASSET.photo([".jpg", ".jpeg", ".png", ".webp"]);
+  // a photo of the user's own (server /bg) replaces the drawn cabin when there is one
   const photo = new Image();
-  photo.onload = () => { document.body.classList.add("photo"); document.body.style.setProperty("--photo", `url("${photo.src}")`); cv.remove(); };
+  photo.onload = () => { document.body.classList.add("photo"); document.body.style.setProperty("--photo", "url(/bg)"); cv.remove(); };
   photo.onerror = () => {
-    if (photos.length) { photo.src = photos.shift(); return; }
     let t = null;
     window.addEventListener("resize", () => { clearTimeout(t); t = setTimeout(draw, 150); });
     draw();
   };
-  photo.src = photos.shift();
+  photo.src = "/bg";
 })();

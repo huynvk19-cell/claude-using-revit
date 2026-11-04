@@ -1,6 +1,6 @@
 // claude using revit - web app server (Node, no dependencies).
 //
-// The page (ui/ of the pyRevit extension, copied to public/ on install) is the user interface for every tool of the pyRevit tab "claude using revit"
+// The page (public/) is the user interface for every tool of the pyRevit tab "claude using revit"
 // and every Revit MCP command, from any device on the LAN (PC browser, iPad...). Revit work goes
 // through the thin bridge each Revit window runs (pyRevit lib/web_bridge.py, 127.0.0.1:48990+,
 // discovered in %APPDATA%\claude-using-revit\web-bridge\<pid>.json); this server never touches the
@@ -25,8 +25,7 @@ const CONFIG = path.join(DATA, "webapp.json");
 const LOG = path.join(DATA, "webapp.log");
 const MESHES = path.join(DATA, "meshes");             // written by the pyRevit task view_mesh_export
 const MESH_RE = /^[0-9A-Za-z_-]{1,90}\.(json|bin)$/;
-const PUBLIC = fs.existsSync(path.join(HERE, "public")) ? path.join(HERE, "public")
-    : path.join(HERE, "..", "pyrevit", "ClaudeUsingRevit.extension", "ui");
+const PUBLIC = path.join(HERE, "public");
 const EXT_TAB = path.join(process.env.APPDATA || "", "pyRevit", "Extensions", "ClaudeUsingRevit.extension",
     "claude using revit.tab");
 const HEADER_RE = /\/\*\s*mcp-tool\s*([\s\S]*?)\*\//;

@@ -5,8 +5,8 @@
 #   -DwgBindXref         : also install the DWG bind-xref tool + its Explorer right-click menu (HKCU, no admin)
 #   -PyRevit             : also install the pyRevit extension (ribbon tab "claude using revit") to
 #                          %APPDATA%\pyRevit\Extensions; then pyRevit > Reload in Revit
-#   -WebApp              : optional, a web server for the same page from a browser or iPad on the LAN, to
-#                          %APPDATA%\claude-using-revit\webapp; inside Revit the panel of -PyRevit needs none of it
+#   -WebApp              : optional, a web server for the tools in a browser or on an iPad in the LAN, to
+#                          %APPDATA%\claude-using-revit\webapp; the add-in of -PyRevit needs none of it
 param([string]$CommandsDir = $env:REVIT_MCP_COMMANDS, [switch]$WorkStatus, [switch]$DwgBindXref, [switch]$PyRevit, [switch]$WebApp)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -61,15 +61,14 @@ if ($PyRevit) {
     }
 }
 if ($WebApp) {
-    # optional web server (webapp\server.mjs) to reach the same page from a browser or an iPad on the LAN. The panel
-    # inside Revit does not need it. Run this from a normal terminal: run by the Claude desktop app (an MSIX package),
+    # optional web server (webapp\server.mjs) for a page of the tools in a browser or on an iPad in the LAN. The add-in
+    # does not need it. Run this from a normal terminal: run by the Claude desktop app (an MSIX package),
     # new folders under %APPDATA% land in the app's private store, where Revit and Explorer never see them.
     $wa = Join-Path $env:APPDATA 'claude-using-revit\webapp'
     Get-CimInstance Win32_Process -Filter "Name = 'node.exe'" |
         Where-Object { $_.CommandLine -like '*claude-using-revit\webapp\server.mjs*' } |
         ForEach-Object { Stop-Process -Id $_.ProcessId -Force; "web app: stopped old server (PID $($_.ProcessId))" }
-    robocopy (Join-Path $root 'webapp') $wa /MIR /R:2 /W:1 /NFL /NDL /NJH /NJS /NP /XD public | Out-Null
-    robocopy (Join-Path $root 'pyrevit\ClaudeUsingRevit.extension\ui') (Join-Path $wa 'public') /MIR /R:2 /W:1 /NFL /NDL /NJH /NJS /NP | Out-Null
+    robocopy (Join-Path $root 'webapp') $wa /MIR /R:2 /W:1 /NFL /NDL /NJH /NJS /NP | Out-Null
     if ($LASTEXITCODE -ge 8) { "web app: some files were in use and not replaced (robocopy $LASTEXITCODE)" }
     $global:LASTEXITCODE = 0
     Get-ChildItem (Join-Path $root 'revit-commands\*.cs') | ForEach-Object { $_.BaseName } |
