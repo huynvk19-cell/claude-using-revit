@@ -7,57 +7,23 @@
 - alert / choose / Progress : glass versions of forms.alert, SelectFromList /
                       CommandSwitchWindow and forms.ProgressBar, same call shapes and results.
 
-The blur is Windows 11's Acrylic backdrop (DWM), so it is live, follows a drag and costs the window nothing.
-It only works on a window that is not layered: no AllowsTransparency, a frame kept for DWM (corners, shadow) and
-hidden by WindowChrome. Without it (older Windows) the body is plain frosted white.
+The blur is Windows' own (native_blur.py): live, follows a drag, costs the window nothing.
 """
 import os
-
-import ctypes
 
 from pyrevit import forms, revit, script  # first: loads the WPF assemblies
 from pyrevit import HOST_APP
 
 from System import Action, Uri
-from System.Windows import (CornerRadius, HorizontalAlignment, ResourceDictionary, TextWrapping, Thickness, Visibility,
-                            WindowStyle)
+from System.Windows import HorizontalAlignment, ResourceDictionary, TextWrapping, Thickness, Visibility
 from System.Windows.Controls import Button, TextBlock
-from System.Windows.Input import Mouse, MouseButtonState
-from System.Windows.Interop import HwndSource, WindowInteropHelper
-from System.Windows.Media import Colors
-from System.Windows.Shell import WindowChrome
 from System.Windows.Threading import DispatcherPriority
+
+import native_blur
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 THEME = os.path.join(HERE, "liquid_glass.xaml")
-# DwmSetWindowAttribute
-DWMWA_USE_IMMERSIVE_DARK_MODE = 20
-DWMWA_WINDOW_CORNER_PREFERENCE = 33
-DWMWA_SYSTEMBACKDROP_TYPE = 38
-DWMWCP_ROUND = 2
-DWMSBT_TRANSIENTWINDOW = 3      # Acrylic
-GWL_STYLE = -16
-WS_SYSMENU = 0x00080000         # DWM draws its own close button on the frame while this is on
-
 ICON_INFO, ICON_WARN, ICON_PDF, ICON_LIST = u"", u"", u"", u""
-
-
-def _dwm_set(hwnd, attr, value):
-    v = ctypes.c_int(value)
-    return ctypes.windll.dwmapi.DwmSetWindowAttribute(ctypes.c_void_p(hwnd), attr, ctypes.byref(v), 4)
-
-
-def acrylic(hwnd):
-    """Windows' own blur behind this window; False where Windows has none (older than 11 22H2)."""
-    try:
-        user32 = ctypes.windll.user32
-        user32.SetWindowLongW(ctypes.c_void_p(hwnd), GWL_STYLE,
-                              user32.GetWindowLongW(ctypes.c_void_p(hwnd), GWL_STYLE) & ~WS_SYSMENU)
-        _dwm_set(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, 0)  # light: the theme's ink is dark
-        _dwm_set(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, DWMWCP_ROUND)
-        return _dwm_set(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, DWMSBT_TRANSIENTWINDOW) == 0
-    except Exception:
-        return False
 
 
 def load_theme(resources):
@@ -73,29 +39,14 @@ class GlassWindow(forms.WPFWindow):
         load_theme(self.Resources)  # before the XAML: its StaticResources need the theme
         self.backdrop = False
         forms.WPFWindow.__init__(self, xaml_source, literal_string=literal_string, handle_esc=handle_esc)
-        self.WindowStyle = WindowStyle.SingleBorderWindow  # DWM blurs, rounds and shades a framed window
-        chrome = WindowChrome()
-        chrome.CaptionHeight = 0
-        chrome.ResizeBorderThickness = Thickness(0)
-        chrome.CornerRadius = CornerRadius(0)
-        chrome.GlassFrameThickness = Thickness(-1)
-        chrome.UseAeroCaptionButtons = False
-        WindowChrome.SetWindowChrome(self, chrome)
-        self.SourceInitialized += self._backdrop_on
-        self.MouseLeftButtonDown += self.drag
+        native_blur.apply(self, self._backdrop_set)
 
-    def _backdrop_on(self, sender, args):
-        hwnd = WindowInteropHelper(self).Handle
-        self.backdrop = acrylic(hwnd.ToInt64())
-        if self.backdrop:
-            HwndSource.FromHwnd(hwnd).CompositionTarget.BackgroundColor = Colors.Transparent
-        else:
-            self.Background = self.FindResource("GlassBase")
+    def _backdrop_set(self, ok):
+        self.backdrop = ok
 
     def drag(self, sender, args):
-        """Move the window. A header that moved it already comes here with the button up."""
-        if Mouse.LeftButton == MouseButtonState.Pressed:
-            self.DragMove()
+        """Header MouseLeftButtonDown handler: move the window."""
+        native_blur.drag(self)
 
 
 # ---- dialogs ---------------------------------------------------------------

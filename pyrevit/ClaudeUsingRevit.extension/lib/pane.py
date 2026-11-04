@@ -31,27 +31,29 @@ clr.AddReference('System.Data')
 clr.AddReference('System.Xaml')
 clr.AddReference('WindowsBase')
 
-from System import Action, AppDomain, DBNull, Guid, Int32, String
+from System import Action, AppDomain, DBNull, Guid, Int32, String, Uri
 from System.Data import DataTable
 from System import TimeSpan
-from System.Windows import (ContentElement, DataTrigger, LogicalTreeHelper, MessageBox, MessageBoxButton, MessageBoxResult,
-                            Point, Setter, SizeToContent, Style, TextWrapping, Thickness, Trigger, Visibility, Window,
-                            WindowStartupLocation)
-from System.Windows.Controls import (Button, Canvas, CheckBox, ComboBox, DataGridCell, DataGridCellInfo, DataGridEditAction,
-                                     DataGridEditingUnit, DataGridLength, DataGridRow, DataGridTextColumn, ListBox, Page,
-                                     RadioButton, ScrollViewer, StackPanel, TextBlock, TextBox, WrapPanel)
+from System.Windows import (ContentElement, DataTrigger, FrameworkElement, HorizontalAlignment, LogicalTreeHelper, Point,
+                            ResizeMode, ResourceDictionary, Setter, SizeToContent, Style, TextWrapping, Thickness, Trigger,
+                            VerticalAlignment, Visibility, Window, WindowStartupLocation)
+from System.Windows.Controls import (Button, Canvas, CheckBox, ComboBox, ContentControl, DataGridCell, DataGridCellInfo,
+                                     DataGridEditAction, DataGridEditingUnit, DataGridLength, DataGridRow, DataGridTextColumn,
+                                     Dock, DockPanel, ListBox, Orientation, Page, RadioButton, ScrollViewer, StackPanel,
+                                     TextBlock, TextBox, WrapPanel)
 from System.Windows.Controls.Primitives import DataGridColumnHeadersPresenter
 from System.Windows.Data import Binding, BindingMode, UpdateSourceTrigger
 from System.Windows.Input import Key, Keyboard, ModifierKeys
 from System.Windows.Interop import WindowInteropHelper
 from System.Windows.Markup import XamlReader
-from System.Windows.Media import BrushConverter, Visual, VisualTreeHelper
+from System.Windows.Media import BrushConverter, Brushes, TextFormattingMode, TextOptions, Visual, VisualTreeHelper
 from System.Windows.Threading import DispatcherTimer
 from Microsoft.Win32 import OpenFileDialog, SaveFileDialog
 
 from Autodesk.Revit.DB import Rectangle, ViewSchedule
 from Autodesk.Revit.UI import DockablePaneId, DockablePanes, DockablePaneState, DockPosition, IDockablePaneProvider
 
+import native_blur
 import table_ops as ops
 import web_bridge
 
@@ -59,6 +61,7 @@ SLOT = 'ClaudeUsingRevit.Pane'
 PANE_ID = Guid('c3a94e17-2d6b-4f08-8e51-7a0b9d4c6e30')
 TITLE = u'Bảng & công cụ'
 HERE = os.path.dirname(os.path.abspath(__file__))
+THEME = os.path.join(HERE, 'liquid_glass.xaml')
 SETTINGS = os.path.join(os.environ.get('APPDATA', ''), 'claude-using-revit', 'pane.json')
 _bc = BrushConverter()
 
@@ -122,19 +125,68 @@ class _Provider(IDockablePaneProvider):
 # ---- small native dialogs ------------------------------------------------------------------
 
 def _dialog(host, title, content, width=460):
+    """A tool window on Windows' blur, with the theme of the other tools (a docked pane cannot have the blur)."""
     w = Window()
     w.Title = title
     w.Width = width
     w.SizeToContent = SizeToContent.Height
     w.WindowStartupLocation = WindowStartupLocation.CenterOwner
+    w.ResizeMode = ResizeMode.NoResize
     w.ShowInTaskbar = False
+    w.Background = Brushes.Transparent
+    theme = ResourceDictionary()
+    theme.Source = Uri(THEME)
+    w.Resources.MergedDictionaries.Add(theme)
+    w.FontFamily = w.FindResource('Ui')
+    w.FontSize = 13
+    w.Foreground = w.FindResource('Ink')
+    TextOptions.SetTextFormattingMode(w, TextFormattingMode.Display)
+    close = Button()
+    close.SetResourceReference(FrameworkElement.StyleProperty, 'CloseBtn')
+    close.Click += lambda s, e: w.Close()
+    DockPanel.SetDock(close, Dock.Right)
+    head_text = TextBlock()
+    head_text.Text = title
+    head_text.SetResourceReference(FrameworkElement.StyleProperty, 'Title')
+    head_text.VerticalAlignment = VerticalAlignment.Center
+    head = DockPanel()
+    head.Margin = Thickness(0, 0, 0, 10)
+    head.Children.Add(close)
+    head.Children.Add(head_text)
     panel = StackPanel()
-    panel.Margin = Thickness(10)
+    panel.Margin = Thickness(20, 16, 18, 18)
+    panel.Children.Add(head)
     for c in content:
+        if isinstance(c, ListBox):
+            c.Background = brush('#80FFFFFF')
+            c.BorderThickness = Thickness(0)
+        if isinstance(c, (ComboBox, TextBox)):
+            c.Margin = Thickness(0, 0, 0, 8)
         panel.Children.Add(c)
-    w.Content = panel
+    body = ContentControl()
+    body.SetResourceReference(FrameworkElement.StyleProperty, 'GlassPanel')
+    body.Content = panel
+    w.Content = body
     WindowInteropHelper(w).Owner = host.uiapp.MainWindowHandle
+    w.PreviewKeyDown += lambda s, e: w.Close() if e.Key == Key.Escape else None
+    native_blur.apply(w)
     return w
+
+
+def _notify(host, message):
+    w = _dialog(host, TITLE, [_text(message), _row(_button(u'OK', lambda: w.Close()))], 440)
+    w.ShowDialog()
+
+
+def _confirm(host, message):
+    answer = []
+
+    def yes():
+        answer.append(True)
+        w.Close()
+    w = _dialog(host, TITLE, [_text(message), _row(_button(u'Có', yes), _button(u'Không', lambda: w.Close()))], 440)
+    w.ShowDialog()
+    return bool(answer)
 
 
 def _text(s, wrap=True, dim=False):
@@ -149,9 +201,13 @@ def _text(s, wrap=True, dim=False):
 
 
 def _row(*buttons):
-    p = WrapPanel()
-    p.Margin = Thickness(0, 5, 0, 0)
-    for b in buttons:
+    """Buttons at the bottom right, the main one (the first) last, as on the other tools."""
+    p = StackPanel()
+    p.Orientation = Orientation.Horizontal
+    p.HorizontalAlignment = HorizontalAlignment.Right
+    p.Margin = Thickness(0, 10, 0, 0)
+    for n, b in reversed(list(enumerate(buttons))):
+        b.SetResourceReference(FrameworkElement.StyleProperty, 'Primary' if n == 0 else 'Secondary')
         p.Children.Add(b)
     return p
 
@@ -159,8 +215,7 @@ def _row(*buttons):
 def _button(label, click):
     b = Button()
     b.Content = label
-    b.Padding = Thickness(10, 2, 10, 2)
-    b.Margin = Thickness(0, 0, 4, 0)
+    b.Margin = Thickness(8, 0, 0, 0)
     b.Click += lambda s, e: click()
     return b
 
@@ -241,7 +296,7 @@ class Table(object):
     def leave_ok(self):
         if not self.dirty_count():
             return True
-        return MessageBox.Show(u'Bảng còn ô đã sửa chưa ghi vào Revit. Bỏ các thay đổi đó?', TITLE, MessageBoxButton.YesNo) == MessageBoxResult.Yes
+        return _confirm(self.host, u'Bảng còn ô đã sửa chưa ghi vào Revit. Bỏ các thay đổi đó?')
 
     def refresh_doc(self):
         """The list of schedules follows the model on screen."""
@@ -516,8 +571,7 @@ class Table(object):
 
     def _unlock_changed(self):
         box = self.f('c_unlock')
-        if box.IsChecked and MessageBox.Show(u'Cho sửa cả phần tử do người khác tạo và sửa lần cuối?\nPhần tử đang bị người khác mượn vẫn bị khoá.',
-                                             TITLE, MessageBoxButton.YesNo) != MessageBoxResult.Yes:
+        if box.IsChecked and not _confirm(self.host, u'Cho sửa cả phần tử do người khác tạo và sửa lần cuối?\nPhần tử đang bị người khác mượn vẫn bị khoá.'):
             box.IsChecked = False
         self.unlock = bool(box.IsChecked)
         self._refresh_states()
@@ -1249,7 +1303,7 @@ class Table(object):
         def done(r):
             if r.get('blocked'):
                 msg = u'Của người khác:\n{0}\n\nVẫn sửa?'.format(u'\n'.join(r['blocked']))
-                if MessageBox.Show(msg, TITLE, MessageBoxButton.YesNo) == MessageBoxResult.Yes:
+                if _confirm(self.host, msg):
                     self._send_filter(dict(args, force=True))
                 return
             self.say(u'{0} filter {1} · view template {2} · {3} · {4} giá trị'.format(
@@ -1257,7 +1311,7 @@ class Table(object):
                 u'Hide' if r['hide'] else u'No hide', sum(r['values'].values())) +
                 (u' · phần tử trong link chỉ theo filter ở view để link By Host View' if r.get('linkedRows') else u''))
         self.say(u'Đang ghi filter…')
-        self.host.run('task', 'schedule_filter_add', args, done, lambda err: MessageBox.Show(u'Chưa thêm được: {0}'.format(err), TITLE))
+        self.host.run('task', 'schedule_filter_add', args, done, lambda err: _notify(self.host, u'Chưa thêm được: {0}'.format(err)))
 
     def add_rows(self):
         if self.data is None or not self.data.get('sheetList'):
@@ -1353,12 +1407,12 @@ class Table(object):
         if bad:
             names = dict((c['key'], c['heading']) for c in self.cols)
             msg += u'\n\nKhông ghi được:\n' + u'\n'.join(u'Id {0} · {1}: {2}'.format(x.get('id'), names.get(x.get('col'), x.get('col')), x.get('error') or (u'khoá, của {0}'.format(x['by']) if x.get('by') else u'khoá')) for x in bad[:30] if isinstance(x, dict))
-            MessageBox.Show(msg, TITLE)
+            _notify(self.host, msg)
         self.load(self.data['id'], keep=True)
         self.after_load = msg
 
     def _write_failed(self, err):
-        MessageBox.Show(u'Chưa ghi được: {0}'.format(err), TITLE)
+        _notify(self.host, u'Chưa ghi được: {0}'.format(err))
         self._status()
 
     # -- files ------------------------------------------------------------------------------------------------
@@ -1435,7 +1489,7 @@ class Table(object):
         added = 0
         sn = next((k for k, c in enumerate(self.cols) if c.get('role') == 'sheetNumber'), None)
         if unmatched and self.data.get('sheetList') and sn in mapped and (id_col is None or all(not (u'{0}'.format(l[id_col]) if id_col < len(l) else u'').strip() for l in unmatched)):
-            if MessageBox.Show(u'{0} dòng trong file không có trong danh mục. Thêm thành sheet mới?'.format(len(unmatched)), TITLE, MessageBoxButton.YesNo) == MessageBoxResult.Yes:
+            if _confirm(self.host, u'{0} dòng trong file không có trong danh mục. Thêm thành sheet mới?'.format(len(unmatched))):
                 for line in unmatched:
                     v = [u''] * len(self.cols)
                     for j, ci in enumerate(mapped):
@@ -1545,7 +1599,7 @@ class Host(object):
         self.uiapp = uiapp
         self.page = page if page is not None else Page()
         with io.open(os.path.join(HERE, 'pane.xaml'), encoding='utf-8') as f:
-            self.root = XamlReader.Parse(f.read())
+            self.root = XamlReader.Parse(f.read().replace(u'__THEME__', Uri(THEME).AbsoluteUri))
         self.page.Content = self.root
         self.table = Table(self, self.root)
         self.tools = Tools(self, self.root)
