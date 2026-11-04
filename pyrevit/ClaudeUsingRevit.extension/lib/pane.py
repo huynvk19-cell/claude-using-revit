@@ -331,6 +331,8 @@ class Table(object):
 
     def can_edit(self, row, ci):
         c = self.cols[ci]
+        if row.get('linked'):       # its element lives in a linked model
+            return False
         if not c['editable'] and not (row.get('new') and c.get('role')):
             return False
         if row.get('new') and c['source'] == 'type':
@@ -640,7 +642,9 @@ class Table(object):
         r, c = self.rows[i], self.cols[ci]
         lk = self._lock(r, c)
         by = (r.get('typeBy') if c['source'] == 'type' else r.get('by')) or u'người khác'
-        if lk == 'busy':
+        if r.get('linked'):
+            self.say(u'Phần tử ở file link: sửa ở model đó')
+        elif lk == 'busy':
             self.say(u'Đang bị {0} mượn'.format(by))
         elif lk == 'others':
             self.say(u'Phần tử của {0}: bật "Sửa phần tử người khác"'.format(by))
@@ -1088,9 +1092,9 @@ class Table(object):
         if self.data is None:
             return
         rows, cols = self.block()
-        rows = [i for i in rows if not self.rows[i].get('new')]
+        rows = [i for i in rows if not self.rows[i].get('new') and not self.rows[i].get('linked')]
         if not rows:
-            return self.say(u'Chọn các ô cần đưa vào filter')
+            return self.say(u'Chọn các ô cần đưa vào filter (dòng từ file link thì phần tử nằm ở model khác, không đưa vào được)')
         bad = [self.cols[ci]['heading'] for ci in cols if self.cols[ci]['param'] is None]
         if bad:
             return self.say(u'Cột {0}: Revit tính ra, không lọc được'.format(u', '.join(bad)))
@@ -1271,7 +1275,7 @@ class Table(object):
         for i in self._view_rows():
             r = self.rows[i]
             if not r.get('new'):
-                rows.append([u'{0}'.format(r['id'])] + [r['v'][ci] for ci in self.shown])
+                rows.append([u'' if r.get('linked') else u'{0}'.format(r['id'])] + [r['v'][ci] for ci in self.shown])
         if kind == 'csv':
             ops.write_csv(dlg.FileName, rows)
         else:
@@ -1300,7 +1304,7 @@ class Table(object):
             return k if k is not None else next((i for i, c in enumerate(self.cols) if c['name'].lower() == h), None)
         mapped = [col_of(h) for h in head]
         id_col = head.index(u'id') if u'id' in head else None
-        olds = [r for r in self.rows if not r.get('new')]
+        olds = [r for r in self.rows if not r.get('new') and not r.get('linked')]
         key_col, key_file = None, None
         if id_col is None:
             sn = next((k for k, c in enumerate(self.cols) if c.get('role') == 'sheetNumber'), None)
@@ -1358,6 +1362,9 @@ class Table(object):
         oth = len([r for r in self.rows if r.get('lock') == 'others'])
         parts = [u'{0}/{1} dòng'.format(self.dv.Count, len(self.rows)), u'{0} cột'.format(len(self.shown)),
                  u'thứ tự như schedule' if self.data.get('order') == 'schedule' else u'thứ tự theo cột sắp xếp của schedule']
+        linked = len([r for r in self.rows if r.get('linked')])
+        if linked:
+            parts.append(u'{0} dòng từ file link (chỉ đọc, sửa ở model đó)'.format(linked))
         if busy:
             parts.append(u'{0} dòng đang bị người khác mượn'.format(busy))
         if oth:
@@ -1373,7 +1380,9 @@ class Table(object):
                 r, c = self.rows[i], self.cols[ci]
                 lk = self._lock(r, c)
                 by = (r.get('typeBy') if c['source'] == 'type' else r.get('by')) or u'người khác'
-                if lk == 'busy':
+                if r.get('linked'):
+                    parts.append(u'ô này: phần tử ở file link')
+                elif lk == 'busy':
                     parts.append(u'ô này: đang bị {0} mượn'.format(by))
                 elif lk == 'others' and not self.unlock:
                     parts.append(u'ô này: của {0}'.format(by))

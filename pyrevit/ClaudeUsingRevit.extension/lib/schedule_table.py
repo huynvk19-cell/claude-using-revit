@@ -5,6 +5,7 @@ read(): one row per element the schedule shows (itemized, even when the schedule
   the schedule's row order: the body rows are read and matched on the texts of all shown
   parameter columns (else on one column unique per element: Sheet Number, Mark...); when fewer
   than half match, the rows follow the schedule's sort / group fields (natural order).
+  A schedule that includes elements in links also gets their rows, read-only, as Revit shows them.
   Columns are the schedule fields in order (hidden ones flagged). A cell is editable when the
   field is an instance or type parameter, the parameter is not read-only and holds text, a whole
   number, yes/no or a measurement (an element id - Level, Phase... - stays read-only). Computed
@@ -30,7 +31,7 @@ from Autodesk.Revit.DB import (
     BuiltInCategory, BuiltInParameter, Category, CheckoutStatus, ElementFilter, ElementId, ElementParameterFilter,
     FamilyInstance, FilteredElementCollector, LogicalAndFilter, LogicalOrFilter, ParameterFilterElement,
     ParameterFilterRuleFactory, ParameterFilterUtilities, ScheduleFieldType, SectionType, SpecTypeId, StorageType,
-    Transaction, View, ViewSchedule, ViewSheet, WorksharingUtils)
+    RevitLinkInstance, Transaction, View, ViewSchedule, ViewSheet, WorksharingUtils)
 
 import print_set_sync as ps
 
@@ -247,6 +248,35 @@ def _match(rows, body, key, shown):
     return ordered, left
 
 
+def _with_linked(rows, body, key, shown, fields):
+    """A schedule that includes elements in links: its rows in body order, host elements as usual, the others
+    (their elements live in another model) as read-only rows holding the text Revit shows. Headings, blank rows,
+    group headers and totals (one filled cell) are left out."""
+    pending = {}
+    for r in rows:
+        pending.setdefault(tuple(r["v"][f["index"]].strip() for f in key), []).append(r)
+    heads = [(f["heading"] or u"").strip().lower() for f in shown]
+    out = []
+    for cells in body:
+        filled = [c for c in cells if c]
+        if not filled or (len(shown) > 1 and len(filled) == 1) or [c.lower() for c in cells[:len(heads)]] == heads:
+            continue
+        hit = pending.get(tuple(cells[f["body"]] if f["body"] < len(cells) else u"" for f in key))
+        if hit:
+            r = hit.pop(0)
+            for g in shown:
+                if g["param"] is None and g["body"] < len(cells):
+                    r["v"][g["index"]] = cells[g["body"]]
+            out.append(r)
+            continue
+        v = [u""] * len(fields)
+        for g in shown:
+            if g["body"] < len(cells):
+                v[g["index"]] = cells[g["body"]]
+        out.append({"id": None, "linked": True, "v": v})
+    return out + [r for rs in pending.values() for r in rs]
+
+
 def _natural(text):
     return [(0, float(t), u"") if t[0].isdigit() else (1, 0, t.lower())
             for t in re.findall(r"\d+(?:\.\d+)?|\D+", text or u"")]
@@ -272,6 +302,9 @@ def read(doc, vs, limit=20000):
     fields = _fields(doc, vs)
     params, locks, types = _Params(doc), _Locks(doc), {}
     els = list(FilteredElementCollector(doc, vs.Id).WhereElementIsNotElementType())
+    linked = bool(vs.Definition.IncludeLinkedFiles)
+    if linked and vs.Definition.CategoryId.IntegerValue != int(BuiltInCategory.OST_RvtLinks):
+        els = [e for e in els if not isinstance(e, RevitLinkInstance)]    # the collector returns the links themselves
     truncated = len(els) > limit
     els = els[:limit]
 
@@ -313,7 +346,7 @@ def read(doc, vs, limit=20000):
     # row order + computed cells: match the schedule's body rows on the texts of shown parameter
     # columns (all of them, else a single column unique per element), else its sort fields
     shown = [f for f in fields if f["body"] is not None]
-    body = _body(vs) if rows else []
+    body = _body(vs) if rows or linked else []
     params_shown = [f for f in shown if f["param"] is not None]
     keys = [params_shown] if params_shown else []
     for f in params_shown:
@@ -321,7 +354,9 @@ def read(doc, vs, limit=20000):
         if all(texts) and len(set(texts)) == len(texts):
             keys.append([f])
     order = None
-    for key in keys:
+    if linked:
+        rows, order = _with_linked(rows, body, params_shown or shown, shown, fields), u"schedule"
+    for key in keys if not linked else []:
         ordered, left = _match(rows, body, key, shown)
         if len(ordered) * 2 >= len(rows):
             rows, order = ordered + _sorted(vs, left), u"schedule"
