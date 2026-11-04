@@ -7,5 +7,6 @@ host = AppDomain.CurrentDomain.GetData('ClaudeUsingRevit.Pane')
 if host is None:
     from pyrevit import forms
     forms.alert(u'Panel chưa sẵn sàng: pyRevit > Reload rồi bấm lại.')
-else:
-    host.show()
+elif not host.show():
+    from pyrevit import forms
+    forms.alert(u'Panel nằm trong cửa sổ Revit nên Revit chỉ tạo nó lúc khởi động: đóng rồi mở lại Revit là có.')

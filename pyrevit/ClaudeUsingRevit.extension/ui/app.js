@@ -627,7 +627,7 @@ async function boot() {
   try {
     await loadWindows();
     await refreshInfo(true);
-    if (location.hash === "#table" || new URLSearchParams(location.search).get("open") === "table") show("table");
+    if (PANE || location.hash === "#table" || new URLSearchParams(location.search).get("open") === "table") show("table");
     setInterval(() => loadWindows().catch(() => {}), 10000);
   } catch (e) { if (!/mã truy cập/.test(e.message)) toast(e.message, "err"); }
 }
