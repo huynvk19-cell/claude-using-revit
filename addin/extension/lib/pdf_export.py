@@ -19,6 +19,10 @@ Per sheet:
   - between sheets: .NET garbage collection + released API objects purged, free RAM
     checked; too little left -> stop cleanly, the next run carries on from there.
 
+Other formats plug in through an object like PdfOut (dwg_export.DwgOut for CAD): same
+plan, passes, journal and crash memory. Before every sheet the part files are deleted and
+memory is handed back (clear_cache).
+
 A journal (journals\ next to the settings) records each sheet as started / done, so
 a run cut short carries on where it stopped. Revit can also die inside its own
 drawing code on one bad view whatever the RAM (GeomUtil crash): the crash memory in
@@ -54,6 +58,8 @@ from Autodesk.Revit.DB import (
     ViewDetailLevel, XYZ,
     StorageType, Viewport, ViewSheet, ViewType, WorksetKind, WorksharingUtils, ZoomType)
 from System import GC
+from System.Diagnostics import Process
+from System.IO import Directory
 from System.Collections.Generic import List
 
 import pdf_merge
@@ -61,7 +67,8 @@ import pdf_merge
 MM = 304.8
 LIMIT = 250000          # weight one export pass may carry on a PC with 8 GB free
 MIN_FREE_MB = 1500      # stop before the next sheet below this much free RAM
-PARTS_DIR = os.path.join(os.environ.get("TEMP", u"C:\\Temp"), u"claude-using-revit", u"pdf-parts")
+PARTS_ROOT = os.path.join(os.environ.get("TEMP", u"C:\\Temp"), u"claude-using-revit", u"pdf-parts")
+PARTS_DIR = os.path.join(PARTS_ROOT, str(Process.GetCurrentProcess().Id))
 SETTINGS = os.path.join(os.environ.get("APPDATA", u""), u"claude-using-revit", u"pdf_export.json")
 
 # (format, long side mm, short side mm)
@@ -137,6 +144,22 @@ def tidy(app):
         pass
 
 
+def clear_cache(app):
+    """Before every export: memory handed back, part files of this window deleted, and
+    those of Revit windows that are gone (another running window keeps its own)."""
+    tidy(app)
+    if not os.path.isdir(PARTS_ROOT):
+        return
+    alive = set(str(x.Id) for x in Process.GetProcessesByName("Revit"))
+    alive.discard(str(Process.GetCurrentProcess().Id))
+    for d in Directory.GetDirectories(PARTS_ROOT):
+        if os.path.basename(d) not in alive:
+            try:
+                Directory.Delete(d, True)
+            except Exception:
+                pass
+
+
 def wait_for_memory(app, min_free):
     """Tidy and wait a little until min_free MB are free; returns free MB."""
     free = memory_mb()[0]
@@ -190,21 +213,28 @@ def _doc_key(doc):
     return re.sub(u"(?i)\\.rvt$", u"", doc.Title)
 
 
-def crash_memory(doc):
-    return settings().get("crash", {}).get(_doc_key(doc), {})
+def _crash_store(kind):
+    return "crash" if kind == "pdf" else "crash_" + kind
 
 
-def _crash_save(doc, mem):
+def crash_memory(doc, kind="pdf"):
+    """What Revit died on, kept per format: a view that kills one export may pass the other."""
+    return settings().get(_crash_store(kind), {}).get(_doc_key(doc), {})
+
+
+def _crash_save(doc, mem, kind="pdf"):
     s = settings()
-    s.setdefault("crash", {})[_doc_key(doc)] = mem
+    s.setdefault(_crash_store(kind), {})[_doc_key(doc)] = mem
     save_settings(s)
 
 
-def forget(doc):
+def forget(doc, kinds=("pdf", "dwg")):
     """Clear the crash memory of this model (after fixing the views); returns its size."""
-    mem = crash_memory(doc)
-    n = len(mem.get("views", {})) + len(mem.get("sheets", []))
-    _crash_save(doc, {})
+    n = 0
+    for kind in kinds:
+        mem = crash_memory(doc, kind)
+        n += len(mem.get("views", {})) + len(mem.get("sheets", []))
+        _crash_save(doc, {}, kind)
     return n
 
 
@@ -234,9 +264,9 @@ def plan_dead(mem, sheet_id, plan):
     return plan_key(plan) in mem.get("dead", {}).get(str(sheet_id), [])
 
 
-def crash_notes(doc, sheets):
+def crash_notes(doc, sheets, kind="pdf"):
     """[(sheet, [(view name, tiles per side)])] for sheets the crash memory isolates or tiles."""
-    mem = crash_memory(doc)
+    mem = crash_memory(doc, kind)
     out = []
     for s in sheets:
         rows = []
@@ -250,34 +280,34 @@ def crash_notes(doc, sheets):
     return out
 
 
-def mark_pass(doc, sheet, plan, view_ids, tiles=1):
-    mem = crash_memory(doc)
+def mark_pass(doc, sheet, plan, view_ids, tiles=1, kind="pdf"):
+    mem = crash_memory(doc, kind)
     mem["pending"] = {"sheet": sheet.Id.IntegerValue, "views": list(view_ids), "tiles": tiles,
                       "plan": plan_key(plan), "alone": bool(plan.get("isolated"))}
-    _crash_save(doc, mem)
+    _crash_save(doc, mem, kind)
 
 
-def clear_pass(doc):
-    mem = crash_memory(doc)
+def clear_pass(doc, kind="pdf"):
+    mem = crash_memory(doc, kind)
     if mem.pop("pending", None) is not None:
-        _crash_save(doc, mem)
+        _crash_save(doc, mem, kind)
 
 
-def recover(doc):
+def recover(doc, kind="pdf"):
     """Read a pass left pending by a crash; returns lines for the user."""
-    line = _learn_pending(doc, u"Revit văng")
+    line = _learn_pending(doc, u"Revit văng", kind)
     return [line] if line else []
 
 
-def learn_failed(doc):
+def learn_failed(doc, kind="pdf"):
     """The pending pass Revit refused (Export returned False, Revit alive) is learnt
     like a crash, so the sheet can be retried at once in smaller passes. Returns the
     line for the user, or None when no pass was pending."""
-    return _learn_pending(doc, u"Revit không xuất được")
+    return _learn_pending(doc, u"Revit không xuất được", kind)
 
 
-def _learn_pending(doc, what):
-    mem = crash_memory(doc)
+def _learn_pending(doc, what, kind="pdf"):
+    mem = crash_memory(doc, kind)
     p = mem.pop("pending", None)
     if not p:
         return None
@@ -288,7 +318,7 @@ def _learn_pending(doc, what):
         if p["plan"] not in dead:
             dead.append(p["plan"])
     line = _learn(doc, mem, p, label, what)
-    _crash_save(doc, mem)
+    _crash_save(doc, mem, kind)
     return line
 
 
@@ -476,7 +506,7 @@ def viewports(doc, sheet):
     return [doc.GetElement(i) for i in sheet.GetAllViewports()]
 
 
-def assess(doc, sheet, weigher, limit, crash=None):
+def assess(doc, sheet, weigher, limit, crash=None, fmt=None):
     """Weight of the sheet and how to export it. No view is ever left out.
 
     Returns {"weight", "views": [(viewport, weight, notes)], "mode": whole | parts,
@@ -485,6 +515,7 @@ def assess(doc, sheet, weigher, limit, crash=None):
              tiles)], "note"}.
     """
     crash = crash or {}
+    always = bool(fmt and fmt.always_split)
     rows = []
     for vp in viewports(doc, sheet):
         w, notes = weigher.view(doc.GetElement(vp.ViewId))
@@ -495,12 +526,13 @@ def assess(doc, sheet, weigher, limit, crash=None):
     sid = sheet.Id.IntegerValue
     crashed = sid in crash.get("sheets", []) or any(
         crashes(crash, vp.ViewId.IntegerValue) for vp, _, _ in rows)
-    isolate = crashed or any(_view_by_view(doc.GetElement(vp.ViewId)) for vp, _, _ in rows)
+    isolate = crashed or (always and rows) or any(
+        _view_by_view(doc.GetElement(vp.ViewId)) for vp, _, _ in rows)
     if not isolate and (total <= limit or len(rows) < 2):
         if total > limit:
             out["note"] = u"một view nặng, không chia được"
         return out
-    why = _cannot_split(doc, sheet, rows)
+    why = _cannot_split(doc, sheet, rows, not fmt or fmt.overlay)
     if why:                              # whole again (a crash on it is retried)
         out["note"] = why
         return out
@@ -523,7 +555,7 @@ def assess(doc, sheet, weigher, limit, crash=None):
         out["parts"] = parts
         out["isolated"] = True
         out["note"] = out["note"] or (u"tách từng view (lần trước Revit văng)" if crashed else
-                                      u"mặt đứng / mặt cắt: xuất từng view rồi gộp")
+                                      (u"xuất từng view rồi gộp" if always else u"mặt đứng / mặt cắt: xuất từng view rồi gộp"))
         return out
     if len(units) < 2:
         out["mode"] = "whole"
@@ -586,14 +618,16 @@ def _units(doc, rows):
     return [by_root[r] for r in order]
 
 
-def _cannot_split(doc, sheet, rows):
-    """Reason the sheet must go out whole, or u"". Parts are aligned on the title block,
-    so everything printed must sit inside it."""
+def _cannot_split(doc, sheet, rows, overlay=True):
+    """Reason the sheet must go out whole, or u"". Parts drawn over each other on a page
+    are aligned on the title block, so everything printed must sit inside it."""
     if doc.IsWorkshared:
         ids = [sheet.Id] + [vp.Id for vp, _, _ in rows] + [vp.ViewId for vp, _, _ in rows]
         if any(WorksharingUtils.GetCheckoutStatus(doc, i) == CheckoutStatus.OwnedByOtherUser
                for i in ids):
             return u"sheet / view đang do người khác giữ, không tạm làm trống view được"
+    if not overlay:
+        return u""
     tb = titleblock(doc, sheet)
     if tb is None:
         return u"không có khung tên để căn các phần"
@@ -634,13 +668,48 @@ class ExportFailed(Exception):
     """Revit refused one export pass (alive); the pass is still pending in the crash memory."""
 
 
-def _export(doc, sheet, folder, name, p):
-    path = os.path.join(folder, name + u".pdf")
-    _remove(path)
-    ok = doc.Export(folder, List[ElementId]([sheet.Id]), options(p, name))
-    if not ok or not os.path.exists(path):
-        raise ExportFailed(u"Revit không xuất được {0}".format(name))
-    return path
+class PdfOut(object):
+    """What is particular to PDF in an export run; dwg_export.DwgOut is its CAD twin."""
+    kind = "pdf"
+    noun = u"PDF"
+    always_split = False    # True: every sheet one view per part, however light
+    overlay = True          # parts are whole pages drawn over each other
+
+    def check(self, doc):
+        """Why this export cannot start, or u""."""
+        return u""
+
+    def key(self):
+        """Added to the journal key: a run of another format / setup starts its own."""
+        return u""
+
+    def prepare(self, doc, sheet):
+        """Per sheet, before its passes; returns the label for the progress bar."""
+        self.paper = paper(doc, sheet)
+        return self.paper["label"]
+
+    def file_name(self, sheet):
+        return file_name(sheet)
+
+    def path(self, target, sheet):
+        return os.path.join(target, self.file_name(sheet) + u".pdf")
+
+    def export(self, doc, sheet, folder, name):
+        path = os.path.join(folder, name + u".pdf")
+        _remove(path)
+        ok = doc.Export(folder, List[ElementId]([sheet.Id]), options(self.paper, name))
+        if not ok or not os.path.exists(path):
+            raise ExportFailed(u"Revit không xuất được {0}".format(name))
+        return path
+
+    def whole(self, doc, sheet, plan, target):
+        return self.export(doc, sheet, target, self.file_name(sheet))
+
+    def join(self, doc, sheet, plan, target, files):
+        path = self.path(target, sheet)
+        _remove(path)
+        pdf_merge.join([(None, files[0][0], [f for f, _ in files[1:]])], path)
+        return path
 
 
 def _anchors(doc, sheet, box):
@@ -707,47 +776,53 @@ def _no_title(doc, vp, k):
     vp.ChangeTypeId(nt.Id)
 
 
-def _passes(plan):
+def _passes(plan, out):
     """[(kept viewport ids, kind, tile)] for the parts of a plan. kind: base / view /
-    title / tile. A tiled part = one pass for its title(s) + n x n tile passes."""
-    out = []
+    title / tile. A tiled part = one pass for its title(s) + n x n tile passes (the
+    title pass only when the parts are whole pages: else titles come with the base)."""
+    res = []
     for k, part in enumerate(plan["parts"]):
         n = part.get("tiles", 1)
         if k == 0:
-            out.append((part["vps"], "base", None))
+            res.append((part["vps"], "base", None))
         elif n <= 1:
-            out.append((part["vps"], "view", None))
+            res.append((part["vps"], "view", None))
         else:
-            out.append((part["vps"], "title", None))
-            out += [(part["vps"], "tile", (i, j, n)) for i in range(n) for j in range(n)]
-    return out
+            if out.overlay:
+                res.append((part["vps"], "title", None))
+            res += [(part["vps"], "tile", (i, j, n)) for i in range(n) for j in range(n)]
+    return res
 
 
-def export_sheet(doc, sheet, folder, plan, p, tidy_between=None):
-    """Export one sheet to folder/<number - name>.pdf (parts joined into one page).
+def export_sheet(doc, sheet, target, plan, out, tidy_between=None):
+    """Export one sheet to target (parts joined into one file).
 
     Part 1 = the sheet minus the viewports of the other parts (title block, sheet
     notes, schedules stay). Part 2.. = only their viewports + two corner anchors; a
-    view Revit died on is drawn tile by tile (crop cut into n x n). Blanking / hiding /
-    anchors / crops happen in a transaction group that is rolled back, so the model is
-    left exactly as it was. Every view is drawn; nothing is left out.
-    Each pass is written to the crash memory first (mark_pass / clear_pass).
+    view Revit died on is drawn tile by tile (crop cut into n x n). A format whose parts
+    are not whole pages (out.overlay False) hides nothing: the views of the other parts
+    are only blanked. Blanking / hiding / anchors / crops happen in a transaction group
+    that is rolled back, so the model is left exactly as it was. Every view is drawn;
+    nothing is left out. Each pass is written to the crash memory first (mark_pass /
+    clear_pass).
     """
-    name = file_name(sheet)
+    name = out.file_name(sheet)
     view_of = dict((vp.Id.IntegerValue, vp.ViewId.IntegerValue) for vp in viewports(doc, sheet))
     if plan["mode"] == "whole":
-        mark_pass(doc, sheet, plan, view_of.values())
-        path = _export(doc, sheet, folder, name, p)
-        clear_pass(doc)
+        mark_pass(doc, sheet, plan, view_of.values(), kind=out.kind)
+        path = out.whole(doc, sheet, plan, target)
+        clear_pass(doc, out.kind)
         return path
-    on_sheet = [e for e in FilteredElementCollector(doc, sheet.Id).WhereElementIsNotElementType()
-                if e.Category is not None and e.CanBeHidden(sheet) and not e.IsHidden(sheet)]
-    box = titleblock(doc, sheet).get_BoundingBox(sheet)
+    on_sheet, box = [], None
+    if out.overlay:
+        on_sheet = [e for e in FilteredElementCollector(doc, sheet.Id).WhereElementIsNotElementType()
+                    if e.Category is not None and e.CanBeHidden(sheet) and not e.IsHidden(sheet)]
+        box = titleblock(doc, sheet).get_BoundingBox(sheet)
     if not os.path.isdir(PARTS_DIR):
         os.makedirs(PARTS_DIR)
     files = []
     try:
-        for k, (vps, kind, tile) in enumerate(_passes(plan)):
+        for k, (vps, kind, tile) in enumerate(_passes(plan, out)):
             keep = set(i.IntegerValue for i in vps)
             if kind == "base":
                 drop = [e for e in on_sheet
@@ -760,13 +835,14 @@ def export_sheet(doc, sheet, folder, plan, p, tidy_between=None):
             hide = [e.Id for e in drop]
             # never blank a view of the same root as a kept one (it would blank both)
             kept_roots = set(view_root(doc, ElementId(view_of[i])) for i in keep)
-            blank = [doc.GetElement(ElementId(view_of[e.Id.IntegerValue]))
-                     for e in drop if e.Id.IntegerValue in view_of and
-                     view_root(doc, ElementId(view_of[e.Id.IntegerValue])) not in kept_roots]
+            gone = [e.Id.IntegerValue for e in drop] if out.overlay else list(view_of)
+            blank = [doc.GetElement(ElementId(view_of[i])) for i in gone if i in view_of and
+                     i not in keep and view_root(doc, ElementId(view_of[i])) not in kept_roots]
             kept = [doc.GetElement(ElementId(i)) for i in keep]
             if kind == "title":          # only the titles of the tiled views
                 blank += [doc.GetElement(vp.ViewId) for vp in kept]
-            mark_pass(doc, sheet, plan, [view_of[i] for i in keep], tile[2] if tile else 1)
+            views = [view_of[i] for i in keep]
+            mark_pass(doc, sheet, plan, views, tile[2] if tile else 1, out.kind)
             tg = TransactionGroup(doc, u"PDF part")
             tg.Start()
             try:
@@ -779,25 +855,23 @@ def export_sheet(doc, sheet, folder, plan, p, tidy_between=None):
                     _blank(doc, v)
                 if hide:
                     sheet.HideElements(List[ElementId](hide))
-                if kind != "base":
+                if out.overlay and kind != "base":
                     _anchors(doc, sheet, box)
                 if kind == "tile":
                     for vp in kept:
-                        _no_title(doc, vp, k)
+                        if out.overlay:
+                            _no_title(doc, vp, k)
                         _tile_crop(doc.GetElement(vp.ViewId), *tile)
                 t.Commit()
-                files.append(_export(doc, sheet, PARTS_DIR, u"{0}__part{1}".format(name, k + 1), p))
+                files.append((out.export(doc, sheet, PARTS_DIR, u"{0}__part{1}".format(name, k + 1)), views))
             finally:
                 tg.RollBack()
-            clear_pass(doc)
+            clear_pass(doc, out.kind)
             if tidy_between:
                 tidy_between()
-        path = os.path.join(folder, name + u".pdf")
-        _remove(path)
-        pdf_merge.join([(None, files[0], files[1:])], path)
-        return path
+        return out.join(doc, sheet, plan, target, files)
     finally:
-        for f in files:
+        for f, _ in files:
             try:
                 _remove(f)
             except Exception:
@@ -932,14 +1006,15 @@ def group_path(doc, sheet, group, levels=None):
 
 # ---- the whole run ----------------------------------------------------------------
 
-def plan_sheets(doc, sheets, limit=None):
+def plan_sheets(doc, sheets, limit=None, fmt=None):
     """(RO) Paper + weight + mode of each sheet, nothing exported."""
+    fmt = fmt or PdfOut()
     lim = limit or limit_now()
-    crash = crash_memory(doc)
+    crash = crash_memory(doc, fmt.kind)
     wg = Weigher(doc)
     out = []
     for s in sheets:
-        a = assess(doc, s, wg, lim, crash)
+        a = assess(doc, s, wg, lim, crash, fmt)
         note = dead_error(doc, s, crash, a) if plan_dead(crash, s.Id.IntegerValue, a) else a["note"]
         out.append({"sheet": s, "paper": paper(doc, s), "weight": a["weight"],
                     "mode": a["mode"], "parts": len(a["parts"] or [1]), "note": note,
@@ -948,21 +1023,23 @@ def plan_sheets(doc, sheets, limit=None):
 
 
 def run(doc, sheets, folder, group=None, progress=None, cancelled=None, limit=None,
-        min_free=MIN_FREE_MB, allow_incomplete=False):
-    """Export sheets (in this order): one vector PDF per sheet, in folder or in its
-    sub-folders by `group`. Never joined into one file.
+        min_free=MIN_FREE_MB, allow_incomplete=False, out=None):
+    """Export sheets (in this order): one file per sheet (vector PDF, or as `out` says),
+    in folder or in its sub-folders by `group`. Never joined into one file.
 
     progress(i, n, text) and cancelled() are optional callbacks. allow_incomplete:
     export even with worksets of the model closed / links not loaded (on purpose).
     Returns a summary dict (files, counts, stopped reason, crash notes).
     """
+    out = out or PdfOut()
+    out.root = folder
     app = doc.Application
     levels = browser_levels(doc) if group and group.get("browser") else None
-    key = u",".join(str(s.Id.IntegerValue) for s in sheets) + u"|" + dumps(group)
+    key = u",".join(str(s.Id.IntegerValue) for s in sheets) + u"|" + dumps(group) + out.key()
     jr = Journal(folder, key)
     resumed = jr.resumed()
-    learnt = recover(doc)          # the pass Revit died on last time, if any
-    crash = crash_memory(doc)
+    learnt = recover(doc, out.kind)    # the pass Revit died on last time, if any
+    crash = crash_memory(doc, out.kind)
     wg = Weigher(doc)
     done, skipped, failed, split, tiled = [], [], [], [], []
     subfolders = set()
@@ -970,8 +1047,9 @@ def run(doc, sheets, folder, group=None, progress=None, cancelled=None, limit=No
     closed = [] if allow_incomplete else closed_worksets(doc)
     if closed:
         stopped = u"workset của model đang đóng, view sẽ in thiếu phần tử: " + u", ".join(closed)
+    stopped = stopped or out.check(doc) or None
     with LowPriority():
-        for i, s in enumerate([] if closed else sheets):
+        for i, s in enumerate([] if stopped else sheets):
             sid = s.Id.IntegerValue
             st = jr.state(sid)
             if st.get("state") == "done" and os.path.exists(st.get("file", u"")):
@@ -991,9 +1069,10 @@ def run(doc, sheets, folder, group=None, progress=None, cancelled=None, limit=No
                 jr.set(sid, state="failed", error=err)
                 failed.append((s, err))
                 continue
+            clear_cache(app)
             lim = limit or limit_now()
-            plan = assess(doc, s, wg, lim, crash)
-            p = paper(doc, s)
+            plan = assess(doc, s, wg, lim, crash, out)
+            label = out.prepare(doc, s)
             sub = group_path(doc, s, group, levels)
             target = os.path.join(folder, *sub) if sub else folder
             if not os.path.isdir(target):
@@ -1002,7 +1081,7 @@ def run(doc, sheets, folder, group=None, progress=None, cancelled=None, limit=No
                 subfolders.add(os.path.join(*sub))
             if progress:
                 progress(i, len(sheets), u"{0} - {1} · {2}{3}".format(
-                    s.SheetNumber, s.Name, p["label"],
+                    s.SheetNumber, s.Name, label,
                     u" · {0} phần".format(len(plan["parts"])) if plan["mode"] == "parts" else u""))
             jr.set(sid, state="started", weight=plan["weight"], mode=plan["mode"])
             while True:
@@ -1012,7 +1091,7 @@ def run(doc, sheets, folder, group=None, progress=None, cancelled=None, limit=No
                     failed.append((s, err))
                     break
                 try:
-                    path = export_sheet(doc, s, target, plan, p, lambda: tidy(app))
+                    path = export_sheet(doc, s, target, plan, out, lambda: tidy(app))
                     jr.set(sid, state="done", file=path)
                     done.append((s, path))
                     if plan["mode"] == "parts":
@@ -1022,23 +1101,23 @@ def run(doc, sheets, folder, group=None, progress=None, cancelled=None, limit=No
                     break
                 except ExportFailed as ex:
                     # Revit refused a pass but lives: narrow it now, as after a crash
-                    line = learn_failed(doc)
+                    line = learn_failed(doc, out.kind)
                     if not line:
                         jr.set(sid, state="failed", error=u"{0}".format(ex))
                         failed.append((s, u"{0}".format(ex)))
                         break
                     learnt.append(line)
-                    crash = crash_memory(doc)
-                    plan = assess(doc, s, wg, lim, crash)
+                    crash = crash_memory(doc, out.kind)
+                    plan = assess(doc, s, wg, lim, crash, out)
                     jr.set(sid, state="started", weight=plan["weight"], mode=plan["mode"])
                     tidy(app)
                 except Exception as ex:
-                    clear_pass(doc)        # an error Revit survived is not a crash
+                    clear_pass(doc, out.kind)    # an error Revit survived is not a crash
                     jr.set(sid, state="failed", error=u"{0}".format(ex))
                     failed.append((s, u"{0}".format(ex)))
                     break
-            crash = crash_memory(doc)
-            tidy(app)
+            crash = crash_memory(doc, out.kind)
+            clear_cache(app)
     if not stopped and not failed:
         jr.data["done"] = True
         jr.save()
