@@ -20,11 +20,12 @@ A journal (journals\ next to the settings) records each sheet as started / done,
 a run cut short carries on where it stopped. Revit can also die inside its own
 drawing code on one bad view whatever the RAM (GeomUtil crash): the crash memory in
 pdf_export.json (%APPDATA%\\claude-using-revit) remembers the pass Revit died on and
-narrows it down run after run: sheet -> one view per part -> that view again alone ->
-that view in 2x2, 3x3, 4x4 crop tiles. No view is ever left out of a PDF (always
-vector, never raster); a sheet that cannot be drawn whole fails and is named.
-Revit can also refuse a pass without dying (Export returns False): the same narrowing
-runs at once, in the same run, until the sheet goes out whole or the steps run out.
+narrows it down run after run: sheet -> one view per part -> that view in 2x2, 3x3,
+4x4, 6x6, 8x8 crop tiles. A way of exporting a sheet that killed Revit is never run
+again: when no narrower way is left the sheet fails and is named, without touching
+Revit, and the run goes on. No view is ever left out of a PDF (always vector, never
+raster). Revit can also refuse a pass without dying (Export returns False): the same
+narrowing runs at once, in the same run.
 
 A model opened with some of its worksets closed prints its views without the elements
 of those worksets (walls, grids, levels... gone, titles and tags still there), and a
@@ -167,15 +168,19 @@ class LowPriority(object):
 
 # ---- crash memory ("black box") ---------------------------------------------------
 # Revit can die inside its own drawing code on one bad view (GeomUtil / hidden-line
-# crash), whatever the RAM. Before every export pass the views it draws are written
-# here; a pass still written down at the next run is the one Revit died on (only when
-# Windows logged Revit crashing / hanging; a Revit closed by hand teaches nothing):
+# crash), whatever the RAM. Before every export pass the views it draws and the way the
+# sheet is being exported are written here; a pass still written down at the next run is
+# the one Revit died on. Windows does not always log it (Autodesk's crash reporter often
+# catches the crash first), so every pending pass counts; a Revit closed by hand counts
+# too, which only costs smaller passes:
 #   - a pass of several views -> that sheet is isolated: one view per part;
-#   - a pass of one view      -> its crash count goes up: 1 = exported alone again,
-#                                2+ = cut into 2x2, 3x3, 4x4 tiles of its crop region.
-# No view is ever left out (vector only, never raster); a sheet that still cannot be
-# drawn fails and is named, so no PDF ever misses a view. Kept per model (document
-# title) across days and folders; forget() clears it once the model is fixed.
+#   - a pass of one view      -> its crash count goes up: cut into 2x2, 3x3, 4x4, 6x6,
+#                                8x8 tiles of its crop region.
+# The way of exporting that died is kept ("dead") and never run again, so Revit cannot
+# die twice the same way: with no narrower way left the sheet fails and is named, and the
+# run goes on with the next sheet. No view is ever left out (vector only, never raster),
+# no PDF ever misses a view. Kept per model (document title) across days and folders;
+# forget() clears it once the model is fixed.
 
 def _doc_key(doc):
     # Title carries ".rvt" or not depending on the Windows "hide extensions" setting
@@ -206,13 +211,28 @@ def crashes(mem, view_id):
     return 2 if v == "skip" else int(v)
 
 
+TILES = (2, 3, 4, 6, 8)
+
+
 def tiles_for(n):
     """Tiles per side for a view Revit died on n times alone."""
-    return 1 if n <= 1 else min(n, 4)
+    return 1 if n <= 0 else TILES[min(n, len(TILES)) - 1]
+
+
+def plan_key(plan):
+    """Text naming a way of exporting a sheet, stable across runs."""
+    parts = sorted(u"{0}x{1}".format(u",".join(str(i) for i in sorted(v.IntegerValue for v in pt["vps"])),
+                                     pt.get("tiles", 1)) for pt in plan["parts"] or [])
+    return u"{0}:{1}".format(plan["mode"], u";".join(parts))
+
+
+def plan_dead(mem, sheet_id, plan):
+    """True when Revit already died (or refused) exporting this sheet this way."""
+    return plan_key(plan) in mem.get("dead", {}).get(str(sheet_id), [])
 
 
 def crash_notes(doc, sheets):
-    """[(sheet, [(view name, tiles per side)])] for views the crash memory tiles."""
+    """[(sheet, [(view name, tiles per side)])] for sheets the crash memory isolates or tiles."""
     mem = crash_memory(doc)
     out = []
     for s in sheets:
@@ -222,41 +242,16 @@ def crash_notes(doc, sheets):
             n = tiles_for(crashes(mem, vid.IntegerValue))
             if crashes(mem, vid.IntegerValue):
                 rows.append((doc.GetElement(vid).Name, n))
-        if rows:
+        if rows or s.Id.IntegerValue in mem.get("sheets", []):
             out.append((s, rows))
     return out
 
 
-def mark_pass(doc, sheet, view_ids, tiles=1):
+def mark_pass(doc, sheet, plan, view_ids, tiles=1):
     mem = crash_memory(doc)
-    from System import DateTime
     mem["pending"] = {"sheet": sheet.Id.IntegerValue, "views": list(view_ids), "tiles": tiles,
-                      "t": DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ")}
+                      "plan": plan_key(plan)}
     _crash_save(doc, mem)
-
-
-def revit_died_since(utc_iso):
-    """True when Windows logged Revit crashing / hanging (Application Error, WER,
-    Application Hang: events 1000 / 1001 / 1002) after that UTC time. None when the
-    log cannot be read. A Revit closed by the user mid-export leaves no such event."""
-    try:
-        from System import DateTime
-        from System.Diagnostics import EventLog
-        since = DateTime.Parse(utc_iso).ToUniversalTime()
-        log = EventLog(u"Application")
-        entries = log.Entries
-        i = entries.Count - 1
-        while i >= 0:                       # newest first, stop at the pass start
-            e = entries[i]
-            if e.TimeGenerated.ToUniversalTime() < since:
-                break
-            if e.InstanceId & 0xFFFF in (1000, 1001, 1002) and \
-                    u"revit.exe" in (e.Message or u"").lower():
-                return True
-            i -= 1
-        return False
-    except Exception:
-        return None
 
 
 def clear_pass(doc):
@@ -267,39 +262,34 @@ def clear_pass(doc):
 
 def recover(doc):
     """Read a pass left pending by a crash; returns lines for the user."""
-    mem = crash_memory(doc)
-    p = mem.pop("pending", None)
-    if not p:
-        return []
-    sheet = doc.GetElement(ElementId(int(p["sheet"])))
-    label = sheet.SheetNumber if isinstance(sheet, ViewSheet) else str(p["sheet"])
-    if p.get("t") and revit_died_since(p["t"]) is False:
-        # Revit was closed, not crashed: nothing to learn, export it as usual
-        _crash_save(doc, mem)
-        return [u"{0}: lần trước Revit bị đóng giữa lúc xuất sheet này (không văng), "
-                u"lần này xuất lại bình thường".format(label)]
-    line = _learn(doc, mem, p, label, u"Revit văng")
-    _crash_save(doc, mem)
-    return [line]
+    line = _learn_pending(doc, u"Revit văng")
+    return [line] if line else []
 
 
 def learn_failed(doc):
     """The pending pass Revit refused (Export returned False, Revit alive) is learnt
     like a crash, so the sheet can be retried at once in smaller passes. Returns the
     line for the user, or None when no pass was pending."""
+    return _learn_pending(doc, u"Revit không xuất được")
+
+
+def _learn_pending(doc, what):
     mem = crash_memory(doc)
     p = mem.pop("pending", None)
     if not p:
         return None
     sheet = doc.GetElement(ElementId(int(p["sheet"])))
     label = sheet.SheetNumber if isinstance(sheet, ViewSheet) else str(p["sheet"])
-    # alone again would fail the same way in this session: straight to tiles
-    line = _learn(doc, mem, p, label, u"Revit không xuất được", first=2)
+    if p.get("plan"):
+        dead = mem.setdefault("dead", {}).setdefault(str(p["sheet"]), [])
+        if p["plan"] not in dead:
+            dead.append(p["plan"])
+    line = _learn(doc, mem, p, label, what)
     _crash_save(doc, mem)
     return line
 
 
-def _learn(doc, mem, p, label, what, first=1):
+def _learn(doc, mem, p, label, what):
     """Narrow the crash memory one step for pass p; returns the line for the user."""
     sheets = mem.setdefault("sheets", [])
     if len(p["views"]) == 1 or (p["views"] and p["sheet"] in sheets):
@@ -307,18 +297,28 @@ def _learn(doc, mem, p, label, what, first=1):
         names, n = [], 1
         for vid in p["views"]:
             v = doc.GetElement(ElementId(int(vid)))
-            n = max(crashes(mem, vid) + 1, first)
+            n = crashes(mem, vid) + 1
             mem.setdefault("views", {})[str(vid)] = n
             names.append(v.Name if v is not None else str(vid))
-        k = tiles_for(n)
-        return u"{0}: {1} view \"{2}\" (lần {3}), lần này {4}".format(
-            label, what, u"\", \"".join(names), n,
-            u"xuất riêng lại view này" if k == 1 else
-            u"chia view thành {0}x{0} ô theo vùng crop rồi ghép lại".format(k))
+        return u"{0}: {1} view \"{2}\" (lần {3}), lần sau chia view thành {4}x{4} ô theo vùng crop".format(
+            label, what, u"\", \"".join(names), n, tiles_for(n))
     if p["sheet"] in sheets:
-        return u"{0}: {1} khung tên / ghi chú của sheet, lần này thử lại".format(label, what)
+        return u"{0}: {1} khung tên / ghi chú của sheet".format(label, what)
     sheets.append(p["sheet"])
-    return u"{0}: {1} sheet này, lần này tách từng view để tìm view lỗi".format(label, what)
+    return u"{0}: {1} sheet này, lần sau tách từng view để tìm view lỗi".format(label, what)
+
+
+def dead_error(doc, sheet, mem, plan):
+    """Why a sheet is not exported again: its only way left already killed Revit."""
+    rows = []
+    for vp in viewports(doc, sheet):
+        n = crashes(mem, vp.ViewId.IntegerValue)
+        if n:
+            rows.append(u"{0} ({1}x{1} ô)".format(doc.GetElement(vp.ViewId).Name, tiles_for(n)))
+    return u"Revit đã văng với cách xuất này, tool không chạy lại để khỏi văng tiếp{0}{1}. " \
+           u"Sửa model rồi bấm Thử lại (xoá trí nhớ văng)".format(
+               u"; view lỗi: " + u", ".join(rows) if rows else u"",
+               u"; " + plan["note"] if plan["note"] else u"")
 
 
 # ---- model completeness -----------------------------------------------------------
@@ -723,7 +723,7 @@ def export_sheet(doc, sheet, folder, plan, p, tidy_between=None):
     name = file_name(sheet)
     view_of = dict((vp.Id.IntegerValue, vp.ViewId.IntegerValue) for vp in viewports(doc, sheet))
     if plan["mode"] == "whole":
-        mark_pass(doc, sheet, view_of.values())
+        mark_pass(doc, sheet, plan, view_of.values())
         path = _export(doc, sheet, folder, name, p)
         clear_pass(doc)
         return path
@@ -753,7 +753,7 @@ def export_sheet(doc, sheet, folder, plan, p, tidy_between=None):
             kept = [doc.GetElement(ElementId(i)) for i in keep]
             if kind == "title":          # only the titles of the tiled views
                 blank += [doc.GetElement(vp.ViewId) for vp in kept]
-            mark_pass(doc, sheet, [view_of[i] for i in keep], tile[2] if tile else 1)
+            mark_pass(doc, sheet, plan, [view_of[i] for i in keep], tile[2] if tile else 1)
             tg = TransactionGroup(doc, u"PDF part")
             tg.Start()
             try:
@@ -927,18 +927,11 @@ def plan_sheets(doc, sheets, limit=None):
     out = []
     for s in sheets:
         a = assess(doc, s, wg, lim, crash)
+        note = dead_error(doc, s, crash, a) if plan_dead(crash, s.Id.IntegerValue, a) else a["note"]
         out.append({"sheet": s, "paper": paper(doc, s), "weight": a["weight"],
-                    "mode": a["mode"], "parts": len(a["parts"] or [1]), "note": a["note"],
+                    "mode": a["mode"], "parts": len(a["parts"] or [1]), "note": note,
                     "tiled": a["tiled"]})
     return lim, out
-
-
-RETRIES = 5    # sheet -> each view alone -> view alone again -> 2x2 -> 3x3 -> 4x4 tiles
-
-
-def _shape(plan):
-    return (plan["mode"], [(sorted(i.IntegerValue for i in pt["vps"]), pt.get("tiles", 1))
-                           for pt in plan["parts"] or []])
 
 
 def run(doc, sheets, folder, group=None, progress=None, cancelled=None, limit=None,
@@ -999,7 +992,12 @@ def run(doc, sheets, folder, group=None, progress=None, cancelled=None, limit=No
                     s.SheetNumber, s.Name, p["label"],
                     u" · {0} phần".format(len(plan["parts"])) if plan["mode"] == "parts" else u""))
             jr.set(sid, state="started", weight=plan["weight"], mode=plan["mode"])
-            for attempt in range(RETRIES + 1):
+            while True:
+                if plan_dead(crash, sid, plan):
+                    err = dead_error(doc, s, crash, plan)
+                    jr.set(sid, state="failed", error=err)
+                    failed.append((s, err))
+                    break
                 try:
                     path = export_sheet(doc, s, target, plan, p, lambda: tidy(app))
                     jr.set(sid, state="done", file=path)
@@ -1011,15 +1009,14 @@ def run(doc, sheets, folder, group=None, progress=None, cancelled=None, limit=No
                     break
                 except ExportFailed as ex:
                     # Revit refused a pass but lives: narrow it now, as after a crash
-                    line = learn_failed(doc) if attempt < RETRIES else None
-                    new = assess(doc, s, wg, lim, crash_memory(doc)) if line else None
-                    if new is None or _shape(new) == _shape(plan):
-                        clear_pass(doc)
+                    line = learn_failed(doc)
+                    if not line:
                         jr.set(sid, state="failed", error=u"{0}".format(ex))
                         failed.append((s, u"{0}".format(ex)))
                         break
                     learnt.append(line)
-                    plan = new
+                    crash = crash_memory(doc)
+                    plan = assess(doc, s, wg, lim, crash)
                     jr.set(sid, state="started", weight=plan["weight"], mode=plan["mode"])
                     tidy(app)
                 except Exception as ex:
