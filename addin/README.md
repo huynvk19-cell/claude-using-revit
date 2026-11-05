@@ -24,7 +24,7 @@ Người dùng ──bấm nút──> extension/claude using revit.tab/<panel>.
 | `build.ps1` | Build mọi bản Revit có trên máy vào `dist/<bản>/`; `-Check` chạy thêm CommandCheck |
 | `setup/` | Bộ cài **ClaudeUsingRevit-Setup.exe** (.NET Framework 4.8, một file, cửa sổ tiếng Việt, gỡ được từ Settings > Apps): `make-setup.sh` build mọi bản Revit + gói payload; logic ở `InstallerCore.cs` (test: `tests/setup-test.sh`) |
 
-**Trạng thái** (nút đầu tiên của tab, cập nhật mỗi giây): xanh lá *Đã kết nối* / *Đang chạy* · xanh dương *Chờ kết nối* (cửa sổ này giữ cổng) · vàng *Cửa sổ khác* (cửa sổ khác giữ cổng; cửa sổ này nhận khi cổng rảnh) · xám *Đã tắt* · đỏ *Lỗi*. Bấm vào: cửa sổ chi tiết (client, lệnh gần đây, bật / tắt, *Nhận kết nối về cửa sổ này*, chép lệnh `claude mcp add`, mở log).
+**Trạng thái** (nút đầu tiên của tab, cập nhật mỗi giây, vẽ thành nút gạt trên tấm mica như các nút khác, gạt sang phải khi cửa sổ này giữ cổng): xanh lá *Đã kết nối* / *Đang chạy* · xanh dương *Chờ kết nối* (cửa sổ này giữ cổng) · vàng *Cửa sổ khác* (cửa sổ khác giữ cổng; cửa sổ này nhận khi cổng rảnh) · xám *Đã tắt* · đỏ *Lỗi*. Bấm vào: cửa sổ chi tiết (client, lệnh gần đây, bật / tắt, *Nhận kết nối về cửa sổ này*, chép lệnh `claude mcp add`, mở log).
 
 **Dữ liệu** `%APPDATA%\claude-using-revit\`: `config.json` (`port`, `autoStart`, `extensionDir`, `commandsDir`, `tabName`), `bin\<bản>\`, `extension\`, `commands\`, `logs\` (C#: `claude-using-revit-<ngày>.log`, Python: `python.log`), `instances\<pid>.json` (vai trò từng cửa sổ), `open-docs\`, `web-bridge\`, `tool-config\` (cài đặt từng nút), `control.key`.
 
