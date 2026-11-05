@@ -175,12 +175,19 @@ namespace ClaudeUsingRevit.Mcp
                         if (File.Exists(cand)) { list.Add(cand); break; }
                 }
             }
+            // Other add-ins bring their own copies: a second Newtonsoft (ModPlus.Newtonsoft.Json has the same namespaces, so
+            // every JObject would be CS0433) or an older one by the same name. One assembly per name, ours first.
+            var ours = typeof(JObject).Assembly;
+            var names = new HashSet<string>(list.Select(p => Path.GetFileNameWithoutExtension(p)), StringComparer.OrdinalIgnoreCase);
             foreach (var a in AppDomain.CurrentDomain.GetAssemblies())
             {
                 if (a.IsDynamic) continue;
                 string loc;
                 try { loc = a.Location; } catch { continue; }
                 if (string.IsNullOrEmpty(loc) || loc.StartsWith(Paths.RoslynDir, StringComparison.OrdinalIgnoreCase)) continue;
+                string asmName = a.GetName().Name;
+                if (a != ours && asmName.EndsWith("Newtonsoft.Json", StringComparison.OrdinalIgnoreCase)) continue;
+                if (!names.Add(asmName)) continue;
                 list.Add(loc);
             }
             foreach (string r in extra)
