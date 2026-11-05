@@ -9,28 +9,25 @@
    - levels: `query_elements_with_filter {category:"Levels", returnFields:["Elevation"]}`;
    - basement, mezzanine, roof, typical floors;
    - house types / blocks / zones from the profile.
-2. Build the **target list**:
+2. Build the **sheet register** (`drafting-sheet-layout.md` §11), one row per drawing:
    - start from the core set (§4) + the sheet-set file's table; a sheet-set file with a **Danh mục điển hình** replaces the core set, and its row order is the sheet order;
    - keep the rows whose GĐ is not later than the job's stage, and whose condition holds ("nếu có tầng hầm"…);
    - expand "mỗi tầng" to one row per level, typical floors as one row with their level range;
    - expand per zone (if card 03 already split) and per house type / block.
-3. One row = one drawing:
-
-   | Group | Drawing | Level / zone / type | Scale | Stage | Source row |
-   |---|---|---|---|---|---|
-
-   "Source row" names the standard row the drawing comes from, so the user can see why it is needed.
-4. Write it to `layout-target-<date>.md` (round folder or `log/`). Show the user the counts per group and the drawings that come from a condition. Then ask once: add / remove?
+3. Fill the columns of this card: `ID`, `Nhóm`, `Bản vẽ`, `Tầng / vùng / mẫu`, `Tỷ lệ`, `GĐ`, `Nguồn`. Every row starts in state `planned`.
+   - `Nguồn` names the standard row the drawing comes from, so the user can see why it is needed.
+   - A drawing made of several views (stair: plans + sections) gets sub-rows `ID.a`, `ID.b`.
+4. Write it to `sheet-register-<date>.md` (round folder or `log/`). Show the user the counts per group and the drawings that come from a condition. Then ask once: add / remove?
 
 ## Done when
 
-- The target list file exists.
+- The register file exists, every row `planned`.
 - Every mandatory row of §4 and of the sheet-set file is either expanded or written as "n/a + reason".
 - The user confirmed the list, or added / removed rows (their changes noted with the date).
 
 ## Skip only if
 
-A target list of this job, already confirmed by the user, exists and the type / stage / levels did not change since.
+A register of this job, already confirmed by the user, exists and the type / stage / levels did not change since.
 
 ## Never
 

@@ -35,6 +35,9 @@ description: "Giá trị riêng của dự án cho bộ skill drafting. Copy fil
 | Layout: khổ giấy · khung tên · vùng vẽ (lề, dải khung tên, cột ghi chú, mm) · khoảng hở giữa viewport (mm) | `<vd. A1>` · `<tên type khung tên>` · `<vd. lề 10, khung tên phải 180, ghi chú 120>` · `15` |
 | Layout: định dạng số sheet theo nhóm · mã mẫu nhà / hạng mục / khối | `<vd. tiền tố + nhóm + 2 chữ số>` · `<vd. mẫu A, B, góc>` |
 | Layout: vùng (scope box) · thứ tự sheet vùng · ngôn ngữ tên sheet | `<tên scope box>` · `<theo tầng rồi vùng / theo vùng rồi tầng>` · `<Việt / Anh / song ngữ>` |
+| Sheet (`drafting-sheet-create`): tham số chung + giá trị (giai đoạn, ngày phát hành, người vẽ / kiểm / duyệt) · tham số nhóm Project Browser + giá trị theo nhóm | `<tên tham số = giá trị>` · `<tên tham số>` |
+| View (`drafting-view-create`): template theo khoá `plan`, `plan-finish`, `ceiling`, `roof`, `site`, `site-setout`, `elevation`, `section`, `stair`, `toilet`, `detail`, `legend` · mẫu tên view · tham số nhóm view | `<khoá = tên template>` · `<vd. = tên bản vẽ, in hoa>` · `<tên tham số>` |
+| Đặt view (`drafting-sheet-place`): viewport type theo loại view · trục gốc căn chuỗi mặt bằng · vị trí ghi chú / key plan / mũi tên Bắc | `<loại = type>` · `<vd. 1 + A>` · `<vd. cột phải, góc dưới phải>` |
 | Sổ tay dự án (nếu có) | `<link>` |
 
 ## Ghi chú riêng của dự án

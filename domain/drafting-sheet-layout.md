@@ -3,7 +3,7 @@ name: drafting-sheet-layout
 description: "Chuẩn layout bộ hồ sơ kiến trúc trên sheet: loại công trình → bộ hồ sơ, giai đoạn hồ sơ, nhóm và đánh số bản vẽ, bộ hồ sơ lõi, khổ giấy, tỷ lệ, bố cục viewport trên sheet (LO1–LO12), chia vùng + key plan + matchline (Z1–Z5), tên sheet, danh mục. Sheet set and sheet layout standard."
 metadata:
   updated: "2026-11-05"
-  related: ["drafting-views-sheets", "drafting-annotation", "drafting-work-rules", "drafting-sheet-set-townhouse", "drafting-sheet-set-villa", "drafting-sheet-set-highrise", "drafting-sheet-set-airport", "drafting-sheet-set-public", "drafting-sheet-set-industrial"]
+  related: ["drafting-sheet-create", "drafting-view-create", "drafting-sheet-place", "drafting-views-sheets", "drafting-annotation", "drafting-work-rules", "drafting-sheet-set-townhouse", "drafting-sheet-set-villa", "drafting-sheet-set-highrise", "drafting-sheet-set-airport", "drafting-sheet-set-public", "drafting-sheet-set-industrial"]
 ---
 
 # Layout bộ hồ sơ và sheet (Sheet set and sheet layout)
@@ -165,3 +165,36 @@ Bộ hồ sơ chỉ xong khi đủ tất cả các điều sau:
 - Quy định hiện hành về hồ sơ thiết kế xây dựng theo giai đoạn.
 
 Quy định của dự án, của chủ đầu tư hoặc của cơ quan thẩm định **luôn ưu tiên** hơn chuẩn này. Ghi những khác biệt đó vào profile.
+
+## 11. Sổ bộ hồ sơ (sheet register): nguồn sự thật của quy trình dàn trang
+
+Sổ bộ hồ sơ là **một file** cho mỗi job: `sheet-register-<YYYY-MM-DD>.md`, đặt trong thư mục đợt (`review/<ngày>_<mã>/`) hoặc `log/`.
+- Mỗi **dòng** là một bản vẽ của bộ hồ sơ mục tiêu (`drafting-sheet-layout` thẻ 01).
+- Mỗi **skill chỉ điền các cột của mình**. Skill sau chỉ chạy trên các dòng mà skill trước đã đưa tới đúng trạng thái.
+- Không skill nào được bỏ qua một dòng mà không ghi lý do.
+
+| Cột | Ai điền (skill · thẻ) |
+|---|---|
+| `ID` (thứ tự trong bộ), `Nhóm`, `Bản vẽ`, `Tầng / vùng / mẫu`, `Tỷ lệ`, `GĐ`, `Nguồn` (dòng chuẩn) | `drafting-sheet-layout` 01 |
+| `Có sẵn` (ok / chưa đặt / chưa có view / thừa) | `drafting-sheet-layout` 02 |
+| `Khổ giấy`, `Vừa khổ`, `Vùng` | `drafting-sheet-layout` 03 |
+| `Số sheet`, `Tên sheet`, `Sheet id` | `drafting-sheet-create` |
+| `Loại view`, `Tên view`, `View id`, `Template`, `Crop` | `drafting-view-create` |
+| `Vị trí (mm)`, `Viewport id`, `Viewport type` | `drafting-sheet-place` |
+| `Kiểm` (LO / Z đạt, hoặc mã lỗi) | `drafting-sheet-layout` 04 |
+| `Trạng thái`, `Ghi chú` | mọi skill, khi đổi trạng thái |
+
+**Trạng thái của mỗi dòng**, đi theo đúng thứ tự:
+
+```text
+planned → sheet → view → placed → checked
+```
+
+Các dấu đặc biệt:
+- `!` = chưa xong, có lý do (vào Việc tồn);
+- `n/a` = không áp dụng, có lý do;
+- `extra` = có trong model nhưng ngoài bộ, user đã quyết giữ hay bỏ.
+
+Một dòng có nhiều view (vd. chi tiết thang = mặt bằng các tầng + mặt cắt): mỗi view một dòng con `ID.a`, `ID.b`…, cùng một sheet.
+
+Quy trình chỉ xong khi mọi dòng là `checked`, `n/a` hoặc `!` có lý do (§9).

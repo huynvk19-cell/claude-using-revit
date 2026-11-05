@@ -47,7 +47,10 @@ Skills and domain standards that let Claude Code do drawing production like a dr
 | `drafting-plan-floor-finish` | **Khai triển mặt bằng hoàn thiện sàn** (cùng cấp với `drafting-plan-dims`): thẻ Tag cao độ sàn (FL1–FL3) và Ký hiệu độ dốc (SL1–SL5), chung với `drafting-plan-dims`; thẻ mã hoàn thiện sàn sẽ thêm |
 | `drafting-tags-titles` | Room tag (sửa tag ngoài phòng, tag "?"), view title |
 | `drafting-views-sheets` | Viewport, crop/scope box, đầu trục 2D, view template, link |
-| `drafting-sheet-layout` | **Layout bộ hồ sơ** theo loại công trình (nhà liên kế, biệt thự, nhà cao tầng, sân bay, công cộng, công nghiệp): loại + giai đoạn → bộ bản vẽ cần có → đối chiếu model (thiếu / thừa) → tỷ lệ, vừa khổ, chia vùng → đánh số, đặt tên, tạo sheet → bố trí viewport → đặt và căn view → kiểm LO1–LO12, Z1–Z5 |
+| `drafting-sheet-layout` | **Lập bộ hồ sơ** theo loại công trình (nhà liên kế, biệt thự, nhà cao tầng, sân bay, công cộng, công nghiệp): loại + giai đoạn → **sổ bộ hồ sơ** (mỗi bản vẽ một dòng, trạng thái planned → sheet → view → placed → checked) → đối chiếu model → tỷ lệ, vừa khổ, chia vùng → kiểm layout LO1–LO12, Z1–Z5 (5 thẻ) |
+| `drafting-sheet-create` | **Khởi tạo sheet** từ sổ: gom bản vẽ thành sheet, đánh số, đặt tên theo danh mục điển hình, kiểm khung tên, tạo qua danh mục bản vẽ (print set + No. tự theo), tham số sheet, nhóm Project Browser (6 thẻ, SC1–SC10) |
+| `drafting-view-create` | **Tạo view cho sheet** từ sổ: mỗi bản vẽ → loại view Revit (mặt bằng, duplicate, dependent theo vùng, mặt đứng, mặt cắt, callout thang / WC, interior elevation, chi tiết, legend, schedule), template, tỷ lệ, crop, tên; dùng lại view có sẵn (8 thẻ, VC1–VC12) |
+| `drafting-sheet-place` | **Bỏ view vào sheet** từ sổ: kiểm sẵn sàng, bảng bố trí mm trên giấy, phần cố định (ghi chú, legend, key plan, mũi tên Bắc, schedule), đặt view, căn chuỗi mặt bằng theo điểm trục và mặt đứng / mặt cắt theo ±0.000, kiểm (6 thẻ, VP1–VP10) |
 | `drafting-visual-check` | Xuất ảnh sheet và soát lỗi trình bày |
 
 ### Thẻ bước (Step cards) — chia để trị
@@ -58,7 +61,7 @@ Skill nhiều bước thì mỗi bước là **một file riêng** trong `skills
 - Duyệt, sửa một bước = sửa một file trên GitHub; lịch sử (commit, diff) theo từng bước.
 - Quy trình chỉ gọi skill; thứ tự thẻ nằm trong `SKILL.md`, "xong khi" / "chỉ bỏ khi" chỉ nằm trong thẻ.
 
-Đã tách: `drafting-stair-plan`, `drafting-stair-section-parallel`, `drafting-stair-section-cross` (mỗi skill 16 thẻ), `drafting-views-sheets` (8), `drafting-grid-dims` (4), `drafting-opening-dims` (4), `drafting-opening-tags` (6), `drafting-tags-titles` (2), `drafting-plan-dims` (6), `drafting-plan-floor-finish` (2), `drafting-ceiling-plan` (1), `drafting-sheet-layout` (8). Skill một bước (`drafting-dims`) và các skill mở/đóng phiên (`drafting-start`, `drafting-end`, `drafting-visual-check`, `drafting-review-round`) giữ nguyên.
+Đã tách: `drafting-stair-plan`, `drafting-stair-section-parallel`, `drafting-stair-section-cross` (mỗi skill 16 thẻ), `drafting-views-sheets` (8), `drafting-grid-dims` (4), `drafting-opening-dims` (4), `drafting-opening-tags` (6), `drafting-tags-titles` (2), `drafting-plan-dims` (6), `drafting-plan-floor-finish` (2), `drafting-ceiling-plan` (1), `drafting-sheet-layout` (5), `drafting-sheet-create` (6), `drafting-view-create` (8), `drafting-sheet-place` (6). Skill một bước (`drafting-dims`) và các skill mở/đóng phiên (`drafting-start`, `drafting-end`, `drafting-visual-check`, `drafting-review-round`) giữ nguyên.
 
 ### Quy trình (Workflows)
 
@@ -70,7 +73,7 @@ Quy trình là lớp trên skill: nó **chỉ gọi skill** — skill nào, theo
 | `floor-plan` | start (gom view / sheet) → views-sheets (00–04) → grid-dims → plan-dims (dim cửa → tag cửa → tag room → cao độ sàn → tag tường → độ dốc) → plan-floor-finish (cao độ sàn, độ dốc, mặt bằng hoàn thiện) → tags-titles (room tag, title) → views-sheets (07) → visual-check → end |
 | `ceiling-plan` | start (gom view / sheet) → views-sheets (00–04) → grid-dims → ceiling-plan (tag room) → tags-titles (room tag, title) → views-sheets (07) → visual-check → end |
 | `stair-core` | start (gom view / sheet) → stair-plan → stair-section-parallel → stair-section-cross → visual-check → end |
-| `sheet-layout` | start (gom mọi sheet của bộ) → sheet-layout (loại công trình, bộ hồ sơ cần có, đối chiếu model) → views-sheets (00, 02, 03: crop, đầu trục) → sheet-layout (tỷ lệ, vừa khổ, chia vùng → đánh số, tạo sheet → bố trí, đặt view) → views-sheets (01) → tags-titles (title) → sheet-layout (kiểm layout) → views-sheets (07) → visual-check → end |
+| `sheet-layout` | start (gom mọi sheet của bộ) → sheet-layout (loại công trình → sổ bộ hồ sơ → đối chiếu model → tỷ lệ, chia vùng) → sheet-create (khởi tạo sheet) → view-create (tạo view) → views-sheets (00, 02, 03: crop, đầu trục) → sheet-place (bỏ view vào sheet) → tags-titles (title) → sheet-layout (kiểm layout) → views-sheets (07) → visual-check → end |
 | `review-round` | review-round (đọc + phân loại) → start (gom view / sheet mọi task) → skill theo chủ đề (task cùng chủ đề làm một lượt) (thẻ khảo sát, thẻ của comment, thẻ kiểm lại) → tags-titles (title) → visual-check → end |
 
 Thêm quy trình mới: một file `workflows/<tên>.md` (dòng 0 = `drafting-start` gom view / sheet; bảng skill · thẻ · view + vì sao thứ tự này) + một dòng trong bảng của `drafting-workflow` + một dòng ở bảng trên.
@@ -92,7 +95,10 @@ Thêm quy trình mới: một file `workflows/<tên>.md` (dòng 0 = `drafting-st
 | `drafting-ceiling-plan.md` | Mặt bằng trần: các thẻ bước (hiện có tag room) |
 | `drafting-plan-floor-finish.md` | Mặt bằng hoàn thiện sàn: các thẻ bước (hiện có cao độ sàn) |
 | `drafting-views-sheets.md` | Viewport, crop, dependent view, template |
-| `drafting-sheet-layout.md` | Layout bộ hồ sơ: loại công trình → file bộ hồ sơ, giai đoạn (YT / CS / KT / TC / HC), nhóm và đánh số bản vẽ, bộ hồ sơ lõi, khổ giấy, tỷ lệ, bố cục trên sheet (LO1–LO12), chia vùng + key plan + matchline (Z1–Z5), tên sheet |
+| `drafting-sheet-layout.md` | Layout bộ hồ sơ: loại công trình → file bộ hồ sơ, giai đoạn (YT / CS / KT / TC / HC), nhóm và đánh số bản vẽ, bộ hồ sơ lõi, khổ giấy, tỷ lệ, bố cục trên sheet (LO1–LO12), chia vùng + key plan + matchline (Z1–Z5), tên sheet, **sổ bộ hồ sơ** (§11) |
+| `drafting-sheet-create.md` | Khởi tạo sheet từ sổ (SC1–SC10): gom sheet, số, tên, khung tên, tạo qua danh mục, tham số sheet |
+| `drafting-view-create.md` | Tạo view cho sheet (VC1–VC12): bảng bản vẽ → loại view Revit, tạo từ đâu, template, tỷ lệ, crop, tên; hợp đồng lệnh `view_create` (chưa có) |
+| `drafting-sheet-place.md` | Đặt view lên sheet (VP1–VP10): bảng bố trí mm, thứ tự đặt, căn theo điểm trục, legend / schedule; hợp đồng lệnh `viewport_place` (chưa có) |
 | `drafting-sheet-set-<loại>.md` | Bộ bản vẽ riêng của từng loại công trình (cộng vào bộ lõi): `townhouse` nhà liên kế, `villa` biệt thự, `highrise` nhà cao tầng, `airport` sân bay, `public` trường học / bệnh viện / TTTM, `industrial` nhà xưởng / kho. Mỗi job chỉ mở một file |
 | `drafting-tools.md` | Danh mục lệnh MCP theo chủ đề |
 | `drafting-api-pitfalls.md` | Bẫy Revit API và cách tránh |

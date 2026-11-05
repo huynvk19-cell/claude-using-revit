@@ -1,7 +1,7 @@
 # 03 · Scale, paper fit, zones (tỷ lệ, vừa khổ, chia vùng)
 
 **Skill** `drafting-sheet-layout` · **Standard** `drafting-sheet-layout.md` §5, §7 (Z1–Z5) · **Tools** `view_crop_info`
-**Applies to** every view of the job (rows `ok` and `not placed` of card 02).
+**Applies to** every register row: existing views by their crop; rows `no view` by the extent they will show (outermost grids + the annotation band of the existing plans, or the size the user gives).
 
 ## Do
 
@@ -18,13 +18,13 @@
    1. the next smaller scale allowed for that kind of view;
    2. otherwise zones (Z1–Z5): propose **one** zone scheme for every level and every plan kind, with boundaries on grids or joints and one bay of overlap.
 
-   Show the scheme as a table: zone → grid range → levels. The user makes the scope boxes and dependent views, or approves the existing ones.
-5. Write per view into the target list file: paper size, fits yes / no, scale ok / flag, zone.
+   Show the scheme as a table: zone → grid range → levels. The user makes the scope boxes, or approves the existing ones; the dependent views per zone come in `drafting-view-create`.
+5. Fill `Khổ giấy`, `Vừa khổ`, `Vùng` in the register; a zoned drawing gets one row per zone.
 
 ## Done when
 
 - Every view of the job fits the drawing area at a scale from the table, or it is split into zones that do.
-- The zone scheme (if any) is the same for every level and every plan kind (Z1). Each zone has a key plan source (Z3) and a level overview plan (Z4) in the target list.
+- The zone scheme (if any) is the same for every level and every plan kind (Z1). Each zone has a key plan source (Z3) and a level overview plan (Z4) in the register.
 
 ## Skip only if
 
