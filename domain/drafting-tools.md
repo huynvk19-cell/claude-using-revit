@@ -1,6 +1,6 @@
 ---
 name: drafting-tools
-description: "Danh mục lệnh MCP của add-in AI Culi (lệnh C# trong revit-commands/ + tool có sẵn) dùng cho triển khai bản vẽ, theo chủ đề, kèm tham số chính. Drafting tool catalog."
+description: "Danh mục lệnh MCP của add-in claude using revit (lệnh C# trong revit-commands/ + tool có sẵn) dùng cho triển khai bản vẽ, theo chủ đề, kèm tham số chính. Drafting tool catalog."
 metadata:
   updated: "2026-10-23"
   related: ["drafting-work-rules", "drafting-dimensions", "drafting-annotation", "drafting-views-sheets"]
@@ -9,23 +9,23 @@ metadata:
 # Danh mục lệnh (Tool catalog)
 
 **Yêu cầu**
-- Add-in **AI Culi** (`aiculi/`, cài bằng `install.ps1 -AddIn`): nó vừa là tab ribbon vừa là máy chủ MCP `http://127.0.0.1:8970/mcp` (Claude Code: `claude mcp add --transport http --scope user aiculi http://127.0.0.1:8970/mcp`). Không cần pyRevit hay Revit MCP nào khác.
+- Add-in **claude using revit** (`addin/`, cài bằng `install.ps1 -AddIn`): nó vừa là tab ribbon vừa là máy chủ MCP `http://127.0.0.1:8970/mcp` (Claude Code: `claude mcp add --transport http --scope user claude-using-revit http://127.0.0.1:8970/mcp`). Không cần pyRevit hay Revit MCP nào khác.
 - Mỗi file `revit-commands/<tên>.cs` là một tool. Lệnh nào chưa có thì viết thêm: C#, biên dịch ngay trong Revit lần gọi đầu và mỗi khi file đổi, không cần khởi động lại Revit hay phiên Claude (danh sách tool tự cập nhật).
-- Kiểm tra lệnh không cần Revit: `aiculi/build.ps1 -Check` (hoặc `aiculi/tests/CommandCheck`) biên dịch mọi lệnh theo API của từng bản Revit.
+- Kiểm tra lệnh không cần Revit: `addin/build.ps1 -Check` (hoặc `addin/tests/CommandCheck`) biên dịch mọi lệnh theo API của từng bản Revit.
 
-**Mã nguồn**: thư mục `revit-commands/` của repo (cài vào `%APPDATA%\AiCuli\commands`; `install.ps1 -AddIn -Dev` thì add-in đọc thẳng thư mục của repo). Tool không có giá trị mặc định của dự án nào: tên dim type, family cửa cuốn… truyền vào lúc gọi, lấy từ `drafting-profile.md`.
+**Mã nguồn**: thư mục `revit-commands/` của repo (cài vào `%APPDATA%\claude-using-revit\commands`; `install.ps1 -AddIn -Dev` thì add-in đọc thẳng thư mục của repo). Tool không có giá trị mặc định của dự án nào: tên dim type, family cửa cuốn… truyền vào lúc gọi, lấy từ `drafting-profile.md`.
 
 **Cách gọi**
 - Gọi trực tiếp tool `<tên>`, hoặc qua `run_dynamic_command {name, args}`.
-- Tool có sẵn trong add-in: `culi_task` (task dùng chung, dưới đây), `culi_status` (cửa sổ Revit nào đang phục vụ, document đang mở, client, lệnh gần đây; trả lời cả khi Revit bận), `run_dynamic_command`.
+- Tool có sẵn trong add-in: `cur_task` (task dùng chung, dưới đây), `cur_status` (cửa sổ Revit nào đang phục vụ, document đang mở, client, lệnh gần đây; trả lời cả khi Revit bận), `run_dynamic_command`.
 - Lệnh chạy lần lượt trên luồng API của Revit. Lệnh chưa bắt đầu sau `timeoutSeconds` (Revit đang mở hộp thoại / đang bận) thì bị bỏ, không chạy gì.
 - Claude Code hoãn nạp tool MCP (tool search): đầu việc nạp mọi lệnh ở dòng **Tools** của skill trong **một** lần ToolSearch (`select:` + tên đầy đủ `mcp__<server>__<tên>`).
 - Khi không chắc tham số: đọc header của file (`/* mcp-tool */`) và comment `// ---- Details` ngay dưới nó (giải thích đầy đủ).
 - Ký hiệu: RO = read-only; **1V** = mỗi lần gọi chỉ một view.
 
-## Task dùng chung với nút ribbon (`culi_task`)
+## Task dùng chung với nút ribbon (`cur_task`)
 
-Việc mà user làm bằng nút trên tab **AI Culi** thì Claude gọi đúng code đó: `culi_task {task, args}` (một tool cho mọi task, code ở `aiculi/extension/lib/tasks.py`). Thêm task mới không cần sửa C# hay mở phiên mới. `args` chung: `dryRun` (chỉ báo, không ghi), `detail` (danh sách đầy đủ), `limit`.
+Việc mà user làm bằng nút trên tab **claude using revit** thì Claude gọi đúng code đó: `cur_task {task, args}` (một tool cho mọi task, code ở `addin/extension/lib/tasks.py`). Thêm task mới không cần sửa C# hay mở phiên mới. `args` chung: `dryRun` (chỉ báo, không ghi), `detail` (danh sách đầy đủ), `limit`.
 
 | Task | Việc · args | Nút tương ứng |
 |---|---|---|
@@ -40,7 +40,7 @@ Việc mà user làm bằng nút trên tab **AI Culi** thì Claude gọi đúng 
 | `untagged_highlight` / `untagged_remove` | Tô cam chỗ chưa tag (thay vùng tô cũ của mình) / xoá vùng tô của mình. | Tìm chưa tag / Xoá vùng tô |
 | `highlight` / `highlight_clear` | Tô đỏ 50% quanh phần tử (`ids`, `view`) / xoá highlight của mình (`view` hoặc cả model). | Tô đối tượng / Xoá vùng tô |
 | `view_3d_from_view` | Mở view 3D riêng của user (`3D Box - <tên Revit>`, tạo lần đầu rồi dùng lại) với section box ôm phần view thể hiện: mặt bằng = crop x view range (thấp nhất tới cao nhất của top / cut / bottom / view depth; Unlimited = 20 m từ level); mặt cắt / mặt đứng / detail = crop x far clip từ mặt phẳng view (không far clip = sâu 1 km). Section box chỉ xoay quanh Z. Phase + phase filter theo view gốc; nhìn isometric (mặt bằng từ góc đông nam của crop, mặt cắt từ phía người xem, hơi trái + trên). `view` (id; mặc định view đang mở, hoặc viewport đang chọn trên sheet), `cut` (mặt bằng: box dừng ở cut plane, mặt bằng trần: bắt đầu từ cut plane; nút: Shift+click), `activate` (mặc định true: mở view + zoom vào box), `dryRun`. View 3D tắt crop nên ảnh export toàn model: muốn xuất ảnh thì bật crop tạm. | 3D theo view |
-| `view_mesh_export` | (RO) Lưới tam giác của một view 3D (section box, category ẩn, link như view thể hiện; màu vật liệu; id phần tử) ra `%APPDATA%\AiCuli\meshes` cho viewer GPU của web app (`/viewer.html?mesh=<name>`). `view` (id; mặc định view 3D đang mở, không thì view `3D Box - <user>`), `maxTriangles` (mặc định 6 triệu, quá thì cắt và báo `truncated`). Model to: dùng 3D theo view trước để giới hạn vùng. | Web app: 3D theo view > Xem bằng GPU |
+| `view_mesh_export` | (RO) Lưới tam giác của một view 3D (section box, category ẩn, link như view thể hiện; màu vật liệu; id phần tử) ra `%APPDATA%\claude-using-revit\meshes` cho viewer GPU của web app (`/viewer.html?mesh=<name>`). `view` (id; mặc định view 3D đang mở, không thì view `3D Box - <user>`), `maxTriangles` (mặc định 6 triệu, quá thì cắt và báo `truncated`). Model to: dùng 3D theo view trước để giới hạn vùng. | Web app: 3D theo view > Xem bằng GPU |
 | `schedule_sheets` | (RO) Sheet của một schedule danh mục theo thứ tự hàng (id, số, tên, đang chọn), thư mục PDF dùng lần trước, các lựa chọn `groupBy`. `schedule`. | Web app: Xuất PDF / DWG |
 | `status_board` | (RO) Việc còn lại của từng công cụ trong model: print set so với danh mục cùng tên, cột chuẩn từng danh mục, chưa tag ở view đang mở, số vùng highlight / tô cam của mình còn trong model. `parts` (lists, marks, untagged; mặc định cả ba), trả `ms` thời gian từng phần. | Panel |
 | `schedule_list` | (RO) Mọi schedule của model: id, tên, category, `sheetList`, `key` (key schedule). | Panel: Bảng |
@@ -58,7 +58,7 @@ Việc mà user làm bằng nút trên tab **AI Culi** thì Claude gọi đúng 
 | Lệnh | Việc |
 |---|---|
 | `hello_revit` | Phiên bản Revit, document đang mở, active view. |
-| `revit_docs` | Cửa sổ Revit đang giữ cổng MCP: `list` (PID, trạng thái MCP + các cửa sổ khác, document chưa lưu / active / đường dẫn) · `open` (cloud GUID hoặc path, `activate`; luôn mở **mọi workset**; **không bao giờ mở lại** model đã mở: đang mở ở cửa sổ này → chỉ kích hoạt, đang mở ở cửa sổ khác → từ chối kèm PID; cửa sổ chưa rõ document → từ chối. Danh sách mọi cửa sổ: `%APPDATA%\AiCuli\open-docs\<pid>.json`, do add-in AI Culi (khởi động + mở / đóng document) + chính lệnh này ghi; xem bằng `revit-port.ps1 status`) · `close` (`title`; từ chối khi chưa lưu trừ khi `discardChanges` sau khi user đồng ý; doc đang active cần `switchTo`). Ai giữ cổng / nhả cổng: `tools/revit-port/revit-port.ps1`. |
+| `revit_docs` | Cửa sổ Revit đang giữ cổng MCP: `list` (PID, trạng thái MCP + các cửa sổ khác, document chưa lưu / active / đường dẫn) · `open` (cloud GUID hoặc path, `activate`; luôn mở **mọi workset**; **không bao giờ mở lại** model đã mở: đang mở ở cửa sổ này → chỉ kích hoạt, đang mở ở cửa sổ khác → từ chối kèm PID; cửa sổ chưa rõ document → từ chối. Danh sách mọi cửa sổ: `%APPDATA%\claude-using-revit\open-docs\<pid>.json`, do add-in claude using revit (khởi động + mở / đóng document) + chính lệnh này ghi; xem bằng `revit-port.ps1 status`) · `close` (`title`; từ chối khi chưa lưu trừ khi `discardChanges` sau khi user đồng ý; doc đang active cần `switchTo`). Ai giữ cổng / nhả cổng: `tools/revit-port/revit-port.ps1`. |
 | `work_status` | Cửa sổ "Đang xử lý": show / update / close. |
 | `export_sheet_images` | Xuất PNG sheet `{sheetNumbers, folder, pixelWidth}`. |
 | `view_region_image` | Xuất PNG một vùng của view. |

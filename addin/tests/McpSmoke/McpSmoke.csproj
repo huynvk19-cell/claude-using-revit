@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    The MCP server of claude using revit without Revit: the real server, registry, compiler and queue sources, with the few
+    Revit types they touch stubbed (Stubs.cs). addin/tests/smoke.sh runs it, then the official MCP client against it.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <RollForward>Major</RollForward>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>McpSmoke</AssemblyName>
+    <NoWarn>$(NoWarn);CA1416</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\..\src\ClaudeUsingRevit\Core\Paths.cs" />
+    <Compile Include="..\..\src\ClaudeUsingRevit\Core\Config.cs" />
+    <Compile Include="..\..\src\ClaudeUsingRevit\Core\Log.cs" />
+    <Compile Include="..\..\src\ClaudeUsingRevit\Core\Json.cs" />
+    <Compile Include="..\..\src\ClaudeUsingRevit\Core\RevitQueue.cs" />
+    <Compile Include="..\..\src\ClaudeUsingRevit\Mcp\*.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <ProjectReference Include="..\..\src\ClaudeUsingRevit.Compiler\ClaudeUsingRevit.Compiler.csproj" ReferenceOutputAssembly="false" SetTargetFramework="TargetFramework=net8.0" />
+  </ItemGroup>
+  <!-- claude using revit loads the compiler from roslyn\ next to itself -->
+  <Target Name="CopyRoslyn" AfterTargets="Build">
+    <ItemGroup>
+      <RoslynFiles Include="..\..\src\ClaudeUsingRevit.Compiler\bin\$(Configuration)\net8.0\*.dll" />
+    </ItemGroup>
+    <Copy SourceFiles="@(RoslynFiles)" DestinationFolder="$(OutDir)roslyn" SkipUnchangedFiles="true" />
+  </Target>
+</Project>

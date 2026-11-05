@@ -14,7 +14,7 @@
 }
 */
 // ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
-// Deletes elementId and/or ids in one transaction "AI Culi: delete". Missing ids are listed, not an error.
+// Deletes elementId and/or ids in one transaction "claude using revit: delete". Missing ids are listed, not an error.
 // Revit also deletes what depends on an element (tags of a deleted door, dims of a deleted grid...): those come back
 // as AlsoDeleted (count + first ids). dryRun: the same transaction is rolled back, so the report shows what WOULD go.
 // Element types, views and sheets are deleted too if their id is given: check the id first.
@@ -47,7 +47,7 @@ public static class DeleteElement
         if (ids.Count == 0) return new { Deleted = 0, Missing = missing };
 
         ICollection<ElementId> gone;
-        using (var t = new Transaction(doc, "AI Culi: delete"))
+        using (var t = new Transaction(doc, "claude using revit: delete"))
         {
             t.Start();
             gone = doc.Delete(ids);

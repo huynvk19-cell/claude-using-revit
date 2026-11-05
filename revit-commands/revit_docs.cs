@@ -21,7 +21,7 @@
 */
 // ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
 // Model open/close for the Revit window that currently holds the MCP port (only that window can be reached).
-//  list: Revit PID + window, the AI Culi MCP server state (McpClient: clients, connected, the other Revit windows and
+//  list: Revit PID + window, the claude using revit MCP server state (McpClient: clients, connected, the other Revit windows and
 //    whether they hold the port or wait), every non-linked document with IsModified / Active / path, and the number of
 //    loaded links. Read-only.
 //  open: cloud model (projectGuid + modelGuid [+ region]) or local path. activate=true (default) opens it in the UI
@@ -29,7 +29,7 @@
 //    Never detaches from central. Never syncs. Always opens ALL worksets (closed worksets print views incomplete).
 //    Never opens a model twice: open in this window -> only activated; open in ANOTHER Revit window -> refused with
 //    that window's PID (work there instead). The other windows' documents come from
-//    %APPDATA%\AiCuli\open-docs\<pid>.json, written by the AI Culi add-in (startup + doc open/close
+//    %APPDATA%\claude-using-revit\open-docs\<pid>.json, written by the claude using revit add-in (startup + doc open/close
 //    hooks) and by this command for its own window. A live Revit window without that file has unknown documents, so
 //    open is refused until it has one (Tải lại in panel Claude there, or run revit_docs list while it holds the port).
 //  close: closes the non-linked document whose Title equals title. Refuses when it has unsaved changes unless
@@ -71,9 +71,9 @@ public static class RevitDocs
     }
 
     static string SnapshotFolder => System.IO.Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AiCuli", "open-docs");
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "claude-using-revit", "open-docs");
 
-    // Same file and shape as aiculi/extension/lib/open_docs.py.
+    // Same file and shape as addin/extension/lib/open_docs.py.
     static void WriteSnapshot(UIApplication app)
     {
         try
@@ -151,8 +151,8 @@ public static class RevitDocs
         object client = null;
         try
         {
-            // the AI Culi add-in's MCP server (state, clients, the other Revit windows and their role)
-            client = AiCuli.Mcp.McpServer.Snapshot(false);
+            // the claude using revit add-in's MCP server (state, clients, the other Revit windows and their role)
+            client = ClaudeUsingRevit.Mcp.McpServer.Snapshot(false);
         }
         catch (Exception ex) { client = "unavailable: " + ex.Message; }
 

@@ -5,7 +5,7 @@ description: "Ground rules + start/end routine for any Revit drafting work throu
 
 # Drafting session
 
-**Tools** (load all in one ToolSearch call): `annotation_overlaps`, `dims_text`, `export_sheet_images`, `hello_revit`, `culi_task`, `culi_status`, `mark_types`, `ui_view_focus`, `view_elem_boxes`.
+**Tools** (load all in one ToolSearch call): `annotation_overlaps`, `dims_text`, `export_sheet_images`, `hello_revit`, `cur_task`, `cur_status`, `mark_types`, `ui_view_focus`, `view_elem_boxes`.
 
 Read first (only these two):
 - `~/.claude/drafting-domain/drafting-work-rules.md` (Vietnamese).
@@ -36,13 +36,13 @@ Do **not** read the whole `drafting-domain/` folder or every skill. Pick the tas
 | Viewports, crops, templates, links, drawing list + print set | `drafting-views-sheets` | `drafting-views-sheets.md` |
 | Checking by image | `drafting-visual-check` | — |
 
-- **Shared tasks first**: a job the ribbon tab "AI Culi" already does (print set = drawing list, sheet-list columns / No. / one value for all sheets, untagged scan / highlight, highlight / clear) is one `culi_task {task, args}` call: same code as the user's button, short result. `culi_task {task:"list_tasks"}` lists them. Never re-derive such a job step by step.
+- **Shared tasks first**: a job the ribbon tab "claude using revit" already does (print set = drawing list, sheet-list columns / No. / one value for all sheets, untagged scan / highlight, highlight / clear) is one `cur_task {task, args}` call: same code as the user's button, short result. `cur_task {task:"list_tasks"}` lists them. Never re-derive such a job step by step.
 - A task touching two topics → load the two rows, nothing else.
 - `drafting-tools.md` and `drafting-api-pitfalls.md` are look-up lists: search them for the one command or symptom you need (`grep`). Do not read them whole.
 - The `related` list in a standard's header is for maintainers. Do not open those files because of it.
 - A command's parameters: read the header comment of that one `.cs` file only when unsure.
-- Revit MCP tools (the AI Culi add-in, server `aiculi`) are deferred (tool search). Load the commands on the chosen skills' **Tools** lines in **one** ToolSearch call (`select:` + the full names, e.g. `mcp__aiculi__dims_text`), not one search per command.
-- Which Revit window answers, and what it has open: `culi_status` (answers even while Revit is busy).
+- Revit MCP tools (the claude using revit add-in, server `claude-using-revit`) are deferred (tool search). Load the commands on the chosen skills' **Tools** lines in **one** ToolSearch call (`select:` + the full names, e.g. `mcp__claude-using-revit__dims_text`), not one search per command.
+- Which Revit window answers, and what it has open: `cur_status` (answers even while Revit is busy).
 
 ## Hard rules (recite before acting)
 

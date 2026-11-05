@@ -1,7 +1,7 @@
-// AI Culi - web app page (visionOS-like). Plain JS, no build step.
+// claude using revit - web app page (visionOS-like). Plain JS, no build step.
 // Every Revit action is a job: POST /api/w/<pid>/jobs {kind: task|command|tool, name, args}, then
 // GET /api/jobs/<id> until it is done. Tasks = lib/tasks.py (the ribbon buttons), commands = the
-// AI Culi commands (revit-commands/*.cs), tools = the add-in's built-in tools (culi_task, culi_status).
+// claude using revit commands (revit-commands/*.cs), tools = the add-in's built-in tools (cur_task, cur_status).
 // The tool tiles take their state from the read-only task status_board: colour only where work is left.
 "use strict";
 
@@ -226,7 +226,7 @@ function renderTiles() {
   const pill = $("#o-todo");
   pill.textContent = work === 1 ? "1 việc" : `${work} việc`;
   pill.classList.toggle("hidden", !work);
-  document.title = (work ? `(${work}) ` : "") + "AI Culi";
+  document.title = (work ? `(${work}) ` : "") + "claude using revit";
   if (S.open) refreshWindowState();
   // /#export etc. (deep link /?k=..&open=export): open that tool once
   const want = location.hash.slice(1);

@@ -16,7 +16,7 @@
 }
 */
 // ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
-// ElementTransformUtils.MoveElements in one transaction "AI Culi: move". The vector is in MODEL coordinates (mm), not
+// ElementTransformUtils.MoveElements in one transaction "claude using revit: move". The vector is in MODEL coordinates (mm), not
 // in the view frame: for a move "right / up on the sheet" of an annotation in a section, convert with the view's
 // RightDirection / UpDirection first (or use the commands that take view-frame offsets, e.g. dims_text_move).
 // Pinned elements are skipped and listed. Missing ids are listed.
@@ -56,7 +56,7 @@ public static class MoveElement
         }
         if (ids.Count > 0)
         {
-            using (var t = new Transaction(doc, "AI Culi: move"))
+            using (var t = new Transaction(doc, "claude using revit: move"))
             {
                 t.Start();
                 ElementTransformUtils.MoveElements(doc, ids, v);

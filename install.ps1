@@ -1,26 +1,26 @@
-# Install the drafting skills, workflows, subagents and domain files for Claude Code, and (optionally) the AI Culi
-# Revit add-in: the ribbon tab "AI Culi" + the MCP server Claude uses. Needs neither pyRevit nor another Revit MCP.
-#   -AddIn          : build (aiculi\build.ps1, needs the .NET SDK) and install AI Culi for the Revit versions on this PC:
-#                     %APPDATA%\AiCuli\bin\<version>\ (the add-in), \extension\ (the ribbon tools, Python),
-#                     \commands\ (revit-commands\*.cs = the MCP tools), %APPDATA%\Autodesk\Revit\Addins\<version>\AiCuli.addin.
+# Install the drafting skills, workflows, subagents and domain files for Claude Code, and (optionally) the claude using revit
+# Revit add-in: the ribbon tab "claude using revit" + the MCP server Claude uses. Needs neither pyRevit nor another Revit MCP.
+#   -AddIn          : build (addin\build.ps1, needs the .NET SDK) and install claude using revit for the Revit versions on this PC:
+#                     %APPDATA%\claude-using-revit\bin\<version>\ (the add-in), \extension\ (the ribbon tools, Python),
+#                     \commands\ (revit-commands\*.cs = the MCP tools), %APPDATA%\Autodesk\Revit\Addins\<version>\ClaudeUsingRevit.addin.
 #                     Close Revit first (it locks the DLL). Removes the old pyRevit extension ClaudeUsingRevit.extension.
 #   -Revit 2024,2025: the Revit versions for -AddIn (default: the ones installed)
-#   -Dist <folder>  : with -AddIn, install a ready build (<folder>\<version>\AiCuli.dll, e.g. the aiculi-dist download of
+#   -Dist <folder>  : with -AddIn, install a ready build (<folder>\<version>\ClaudeUsingRevit.dll, e.g. the claude-using-revit-dist download of
 #                     the GitHub Actions run) instead of building: no .NET SDK needed
-#   -Dev            : with -AddIn, AI Culi reads extension\ and commands\ straight from this repo checkout
+#   -Dev            : with -AddIn, claude using revit reads extension\ and commands\ straight from this repo checkout
 #                     (config.json extensionDir / commandsDir): an edit applies on the next click / tool call.
-#   -RegisterClaude : add the MCP server to Claude Code (claude mcp add --transport http --scope user aiculi ...)
+#   -RegisterClaude : add the MCP server to Claude Code (claude mcp add --transport http --scope user claude-using-revit ...)
 #   -WorkStatus     : also install the status window scripts to %USERPROFILE%\Tools\WorkStatus
 #   -DwgBindXref    : also install the DWG bind-xref tool + its Explorer right-click menu (HKCU, no admin)
 #   -WebApp         : optional, a web server for the tools in a browser or on an iPad in the LAN, to
-#                     %APPDATA%\AiCuli\webapp; the add-in needs none of it
+#                     %APPDATA%\claude-using-revit\webapp; the add-in needs none of it
 param([switch]$AddIn, [string[]]$Revit, [string]$Dist, [switch]$Dev, [switch]$RegisterClaude, [switch]$WorkStatus, [switch]$DwgBindXref, [switch]$WebApp)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $claude = Join-Path $env:USERPROFILE '.claude'
 $skills = Join-Path $claude 'skills'
 $domain = Join-Path $claude 'drafting-domain'
-$data = Join-Path $env:APPDATA 'AiCuli'
+$data = Join-Path $env:APPDATA 'claude-using-revit'
 New-Item -ItemType Directory -Force $skills, $domain | Out-Null
 Get-ChildItem (Join-Path $root 'skills') -Directory | ForEach-Object {
     Copy-Item $_.FullName -Destination $skills -Recurse -Force
@@ -47,9 +47,9 @@ function Mirror($from, $to) {
 }
 
 if ($AddIn) {
-    if (Get-Process Revit -ErrorAction SilentlyContinue) { throw 'Close every Revit window first (Revit locks AiCuli.dll).' }
-    if ($Dist) { if (-not (Test-Path (Join-Path $Dist '*\AiCuli.dll'))) { throw "no <version>\AiCuli.dll in $Dist" } }
-    else { & (Join-Path $root 'aiculi\build.ps1') -Revit $Revit; $Dist = Join-Path $root 'aiculi\dist' }
+    if (Get-Process Revit -ErrorAction SilentlyContinue) { throw 'Close every Revit window first (Revit locks ClaudeUsingRevit.dll).' }
+    if ($Dist) { if (-not (Test-Path (Join-Path $Dist '*\ClaudeUsingRevit.dll'))) { throw "no <version>\ClaudeUsingRevit.dll in $Dist" } }
+    else { & (Join-Path $root 'addin\build.ps1') -Revit $Revit; $Dist = Join-Path $root 'addin\dist' }
     $built = Get-ChildItem $Dist -Directory | Where-Object { $_.Name -match '^20\d\d$' }
     if (-not $Revit) {
         $have = Get-ChildItem "$env:ProgramFiles\Autodesk" -Directory -Filter 'Revit 20*' -ErrorAction SilentlyContinue |
@@ -67,20 +67,20 @@ if ($AddIn) {
 <?xml version="1.0" encoding="utf-8"?>
 <RevitAddIns>
   <AddIn Type="Application">
-    <Name>AI Culi</Name>
-    <Assembly>$bin\AiCuli.dll</Assembly>
+    <Name>claude using revit</Name>
+    <Assembly>$bin\ClaudeUsingRevit.dll</Assembly>
     <AddInId>8D3C5F2E-6B1A-4C9E-9A57-2F0D6C1E4B73</AddInId>
-    <FullClassName>AiCuli.App</FullClassName>
-    <VendorId>AICULI</VendorId>
-    <VendorDescription>AI Culi: ribbon tools + MCP server for Claude</VendorDescription>
+    <FullClassName>ClaudeUsingRevit.App</FullClassName>
+    <VendorId>CLAUDEUSINGREVIT</VendorId>
+    <VendorDescription>claude using revit: ribbon tools + MCP server for Claude</VendorDescription>
   </AddIn>
 </RevitAddIns>
 "@
-        Set-Content (Join-Path $addins 'AiCuli.addin') $manifest -Encoding UTF8
-        "add-in  -> $bin (Revit $v, manifest $addins\AiCuli.addin)"
+        Set-Content (Join-Path $addins 'ClaudeUsingRevit.addin') $manifest -Encoding UTF8
+        "add-in  -> $bin (Revit $v, manifest $addins\ClaudeUsingRevit.addin)"
     }
     if (-not $Dev) {
-        Mirror (Join-Path $root 'aiculi\extension') (Join-Path $data 'extension')
+        Mirror (Join-Path $root 'addin\extension') (Join-Path $data 'extension')
         "ribbon  -> $data\extension"
         Mirror (Join-Path $root 'revit-commands') (Join-Path $data 'commands')
         "commands -> $data\commands ($((Get-ChildItem (Join-Path $data 'commands') -Filter *.cs).Count) files)"
@@ -90,9 +90,9 @@ if ($AddIn) {
     $cfg = if (Test-Path $cfgFile) { Get-Content $cfgFile -Raw | ConvertFrom-Json } else { [pscustomobject]@{ port = 8970; autoStart = $true } }
     foreach ($k in 'extensionDir', 'commandsDir') { if (-not ($cfg.PSObject.Properties.Name -contains $k)) { $cfg | Add-Member $k $null } }
     if ($Dev) {
-        $cfg.extensionDir = Join-Path $root 'aiculi\extension'
+        $cfg.extensionDir = Join-Path $root 'addin\extension'
         $cfg.commandsDir = Join-Path $root 'revit-commands'
-        "dev     -> AI Culi reads $($cfg.extensionDir) and $($cfg.commandsDir)"
+        "dev     -> claude using revit reads $($cfg.extensionDir) and $($cfg.commandsDir)"
     }
     else { $cfg.extensionDir = $null; $cfg.commandsDir = $null }
     $cfg | ConvertTo-Json | Set-Content $cfgFile -Encoding UTF8
@@ -100,7 +100,7 @@ if ($AddIn) {
     $old = Join-Path $env:APPDATA 'pyRevit\Extensions\ClaudeUsingRevit.extension'
     if (Test-Path $old) { Remove-Item $old -Recurse -Force; "removed old pyRevit extension $old" }
     $port = if ($cfg.port) { $cfg.port } else { 8970 }
-    "MCP     -> http://127.0.0.1:$port/mcp (starts with Revit; ribbon tab AI Culi, panel Claude shows the connection)"
+    "MCP     -> http://127.0.0.1:$port/mcp (starts with Revit; ribbon tab claude using revit, panel Claude shows the connection)"
 }
 
 if ($RegisterClaude) {
@@ -109,11 +109,11 @@ if ($RegisterClaude) {
     if (Test-Path $cfgFile) { $p = (Get-Content $cfgFile -Raw | ConvertFrom-Json).port; if ($p) { $port = $p } }
     $cli = Get-Command claude -ErrorAction SilentlyContinue
     if ($cli) {
-        & claude mcp remove --scope user aiculi 2>$null | Out-Null
-        & claude mcp add --transport http --scope user aiculi "http://127.0.0.1:$port/mcp"
-        "claude  -> MCP server 'aiculi' added (user scope). An old 'revit-mcp' entry can go: claude mcp remove revit-mcp"
+        & claude mcp remove --scope user claude-using-revit 2>$null | Out-Null
+        & claude mcp add --transport http --scope user claude-using-revit "http://127.0.0.1:$port/mcp"
+        "claude  -> MCP server 'claude-using-revit' added (user scope). An old 'revit-mcp' entry can go: claude mcp remove revit-mcp"
     }
-    else { "claude CLI not found: claude mcp add --transport http --scope user aiculi http://127.0.0.1:$port/mcp" }
+    else { "claude CLI not found: claude mcp add --transport http --scope user claude-using-revit http://127.0.0.1:$port/mcp" }
 }
 
 if ($WorkStatus) {
@@ -129,7 +129,7 @@ if ($WebApp) {
     # new folders under %APPDATA% land in the app's private store, where Revit and Explorer never see them.
     $wa = Join-Path $data 'webapp'
     Get-CimInstance Win32_Process -Filter "Name = 'node.exe'" |
-        Where-Object { $_.CommandLine -like '*AiCuli\webapp\server.mjs*' } |
+        Where-Object { $_.CommandLine -like '*claude-using-revit\webapp\server.mjs*' } |
         ForEach-Object { Stop-Process -Id $_.ProcessId -Force; "web app: stopped old server (PID $($_.ProcessId))" }
     Mirror (Join-Path $root 'webapp') $wa
     Get-ChildItem (Join-Path $root 'revit-commands\*.cs') | ForEach-Object { $_.BaseName } |

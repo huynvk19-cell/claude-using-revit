@@ -1,16 +1,16 @@
-// AI Culi - web app server (Node, no dependencies).
+// claude using revit - web app server (Node, no dependencies).
 //
-// The page (public/) is the user interface for every tool of the ribbon tab "AI Culi"
-// and every AI Culi MCP command, from any device on the LAN (PC browser, iPad...). Revit work goes
-// through the thin bridge each Revit window runs (aiculi/extension lib/web_bridge.py, 127.0.0.1:48990+,
-// discovered in %APPDATA%\AiCuli\web-bridge\<pid>.json); this server never touches the
-// AI Culi MCP port (8970), so it does not compete with Claude sessions.
+// The page (public/) is the user interface for every tool of the ribbon tab "claude using revit"
+// and every claude using revit MCP command, from any device on the LAN (PC browser, iPad...). Revit work goes
+// through the thin bridge each Revit window runs (addin/extension lib/web_bridge.py, 127.0.0.1:48990+,
+// discovered in %APPDATA%\claude-using-revit\web-bridge\<pid>.json); this server never touches the
+// claude using revit MCP port (8970), so it does not compete with Claude sessions.
 //
 // Access: a token (webapp.json). Open http://<pc>:<port>/?k=<token> once per device; the page keeps
 // it as a SameSite=Strict cookie. Every /api call needs that cookie and a Host header naming this PC.
-// Settings: %APPDATA%\AiCuli\webapp.json (port, host, token, commandsDir).
+// Settings: %APPDATA%\claude-using-revit\webapp.json (port, host, token, commandsDir).
 // host 127.0.0.1 (default) = this PC only; 0.0.0.0 = the LAN / Tailscale too. Restart the server after a change.
-// Log: %APPDATA%\AiCuli\webapp.log. Started by the add-in (extension startup.py) when not running.
+// Log: %APPDATA%\claude-using-revit\webapp.log. Started by the add-in (extension startup.py) when not running.
 import fs from "node:fs";
 import http from "node:http";
 import os from "node:os";
@@ -19,7 +19,7 @@ import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const DATA = path.join(process.env.APPDATA || os.homedir(), "AiCuli");
+const DATA = path.join(process.env.APPDATA || os.homedir(), "claude-using-revit");
 const BRIDGES = path.join(DATA, "web-bridge");
 const CONFIG = path.join(DATA, "webapp.json");
 const LOG = path.join(DATA, "webapp.log");
@@ -30,7 +30,7 @@ const ADDIN_CONFIG = path.join(DATA, "config.json");      // the add-in's settin
 function addinConfig() {
     try { return JSON.parse(fs.readFileSync(ADDIN_CONFIG, "utf8")); } catch { return {}; }
 }
-const EXT_TAB = path.join(addinConfig().extensionDir || path.join(DATA, "extension"), "AI Culi.tab");
+const EXT_TAB = path.join(addinConfig().extensionDir || path.join(DATA, "extension"), "claude using revit.tab");
 const HEADER_RE = /\/\*\s*mcp-tool\s*([\s\S]*?)\*\//;
 const NAME_RE = /^[a-z][a-z0-9_]{0,63}$/;
 const MAX_JOBS = 200;
@@ -53,7 +53,7 @@ function loadConfig() {
     set("port", 8780);
     set("host", "127.0.0.1");      // this PC only; "0.0.0.0" = the LAN too (iPad), token still needed
     set("token", crypto.randomBytes(6).toString("hex"));
-    // the commands of the add-in (config.json commandsDir, else %APPDATA%\AiCuli\commands); not stored, so
+    // the commands of the add-in (config.json commandsDir, else %APPDATA%\claude-using-revit\commands); not stored, so
     // install.ps1 -Dev and back applies without editing webapp.json
     if (changed) fs.writeFileSync(CONFIG, JSON.stringify(cfg, null, 2));
     if (!cfg.commandsDir) cfg.commandsDirDefault = addinConfig().commandsDir || path.join(DATA, "commands");
@@ -98,7 +98,7 @@ function readCommands() {
     return out.sort((a, b) => a.name.localeCompare(b.name));
 }
 
-// tools of the add-in itself (culi_task, culi_status...), asked from a live Revit window (bridge GET /tools);
+// tools of the add-in itself (cur_task, cur_status...), asked from a live Revit window (bridge GET /tools);
 // the command files are listed by readCommands, and run_dynamic_command is how this server runs them
 const NOT_LISTED = new Set(["run_dynamic_command"]);
 let baseTools = null;
@@ -163,7 +163,7 @@ function bridgeCall(b, method, p, body, timeoutMs) {
 
 function bridgeOf(pid) {
     const b = bridges().find(x => String(x.pid) === String(pid));
-    if (!b) throw httpError(404, "Revit window not found (closed, or AI Culi not reloaded since install: Tải lại)");
+    if (!b) throw httpError(404, "Revit window not found (closed, or claude using revit not reloaded since install: Tải lại)");
     return b;
 }
 
@@ -185,7 +185,7 @@ const jobs = [];
 let nextJob = 1;
 
 function unwrap(kind, r) {
-    // tasks and AI Culi tools answer plain JSON ({error} on failure)
+    // tasks and claude using revit tools answer plain JSON ({error} on failure)
     return r;
 }
 
@@ -427,6 +427,6 @@ const listenHost = process.env.CUR_WEBAPP_HOST || cfg.host;    // 127.0.0.1 = th
 const listenPort = Number(process.env.CUR_WEBAPP_PORT) || cfg.port;    // a second copy from the repo, for tests
 server.listen(listenPort, listenHost, () => {
     log(`listening on ${listenHost}:${listenPort}`);
-    console.log(`AI Culi web app: http://localhost:${listenPort}/?k=${cfg.token}`);
+    console.log(`claude using revit web app: http://localhost:${listenPort}/?k=${cfg.token}`);
     for (const u of lanUrls()) console.log("  " + u);
 });
