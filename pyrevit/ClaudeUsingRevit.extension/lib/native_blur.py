@@ -7,17 +7,23 @@ none (older than 11 22H2) the window stays opaque.
 No pyRevit here: the startup engine and the button scripts both use it.
 """
 import ctypes
+import os
 
 import clr
 clr.AddReference('PresentationCore')
 clr.AddReference('PresentationFramework')
 clr.AddReference('WindowsBase')
 
+from System import Uri
 from System.Windows import CornerRadius, PresentationSource, Thickness, WindowStyle
 from System.Windows.Input import Mouse, MouseButtonState
 from System.Windows.Interop import HwndSource, WindowInteropHelper
 from System.Windows.Media import Brushes, Colors
+from System.Windows.Media.Imaging import BitmapCacheOption, BitmapImage
 from System.Windows.Shell import WindowChrome
+
+PANEL_ICON = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), u'claude using revit.tab', u'Panel.panel',
+                          u'Open Panel.pushbutton', u'icon.png')
 
 # DwmSetWindowAttribute
 DWMWA_USE_IMMERSIVE_DARK_MODE = 20
@@ -92,6 +98,19 @@ def combo(box):
         if popup is not None:
             popup.Opened += opened
     box.Loaded += hook
+
+
+def tool_icon(element, path=None):
+    """Give this element's header icon the picture of the ribbon button: path, or the button of the Bảng window."""
+    if not path or not os.path.isfile(path):
+        path = PANEL_ICON
+    image = BitmapImage()
+    image.BeginInit()
+    image.CacheOption = BitmapCacheOption.OnLoad
+    image.UriSource = Uri(path)
+    image.EndInit()
+    image.Freeze()
+    element.Resources['ToolIcon'] = image
 
 
 def drag(window):

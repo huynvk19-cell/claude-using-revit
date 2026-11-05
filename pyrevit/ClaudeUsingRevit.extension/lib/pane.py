@@ -118,6 +118,7 @@ def _dialog(host, title, content, width=460):
     theme = ResourceDictionary()
     theme.Source = Uri(THEME)
     w.Resources.MergedDictionaries.Add(theme)
+    native_blur.tool_icon(w)
     w.FontFamily = w.FindResource('Ui')
     w.FontSize = 13
     w.Foreground = w.FindResource('Ink')
@@ -130,9 +131,14 @@ def _dialog(host, title, content, width=460):
     head_text.Text = title
     head_text.SetResourceReference(FrameworkElement.StyleProperty, 'Title')
     head_text.VerticalAlignment = VerticalAlignment.Center
+    head_icon = ContentControl()
+    head_icon.SetResourceReference(FrameworkElement.StyleProperty, 'AppIcon')
+    head_icon.Width = head_icon.Height = 34
+    head_icon.Margin = Thickness(0, 0, 10, 0)
     head = DockPanel()
     head.Margin = Thickness(0, 0, 0, 10)
     head.Children.Add(close)
+    head.Children.Add(head_icon)
     head.Children.Add(head_text)
     panel = StackPanel()
     panel.Margin = Thickness(20, 16, 18, 18)
@@ -1585,6 +1591,7 @@ class Host(object):
         self.uiapp = uiapp
         with io.open(os.path.join(HERE, 'pane.xaml'), encoding='utf-8') as f:
             self.root = XamlReader.Parse(f.read().replace(u'__THEME__', Uri(THEME).AbsoluteUri))
+        native_blur.tool_icon(self.root)
         self.window = self._make_window()
         self.table = Table(self, self.root)
         self.tools = Tools(self, self.root)

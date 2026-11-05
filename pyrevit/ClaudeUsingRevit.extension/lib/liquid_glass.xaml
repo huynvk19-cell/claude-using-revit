@@ -64,32 +64,14 @@
     </Setter>
   </Style>
 
-  <!-- header app icon: a raised slab in the accent, as on the ribbon (pyrevit/make_icons.ps1) -->
+  <!-- header icon: the very picture of the tool's ribbon button (resource ToolIcon, set by native_blur.tool_icon) -->
   <Style x:Key="AppIcon" TargetType="ContentControl">
-    <Setter Property="Width" Value="42"/>
+    <Setter Property="Width" Value="44"/>
     <Setter Property="Height" Value="44"/>
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate TargetType="ContentControl">
-          <Grid>
-            <!-- the side of the slab, then its top face -->
-            <Border CornerRadius="9" Margin="0,4,0,0" Background="{DynamicResource Accent}">
-              <Border.Effect>
-                <DropShadowEffect Color="#000000" BlurRadius="8" ShadowDepth="2" Direction="270" Opacity="0.28"/>
-              </Border.Effect>
-            </Border>
-            <Border CornerRadius="9" Margin="0,4,0,0" Background="#59000000"/>
-            <Border CornerRadius="9" Margin="0,0,0,4" Background="{DynamicResource Accent}"/>
-            <Border CornerRadius="9" Margin="0,0,0,4" Background="{StaticResource Gloss}"
-                    BorderBrush="#66FFFFFF" BorderThickness="1"/>
-            <TextBlock Text="{TemplateBinding Content}" FontFamily="{StaticResource Icons}" FontSize="19"
-                       FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"
-                       Margin="0,0,0,4">
-              <TextBlock.Effect>
-                <DropShadowEffect Color="#000000" BlurRadius="1" ShadowDepth="1" Direction="270" Opacity="0.35"/>
-              </TextBlock.Effect>
-            </TextBlock>
-          </Grid>
+          <Image Source="{DynamicResource ToolIcon}" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
         </ControlTemplate>
       </Setter.Value>
     </Setter>
