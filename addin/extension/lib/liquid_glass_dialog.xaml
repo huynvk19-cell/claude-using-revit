@@ -6,8 +6,13 @@
         FontFamily="{StaticResource Ui}" FontSize="13" Foreground="{StaticResource Ink}"
         TextOptions.TextFormattingMode="Display">
   <ContentControl x:Name="glass" Style="{StaticResource GlassPanel}">
-    <StackPanel Margin="24,20,24,22">
-      <Grid x:Name="header" Background="Transparent">
+    <Grid>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="*"/>
+        <RowDefinition Height="Auto"/>
+      </Grid.RowDefinitions>
+      <Grid x:Name="header" Margin="24,20,24,0" Background="Transparent">
         <Grid.ColumnDefinitions>
           <ColumnDefinition Width="Auto"/>
           <ColumnDefinition Width="*"/>
@@ -19,15 +24,20 @@
         <Button x:Name="close_btn" Grid.Column="2" Style="{StaticResource CloseBtn}" VerticalAlignment="Top"
                 ToolTip="Đóng (Esc)"/>
       </Grid>
-      <TextBlock x:Name="message" Margin="4,16,4,0" TextWrapping="Wrap" LineHeight="20"/>
-      <Border x:Name="rows_box" Margin="0,14,0,0" Visibility="Collapsed">
-        <ScrollViewer MaxHeight="380" VerticalScrollBarVisibility="Auto">
-          <StackPanel x:Name="rows"/>
-        </ScrollViewer>
-      </Border>
-      <Grid x:Name="buttons_bar" Margin="0,20,0,0">
+      <!-- the middle gives way on a low screen (screen_fit.py); the buttons are outside it, always there -->
+      <ScrollViewer x:Name="body" Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="24,0,0,20" Padding="0,0,24,0">
+        <StackPanel>
+          <TextBlock x:Name="message" Margin="4,16,4,0" TextWrapping="Wrap" LineHeight="20"/>
+          <Border x:Name="rows_box" Margin="0,14,0,0" Visibility="Collapsed">
+            <ScrollViewer MaxHeight="380" VerticalScrollBarVisibility="Auto">
+              <StackPanel x:Name="rows"/>
+            </ScrollViewer>
+          </Border>
+        </StackPanel>
+      </ScrollViewer>
+      <Grid x:Name="buttons_bar" Grid.Row="2" Margin="24,0,24,22">
         <StackPanel x:Name="buttons" Orientation="Horizontal" HorizontalAlignment="Right"/>
       </Grid>
-    </StackPanel>
+    </Grid>
   </ContentControl>
 </Window>

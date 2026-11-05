@@ -43,7 +43,7 @@ class GlassWindow(forms.WPFWindow):
             native_blur.tool_icon(self)
         self.backdrop = False
         forms.WPFWindow.__init__(self, xaml_source, literal_string=literal_string, handle_esc=handle_esc)
-        native_blur.apply(self, self._backdrop_set)
+        native_blur.apply(self, self._backdrop_set, body=getattr(self, "body", None))
 
     def _backdrop_set(self, ok):
         self.backdrop = ok
@@ -152,6 +152,10 @@ class Progress(GlassWindow):
             self.cancel_btn.Click += self._cancel
         else:
             self.cancel_btn.Visibility = Visibility.Collapsed
+        self.SourceInitialized += self._place
+
+    def _place(self, sender, args):
+        # here: the width has followed the screen by now
         try:
             r = revit.ui.get_window_rectangle()
             s = 1.0 / HOST_APP.proc_screen_scalefactor

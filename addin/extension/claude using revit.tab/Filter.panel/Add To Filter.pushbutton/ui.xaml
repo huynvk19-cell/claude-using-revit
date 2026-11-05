@@ -10,6 +10,7 @@
     <Grid>
       <Grid.RowDefinitions>
         <RowDefinition Height="Auto"/>
+        <RowDefinition Height="*"/>
         <RowDefinition Height="Auto"/>
       </Grid.RowDefinitions>
       <Grid x:Name="header" Grid.Row="0" Margin="24,22,18,0" Background="Transparent">
@@ -27,7 +28,9 @@
                 ToolTip="Đóng (Esc)"/>
       </Grid>
 
-      <StackPanel Grid.Row="1" Margin="24,4,24,22">
+      <!-- the middle gives way on a low screen (lib/screen_fit.py); the buttons are outside it, always there -->
+      <ScrollViewer x:Name="body" Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="24,4,0,0" Padding="0,0,24,0">
+      <StackPanel>
         <TextBlock Text="LỌC THEO (CÙNG THAM SỐ LÀ HOẶC, KHÁC THAM SỐ LÀ VÀ)" Style="{StaticResource Caption}"/>
         <Border Style="{StaticResource Well}">
           <ScrollViewer MaxHeight="210" VerticalScrollBarVisibility="Auto">
@@ -50,12 +53,18 @@
             <RadioButton x:Name="show_rb" GroupName="mode" Style="{StaticResource Seg}" Content="No hide"/>
           </StackPanel>
         </Border>
+      </StackPanel>
+      </ScrollViewer>
 
-        <Border x:Name="warn_box" Style="{StaticResource WarnNote}" Visibility="Collapsed">
-          <TextBlock x:Name="warn_text" Foreground="#8A5A00" FontSize="12" TextWrapping="Wrap"/>
-        </Border>
-
-        <Grid Margin="0,18,0,0">
+      <StackPanel Grid.Row="2" Margin="24,0,24,22">
+        <ScrollViewer MaxHeight="130" VerticalScrollBarVisibility="Auto">
+          <StackPanel>
+            <Border x:Name="warn_box" Style="{StaticResource WarnNote}" Visibility="Collapsed">
+              <TextBlock x:Name="warn_text" Foreground="#8A5A00" FontSize="12" TextWrapping="Wrap"/>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+        <Grid Margin="0,14,0,0">
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
             <ColumnDefinition Width="Auto"/>

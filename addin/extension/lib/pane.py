@@ -32,12 +32,12 @@ clr.AddReference('WindowsBase')
 from System import Action, AppDomain, DBNull, Int32, String, Uri
 from System.Data import DataTable
 from System import TimeSpan
-from System.Windows import (ContentElement, DataTrigger, FrameworkElement, HorizontalAlignment, LogicalTreeHelper, Point,
-                            ResizeMode, ResourceDictionary, Setter, SizeToContent, Style, SystemParameters, TextWrapping, Thickness, Trigger,
+from System.Windows import (ContentElement, DataTrigger, FrameworkElement, GridLength, GridUnitType, HorizontalAlignment, LogicalTreeHelper, Point,
+                            ResizeMode, ResourceDictionary, Setter, SizeToContent, Style, TextWrapping, Thickness, Trigger,
                             VerticalAlignment, Visibility, Window, WindowStartupLocation, WindowState)
-from System.Windows.Controls import (Button, Canvas, CheckBox, ComboBox, ContentControl, DataGridCell, DataGridCellInfo,
+from System.Windows.Controls import (Border, Button, Canvas, CheckBox, ComboBox, ContentControl, DataGridCell, DataGridCellInfo,
                                      DataGridEditAction, DataGridEditingUnit, DataGridLength, DataGridRow, DataGridTextColumn,
-                                     Dock, DockPanel, ListBox, Orientation, RadioButton, ScrollViewer, StackPanel,
+                                     Dock, DockPanel, Grid, ListBox, Orientation, RadioButton, RowDefinition, ScrollBarVisibility, ScrollViewer, StackPanel,
                                      TextBlock, TextBox, WrapPanel)
 from System.Windows.Controls.Primitives import DataGridColumnHeadersPresenter
 from System.Windows.Data import Binding, BindingMode, UpdateSourceTrigger
@@ -51,6 +51,7 @@ from Microsoft.Win32 import OpenFileDialog, SaveFileDialog
 from Autodesk.Revit.DB import ViewSchedule
 
 import native_blur
+import screen_fit
 import table_ops as ops
 import web_bridge
 
@@ -136,30 +137,43 @@ def _dialog(host, title, content, width=460):
     head_icon.Width = head_icon.Height = 34
     head_icon.Margin = Thickness(0, 0, 10, 0)
     head = DockPanel()
-    head.Margin = Thickness(0, 0, 0, 10)
+    head.Margin = Thickness(20, 16, 18, 10)
     head.Children.Add(close)
     head.Children.Add(head_icon)
     head.Children.Add(head_text)
     panel = StackPanel()
-    panel.Margin = Thickness(20, 16, 18, 18)
-    panel.Children.Add(head)
-    for c in content:
+    for c in content[:-1]:      # the last is the row of buttons: outside the part that scrolls
         if isinstance(c, ListBox):
             c.Background = brush('#80FFFFFF')
             c.BorderThickness = Thickness(0)
         if isinstance(c, (ComboBox, TextBox)):
             c.Margin = Thickness(0, 0, 0, 8)
         panel.Children.Add(c)
+    middle = ScrollViewer()
+    middle.VerticalScrollBarVisibility = ScrollBarVisibility.Auto
+    middle.Margin = Thickness(20, 0, 0, 0)
+    middle.Padding = Thickness(0, 0, 18, 0)
+    middle.Content = panel
+    bottom = Border()
+    bottom.Margin = Thickness(20, 0, 18, 18)
+    bottom.Child = content[-1]
+    grid = Grid()
+    for part, height in ((head, GridLength.Auto), (middle, GridLength(1, GridUnitType.Star)), (bottom, GridLength.Auto)):
+        row = RowDefinition()
+        row.Height = height
+        grid.RowDefinitions.Add(row)
+        Grid.SetRow(part, grid.Children.Count)
+        grid.Children.Add(part)
     body = ContentControl()
     body.SetResourceReference(FrameworkElement.StyleProperty, 'GlassPanel')
-    body.Content = panel
+    body.Content = grid
     w.Content = body
     if host.window.IsVisible:
         w.Owner = host.window
     else:
         WindowInteropHelper(w).Owner = host.uiapp.MainWindowHandle
     w.PreviewKeyDown += lambda s, e: w.Close() if e.Key == Key.Escape else None
-    native_blur.apply(w)
+    native_blur.apply(w, body=middle)
     return w
 
 
@@ -1605,14 +1619,9 @@ class Host(object):
         w.Title = TITLE
         w.ShowInTaskbar = False
         w.MinWidth, w.MinHeight = 560, 380
-        w.Width, w.Height = 1000, 680
-        w.WindowStartupLocation = WindowStartupLocation.CenterOwner
         box = load_settings().get('window')
-        if box and box[0] >= SystemParameters.VirtualScreenLeft and box[1] >= SystemParameters.VirtualScreenTop and \
-                box[0] + 80 < SystemParameters.VirtualScreenLeft + SystemParameters.VirtualScreenWidth and \
-                box[1] + 40 < SystemParameters.VirtualScreenTop + SystemParameters.VirtualScreenHeight:
-            w.WindowStartupLocation = WindowStartupLocation.Manual
-            w.Left, w.Top, w.Width, w.Height = box
+        w.WindowStartupLocation = WindowStartupLocation.Manual if box else WindowStartupLocation.CenterOwner
+        self.keep_on_screen = screen_fit.resizable(w, box)
         w.Background = Brushes.Transparent
         w.Resources.MergedDictionaries.Add(self.root.Resources)
         body = ContentControl()
@@ -1663,6 +1672,7 @@ class Host(object):
         w.Show()
         if w.WindowState == WindowState.Minimized:
             w.WindowState = WindowState.Normal
+        self.keep_on_screen()      # the screen may have changed since it was hidden
         w.Activate()
         w.Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, Action(lambda: w.Activate()))  # a ribbon click takes it back
         if self.table.list:

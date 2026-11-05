@@ -196,8 +196,8 @@ class UntaggedWindow(lg.GlassWindow):
         self.refresh()
 
     def on_back(self, sender, args):
-        self.result_panel.Visibility = Visibility.Collapsed
-        self.setup_panel.Visibility = Visibility.Visible
+        self.result_panel.Visibility = self.result_actions.Visibility = Visibility.Collapsed
+        self.setup_panel.Visibility = self.setup_actions.Visibility = Visibility.Visible
         self.head_title.Text = u"Đối tượng chưa tag"
         self.head_sub.Text = u"Tìm và tô cam những gì còn thiếu tag trong view"
         self.refresh()
@@ -241,8 +241,8 @@ class UntaggedWindow(lg.GlassWindow):
             self.notes_box.Visibility = Visibility.Visible
         else:
             self.notes_box.Visibility = Visibility.Collapsed
-        self.setup_panel.Visibility = Visibility.Collapsed
-        self.result_panel.Visibility = Visibility.Visible
+        self.setup_panel.Visibility = self.setup_actions.Visibility = Visibility.Collapsed
+        self.result_panel.Visibility = self.result_actions.Visibility = Visibility.Visible
 
     def _row(self, view, kinds, elems):
         counts = {}
