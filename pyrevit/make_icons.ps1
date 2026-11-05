@@ -1,88 +1,100 @@
-﻿# Draw the ribbon icons (96 x 96 icon.png) of the "claude using revit" tab with WPF: a raised slab of mica in the tool
-# colour, straight edges with a small radius, its side showing below, a frosted top face, a white glyph set square on it.
+﻿# Draw the ribbon icons (96 x 96 icon.png) of the "claude using revit" tab with WPF, in the manner of Revit's own ribbon:
+# transparent background, grey objects with a dark slate outline and a soft top light, one accent (blue, red or gold).
+# Each icon is drawn on a 32 x 32 grid, the size Revit shows it at, so its lines stay crisp.
 #   powershell -STA -File pyrevit\make_icons.ps1 [-Preview <png>]   then install.ps1 -PyRevit + pyRevit > Reload
 param([string]$Preview)
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase
 $tab = Join-Path $PSScriptRoot 'ClaudeUsingRevit.extension\claude using revit.tab'
 
-# button folder, colour top, colour bottom, glyph (Segoe Fluent Icons), plate tint, text label on plate
-$icons = @(
-    @('Panel.panel\Open Panel.pushbutton',                '#FFB84A', '#F0612A', [char]0xE80A, '#FFFFFF', ''),
-    @('Highlight.panel\Highlight.pushbutton',              '#FF6B6B', '#E0243A', [char]0xE7E6, '#FFFFFF', ''),
-    @('Highlight.panel\Clear Highlight.pushbutton',        '#A1A1AA', '#4B4B52', [char]0xE75C, '#FF6B6B', ''),
-    @('Filter.panel\Add To Filter.pushbutton',            '#34D1B6', '#0B8F7E', [char]0xE71C, '#FFFFFF', ''),
-    @('Untagged.panel\Highlight Untagged.pushbutton',      '#FFB54A', '#FF6A1F', [char]0xE8EC, '#FFFFFF', ''),
-    @('Untagged.panel\Remove Untagged.pushbutton',         '#A1A1AA', '#4B4B52', [char]0xE75C, '#FFA23A', ''),
-    @('PrintSet.panel\Print Set Sync.pushbutton',          '#4FA8FF', '#0062DB', [char]0xE749, '#FFFFFF', ''),
-    @('PrintSet.panel\Sheet List Columns.pushbutton',      '#7D7BFF', '#3F3CC4', [char]0xE80A, '#FFFFFF', ''),
-    @('PrintSet.panel\Export PDF.pushbutton',              '#FF6259', '#C4161C', '',           '#FFFFFF', 'PDF'),
-    @('View3D.panel\3D From View.pushbutton',              '#3DDCC0', '#0A8F7E', [char]0xF158, '#FFFFFF', '')
-)
+$ink = '#3E444C'
+function Grad($a, $b) { "<LinearGradientBrush StartPoint='0,0' EndPoint='0,1'><GradientStop Color='$a' Offset='0'/><GradientStop Color='$b' Offset='1'/></LinearGradientBrush>" }
+$grey = Grad '#FBFCFD' '#C3C8CF'
+$greyDark = Grad '#D5D9DF' '#979EA8'
+$blue = Grad '#B9E3FA' '#4CA6E2'
+$red = Grad '#FF8A80' '#E0352B'
+$gold = Grad '#FFD978' '#E89B1C'
 
-function Icon($bundle, $top, $bottom, $glyph, $plateTint, $label) {
-    # the Fluent glyphs are hairline outlines: stack a few 0.8 px shifts so they read at 32 px
-    $bold = foreach ($m in '0,0', '0.8,0', '-0.8,0', '0,0.8', '0,-0.8') {
-        "        <TextBlock Text=`"$glyph`" FontFamily=`"Segoe Fluent Icons, Segoe MDL2 Assets`" FontSize=`"44`" Foreground=`"White`" RenderTransform=`"1,0,0,1,$m`"/>"
-    }
-    $glyphXaml = if ($label) {
-@"
-      <Grid Width="46" Height="56" HorizontalAlignment="Center" VerticalAlignment="Center">
-        <Path Data="M 2,0 L 32,0 L 46,14 L 46,54 Q 46,56 44,56 L 2,56 Q 0,56 0,54 L 0,2 Q 0,0 2,0 Z" Fill="#F2FFFFFF">
-          <Path.Effect><DropShadowEffect Color="#000000" BlurRadius="3" ShadowDepth="2" Direction="270" Opacity="0.35"/></Path.Effect>
-        </Path>
-        <Path Data="M 32,0 L 32,14 L 46,14 Z" Fill="#40000000"/>
-        <Border CornerRadius="2" Background="$bottom" Margin="-7,27,0,0" HorizontalAlignment="Left"
-                VerticalAlignment="Top" Padding="4,0,4,1">
-          <TextBlock Text="$label" FontFamily="Segoe UI Black" FontSize="15" Foreground="White"/>
-        </Border>
-      </Grid>
-"@
-    } else {
-@"
-      <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
-        <Grid.Effect><DropShadowEffect Color="#000000" BlurRadius="2" ShadowDepth="2" Direction="270" Opacity="0.4"/></Grid.Effect>
-$($bold -join "`n")
-      </Grid>
-"@
-    }
-    $xaml = @"
-<Grid xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" Width="96" Height="96">
-  <!-- shadow on the ribbon, the side of the slab, then its top face -->
-  <Border CornerRadius="13" Margin="5,12,5,1" Background="#000000" Opacity="0.3">
-    <Border.Effect><BlurEffect Radius="5"/></Border.Effect>
-  </Border>
-  <Border CornerRadius="12" Margin="5,12,5,4" Background="$bottom"/>
-  <Border CornerRadius="12" Margin="5,12,5,4" Background="#66000000"/>
-  <Grid Margin="5,4,5,12">
-    <Border CornerRadius="12">
-      <Border.Background>
-        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-          <GradientStop Color="$top" Offset="0"/><GradientStop Color="$bottom" Offset="1"/>
-        </LinearGradientBrush>
-      </Border.Background>
-    </Border>
-    <!-- mica: a soft frost, lighter toward the top left -->
-    <Border CornerRadius="12">
-      <Border.Background>
-        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-          <GradientStop Color="#59FFFFFF" Offset="0"/><GradientStop Color="#1AFFFFFF" Offset="0.5"/>
-          <GradientStop Color="#00FFFFFF" Offset="1"/>
-        </LinearGradientBrush>
-      </Border.Background>
-    </Border>
-    <Border CornerRadius="12" BorderThickness="1.6">
-      <Border.BorderBrush>
-        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-          <GradientStop Color="#CCFFFFFF" Offset="0"/><GradientStop Color="#33FFFFFF" Offset="0.5"/>
-          <GradientStop Color="#1AFFFFFF" Offset="1"/>
-        </LinearGradientBrush>
-      </Border.BorderBrush>
-    </Border>
-$glyphXaml
-  </Grid>
-</Grid>
-"@
+function P($data, $fill, $stroke = $ink, $w = 1) {
+    "<Path Data='$data' StrokeThickness='$w' Stroke='$stroke' StrokeLineJoin='Round'><Path.Fill>$fill</Path.Fill></Path>"
+}
+function L($data, $stroke = $ink, $w = 1) { "<Path Data='$data' Stroke='$stroke' StrokeThickness='$w' StrokeLineJoin='Round'/>" }
+
+# a sheet with a folded corner
+function Sheet($x = 6, $y = 3, $w = 20, $h = 26, $fold = 6) {
+    $r = $x + $w; $b = $y + $h; $f = $r - $fold; $g = $y + $fold
+    (P "M $x.5,$y.5 L $f.5,$y.5 L $r.5,$g.5 L $r.5,$b.5 L $x.5,$b.5 Z" $grey) +
+    (P "M $f.5,$y.5 L $f.5,$g.5 L $r.5,$g.5 Z" $greyDark)
+}
+# a schedule: dark header, grid, optional blue cells given as path data
+function Table($cells = '') {
+    (P 'M 3.5,6.5 L 28.5,6.5 L 28.5,26.5 L 3.5,26.5 Z' $grey) +
+    $(if ($cells) { "<Path Data='$cells'><Path.Fill>$blue</Path.Fill></Path>" }) +
+    (P 'M 3.5,6.5 L 28.5,6.5 L 28.5,11.5 L 3.5,11.5 Z' (Grad '#6A727C' '#454B53')) +
+    (L 'M 3.5,16.5 L 28.5,16.5 M 3.5,21.5 L 28.5,21.5 M 11.5,11.5 L 11.5,26.5 M 20.5,11.5 L 20.5,26.5' '#7F8791')
+}
+# a cube seen from above, centred about (cx, cy), half width s
+function Cube($cx = 15, $cy = 16, $s = 8) {
+    $t = $cy - $s; $q = [int]($s / 2); $m = $t + $q; $n = $m + $q; $b = $cy + $s; $o = $b - $q
+    $l = $cx - $s; $r = $cx + $s
+    (P "M $cx.5,$t.5 L $r.5,$m.5 L $cx.5,$n.5 L $l.5,$m.5 Z" (Grad '#FFFFFF' '#E4E7EB')) +
+    (P "M $l.5,$m.5 L $cx.5,$n.5 L $cx.5,$b.5 L $l.5,$o.5 Z" (Grad '#E2E5E9' '#B9BEC6')) +
+    (P "M $r.5,$m.5 L $cx.5,$n.5 L $cx.5,$b.5 L $r.5,$o.5 Z" (Grad '#B5BBC3' '#858C96'))
+}
+# corners of a selection around an object, as on Revit's view tools
+function Corners($stroke = $ink, $a = 2, $b = 29, $n = 5) {
+    $c = $a + $n; $d = $b - $n
+    L "M $a.5,$c.5 L $a.5,$a.5 L $c.5,$a.5 M $d.5,$a.5 L $b.5,$a.5 L $b.5,$c.5 M $b.5,$d.5 L $b.5,$b.5 L $d.5,$b.5 M $c.5,$b.5 L $a.5,$b.5 L $a.5,$d.5" $stroke 1.2
+}
+# a red cross in the lower right corner
+function RedX {
+    P 'M 19,16 L 23,20 L 27,16 L 30,19 L 26,23 L 30,27 L 27,30 L 23,26 L 19,30 L 16,27 L 20,23 L 16,19 Z' $red '#9E1F17' 1
+}
+# a tag: a label with a point on the left
+function TagShape {
+    P 'M 2.5,13.5 L 9.5,6.5 L 25.5,6.5 L 25.5,20.5 L 9.5,20.5 Z' $grey
+}
+
+$icons = [ordered]@{
+    # the schedule editor: a table with a row in blue and a pencil
+    'Panel.panel\Open Panel.pushbutton' = (Table 'M 12,12 L 28,12 L 28,16 L 12,16 Z') +
+        (P 'M 16.5,31.5 L 17.5,26.5 L 27.5,16.5 L 31.5,20.5 L 21.5,30.5 Z' $gold '#8A5A08' 1) +
+        (L 'M 17.5,26.5 L 21.5,30.5' '#8A5A08')
+    # an object in its selection corners with the red see-through region over it
+    'Highlight.panel\Highlight.pushbutton' = (Corners) + (Cube 15 16 8) +
+        "<Path Data='M 6,7 L 25,7 L 25,25 L 6,25 Z' Stroke='#C4261C' StrokeThickness='1.2' Fill='#73E0352B'/>"
+    # the same object, its region gone
+    'Highlight.panel\Clear Highlight.pushbutton' = (Corners) + (Cube 13 14 8) + (RedX)
+    # an object and a funnel, with a plus for "add to"
+    'Filter.panel\Add To Filter.pushbutton' = (Corners '#3E444C' 2 21 4) + (Cube 11 11 6) +
+        (P 'M 13.5,14.5 L 30.5,14.5 L 30.5,16.5 L 24.5,23.5 L 24.5,30.5 L 19.5,28.5 L 19.5,23.5 L 13.5,16.5 Z' $grey) +
+        (P 'M 3,23 L 6,23 L 6,20 L 10,20 L 10,23 L 13,23 L 13,27 L 10,27 L 10,30 L 6,30 L 6,27 L 3,27 Z' $blue '#1D6FAE' 1)
+    # a tag with the gold mark of something missing
+    'Untagged.panel\Highlight Untagged.pushbutton' = (TagShape) +
+        (L 'M 12.5,11.5 L 22.5,11.5 M 12.5,15.5 L 19.5,15.5' '#7F8791') +
+        (P 'M 22.5,14.5 L 30.5,29.5 L 14.5,29.5 Z' $gold '#8A5A08' 1) +
+        (L 'M 22.5,19.5 L 22.5,24.5 M 22.5,26 L 22.5,27.5' '#3A2600' 1.4)
+    # the tag with a red cross
+    'Untagged.panel\Remove Untagged.pushbutton' = (TagShape) +
+        (L 'M 12.5,11.5 L 22.5,11.5' '#7F8791') + (RedX)
+    # sheets kept in step: two sheets and a blue arrow
+    'PrintSet.panel\Print Set Sync.pushbutton' = (Sheet 9 2 17 21 5) + (Sheet 4 7 17 21 5) +
+        (L 'M 8.5,17.5 L 16.5,17.5 M 8.5,21.5 L 16.5,21.5' '#7F8791') +
+        (P 'M 18,19 A 7,7 0 0 1 30,19 L 31,15 L 31,23 L 24,23 L 27,20 A 4,4 0 0 0 21,21 Z' $blue '#1D6FAE' 1) +
+        (P 'M 30,26 A 7,7 0 0 1 18,27 L 17,31 L 17,24 L 24,24 L 21,27 A 4,4 0 0 0 27,25 Z' $blue '#1D6FAE' 1)
+    # the sheet list: a table with one column in blue
+    'PrintSet.panel\Sheet List Columns.pushbutton' = Table 'M 12,12 L 20,12 L 20,26 L 12,26 Z'
+    # a sheet with a red PDF band
+    'PrintSet.panel\Export PDF.pushbutton' = (Sheet 7 2 19 27 6) +
+        (L 'M 11.5,10.5 L 18.5,10.5 M 11.5,25.5 L 22.5,25.5' '#7F8791') +
+        (P 'M 2.5,13.5 L 26.5,13.5 L 26.5,22.5 L 2.5,22.5 Z' $red '#9E1F17' 1) +
+        "<TextBlock Canvas.Left='3' Canvas.Top='12' Width='23' TextAlignment='Center' Text='PDF' FontFamily='Arial' FontWeight='Bold' FontSize='9.5' Foreground='White'/>"
+    # a cube in blue corners: the 3D of a view
+    'View3D.panel\3D From View.pushbutton' = (Corners '#1D6FAE') + (Cube 15 16 9)
+}
+
+function Icon($inner) {
+    $xaml = "<Viewbox xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' Width='96' Height='96'><Canvas Width='32' Height='32'>$inner</Canvas></Viewbox>"
     $el = [Windows.Markup.XamlReader]::Parse($xaml)
     $el.Measure((New-Object Windows.Size 96, 96)); $el.Arrange((New-Object Windows.Rect 0, 0, 96, 96)); $el.UpdateLayout()
     $bmp = New-Object Windows.Media.Imaging.RenderTargetBitmap 96, 96, 96, 96, ([Windows.Media.PixelFormats]::Pbgra32)
@@ -96,9 +108,9 @@ function SavePng($bmp, $path) {
     $fs = [IO.File]::Create($path); $enc.Save($fs); $fs.Close()
 }
 
-$all = foreach ($i in $icons) {
-    $bmp = Icon @i
-    $out = Join-Path $tab "$($i[0])\icon.png"
+$all = foreach ($name in $icons.Keys) {
+    $bmp = Icon $icons[$name]
+    $out = Join-Path $tab "$name\icon.png"
     SavePng $bmp $out
     "icon -> $out" | Write-Host
     $bmp
@@ -108,7 +120,7 @@ if ($Preview) {  # strip at 96 px and at the 32 px Revit shows, on the ribbon gr
     $n = $all.Count
     $dv = New-Object Windows.Media.DrawingVisual
     $dc = $dv.RenderOpen()
-    $dc.DrawRectangle((New-Object Windows.Media.SolidColorBrush ([Windows.Media.Color]::FromRgb(245, 245, 245))), $null,
+    $dc.DrawRectangle((New-Object Windows.Media.SolidColorBrush ([Windows.Media.Color]::FromRgb(240, 240, 240))), $null,
                       (New-Object Windows.Rect 0, 0, (110 * $n), 160))
     for ($k = 0; $k -lt $n; $k++) {
         $dc.DrawImage($all[$k], (New-Object Windows.Rect (7 + 110 * $k), 7, 96, 96))
