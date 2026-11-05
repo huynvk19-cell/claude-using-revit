@@ -148,7 +148,7 @@ class SheetPicker(lg.GlassWindow):
             self.warn_box.Visibility = Visibility.Collapsed
             return
         lines = [u"{0}: {1}".format(s.SheetNumber, u", ".join(
-            v if n == 1 else u"{0} (chia {1}x{1} ô)".format(v, n) for v, n in rows))
+            u"{0} (chia {1}x{1} ô)".format(v, n) for v, n in rows) or u"tách từng view")
             for s, rows in lo[:4]] + ([u"…"] if len(lo) > 4 else [])
         self.warn_text.Text = (u"Lần trước Revit văng khi vẽ các view này; lần này tool xuất riêng "
                                u"hoặc chia ô để vẫn ra đủ view:\n" + u"\n".join(lines) +
