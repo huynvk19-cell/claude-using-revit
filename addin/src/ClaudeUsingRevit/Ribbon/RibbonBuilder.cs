@@ -58,10 +58,8 @@ namespace ClaudeUsingRevit.Ribbon
                 AvailabilityClassName = typeof(AlwaysAvailable).FullName,
                 ToolTip = "Chạy lại phần Python của claude using revit (startup.py: cầu nối web, cửa sổ Bảng). " +
                           "Sửa script của một nút thì không cần: mỗi lần bấm nút đã chạy file mới.",
-                LargeImage = Icons.Status(System.Windows.Media.Color.FromRgb(0x8C, 0x9B, 0xB0),
-                    System.Windows.Media.Color.FromRgb(0x4A, 0x5A, 0x70), "↻", 32),
-                Image = Icons.Status(System.Windows.Media.Color.FromRgb(0x8C, 0x9B, 0xB0),
-                    System.Windows.Media.Color.FromRgb(0x4A, 0x5A, 0x70), "↻", 16),
+                LargeImage = Icons.Badge("&#xE72C;", 32),
+                Image = Icons.Badge("&#xE72C;", 16),
             };
             claude.AddItem(reload);
             StatusUpdater.Paint();
