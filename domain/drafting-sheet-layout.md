@@ -83,7 +83,7 @@ Bộ hồ sơ được xếp theo thứ tự đọc: từ cái chung đến cái
 | 7 | Thống kê cửa + mặt đứng cửa | 1:50 | KT |
 | 8 | Chi tiết cấu tạo: tường, sàn, mái, chống thấm, lan can | 1:20–1:5 | TC |
 
-File bộ hồ sơ của từng loại công trình **cộng thêm hoặc sửa** bảng này; không chép lại các dòng của bảng lõi.
+File bộ hồ sơ của từng loại công trình **cộng thêm hoặc sửa** bảng này; không chép lại các dòng của bảng lõi. Ngoại lệ: file có mục **Danh mục điển hình** (danh mục user đã duyệt) thì danh mục đó **thay hẳn** bảng lõi, và thứ tự các dòng của nó là thứ tự sheet.
 
 ## 5. Khổ giấy và tỷ lệ (HS5)
 

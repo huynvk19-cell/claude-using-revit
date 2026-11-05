@@ -10,7 +10,7 @@
    - basement, mezzanine, roof, typical floors;
    - house types / blocks / zones from the profile.
 2. Build the **target list**:
-   - start from the core set (§4) + the sheet-set file's table;
+   - start from the core set (§4) + the sheet-set file's table; a sheet-set file with a **Danh mục điển hình** replaces the core set, and its row order is the sheet order;
    - keep the rows whose GĐ is not later than the job's stage, and whose condition holds ("nếu có tầng hầm"…);
    - expand "mỗi tầng" to one row per level, typical floors as one row with their level range;
    - expand per zone (if card 03 already split) and per house type / block.
