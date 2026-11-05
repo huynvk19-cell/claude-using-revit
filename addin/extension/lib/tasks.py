@@ -14,6 +14,7 @@ limit (list length when not detail, default 20).
 from Autodesk.Revit.DB import Element, ElementId, Transaction, View, ViewSheet
 
 import highlight_regions as hr
+import dwg_export as de
 import pdf_export as pe
 import print_set_sync as ps
 import schedule_table as st
@@ -209,10 +210,28 @@ def print_set_sync(doc, uidoc, args):
       u"groupBy (browser | sheet param name: sub-folders), dryRun, limit, forget (crash memory), "
       u"allowIncomplete (export with closed worksets / unloaded links on purpose).")
 def pdf_export(doc, uidoc, args):
+    return _sheet_export(doc, uidoc, args, pe.PdfOut())
+
+
+@task(u"Sheets of a sheet-list schedule to DWG, one file per sheet: every view exported alone, "
+      u"then joined with AutoCAD's console; images linked relatively. args: schedule, sheets, folder, "
+      u"setup (DWG export setup, default last used / active), groupBy, dryRun, limit, forget, "
+      u"allowIncomplete.")
+def dwg_export(doc, uidoc, args):
+    out = de.DwgOut(doc, args.get("setup"))
+    res = _sheet_export(doc, uidoc, args, out)
+    if args.get("dryRun"):
+        res.update({"setups": de.setups(doc), "setup": out.setup, "accoreconsole": out.exe})
+    elif args.get("setup"):
+        de.remember_setup(args["setup"])
+    return res
+
+
+def _sheet_export(doc, uidoc, args, out):
     # Blocks Revit until done (minutes on a big set). A run cut short (RAM, crash)
     # carries on where it stopped when called again with the same sheets the same day.
     if args.get("forget"):
-        return {"forgotten": pe.forget(doc)}
+        return {"forgotten": pe.forget(doc, (out.kind,))}
     vs = _schedules(doc, uidoc, args)[0]
     numbers = set(_names(args, "sheet", "sheets"))
     sheets, total = pe.sheets_of(doc, vs)
@@ -225,7 +244,7 @@ def pdf_export(doc, uidoc, args):
         raise TaskError(u"schedule {0} shows no printable sheet".format(vs.Name))
     limit = int(args["limit"]) if args.get("limit") else None
     if args.get("dryRun"):
-        lim, rows = pe.plan_sheets(doc, sheets, limit)
+        lim, rows = pe.plan_sheets(doc, sheets, limit, out)
         heavy = [r for r in rows if r["mode"] == "parts" or r["note"]]
         return {"sheets": len(rows), "limit": lim, "freeMB": pe.memory_mb()[0],
                 "papers": dict((p, len([r for r in rows if r["paper"]["label"] == p]))
@@ -234,7 +253,7 @@ def pdf_export(doc, uidoc, args):
                                   for r in sorted(rows, key=lambda r: -r["weight"])], args),
                 "split": _cut([u"{0}: {1} parts {2}".format(r["sheet"].SheetNumber, r["parts"],
                                                              r["note"]) for r in heavy], args),
-                "crashMemory": pe.crash_memory(doc),
+                "crashMemory": pe.crash_memory(doc, out.kind),
                 "closedWorksets": pe.closed_worksets(doc),
                 "unloadedLinks": _cut([u"{0}: {1}".format(r["sheet"].SheetNumber, u", ".join(l))
                                        for r, l in ((r, pe.unloaded_links(doc, r["sheet"]))
@@ -243,7 +262,7 @@ def pdf_export(doc, uidoc, args):
     folder = args.get("folder") or pe.default_folder()
     group = _pdf_group(doc, sheets, args.get("groupBy"))
     r = pe.run(doc, sheets, folder, group, limit=limit,
-               allow_incomplete=bool(args.get("allowIncomplete")))
+               allow_incomplete=bool(args.get("allowIncomplete")), out=out)
     return {"folder": r["folder"], "subfolders": _cut(r["subfolders"], args),
             "exported": len(r["done"]) - len(r["skipped"]), "resumedSkipped": len(r["skipped"]),
             "total": r["total"], "stopped": r["stopped"], "learnt": r["learnt"],

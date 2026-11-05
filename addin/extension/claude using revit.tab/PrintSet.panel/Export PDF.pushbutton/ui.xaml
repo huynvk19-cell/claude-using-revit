@@ -1,7 +1,7 @@
 <!-- Liquid Glass: styles come from lib/liquid_glass.xaml (loaded by liquid_glass.GlassWindow) -->
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Xuất PDF" Width="516" SizeToContent="Height"
+        Title="Xuất PDF / CAD" Width="516" SizeToContent="Height"
         WindowStyle="None" Background="Transparent"
         ResizeMode="NoResize" WindowStartupLocation="CenterScreen" ShowInTaskbar="False"
         FontFamily="{StaticResource Ui}" FontSize="13" Foreground="{StaticResource Ink}"
@@ -20,7 +20,7 @@
         </Grid.ColumnDefinitions>
         <ContentControl x:Name="icon" Style="{StaticResource AppIcon}"/>
         <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
-          <TextBlock Text="Xuất PDF" Style="{StaticResource Title}"/>
+          <TextBlock Text="Xuất PDF / CAD" Style="{StaticResource Title}"/>
           <TextBlock x:Name="subtitle" Style="{StaticResource Subtitle}" TextTrimming="CharacterEllipsis"/>
         </StackPanel>
         <Button x:Name="close_btn" Grid.Column="2" Style="{StaticResource CloseBtn}" VerticalAlignment="Top"
@@ -62,9 +62,22 @@
           </Grid>
         </Border>
 
+        <TextBlock Text="XUẤT RA" Style="{StaticResource Caption}" Margin="6,18,0,8"/>
+        <StackPanel Orientation="Horizontal">
+          <ToggleButton x:Name="fmt_pdf" Style="{StaticResource Chip}" Content="PDF"
+                        ToolTip="Mỗi sheet một file PDF vector"/>
+          <ToggleButton x:Name="fmt_dwg" Style="{StaticResource Chip}" Margin="8,0,0,0" Content="CAD (DWG)"
+                        ToolTip="Mỗi sheet một file DWG: xuất từng view rồi ghép bằng AutoCAD để Revit không văng"/>
+        </StackPanel>
+        <StackPanel x:Name="dwg_box" Visibility="Collapsed">
+          <TextBlock Text="TEMPLATE XUẤT CAD" Style="{StaticResource Caption}" Margin="6,14,0,8"/>
+          <ComboBox x:Name="setup_box" Height="34" VerticalContentAlignment="Center"
+                    ToolTip="DWG export setup của model; mặc định là template dùng lần trước, chưa có thì template đang chọn trong Revit"/>
+        </StackPanel>
+
         <TextBlock Text="CHIA THƯ MỤC CON THEO" Style="{StaticResource Caption}" Margin="6,18,0,8"/>
         <ComboBox x:Name="group_box" Height="34" VerticalContentAlignment="Center"
-                  ToolTip="Mỗi sheet vẫn là một file PDF riêng; tuỳ chọn này chỉ xếp các file vào thư mục con theo tham số của sheet"/>
+                  ToolTip="Mỗi sheet vẫn là một file riêng; tuỳ chọn này chỉ xếp các file vào thư mục con theo tham số của sheet"/>
         <TextBlock x:Name="group_preview" Foreground="{StaticResource Ink2}" FontSize="12" Margin="6,8,0,0"
                    TextWrapping="Wrap"/>
 
@@ -90,7 +103,7 @@
             <ColumnDefinition Width="*"/>
             <ColumnDefinition Width="Auto"/>
           </Grid.ColumnDefinitions>
-          <Button x:Name="folder_btn" Style="{StaticResource Ghost}" ToolTip="Đổi thư mục lưu PDF">
+          <Button x:Name="folder_btn" Style="{StaticResource Ghost}" ToolTip="Đổi thư mục lưu file">
             <StackPanel Orientation="Horizontal">
               <TextBlock Text="&#xE8B7;" FontFamily="{StaticResource Icons}" FontSize="13" VerticalAlignment="Center"/>
               <TextBlock Text="Thư mục" Margin="7,0,0,0" VerticalAlignment="Center"/>
@@ -99,7 +112,7 @@
           <Button x:Name="export_btn" Grid.Column="2" Style="{StaticResource Primary}">
             <StackPanel Orientation="Horizontal">
               <TextBlock Text="&#xEA90;" FontFamily="{StaticResource Icons}" FontSize="13" VerticalAlignment="Center"/>
-              <TextBlock x:Name="export_text" Text="Xuất PDF" Margin="7,0,0,0" VerticalAlignment="Center"/>
+              <TextBlock x:Name="export_text" Text="Xuất" Margin="7,0,0,0" VerticalAlignment="Center"/>
             </StackPanel>
           </Button>
         </Grid>

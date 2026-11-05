@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
-"""The drawing list (or the sheets ticked in it) to PDF: one file per sheet.
+"""The drawing list (or the sheets ticked in it) to PDF and / or DWG: one file per sheet.
 
 Which list: the sheet-list schedule open now, else the one picked. Then one glass
 window lists its sheets in schedule order: all ticked (or only the ones selected in
 Revit), filter by number / name, untick what is not wanted, optionally sort the files
 into sub-folders by a sheet parameter (Project Browser grouping suggested), Xuất.
-Files are never joined into one PDF. Shift+click: retry
-the views / sheets left out after a crash (once the model is fixed). All the export
-logic is in lib/pdf_export.py (shared with Claude's cur_task "pdf_export").
+Files are never joined into one file. CAD: pick the model's DWG export setup. Shift+click:
+retry the views / sheets left out after a crash (once the model is fixed). All the export
+logic is in lib/pdf_export.py + lib/dwg_export.py (shared with Claude's cur_task "pdf_export"
+and "dwg_export").
 """
 import os
 
@@ -18,6 +19,7 @@ from System.Windows import (FontWeights, GridLength, GridUnitType, TextTrimming,
 from System.Windows.Controls import CheckBox, ColumnDefinition, Grid, TextBlock
 from System.Windows.Input import Key, Keyboard, ModifierKeys, Mouse, MouseButtonState
 
+import dwg_export as de
 import liquid_glass as lg
 import pdf_export as pe
 import print_set_sync as ps
@@ -36,10 +38,13 @@ def pick_schedule():
             return s
     last = pe.settings().get("schedule")
     names = sorted((s.Name for s in schedules), key=lambda n: (n != last, n.lower()))
-    name = lg.choose(names, u"Xuất PDF: chọn danh mục bản vẽ", icon=lg.ICON_PDF)
+    name = lg.choose(names, u"Xuất PDF / CAD: chọn danh mục bản vẽ", icon=lg.ICON_PDF)
     if not name:
         script.exit()
     return [s for s in schedules if s.Name == name][0]
+
+
+NO_SETUP = u"Mặc định của Revit (model chưa có template)"
 
 
 class SheetPicker(lg.GlassWindow):
@@ -85,6 +90,22 @@ class SheetPicker(lg.GlassWindow):
                 pick = k
         self.group_box.SelectedIndex = pick
         self.group_box.SelectionChanged += self.on_group
+        # what to export: PDF and / or CAD, and the DWG export setup
+        self.setups = de.setups(doc)
+        for n in self.setups or [NO_SETUP]:
+            self.setup_box.Items.Add(n)
+        last_setup = de.default_setup(doc)
+        self.setup_box.SelectedIndex = self.setups.index(last_setup) if last_setup else 0
+        formats = pe.settings().get("formats") or ["pdf"]
+        self.fmt_pdf.IsChecked = "pdf" in formats
+        self.fmt_dwg.IsChecked = "dwg" in formats
+        if not de.accore():
+            self.fmt_dwg.IsChecked = False
+            self.fmt_dwg.IsEnabled = False
+            self.fmt_dwg.ToolTip = u"Cần AutoCAD trên máy để ghép các phần DWG"
+            self.fmt_pdf.IsChecked = True
+        self.fmt_pdf.Click += self.refresh
+        self.fmt_dwg.Click += self.refresh
         self.search.TextChanged += self.on_search
         self.pick_all.Click += self.on_all
         self.folder_btn.Click += self.on_folder
@@ -105,7 +126,7 @@ class SheetPicker(lg.GlassWindow):
     def _preview(self, picked):
         """One line: the sub-folders the ticked sheets go to."""
         if not self.group:
-            return u"Tất cả file PDF nằm thẳng trong thư mục lưu."
+            return u"Tất cả file nằm thẳng trong thư mục lưu."
         names = []
         for sh in picked:
             sid = sh.Id.IntegerValue
@@ -135,6 +156,13 @@ class SheetPicker(lg.GlassWindow):
         g.Children.Add(name)
         return g
 
+    def formats(self):
+        return [f for f, b in (("pdf", self.fmt_pdf), ("dwg", self.fmt_dwg)) if b.IsChecked]
+
+    @property
+    def setup(self):
+        return self.setups[self.setup_box.SelectedIndex] if self.setups else None
+
     def picked(self):
         return [sh for sh, cb in self.boxes if cb.IsChecked]
 
@@ -143,7 +171,7 @@ class SheetPicker(lg.GlassWindow):
 
     def show_left_out(self):
         """Tell before export which views Revit died on (they go out alone or in tiles)."""
-        lo = pe.crash_notes(doc, self.sheets)
+        lo = pe.crash_notes(doc, self.sheets, "pdf") + pe.crash_notes(doc, self.sheets, "dwg")
         if not lo:
             self.warn_box.Visibility = Visibility.Collapsed
             return
@@ -235,11 +263,14 @@ class SheetPicker(lg.GlassWindow):
         picked = self.picked()
         n = len(picked)
         self.big_count.Text = str(n)
-        self.summary.Text = u"file PDF riêng · {0} sheet trong danh mục".format(len(self.boxes))
+        fmts = self.formats()
+        self.dwg_box.Visibility = Visibility.Visible if "dwg" in fmts else Visibility.Collapsed
+        self.summary.Text = u"sheet · mỗi sheet một file {0}".format(
+            u" + ".join(f.upper() for f in fmts) or u"(chưa chọn PDF / CAD)")
         self.folder_text.Text = self.folder or u"Chưa chọn thư mục lưu"
         self.group_preview.Text = self._preview(picked)
-        self.export_text.Text = u"Xuất {0} file".format(n) if n else u"Chưa chọn sheet"
-        self.export_btn.IsEnabled = n > 0
+        self.export_text.Text = u"Xuất {0} sheet".format(n) if n else u"Chưa chọn sheet"
+        self.export_btn.IsEnabled = n > 0 and bool(fmts)
         vis = self.visible()
         self.pick_all.IsChecked = bool(vis) and all(cb.IsChecked for cb in vis)
 
@@ -255,7 +286,7 @@ class SheetPicker(lg.GlassWindow):
         self._set(dict((i, bool(self.pick_all.IsChecked)) for i in range(len(self.boxes))))
 
     def on_folder(self, sender=None, args=None):
-        f = forms.pick_folder(title=u"Thư mục lưu PDF")
+        f = forms.pick_folder(title=u"Thư mục lưu file")
         if f:
             self.folder = f
             pe.remember_folder(f)
@@ -269,13 +300,16 @@ class SheetPicker(lg.GlassWindow):
         self.result = self.picked()
         s = pe.settings()
         s["group"] = self.group
+        s["formats"] = self.formats()
+        if "dwg" in s["formats"] and self.setup:
+            s["dwg_setup"] = self.setup
         pe.save_settings(s)
         self.Close()
 
 
 if __shiftclick__ and pe.crash_memory(doc):  # noqa: F821 (set by the claude using revit add-in)
     if lg.alert(u"Xoá trí nhớ văng của model này (model đã sửa) để xuất mọi view như bình thường?",
-                title=u"Xuất PDF", icon=lg.ICON_PDF, yes=True, no=True):
+                title=u"Xuất PDF / CAD", icon=lg.ICON_PDF, yes=True, no=True):
         pe.forget(doc)
 
 vs = pick_schedule()
@@ -296,42 +330,46 @@ if closed:
     if lg.alert(u"Model đang đóng {0} workset, các view sẽ in THIẾU phần tử của chúng:\n  {1}\n\n"
                 u"Mở các workset này (Collaborate › Worksets) rồi xuất lại. Chỉ xuất tiếp nếu "
                 u"cố ý đóng.".format(len(closed), u"\n  ".join(closed)),
-                title=u"Xuất PDF", icon=lg.ICON_PDF,
+                title=u"Xuất PDF / CAD", icon=lg.ICON_PDF,
                 options=[u"Dừng", u"Vẫn xuất (cố ý đóng)"]) != u"Vẫn xuất (cố ý đóng)":
         script.exit()
     incomplete = True
-with lg.Progress(u"Xuất PDF", cancellable=True) as pb:
-    def progress(i, n, text):
-        pb.title = u"Xuất PDF {0}/{1} · {2}".format(i + 1, n, text)
-        pb.update_progress(i, n)
-    res = pe.run(doc, win.result, win.folder, win.group, progress=progress,
-                 cancelled=lambda: pb.cancelled, allow_incomplete=incomplete)
-
 lines = []
-lines.append(u"Đã xuất {0}/{1} file PDF{2} vào {3}{4}.".format(
-    len(res["done"]), res["total"],
-    u" ({0} file có sẵn từ lần trước)".format(len(res["skipped"])) if res["skipped"] else u"",
-    res["folder"],
-    u", chia {0} thư mục con".format(len(res["subfolders"])) if res["subfolders"] else u""))
-if res["split"]:
-    lines.append(u"Sheet nặng xuất từng phần rồi ghép: " +
-                 u", ".join(u"{0} ({1} phần)".format(sh.SheetNumber, n) for sh, n in res["split"]))
-for t in res["learnt"]:
-    lines.append(u"Tự tách nhỏ: " + t)
-if res["tiled"]:
-    lines.append(u"View từng làm Revit văng, đã xuất từng ô vùng crop rồi ghép (đủ view, vector):")
-    lines += [u"  {0}: {1}".format(sh.SheetNumber, u", ".join(
-        u"{0} ({1}x{1})".format(v, n) for v, n in rows)) for sh, rows in res["tiled"]]
-if res["failed"]:
-    lines.append(u"Chưa xuất được {0} sheet (không có file thiếu view), bấm lại để thử lại:".format(
-        len(res["failed"])))
-    lines += [u"  {0}: {1}".format(sh.SheetNumber, e) for sh, e in res["failed"][:8]]
-if res["failed"] or res["learnt"]:
-    lines.append(u"Nếu Revit văng giữa chừng: mở lại và bấm Xuất PDF lần nữa, tool nhớ "
-                 u"chỗ văng và tự né.")
-if res["stopped"]:
-    lines.append(u"Đã dừng an toàn ({0}). Bấm lại để xuất tiếp phần còn lại.".format(res["stopped"]))
-choice = lg.alert(u"\n".join(lines), title=u"Xuất PDF", icon=lg.ICON_PDF,
+for fmt in win.formats():
+    out = de.DwgOut(doc, win.setup) if fmt == "dwg" else pe.PdfOut()
+    with lg.Progress(u"Xuất {0}".format(out.noun), cancellable=True) as pb:
+        def progress(i, n, text):
+            pb.title = u"Xuất {0} {1}/{2} · {3}".format(out.noun, i + 1, n, text)
+            pb.update_progress(i, n)
+        res = pe.run(doc, win.result, win.folder, win.group, progress=progress,
+                     cancelled=lambda: pb.cancelled, allow_incomplete=incomplete, out=out)
+    lines.append(u"Đã xuất {0}/{1} file {2}{3} vào {4}{5}.".format(
+        len(res["done"]), res["total"], out.noun,
+        u" ({0} file có sẵn từ lần trước)".format(len(res["skipped"])) if res["skipped"] else u"",
+        res["folder"],
+        u", chia {0} thư mục con".format(len(res["subfolders"])) if res["subfolders"] else u""))
+    if fmt == "dwg":
+        lines.append(u"Template CAD: {0}.".format(win.setup or NO_SETUP))
+    if res["split"] and fmt != "dwg":
+        lines.append(u"Sheet nặng xuất từng phần rồi ghép: " +
+                     u", ".join(u"{0} ({1} phần)".format(sh.SheetNumber, n) for sh, n in res["split"]))
+    for t in res["learnt"]:
+        lines.append(u"Tự tách nhỏ: " + t)
+    if res["tiled"]:
+        lines.append(u"View từng làm Revit văng, đã xuất từng ô vùng crop rồi ghép (đủ view):")
+        lines += [u"  {0}: {1}".format(sh.SheetNumber, u", ".join(
+            u"{0} ({1}x{1})".format(v, n) for v, n in rows)) for sh, rows in res["tiled"]]
+    if res["failed"]:
+        lines.append(u"Chưa xuất được {0} sheet (không có file thiếu view), bấm lại để thử lại:".format(
+            len(res["failed"])))
+        lines += [u"  {0}: {1}".format(sh.SheetNumber, e) for sh, e in res["failed"][:8]]
+    if res["failed"] or res["learnt"]:
+        lines.append(u"Nếu Revit văng giữa chừng: mở lại và bấm Xuất lần nữa, tool nhớ "
+                     u"chỗ văng và tự né.")
+    if res["stopped"]:
+        lines.append(u"Đã dừng an toàn ({0}). Bấm lại để xuất tiếp phần còn lại.".format(res["stopped"]))
+        break
+choice = lg.alert(u"\n".join(lines), title=u"Xuất PDF / CAD", icon=lg.ICON_PDF,
                   options=[u"Mở thư mục", u"Đóng"])
 if choice == u"Mở thư mục":
     os.startfile(res["folder"])
