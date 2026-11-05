@@ -384,7 +384,7 @@ public static class StairSectionAnnotate
                         var rl = doc.GetElement(rid) as Railing; if (rl == null || rl.TopRail == ElementId.InvalidElementId) continue;
                         var tr = doc.GetElement(rl.TopRail); if (tr == null) continue;
                         foreach (var g in tr.get_Geometry(new Options { ComputeReferences = true, View = V }) ?? Enumerable.Empty<GeometryObject>())
-                            if (g is GeometryInstance gi && gi.Symbol != null) heads.Add(tr.UniqueId + ":1:INSTANCE:" + gi.Symbol.UniqueId + ":");
+                            if (g is GeometryInstance gi && doc.GetElement(gi.GetSymbolGeometryId().SymbolId) is Element giSym) heads.Add(tr.UniqueId + ":1:INSTANCE:" + giSym.UniqueId + ":");
                     }
                     heads = heads.Distinct().ToList();
                 }
@@ -470,7 +470,7 @@ public static class StairSectionAnnotate
                         {
                             var hr = doc.GetElement(hid); if (hr == null) continue;
                             foreach (var g in hr.get_Geometry(new Options { ComputeReferences = true, View = V }) ?? Enumerable.Empty<GeometryObject>())
-                                if (g is GeometryInstance gi && gi.Symbol != null) hHeads.Add(hr.UniqueId + ":1:INSTANCE:" + gi.Symbol.UniqueId + ":");
+                                if (g is GeometryInstance gi && doc.GetElement(gi.GetSymbolGeometryId().SymbolId) is Element giSym) hHeads.Add(hr.UniqueId + ":1:INSTANCE:" + giSym.UniqueId + ":");
                         }
                     }
                     hHeads = hHeads.Distinct().ToList();

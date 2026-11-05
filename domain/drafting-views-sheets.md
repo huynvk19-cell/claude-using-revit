@@ -59,9 +59,9 @@ Thao tác:
 
 Khi thêm, đổi tên hoặc đổi số một sheet (user, 2026-10-10):
 1. Kiểm sheet có trong schedule danh mục bản vẽ (tên schedule ở profile; sheet phải có Appears In Sheet List = Yes).
-2. So print set với schedule: `pyrevit_task {task:"print_sets_status"}` (print set mang đúng tên schedule).
-3. Lệch → `pyrevit_task {task:"print_set_sync", args:{schedule}}`: cùng code với nút pyRevit **Print set theo DM** (panel In ấn), user tự làm được bằng nút đó. Print set do người khác sửa lần cuối: hỏi user trước khi thêm `force:true`.
-4. Schedule có cột No. (nút pyRevit **Chuẩn cột danh mục**, task `sheet_list_columns`): `print_set_sync` tự đánh lại No. theo thứ tự schedule. No. chỉ do tool ghi, không sửa tay, không dùng để sort.
+2. So print set với schedule: `culi_task {task:"print_sets_status"}` (print set mang đúng tên schedule).
+3. Lệch → `culi_task {task:"print_set_sync", args:{schedule}}`: cùng code với nút **Print set theo DM** (tab AI Culi) (panel In ấn), user tự làm được bằng nút đó. Print set do người khác sửa lần cuối: hỏi user trước khi thêm `force:true`.
+4. Schedule có cột No. (nút **Chuẩn cột danh mục**, task `sheet_list_columns`): `print_set_sync` tự đánh lại No. theo thứ tự schedule. No. chỉ do tool ghi, không sửa tay, không dùng để sort.
 5. Ghi vào log và báo user: số sheet trước / sau, sheet được thêm / bỏ.
 
 Tên print set và tên schedule lấy từ `drafting-profile.md`. Không tự đổi tên print set nếu user chưa yêu cầu.

@@ -1,8 +1,8 @@
 # Claude using Revit — drafting architect
 
-Bộ **skill** và **domain** để Claude Code (qua Revit MCP) triển khai bản vẽ Revit như một kiến trúc sư triển khai. Bộ này dùng chung cho mọi dự án.
+Bộ **skill** và **domain** để Claude Code triển khai bản vẽ Revit như một kiến trúc sư triển khai, cùng add-in Revit **AI Culi**: vừa là tab công cụ của người dùng, vừa là máy chủ MCP để Claude làm việc trong Revit (không cần pyRevit hay Revit MCP nào khác). Bộ này dùng chung cho mọi dự án.
 
-Skills and domain standards that let Claude Code, via Revit MCP, do drawing production like a drafting architect: dims, tags, titles, viewports, crops and templates.
+Skills and domain standards that let Claude Code do drawing production like a drafting architect (dims, tags, titles, viewports, crops and templates), and the Revit add-in AI Culi: the user's ribbon tools and the MCP server Claude works through, in one add-in.
 
 ## Cấu trúc (Layout)
 
@@ -13,17 +13,18 @@ Skills and domain standards that let Claude Code, via Revit MCP, do drawing prod
 | `domain/` | Quy chuẩn bản vẽ: con số, vị trí, ngoại lệ, bẫy API | Tiếng Việt + thuật ngữ Revit |
 | `agents/` | Subagent `drafting-visual-checker`: đọc ảnh kiểm tra, chỉ trả lời bằng chữ (ảnh không ở lại trong hội thoại chính) | English |
 | `templates/drafting-profile.md` | Giá trị riêng của từng dự án (dim type, model cấm chạm, view loại trừ…) | Tiếng Việt |
-| `revit-commands/` | 87 lệnh động (dynamic commands) C# cho Revit MCP: dim, tag, title, viewport, crop, lõi thang, dim bám tay vịn, filled region cột theo kết cấu, mặt cắt dọc thang (dim, tag, số bậc, cao độ tay vịn, ô hoàn thiện), kiểm tra mặt cắt ngang thang, kiểm tra chồng lắp… Không chứa giá trị riêng dự án | C# |
+| `aiculi/` | **Add-in AI Culi** (C#, Revit 2023–2027): tab ribbon **AI Culi** dựng từ `aiculi/extension/`, chạy script Python bằng IronPython có sẵn trong add-in; **máy chủ MCP** `http://127.0.0.1:8970/mcp` (Streamable HTTP, Claude nối thẳng, không cần Node); mỗi file `revit-commands/*.cs` là một tool, biên dịch (Roslyn) lần gọi đầu và mỗi khi file đổi; tool có sẵn `culi_task`, `culi_status`, `run_dynamic_command`; nhiều cửa sổ Revit: cửa sổ đầu giữ cổng, các cửa sổ khác chờ và nhận khi cổng rảnh hoặc khi bấm *Nhận kết nối*; panel **Claude**: nút trạng thái (xanh lá = đã kết nối / đang chạy, xanh dương = chờ Claude, vàng = cửa sổ khác giữ cổng, xám = tắt) mở cửa sổ chi tiết (client, lệnh gần đây, bật / tắt, chép lệnh nối Claude Code), nút **Tải lại** (chạy lại phần Python). `aiculi/build.ps1` build, `aiculi/tests/` kiểm tra không cần Revit (biên dịch mọi lệnh theo API từng bản Revit; máy chủ MCP + client MCP chính thức) | C# + IronPython |
+| `revit-commands/` | 99 lệnh MCP C# (mỗi file một tool của AI Culi): dim, tag, title, viewport, crop, lõi thang, dim bám tay vịn, filled region cột theo kết cấu, mặt cắt dọc thang (dim, tag, số bậc, cao độ tay vịn, ô hoàn thiện), kiểm tra mặt cắt ngang thang, kiểm tra chồng lắp… Không chứa giá trị riêng dự án | C# |
 | `tools/crop.ps1` | Cắt vùng ảnh sheet để kiểm tra | PowerShell |
 | `tools/work-status/` | Cửa sổ "Đang xử lý" luôn nổi trên màn hình (tuỳ chọn) | PowerShell |
-| `tools/revit-port/` | Ai đang giữ cổng Revit MCP (cửa sổ Revit nào nghe, node bridge nào đang nối) và nhả cổng (`status` / `release`); bật / tắt dịch vụ MCP ở một cửa sổ Revit chọn trước bằng UI Automation (`mcp-toggle.ps1`) | PowerShell |
+| `tools/revit-port/` | Cửa sổ Revit nào đang phục vụ Claude (cổng MCP của AI Culi), document đang mở ở từng cửa sổ, chuyển cổng sang cửa sổ khác (`status` / `take -RevitPid N` / `release`) | PowerShell |
 | `tools/dwg-bind-xref/` | Gộp xref của DWG thành một file `_merged.dwg` (AutoCAD accoreconsole), có menu chuột phải Explorer | PowerShell |
-| `pyrevit/ClaudeUsingRevit.extension/` | Extension pyRevit, tab **claude using revit**: panel **Đánh dấu**: nút **Tô đối tượng** (Filled Region đỏ, trong suốt 50%, bao quanh từng đối tượng đang chọn, trong view chứa nó) và **Xoá vùng tô** (chỉ xoá highlight do chính mình tạo; Shift+click: chỉ view đang mở); panel **Kiểm tra tag**: **Tìm chưa tag** (một cửa sổ: chọn phạm vi + loại đối tượng, xem trước số room, cửa đi, cửa sổ, tường chưa có tag và sàn chưa có cao độ, tô cam, rồi bấm một view để mở nó và chọn sẵn các đối tượng đó) và **Xoá vùng tô** (chỉ xoá các vùng tô cam do chính mình tạo); panel **In ấn**: **Print set theo DM** (chọn một schedule danh mục bản vẽ, xem sheet được thêm / bỏ, rồi tạo hoặc cập nhật print set mang đúng tên schedule, chứa đúng các sheet schedule đang hiện, bỏ placeholder; print set do người khác sửa lần cuối phải xác nhận mới ghi đè; Shift+click: cập nhật ngay schedule dùng lần trước; tự đánh lại No. nếu schedule có cột này) và **Chuẩn cột danh mục** (tick một hay nhiều schedule danh mục: No., Sheet Number, Sheet Name, SCALE (tham số sheet tên SCALE; model chưa có thì báo, không tự tạo), Revision, Revision Date lên đầu bảng, Checked By / Approved By / Designed By / Drawn By thêm ở dạng ẩn; chỉ thêm, không xoá cột hay tham số; No. là tham số sheet tool tự tạo và tự đánh 1..n theo thứ tự schedule, placeholder có số, sheet người khác đang giữ bị bỏ qua; nút **Hiện / Ẩn cột ký** bật tắt cùng lúc 4 cột ký trong các schedule đang chọn, không đụng cột ẩn khác; ô **Gán một giá trị cho mọi sheet**: chọn một tham số chữ của sheet (không có Sheet Number, Sheet Name, No.), gõ giá trị, Gán cho mọi sheet của các schedule đang chọn, chỉ ghi sheet có giá trị khác, bỏ qua sheet người khác đang giữ; Shift+click: áp ngay cho các schedule dùng lần trước) và **Xuất PDF** (đứng ở schedule danh mục thì dùng danh mục đó, đứng ở chỗ khác thì chọn danh mục; cửa sổ liệt kê các sheet của danh mục theo thứ tự schedule, mặc định chọn hết (hoặc các sheet đang chọn trong Revit), lọc theo số / tên, bỏ tick sheet không cần, chọn thư mục, tuỳ chọn chia thư mục con theo một tham số của sheet (gợi ý theo cách Project Browser nhóm sheet), bấm Xuất N file. Khổ giấy theo khung tên, zoom 100 %, căn giữa, vector; mỗi sheet một file PDF riêng trong thư mục đã chọn, không gộp thành một file. Sheet nặng xuất từng phần rồi chồng lại thành một trang, khung tên không in hai lần; giữa các sheet giải phóng bộ nhớ, kiểm tra RAM, thiếu thì dừng an toàn và bấm lại là xuất tiếp; Revit có văng (thường do một view lỗi hình học, không phải RAM) thì mở lại và bấm lần nữa: tool nhớ chỗ văng, tách từng view để tìm view lỗi, xuất riêng view đó, văng tiếp thì chia view thành ô theo vùng crop rồi ghép lại; không bao giờ bỏ view (luôn xuất vector, không raster); Shift+click xoá trí nhớ văng sau khi sửa model. Shift+click: thử lại view / sheet đã bỏ); panel **3D**: **3D theo view** (đứng ở mặt bằng, mặt bằng trần, mặt cắt hay mặt đứng, hoặc chọn một viewport trên sheet, bấm: mở view 3D riêng của bạn `3D Box - <tên Revit>`, dùng lại mỗi lần, với section box ôm đúng phần view thể hiện: mặt bằng theo crop + view range, mặt cắt / mặt đứng theo crop + far clip; phase theo view gốc; Shift+click: mặt bằng cắt đúng ở cut plane) | IronPython |
-| `pyrevit/ClaudeUsingRevit.extension/lib/liquid_glass.*`, `native_blur.py` | **Giao diện Liquid Glass** dùng chung cho mọi cửa sổ của tab: nền là Acrylic của Windows 11 (blur thật của DWM, chạy theo khi kéo cửa sổ, không chụp màn hình; Windows cũ hơn thì nền trắng mờ), kéo cửa sổ từ mọi chỗ trống, cùng các hộp thoại `alert`, `choose`, `Progress` | IronPython + WPF |
-| `pyrevit/ClaudeUsingRevit.extension/lib/tasks.py` + `revit-commands/pyrevit_task.cs` | **Task dùng chung**: mỗi việc lặp lại viết một lần bằng Python; nút pyRevit và Claude (lệnh MCP `pyrevit_task {task, args}`) chạy đúng cùng code đó, nên Claude không phải tự làm lại từng bước. Hiện có: print set theo danh mục, chuẩn cột danh mục, cột ký, gán giá trị cho mọi sheet, xuất PDF theo danh mục, tìm / tô / xoá chưa tag, highlight, 3D theo view, lưới 3D cho viewer GPU. `list_tasks` liệt kê; thêm task mới không cần sửa C# | IronPython + C# |
-| `pyrevit/ClaudeUsingRevit.extension/lib/view_filter.py` + nút *Thêm vào filter* | Phần tử chọn trực tiếp trong view, kể cả trong file link, vào filter của view template: chọn tham số để lọc, filter mới hoặc có sẵn, Hide hoặc No hide (task `filter_selection`) | IronPython + WPF |
-| `pyrevit/ClaudeUsingRevit.extension/lib/pane.py` + `pane.xaml`, `table_ops.py` | **Cửa sổ Bảng & công cụ** (nút *Bảng & công cụ*, WPF của add-in, thuộc Revit và nổi trên Revit như các tool khác, blur của Windows, đổi cỡ được, vẫn làm việc trong Revit được): tab *Bảng* = mọi schedule sửa như Excel, danh sách luôn theo model: schedule mới hiện khi mở xổ xuống, mở schedule nào trong Revit thì Bảng theo schedule đó (phím, Ctrl+C / V với Excel, Ctrl+D / R, đánh số, tìm & thay, công thức, sort, lọc từng cột, hoàn tác, thêm sheet, xuất / nhập .xlsx .csv, ghi có xem trước, print set cùng tên tự đồng bộ); tab *Công cụ* = còn việc gì | IronPython + WPF |
-| `webapp/` + `pyrevit/ClaudeUsingRevit.extension/lib/web_bridge.py` | **Web app** (tuỳ chọn, trình duyệt / iPad; add-in không cần): mọi nút của tab pyRevit (Highlight, Chưa tag, Print set theo DM, Chuẩn cột danh mục, Xuất PDF / DWG, 3D theo view, viewer 3D vẽ bằng GPU), **Bảng** (mọi schedule sửa như Excel: copy / paste với Excel, fill, đánh số, tìm & thay, xuất / nhập .xlsx) và mọi lệnh Revit MCP (task, lệnh dynamic, lệnh gốc của add-in, form tự sinh từ schema) trong trình duyệt, giao diện kiểu Apple Vision (kính mờ trên nền thiên hà có vành đai; chỉ công cụ còn việc mới lên màu), dùng được từ iPad khi bật LAN. Máy chủ Node không cần thư viện (`webapp/server.mjs`, cổng 8780, mã truy cập trong `%APPDATA%claude-using-revitwebapp.json`); phía Revit chỉ là cầu nối mỏng do pyRevit khởi động trong mỗi cửa sổ (127.0.0.1, cổng 48990 trở lên, có khoá), chạy đúng code của nút và của add-in MCP, **không dùng cổng 8964** nên không tranh với Claude. Xem `webapp/README.md` | Node + IronPython |
+| `aiculi/extension/` | Các nút của tab **AI Culi** (mỗi nút một thư mục `*.pushbutton`: `script.py`, `bundle.yaml`, `icon.png`; API của host: `lib/culi/`): panel **Đánh dấu**: nút **Tô đối tượng** (Filled Region đỏ, trong suốt 50%, bao quanh từng đối tượng đang chọn, trong view chứa nó) và **Xoá vùng tô** (chỉ xoá highlight do chính mình tạo; Shift+click: chỉ view đang mở); panel **Kiểm tra tag**: **Tìm chưa tag** (một cửa sổ: chọn phạm vi + loại đối tượng, xem trước số room, cửa đi, cửa sổ, tường chưa có tag và sàn chưa có cao độ, tô cam, rồi bấm một view để mở nó và chọn sẵn các đối tượng đó) và **Xoá vùng tô** (chỉ xoá các vùng tô cam do chính mình tạo); panel **In ấn**: **Print set theo DM** (chọn một schedule danh mục bản vẽ, xem sheet được thêm / bỏ, rồi tạo hoặc cập nhật print set mang đúng tên schedule, chứa đúng các sheet schedule đang hiện, bỏ placeholder; print set do người khác sửa lần cuối phải xác nhận mới ghi đè; Shift+click: cập nhật ngay schedule dùng lần trước; tự đánh lại No. nếu schedule có cột này) và **Chuẩn cột danh mục** (tick một hay nhiều schedule danh mục: No., Sheet Number, Sheet Name, SCALE (tham số sheet tên SCALE; model chưa có thì báo, không tự tạo), Revision, Revision Date lên đầu bảng, Checked By / Approved By / Designed By / Drawn By thêm ở dạng ẩn; chỉ thêm, không xoá cột hay tham số; No. là tham số sheet tool tự tạo và tự đánh 1..n theo thứ tự schedule, placeholder có số, sheet người khác đang giữ bị bỏ qua; nút **Hiện / Ẩn cột ký** bật tắt cùng lúc 4 cột ký trong các schedule đang chọn, không đụng cột ẩn khác; ô **Gán một giá trị cho mọi sheet**: chọn một tham số chữ của sheet (không có Sheet Number, Sheet Name, No.), gõ giá trị, Gán cho mọi sheet của các schedule đang chọn, chỉ ghi sheet có giá trị khác, bỏ qua sheet người khác đang giữ; Shift+click: áp ngay cho các schedule dùng lần trước) và **Xuất PDF** (đứng ở schedule danh mục thì dùng danh mục đó, đứng ở chỗ khác thì chọn danh mục; cửa sổ liệt kê các sheet của danh mục theo thứ tự schedule, mặc định chọn hết (hoặc các sheet đang chọn trong Revit), lọc theo số / tên, bỏ tick sheet không cần, chọn thư mục, tuỳ chọn chia thư mục con theo một tham số của sheet (gợi ý theo cách Project Browser nhóm sheet), bấm Xuất N file. Khổ giấy theo khung tên, zoom 100 %, căn giữa, vector; mỗi sheet một file PDF riêng trong thư mục đã chọn, không gộp thành một file. Sheet nặng xuất từng phần rồi chồng lại thành một trang, khung tên không in hai lần; giữa các sheet giải phóng bộ nhớ, kiểm tra RAM, thiếu thì dừng an toàn và bấm lại là xuất tiếp; Revit có văng (thường do một view lỗi hình học, không phải RAM) thì mở lại và bấm lần nữa: tool nhớ chỗ văng, tách từng view để tìm view lỗi, xuất riêng view đó, văng tiếp thì chia view thành ô theo vùng crop rồi ghép lại; không bao giờ bỏ view (luôn xuất vector, không raster); Shift+click xoá trí nhớ văng sau khi sửa model. Shift+click: thử lại view / sheet đã bỏ); panel **3D**: **3D theo view** (đứng ở mặt bằng, mặt bằng trần, mặt cắt hay mặt đứng, hoặc chọn một viewport trên sheet, bấm: mở view 3D riêng của bạn `3D Box - <tên Revit>`, dùng lại mỗi lần, với section box ôm đúng phần view thể hiện: mặt bằng theo crop + view range, mặt cắt / mặt đứng theo crop + far clip; phase theo view gốc; Shift+click: mặt bằng cắt đúng ở cut plane) | IronPython |
+| `aiculi/extension/lib/liquid_glass.*`, `native_blur.py` | **Giao diện Liquid Glass** dùng chung cho mọi cửa sổ của tab: nền là Acrylic của Windows 11 (blur thật của DWM, chạy theo khi kéo cửa sổ, không chụp màn hình; Windows cũ hơn thì nền trắng mờ), kéo cửa sổ từ mọi chỗ trống, cùng các hộp thoại `alert`, `choose`, `Progress` | IronPython + WPF |
+| `aiculi/extension/lib/tasks.py` | **Task dùng chung**: mỗi việc lặp lại viết một lần bằng Python; nút ribbon và Claude (tool MCP `culi_task {task, args}`) chạy đúng cùng code đó, nên Claude không phải tự làm lại từng bước. Hiện có: print set theo danh mục, chuẩn cột danh mục, cột ký, gán giá trị cho mọi sheet, xuất PDF theo danh mục, tìm / tô / xoá chưa tag, highlight, 3D theo view, lưới 3D cho viewer GPU. `list_tasks` liệt kê; thêm task mới không cần sửa C# | IronPython + C# |
+| `aiculi/extension/lib/view_filter.py` + nút *Thêm vào filter* | Phần tử chọn trực tiếp trong view, kể cả trong file link, vào filter của view template: chọn tham số để lọc, filter mới hoặc có sẵn, Hide hoặc No hide (task `filter_selection`) | IronPython + WPF |
+| `aiculi/extension/lib/pane.py` + `pane.xaml`, `table_ops.py` | **Cửa sổ Bảng & công cụ** (nút *Bảng & công cụ*, WPF của add-in, thuộc Revit và nổi trên Revit như các tool khác, blur của Windows, đổi cỡ được, vẫn làm việc trong Revit được): tab *Bảng* = mọi schedule sửa như Excel, danh sách luôn theo model: schedule mới hiện khi mở xổ xuống, mở schedule nào trong Revit thì Bảng theo schedule đó (phím, Ctrl+C / V với Excel, Ctrl+D / R, đánh số, tìm & thay, công thức, sort, lọc từng cột, hoàn tác, thêm sheet, xuất / nhập .xlsx .csv, ghi có xem trước, print set cùng tên tự đồng bộ); tab *Công cụ* = còn việc gì | IronPython + WPF |
+| `webapp/` + `aiculi/extension/lib/web_bridge.py` | **Web app** (tuỳ chọn, trình duyệt / iPad; add-in không cần): mọi nút của tab AI Culi (Highlight, Chưa tag, Print set theo DM, Chuẩn cột danh mục, Xuất PDF / DWG, 3D theo view, viewer 3D vẽ bằng GPU), **Bảng** (mọi schedule sửa như Excel: copy / paste với Excel, fill, đánh số, tìm & thay, xuất / nhập .xlsx) và mọi lệnh Revit MCP (task, lệnh của thư mục lệnh, tool có sẵn của add-in, form tự sinh từ schema) trong trình duyệt, giao diện kiểu Apple Vision (kính mờ trên nền thiên hà có vành đai; chỉ công cụ còn việc mới lên màu), dùng được từ iPad khi bật LAN. Máy chủ Node không cần thư viện (`webapp/server.mjs`, cổng 8780, mã truy cập trong `%APPDATA%\AiCuli\webapp.json`); phía Revit chỉ là cầu nối mỏng do AI Culi khởi động trong mỗi cửa sổ (127.0.0.1, cổng 48990 trở lên, có khoá), chạy đúng code của nút và của tool MCP trong add-in, **không dùng cổng MCP (8970)** nên không tranh với Claude. Xem `webapp/README.md` | Node + IronPython |
 
 ### Skills
 
@@ -97,26 +98,31 @@ Thêm quy trình mới: một file `workflows/<tên>.md` (dòng 0 = `drafting-st
 ## Yêu cầu (Requirements)
 
 - Claude Code.
-- Revit có cài [Revit MCP](https://github.com/shuotao/REVIT_MCP_study) bản có dynamic commands (thư mục `dynamic-commands`: file `.cs` được biên dịch ngay trong Revit, không cần khởi động lại).
-- Các lệnh trong `revit-commands/` viết và chạy thử trên Revit 2023 (chưa thử trên bản khác).
+- Revit 2023, 2024 hoặc 2025. Add-in build được cho 2023–2027; các lệnh trong `revit-commands/` và script Python còn dùng `ElementId.IntegerValue` (Revit 2026 đã bỏ), nên 2026+ cần đổi sang `ElementId.Value` trước (`aiculi/tests/CommandCheck` chỉ ra từng chỗ). Lệnh viết và chạy thử trên Revit 2023.
+- Để build add-in: .NET SDK 8 (`winget install Microsoft.DotNet.SDK.8`; Revit 2027 cần SDK 10). Không cần pyRevit, không cần Node (Node chỉ cho web app tuỳ chọn), không cần Revit MCP nào khác.
 
 ## Cài đặt (Install)
+
+Đóng mọi cửa sổ Revit, rồi:
 
 ```powershell
 git clone <repo-url>
 cd claude-using-revit
-powershell -ExecutionPolicy Bypass -File install.ps1 -CommandsDir "<đường dẫn>\REVIT_MCP_study\dynamic-commands" -WorkStatus
+powershell -ExecutionPolicy Bypass -File install.ps1 -AddIn -RegisterClaude -WorkStatus
 ```
 
-Lệnh trên copy:
-- `skills/*` vào `~/.claude/skills/`
-- `workflows/` vào `~/.claude/drafting-domain/workflows/`
-- `agents/*.md` vào `~/.claude/agents/`
-- `domain/`, `templates/`, `tools/` vào `~/.claude/drafting-domain/`
-- `revit-commands/*.cs` vào thư mục dynamic-commands của Revit MCP (nếu có `-CommandsDir` hoặc biến môi trường `REVIT_MCP_COMMANDS`)
-- `-WorkStatus`: script cửa sổ trạng thái vào `%USERPROFILE%\Tools\WorkStatus`
-- `-PyRevit`: extension pyRevit vào `%APPDATA%\pyRevit\Extensions` (lệnh `pyrevit_task` đọc task từ đây; cần [pyRevit](https://github.com/pyrevitlabs/pyRevit)); sau đó bấm pyRevit > Reload trong Revit. Highlight có type `Highlight - Red 50%` và dấu Extensible Storage ghi tên người tạo, nên nút Xoá vùng tô không bao giờ xoá Filled Region khác hay highlight của người khác.
-- `-WebApp`: tuỳ chọn, máy chủ web (trình duyệt, iPad trong LAN), vào `%APPDATA%\claude-using-revit\webapp` (cần Node). Panel trong Revit không cần nó. Chạy từ Terminal thường, không từ phiên Claude desktop (gói MSIX: thư mục mới trong AppData chỉ nó thấy). Dùng từ iPad: đổi `host` thành `0.0.0.0` trong `webapp.json` rồi chạy lại `-WebApp`.
+Lệnh trên:
+- copy `skills/*` vào `~/.claude/skills/`, `workflows/` vào `~/.claude/drafting-domain/workflows/`, `agents/*.md` vào `~/.claude/agents/`, `domain/`, `templates/`, `tools/` vào `~/.claude/drafting-domain/`;
+- `-AddIn`: build add-in AI Culi (`aiculi/build.ps1`) cho các bản Revit có trên máy (hoặc `-Revit 2023,2024`) và cài vào `%APPDATA%\AiCuli\bin\<bản>\` + file `AiCuli.addin` ở `%APPDATA%\Autodesk\Revit\Addins\<bản>\`; các nút vào `%APPDATA%\AiCuli\extension\`, lệnh `revit-commands/*.cs` vào `%APPDATA%\AiCuli\commands\`. Xoá extension pyRevit cũ `ClaudeUsingRevit.extension` nếu còn (không thì có hai tab); cài đặt mà các nút đã nhớ dưới pyRevit được đọc lại ở lần dùng đầu. Highlight có type `Highlight - Red 50%` và dấu Extensible Storage ghi tên người tạo, nên nút Xoá vùng tô không bao giờ xoá Filled Region khác hay highlight của người khác;
+- `-Dist <thư mục>` (thêm vào `-AddIn`): cài bản đã build sẵn thay vì tự build, không cần .NET SDK: tải *aiculi-dist* ở tab Actions của GitHub (workflow `AI Culi` build mọi bản Revit, biên dịch thử mọi lệnh, chạy smoke test ở mỗi lần push), giải nén rồi trỏ tới thư mục đó;
+- `-Dev` (thêm vào `-AddIn`): add-in đọc thẳng `aiculi/extension` và `revit-commands` của repo này: sửa script / lệnh là có hiệu lực ở lần bấm / lần gọi sau, không cần cài lại;
+- `-RegisterClaude`: thêm máy chủ MCP vào Claude Code: `claude mcp add --transport http --scope user aiculi http://127.0.0.1:8970/mcp` (cấu hình `revit-mcp` cũ thì xoá: `claude mcp remove revit-mcp`);
+- `-WorkStatus`: script cửa sổ trạng thái vào `%USERPROFILE%\Tools\WorkStatus`;
+- `-WebApp`: tuỳ chọn, máy chủ web (trình duyệt, iPad trong LAN), vào `%APPDATA%\AiCuli\webapp` (cần Node). Panel trong Revit không cần nó. Chạy từ Terminal thường, không từ phiên Claude desktop (gói MSIX: thư mục mới dưới `%APPDATA%` nằm trong kho riêng của app, Revit không thấy).
+
+Mở Revit: tab **AI Culi**, panel **Claude** hiện trạng thái kết nối. Mở phiên Claude Code mới, gọi `hello_revit` hoặc `culi_status` để thử. Cài đặt của add-in: `%APPDATA%\AiCuli\config.json` (`port` 8970, `autoStart`, `extensionDir`, `commandsDir`); log: `%APPDATA%\AiCuli\logs\`.
+
+**Phát triển add-in**: `aiculi/build.ps1 -Check` (build + biên dịch thử mọi lệnh theo API của từng bản Revit), `bash aiculi/tests/smoke.sh` (máy chủ MCP không cần Revit, kèm client MCP chính thức). Nút mới = thư mục `*.pushbutton` mới (cần mở lại Revit); lệnh mới = file `.cs` mới (Claude thấy ngay).
 
 **Lệnh dùng chung, giá trị theo dự án**: tool không ghi cứng tên type hay tên family của dự án nào. Tên dim type (`dimTypeName` / `typeName`), family cửa cuốn (`nominalFamilies` / `rollupFamilies`)… được truyền vào khi gọi, lấy từ `drafting-profile.md` của dự án. Thiếu tham số bắt buộc thì tool báo lỗi, không tự đoán.
 
@@ -135,27 +141,17 @@ Mỗi bước Claude gọi tool, toàn bộ phần đầu phiên (danh sách too
 
 | Phần | Tốn (mỗi bước) | Cách giảm | Trạng thái |
 |---|---|---|---|
-| Tool có sẵn của Revit MCP (profile `full`, 192 tool) | ~36.6k token nếu nạp sẵn; chỉ tên (~1.5k) khi tool search bật | **A**: profile `drafting` (26 tool) | cần làm trên máy |
-| 87 lệnh của repo (header `mcp-tool`) | ~11.8k token nếu nạp sẵn; chỉ tên (~0.8k) khi tool search bật; mỗi lệnh đã nạp ~140 token | **B**: header ngắn, giải thích ở `// ---- Details` | đã làm |
+| Tool có sẵn của máy chủ MCP | add-in cũ 192 tool (~36.6k token nếu nạp sẵn); AI Culi 3 tool | **A**: add-in riêng, ít tool có sẵn | đã làm |
+| 99 lệnh của repo (header `mcp-tool`) | ~11.8k token nếu nạp sẵn; chỉ tên (~0.8k) khi tool search bật; mỗi lệnh đã nạp ~140 token | **B**: header ngắn, giải thích ở `// ---- Details` | đã làm |
 | Tool search của Claude Code | — | **C**: giữ bật (mặc định), kiểm tra bằng `/context` | kiểm tra trên máy |
 | Nạp lệnh từng cái một (mỗi lần một lượt) | 1 lượt / lệnh | **D**: dòng **Tools** trong mỗi skill → nạp hết trong 1 lần ToolSearch | đã làm |
 | Mô tả skill (gửi mỗi request) | 6.8k → 5.3k ký tự | mô tả ngắn, luật nằm trong thân skill | đã làm |
 | Ảnh kiểm tra (mỗi ảnh ~1.5–2k token, ở lại trong hội thoại) | theo số ảnh | **E**: subagent `drafting-visual-checker` (Sonnet) đọc ảnh, chỉ trả chữ | đã làm |
 | Kết quả lệnh | theo lệnh | **F**: mặc định ngắn (số lượng + lỗi), chi tiết sau cờ `verbose`/`detail` | luật cho lệnh mới (`CLAUDE.md`) |
 
-### A — Profile `drafting` cho Revit MCP
+### A — Ít tool có sẵn
 
-Revit MCP chọn nhóm tool có sẵn theo biến môi trường `MCP_PROFILE` (`full` mặc định, `architect`, `mep`, `structural`, `fire-safety`). Bộ skill drafting chỉ cần nhóm cơ bản (`get_active_view`…) và các lệnh động. Khi tool search bật, profile vẫn có lợi: danh sách tên ngắn hơn, ToolSearch ít trả nhầm tool không liên quan.
-
-1. Áp patch `tools/revit-mcp/drafting-profile.patch` vào thư mục Revit MCP (thêm profile `drafting: [baseTools]` trong `MCP-Server/src/tools/index.ts`), rồi build lại: `cd MCP-Server && npm run build`.
-2. Thêm `MCP_PROFILE` vào cấu hình MCP của Claude:
-   ```json
-   "revit-mcp": { "command": "node", "args": ["<…>/MCP-Server/build/index.js"], "env": { "MCP_PROFILE": "drafting" } }
-   ```
-3. Mở phiên Claude Code mới, kiểm tra: `hello_revit` và các lệnh động vẫn gọi được.
-   - Bản Revit MCP có lệnh động (`dynamic-commands`, `run_dynamic_command`) là bản riêng, không có trong mã gốc. Nếu lệnh động nằm trong một module của `PROFILE_MODULES`, thêm module đó vào `drafting`.
-   - Đặt `drafting` mà **chưa** áp patch → Revit MCP tự quay về `full` (không hỏng, chỉ không tiết kiệm).
-4. Việc cần tool khác (MEP, room, tạo view…) → đổi lại `MCP_PROFILE` = `architect` hoặc `full`.
+Add-in Revit MCP cũ đăng ký sẵn 192 tool (~36.6k token khi nạp sẵn), nên cần profile `drafting`. AI Culi chỉ có 3 tool có sẵn (`culi_task`, `culi_status`, `run_dynamic_command`) cùng các lệnh của repo: không còn gì để cắt.
 
 ### C — Tool search (Claude Code)
 
@@ -164,9 +160,9 @@ Claude Code bản mới **mặc định** hoãn nạp tool MCP: đầu phiên ch
 - có `ENABLE_TOOL_SEARCH=false` hoặc `CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS`;
 - model cũ hơn thế hệ 4.5.
 
-Kiểm tra: gõ `/context` trong phiên có Revit MCP. Tool MCP phải hiện là deferred (hoãn), không chiếm hàng chục nghìn token. Nếu cấu hình `revit-mcp` có `"alwaysLoad": true` thì bỏ đi. Cập nhật Claude Code (`claude update`) nếu bản cũ.
+Kiểm tra: gõ `/context` trong phiên có máy chủ `aiculi`. Tool MCP phải hiện là deferred (hoãn), không chiếm hàng chục nghìn token. Nếu cấu hình `aiculi` có `"alwaysLoad": true` thì bỏ đi. Cập nhật Claude Code (`claude update`) nếu bản cũ.
 
-Dự phòng khi không bật được tool search: cho Revit MCP chỉ đăng ký một tool `run_dynamic_command {name, args}` thay vì mỗi lệnh một tool (sửa trong bản Revit MCP riêng của bạn); Claude tra tham số trong `drafting-tools.md` và header `.cs`.
+Dự phòng khi không bật được tool search: mọi lệnh cũng gọi được qua một tool `run_dynamic_command {name, args}`; có thể cho AI Culi chỉ đăng ký tool đó thay vì mỗi lệnh một tool (`aiculi/src/AiCuli/Mcp/ToolRegistry.cs`); Claude tra tham số trong `drafting-tools.md` và header `.cs`.
 
 ### Cách làm việc ít token
 
@@ -175,9 +171,9 @@ Dự phòng khi không bật được tool search: cho Revit MCP chỉ đăng k�
 - **Lệnh một phát**: mỗi chủ đề nên có một lệnh làm cả khảo sát → áp dụng → kiểm tra (như `stair_plan_annotate`, `grid_dims_band`), mỗi view chỉ còn vài lần gọi: preview, apply, kiểm tra.
 - **Chạy hàng loạt không cần ngồi canh** (máy có Revit đang mở, từng phiên một vì Revit API chỉ chạy một luồng):
   ```powershell
-  claude -p "Dùng skill drafting-grid-dims cho các view <danh sách>. Ghi log, báo cáo Việc tồn." --model sonnet --allowedTools "mcp__revit-mcp" "Read" "Edit" "Write" "Grep" "Glob" "Agent"
+  claude -p "Dùng skill drafting-grid-dims cho các view <danh sách>. Ghi log, báo cáo Việc tồn." --model sonnet --allowedTools "mcp__aiculi" "Read" "Edit" "Write" "Grep" "Glob" "Agent"
   ```
-  `mcp__revit-mcp` cho phép mọi tool của server `revit-mcp` (đổi theo tên server trong cấu hình của bạn). Sáng hôm sau xem log và ảnh.
+  `mcp__aiculi` cho phép mọi tool của máy chủ `aiculi`. Sáng hôm sau xem log và ảnh.
 
 ## Cập nhật bài học (Keeping it alive)
 

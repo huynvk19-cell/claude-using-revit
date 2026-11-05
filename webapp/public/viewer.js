@@ -1,5 +1,5 @@
 // 3D GPU viewer: draws the triangles of a Revit 3D view with WebGL2, entirely on the graphics card.
-// The mesh comes from the pyRevit task view_mesh_export (served at /mesh/<name>.json|.bin); orbiting
+// The mesh comes from the task view_mesh_export (served at /mesh/<name>.json|.bin); orbiting
 // never asks Revit again. Click = pick (an id buffer read back from the GPU), "Chọn trong Revit" runs
 // the task show_elements in the Revit window. No library: plain WebGL2.
 "use strict";

@@ -1,33 +1,36 @@
-// claude using revit - web app server (Node, no dependencies).
+// AI Culi - web app server (Node, no dependencies).
 //
-// The page (public/) is the user interface for every tool of the pyRevit tab "claude using revit"
-// and every Revit MCP command, from any device on the LAN (PC browser, iPad...). Revit work goes
-// through the thin bridge each Revit window runs (pyRevit lib/web_bridge.py, 127.0.0.1:48990+,
-// discovered in %APPDATA%\claude-using-revit\web-bridge\<pid>.json); this server never touches the
-// Revit MCP port 8964, so it does not compete with Claude sessions.
+// The page (public/) is the user interface for every tool of the ribbon tab "AI Culi"
+// and every AI Culi MCP command, from any device on the LAN (PC browser, iPad...). Revit work goes
+// through the thin bridge each Revit window runs (aiculi/extension lib/web_bridge.py, 127.0.0.1:48990+,
+// discovered in %APPDATA%\AiCuli\web-bridge\<pid>.json); this server never touches the
+// AI Culi MCP port (8970), so it does not compete with Claude sessions.
 //
 // Access: a token (webapp.json). Open http://<pc>:<port>/?k=<token> once per device; the page keeps
 // it as a SameSite=Strict cookie. Every /api call needs that cookie and a Host header naming this PC.
-// Settings: %APPDATA%\claude-using-revit\webapp.json (port, host, token, commandsDir, mcpBuildDir).
+// Settings: %APPDATA%\AiCuli\webapp.json (port, host, token, commandsDir).
 // host 127.0.0.1 (default) = this PC only; 0.0.0.0 = the LAN / Tailscale too. Restart the server after a change.
-// Log: %APPDATA%\claude-using-revit\webapp.log. Started by pyRevit startup.py when not running.
+// Log: %APPDATA%\AiCuli\webapp.log. Started by the add-in (extension startup.py) when not running.
 import fs from "node:fs";
 import http from "node:http";
 import os from "node:os";
 import path from "node:path";
 import crypto from "node:crypto";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const DATA = path.join(process.env.APPDATA || os.homedir(), "claude-using-revit");
+const DATA = path.join(process.env.APPDATA || os.homedir(), "AiCuli");
 const BRIDGES = path.join(DATA, "web-bridge");
 const CONFIG = path.join(DATA, "webapp.json");
 const LOG = path.join(DATA, "webapp.log");
-const MESHES = path.join(DATA, "meshes");             // written by the pyRevit task view_mesh_export
+const MESHES = path.join(DATA, "meshes");             // written by the task view_mesh_export
 const MESH_RE = /^[0-9A-Za-z_-]{1,90}\.(json|bin)$/;
 const PUBLIC = path.join(HERE, "public");
-const EXT_TAB = path.join(process.env.APPDATA || "", "pyRevit", "Extensions", "ClaudeUsingRevit.extension",
-    "claude using revit.tab");
+const ADDIN_CONFIG = path.join(DATA, "config.json");      // the add-in's settings (extensionDir, commandsDir)
+function addinConfig() {
+    try { return JSON.parse(fs.readFileSync(ADDIN_CONFIG, "utf8")); } catch { return {}; }
+}
+const EXT_TAB = path.join(addinConfig().extensionDir || path.join(DATA, "extension"), "AI Culi.tab");
 const HEADER_RE = /\/\*\s*mcp-tool\s*([\s\S]*?)\*\//;
 const NAME_RE = /^[a-z][a-z0-9_]{0,63}$/;
 const MAX_JOBS = 200;
@@ -42,16 +45,6 @@ function log(...a) {
 
 // ---- settings --------------------------------------------------------------------------
 
-function mcpServerEntry() {
-    // the Revit MCP server Claude Code uses (~/.claude.json mcpServers.revit-mcp args[0])
-    try {
-        const c = JSON.parse(fs.readFileSync(path.join(os.homedir(), ".claude.json"), "utf8"));
-        for (const [k, v] of Object.entries(c.mcpServers || {}))
-            if (/revit/i.test(k) && v.args && v.args[0]) return { entry: v.args[0], env: v.env || {} };
-    } catch { /* none */ }
-    return null;
-}
-
 function loadConfig() {
     let cfg = {};
     try { cfg = JSON.parse(fs.readFileSync(CONFIG, "utf8")); } catch { /* first run */ }
@@ -60,14 +53,10 @@ function loadConfig() {
     set("port", 8780);
     set("host", "127.0.0.1");      // this PC only; "0.0.0.0" = the LAN too (iPad), token still needed
     set("token", crypto.randomBytes(6).toString("hex"));
-    const mcp = mcpServerEntry();
-    if (mcp) {
-        const build = path.dirname(mcp.entry);
-        set("mcpBuildDir", build);
-        set("commandsDir", mcp.env.REVIT_MCP_DYNAMIC_DIR || process.env.REVIT_MCP_COMMANDS
-            || path.resolve(build, "..", "..", "dynamic-commands"));
-    }
+    // the commands of the add-in (config.json commandsDir, else %APPDATA%\AiCuli\commands); not stored, so
+    // install.ps1 -Dev and back applies without editing webapp.json
     if (changed) fs.writeFileSync(CONFIG, JSON.stringify(cfg, null, 2));
+    if (!cfg.commandsDir) cfg.commandsDirDefault = addinConfig().commandsDir || path.join(DATA, "commands");
     return cfg;
 }
 
@@ -85,7 +74,7 @@ catch {     // running from the repo checkout: its revit-commands folder
 
 function readCommands() {
     const out = [];
-    const dir = cfg.commandsDir;
+    const dir = cfg.commandsDir || cfg.commandsDirDefault;
     if (!dir || !fs.existsSync(dir)) return out;
     for (const f of fs.readdirSync(dir)) {
         if (!f.endsWith(".cs")) continue;
@@ -109,31 +98,24 @@ function readCommands() {
     return out.sort((a, b) => a.name.localeCompare(b.name));
 }
 
-// tools of the add-in itself; the ones the MCP server handles in Node (not in Revit) are left out
-const NODE_ONLY = new Set(["stop_mcp_service", "list_dynamic_commands", "run_dynamic_command"]);
+// tools of the add-in itself (culi_task, culi_status...), asked from a live Revit window (bridge GET /tools);
+// the command files are listed by readCommands, and run_dynamic_command is how this server runs them
+const NOT_LISTED = new Set(["run_dynamic_command"]);
 let baseTools = null;
 
 async function readBaseTools() {
-    if (baseTools) return baseTools;
+    if (baseTools && baseTools.length) return baseTools;
     baseTools = [];
-    const file = cfg.mcpBuildDir && path.join(cfg.mcpBuildDir, "tools", "index.js");
-    if (!file || !fs.existsSync(file)) return baseTools;
-    const prev = process.env.MCP_PROFILE;
-    process.env.MCP_PROFILE = "full";
-    const err = console.error;
-    console.error = () => {};
-    try {
-        const mod = await import(pathToFileURL(file).href);
-        baseTools = mod.registerRevitTools()
-            .filter(t => !NODE_ONLY.has(t.name))
-            .map(t => ({ kind: "tool", name: t.name, description: t.description || "",
-                inputSchema: t.inputSchema || { type: "object", properties: {} },
-                readOnly: !!(t.annotations && t.annotations.readOnlyHint) }));
-    } catch (e) {
-        log("base tools not loaded:", e && e.message);
-    } finally {
-        console.error = err;
-        if (prev === undefined) delete process.env.MCP_PROFILE; else process.env.MCP_PROFILE = prev;
+    for (const b of bridges()) {
+        try {
+            const r = await bridgeCall(b, "GET", "/tools", null, 3000);
+            if (r.status !== 200 || !Array.isArray(r.json)) continue;
+            baseTools = r.json.filter(t => t.builtIn && !NOT_LISTED.has(t.name))
+                .map(t => ({ kind: "tool", name: t.name, description: t.description || "",
+                    inputSchema: t.inputSchema || { type: "object", properties: {} },
+                    readOnly: !!(t.annotations && t.annotations.readOnlyHint) }));
+            break;
+        } catch (e) { log("base tools:", e && e.message); }
     }
     return baseTools;
 }
@@ -181,7 +163,7 @@ function bridgeCall(b, method, p, body, timeoutMs) {
 
 function bridgeOf(pid) {
     const b = bridges().find(x => String(x.pid) === String(pid));
-    if (!b) throw httpError(404, "Revit window not found (closed, or pyRevit not reloaded since install)");
+    if (!b) throw httpError(404, "Revit window not found (closed, or AI Culi not reloaded since install: Tải lại)");
     return b;
 }
 
@@ -203,12 +185,8 @@ const jobs = [];
 let nextJob = 1;
 
 function unwrap(kind, r) {
-    // tasks answer plain JSON; MCP commands a RevitCommandResponse {Success, Data, Error}
-    if (kind === "task" || !r || typeof r !== "object" || !("Success" in r)) return r;
-    if (!r.Success) return { error: r.Error || "failed" };
-    const d = r.Data;
-    if (kind === "command" && d && typeof d === "object" && "Result" in d) return d.Result;
-    return d;
+    // tasks and AI Culi tools answer plain JSON ({error} on failure)
+    return r;
 }
 
 function startJob(pid, kind, name, args, label) {
@@ -218,7 +196,7 @@ function startJob(pid, kind, name, args, label) {
     else if (kind === "tool") payload = { kind: "mcp", name, args, label };
     else if (kind === "command") {
         if (!NAME_RE.test(name)) throw httpError(400, "bad command name");
-        const file = path.join(cfg.commandsDir || "", name + ".cs");
+        const file = path.join(cfg.commandsDir || cfg.commandsDirDefault || "", name + ".cs");
         if (!fs.existsSync(file)) throw httpError(404, "command not found: " + name);
         payload = { kind: "mcp", name: "run_dynamic_command", label,
             args: { name, source: fs.readFileSync(file, "utf8"), args: args || {} } };
@@ -360,7 +338,7 @@ async function api(req, res, url) {
     if (m === "GET" && parts[1] === "windows") return send(res, 200, { windows: await windows() });
     if (m === "GET" && parts[1] === "catalog") {
         return send(res, 200, { commands: readCommands(), tools: await readBaseTools(),
-            commandsDir: cfg.commandsDir || null });
+            commandsDir: cfg.commandsDir || cfg.commandsDirDefault || null });
     }
     if (m === "GET" && parts[1] === "access") {
         const lan = !["127.0.0.1", "localhost", "::1"].includes(listenHost);
@@ -424,7 +402,7 @@ const server = http.createServer(async (req, res) => {
             const f = [".jpg", ".jpeg", ".png", ".webp"].map(e => path.join(DATA, "background" + e)).find(p => fs.existsSync(p));
             return f ? sendFile(res, f) : send(res, 404, { error: "no background photo" });
         }
-        if (url.pathname.startsWith("/mesh/")) {   // triangles of a 3D view (pyRevit task view_mesh_export)
+        if (url.pathname.startsWith("/mesh/")) {   // triangles of a 3D view (task view_mesh_export)
             if (!ok) return send(res, 401, { error: "login" });
             const f = decodeURIComponent(url.pathname.slice(6));
             if (!MESH_RE.test(f)) return send(res, 400, { error: "bad mesh name" });
@@ -449,6 +427,6 @@ const listenHost = process.env.CUR_WEBAPP_HOST || cfg.host;    // 127.0.0.1 = th
 const listenPort = Number(process.env.CUR_WEBAPP_PORT) || cfg.port;    // a second copy from the repo, for tests
 server.listen(listenPort, listenHost, () => {
     log(`listening on ${listenHost}:${listenPort}`);
-    console.log(`claude using revit web app: http://localhost:${listenPort}/?k=${cfg.token}`);
+    console.log(`AI Culi web app: http://localhost:${listenPort}/?k=${cfg.token}`);
     for (const u of lanUrls()) console.log("  " + u);
 });

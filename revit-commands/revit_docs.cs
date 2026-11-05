@@ -1,6 +1,6 @@
 /* mcp-tool
 {
-  "description": "Documents of the Revit window holding MCP: list (unsaved?, active, MCP client), open (cloud GUID or path), close (refuses unsaved).",
+  "description": "Documents of the Revit window holding MCP: list (unsaved?, active, MCP state), open (cloud GUID or path), close (refuses unsaved).",
   "inputSchema": {
     "type": "object",
     "properties": {
@@ -21,17 +21,17 @@
 */
 // ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
 // Model open/close for the Revit window that currently holds the MCP port (only that window can be reached).
-//  list: Revit PID + window, the MCP client holding the lock (name, remote endpoint: its local port maps to the node
-//    bridge PID via Get-NetTCPConnection -LocalPort), every non-linked document with IsModified / Active / path, and
-//    the number of loaded links. Read-only.
+//  list: Revit PID + window, the AI Culi MCP server state (McpClient: clients, connected, the other Revit windows and
+//    whether they hold the port or wait), every non-linked document with IsModified / Active / path, and the number of
+//    loaded links. Read-only.
 //  open: cloud model (projectGuid + modelGuid [+ region]) or local path. activate=true (default) opens it in the UI
 //    and makes it active (OpenAndActivateDocument); false opens it in the background (closes again with close).
 //    Never detaches from central. Never syncs. Always opens ALL worksets (closed worksets print views incomplete).
 //    Never opens a model twice: open in this window -> only activated; open in ANOTHER Revit window -> refused with
 //    that window's PID (work there instead). The other windows' documents come from
-//    %APPDATA%\claude-using-revit\open-docs\<pid>.json, written by the pyRevit extension (startup + doc open/close
+//    %APPDATA%\AiCuli\open-docs\<pid>.json, written by the AI Culi add-in (startup + doc open/close
 //    hooks) and by this command for its own window. A live Revit window without that file has unknown documents, so
-//    open is refused until it has one (pyRevit Reload there, or run revit_docs list while it holds the port).
+//    open is refused until it has one (Tải lại in panel Claude there, or run revit_docs list while it holds the port).
 //  close: closes the non-linked document whose Title equals title. Refuses when it has unsaved changes unless
 //    discardChanges=true (ask the user first; changes are lost). The API cannot close the active document: pass
 //    switchTo (another open document's title) to activate that one first. The last open document cannot be closed
@@ -71,9 +71,9 @@ public static class RevitDocs
     }
 
     static string SnapshotFolder => System.IO.Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "claude-using-revit", "open-docs");
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AiCuli", "open-docs");
 
-    // Same file and shape as pyrevit lib/open_docs.py.
+    // Same file and shape as aiculi/extension/lib/open_docs.py.
     static void WriteSnapshot(UIApplication app)
     {
         try
@@ -138,7 +138,7 @@ public static class RevitDocs
             }
         }
         if (unknown.Count > 0)
-            return "documents of these Revit windows are unknown (no open-docs file; pyRevit Reload there or revit_docs list while it holds the port): "
+            return "documents of these Revit windows are unknown (no open-docs file; Tải lại in panel Claude there, or revit_docs list while it holds the port): "
                 + string.Join("; ", unknown);
         return null;
     }
@@ -151,12 +151,8 @@ public static class RevitDocs
         object client = null;
         try
         {
-            var svc = RevitMCP.Application.SocketService;
-            if (svc != null)
-            {
-                var st = svc.GetStatusSnapshot();
-                client = new { svc.IsRunning, Locked = st.locked, Name = st.clientName, Remote = st.remote, SinceUtc = st.sinceUtc };
-            }
+            // the AI Culi add-in's MCP server (state, clients, the other Revit windows and their role)
+            client = AiCuli.Mcp.McpServer.Snapshot(false);
         }
         catch (Exception ex) { client = "unavailable: " + ex.Message; }
 

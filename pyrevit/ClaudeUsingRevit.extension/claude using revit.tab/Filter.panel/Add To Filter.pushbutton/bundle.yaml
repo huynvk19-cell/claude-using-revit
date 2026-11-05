@@ -1,6 +1,0 @@
-title: "Thêm vào\nfilter"
-tooltip: >-
-  Đưa các phần tử đang chọn trong view, kể cả phần tử trong file link, vào một filter của view
-  template: chọn tham số để lọc, view template, filter mới hoặc có sẵn, Hide hoặc No hide.
-  Chưa chọn gì thì bấm chọn trong model hoặc trong link rồi Finish.
-author: claude-using-revit

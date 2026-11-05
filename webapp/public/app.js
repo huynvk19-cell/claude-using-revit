@@ -1,7 +1,7 @@
-// claude using revit - web app page (visionOS-like). Plain JS, no build step.
+// AI Culi - web app page (visionOS-like). Plain JS, no build step.
 // Every Revit action is a job: POST /api/w/<pid>/jobs {kind: task|command|tool, name, args}, then
 // GET /api/jobs/<id> until it is done. Tasks = lib/tasks.py (the ribbon buttons), commands = the
-// Revit MCP dynamic commands, tools = the Revit MCP add-in's own commands.
+// AI Culi commands (revit-commands/*.cs), tools = the add-in's built-in tools (culi_task, culi_status).
 // The tool tiles take their state from the read-only task status_board: colour only where work is left.
 "use strict";
 
@@ -226,7 +226,7 @@ function renderTiles() {
   const pill = $("#o-todo");
   pill.textContent = work === 1 ? "1 việc" : `${work} việc`;
   pill.classList.toggle("hidden", !work);
-  document.title = (work ? `(${work}) ` : "") + "claude using revit";
+  document.title = (work ? `(${work}) ` : "") + "AI Culi";
   if (S.open) refreshWindowState();
   // /#export etc. (deep link /?k=..&open=export): open that tool once
   const want = location.hash.slice(1);
@@ -482,7 +482,7 @@ async function pickFolder(start, done) {
 $("#modal").addEventListener("click", e => { if (e.target.id === "modal") $("#modal").classList.add("hidden"); });
 
 // ---- every command ------------------------------------------------------------------------
-const GROUPS = [["all", "Tất cả"], ["task", "Nút ribbon"], ["own", "claude-using-revit"], ["command", "Dynamic khác"], ["tool", "Gốc MCP"]];
+const GROUPS = [["all", "Tất cả"], ["task", "Nút ribbon"], ["own", "Lệnh của repo"], ["command", "Lệnh khác"], ["tool", "Có sẵn trong add-in"]];
 
 async function loadCatalog() {
   if (!S.catalog) S.catalog = await api("/api/catalog");

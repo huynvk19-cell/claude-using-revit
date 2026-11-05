@@ -383,7 +383,7 @@ public static class StairXsectionAnnotate
                             if (railDims.Any(r => Math.Abs(r.Item1 - rcx) < 500 && Math.Abs(r.Item2 - target) < 150)) { done.Add(new { Part = "XA6", Key = key, Skipped = "has a rail dim" }); continue; }
                             var el = doc.GetElement(new ElementId(rg.Key)); var heads = new List<string>();
                             foreach (var g in el.get_Geometry(new Options { ComputeReferences = true, View = V }) ?? Enumerable.Empty<GeometryObject>())
-                                if (g is GeometryInstance gi && gi.Symbol != null) heads.Add(el.UniqueId + ":1:INSTANCE:" + gi.Symbol.UniqueId + ":");
+                                if (g is GeometryInstance gi && doc.GetElement(gi.GetSymbolGeometryId().SymbolId) is Element giSym) heads.Add(el.UniqueId + ":1:INSTANCE:" + giSym.UniqueId + ":");
                             var o = Ov("XA6", key);
                             double x = o != null && o["x"] != null ? (double)o["x"] : nearWall ? (Math.Abs(rx0 - mid) < Math.Abs(rx1 - mid) ? rx0 - 150 : rx1 + 150) : rcx;
                             string best = null; double bestVal = double.NaN;
