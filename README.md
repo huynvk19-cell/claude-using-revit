@@ -103,6 +103,17 @@ Thêm quy trình mới: một file `workflows/<tên>.md` (dòng 0 = `drafting-st
 
 ## Cài đặt (Install)
 
+### Cách dễ: file cài đặt `.exe`
+
+1. Tải **[ClaudeUsingRevit-Setup.exe](../../releases/download/setup-latest/ClaudeUsingRevit-Setup.exe)** (trang *Releases* của repo, mục *setup-latest*; GitHub tự build lại sau mỗi lần cập nhật).
+2. Đóng Revit và Claude. Bấm đúp file vừa tải. Windows có thể báo *"Windows protected your PC"* (file chưa ký số): bấm **More info** → **Run anyway**.
+3. Tick các bản Revit (tự tìm sẵn) → **Cài đặt**. Không cần quyền quản trị, không cần cài .NET, pyRevit hay Node.
+4. Mở Revit: tab **claude using revit**, nút đầu tiên của panel **Claude** cho biết đã kết nối với Claude chưa. Lần đầu Revit hỏi có tải add-in không: chọn **Always Load**.
+
+Bộ cài làm đủ việc của `install.ps1 -AddIn -RegisterClaude` (add-in, các nút, lệnh, skill cho Claude, nối Claude Code; sao lưu `~/.claude.json` trước khi sửa) và thêm mục **claude using revit** vào *Settings > Apps* của Windows để gỡ. Cài lại bản mới: chạy file mới, bấm Cài đặt (cài đặt riêng được giữ).
+
+### Cách cho người phát triển (từ repo)
+
 Đóng mọi cửa sổ Revit, rồi:
 
 ```powershell
@@ -114,7 +125,7 @@ powershell -ExecutionPolicy Bypass -File install.ps1 -AddIn -RegisterClaude -Wor
 Lệnh trên:
 - copy `skills/*` vào `~/.claude/skills/`, `workflows/` vào `~/.claude/drafting-domain/workflows/`, `agents/*.md` vào `~/.claude/agents/`, `domain/`, `templates/`, `tools/` vào `~/.claude/drafting-domain/`;
 - `-AddIn`: build add-in claude using revit (`addin/build.ps1`) cho các bản Revit có trên máy (hoặc `-Revit 2023,2024`) và cài vào `%APPDATA%\claude-using-revit\bin\<bản>\` + file `ClaudeUsingRevit.addin` ở `%APPDATA%\Autodesk\Revit\Addins\<bản>\`; các nút vào `%APPDATA%\claude-using-revit\extension\`, lệnh `revit-commands/*.cs` vào `%APPDATA%\claude-using-revit\commands\`. Xoá extension pyRevit cũ `ClaudeUsingRevit.extension` nếu còn (không thì có hai tab); cài đặt mà các nút đã nhớ dưới pyRevit được đọc lại ở lần dùng đầu. Highlight có type `Highlight - Red 50%` và dấu Extensible Storage ghi tên người tạo, nên nút Xoá vùng tô không bao giờ xoá Filled Region khác hay highlight của người khác;
-- `-Dist <thư mục>` (thêm vào `-AddIn`): cài bản đã build sẵn thay vì tự build, không cần .NET SDK: tải *claude-using-revit-dist* ở tab Actions của GitHub (workflow `claude using revit` build mọi bản Revit, biên dịch thử mọi lệnh, chạy smoke test ở mỗi lần push), giải nén rồi trỏ tới thư mục đó;
+- `-Dist <thư mục>` (thêm vào `-AddIn`): cài bản đã build sẵn (`<thư mục>\<bản Revit>\ClaudeUsingRevit.dll`) thay vì tự build;
 - `-Dev` (thêm vào `-AddIn`): add-in đọc thẳng `addin/extension` và `revit-commands` của repo này: sửa script / lệnh là có hiệu lực ở lần bấm / lần gọi sau, không cần cài lại;
 - `-RegisterClaude`: thêm máy chủ MCP vào Claude Code: `claude mcp add --transport http --scope user claude-using-revit http://127.0.0.1:8970/mcp` (cấu hình `revit-mcp` cũ thì xoá: `claude mcp remove revit-mcp`);
 - `-WorkStatus`: script cửa sổ trạng thái vào `%USERPROFILE%\Tools\WorkStatus`;
@@ -122,7 +133,7 @@ Lệnh trên:
 
 Mở Revit: tab **claude using revit**, panel **Claude** hiện trạng thái kết nối. Mở phiên Claude Code mới, gọi `hello_revit` hoặc `cur_status` để thử. Cài đặt của add-in: `%APPDATA%\claude-using-revit\config.json` (`port` 8970, `autoStart`, `extensionDir`, `commandsDir`); log: `%APPDATA%\claude-using-revit\logs\`.
 
-**Phát triển add-in**: `addin/build.ps1 -Check` (build + biên dịch thử mọi lệnh theo API của từng bản Revit), `bash addin/tests/smoke.sh` (máy chủ MCP không cần Revit, kèm client MCP chính thức). Nút mới = thư mục `*.pushbutton` mới (cần mở lại Revit); lệnh mới = file `.cs` mới (Claude thấy ngay).
+**Phát triển add-in**: bộ cài `.exe`: `bash addin/setup/make-setup.sh` (+ `bash addin/tests/setup-test.sh`); `addin/build.ps1 -Check` (build + biên dịch thử mọi lệnh theo API của từng bản Revit), `bash addin/tests/smoke.sh` (máy chủ MCP không cần Revit, kèm client MCP chính thức). Nút mới = thư mục `*.pushbutton` mới (cần mở lại Revit); lệnh mới = file `.cs` mới (Claude thấy ngay).
 
 **Lệnh dùng chung, giá trị theo dự án**: tool không ghi cứng tên type hay tên family của dự án nào. Tên dim type (`dimTypeName` / `typeName`), family cửa cuốn (`nominalFamilies` / `rollupFamilies`)… được truyền vào khi gọi, lấy từ `drafting-profile.md` của dự án. Thiếu tham số bắt buộc thì tool báo lỗi, không tự đoán.
 

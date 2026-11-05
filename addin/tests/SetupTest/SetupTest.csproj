@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The installer's logic (addin/setup/InstallerCore.cs) on fake Windows folders: bash addin/tests/setup-test.sh -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <RollForward>Major</RollForward>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\..\setup\InstallerCore.cs" />
+    <Compile Include="..\..\setup\MiniJson.cs" />
+  </ItemGroup>
+</Project>

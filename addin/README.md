@@ -22,6 +22,7 @@ Người dùng ──bấm nút──> extension/claude using revit.tab/<panel>.
 | `tests/CommandCheck/` | Biên dịch mọi `revit-commands/*.cs` theo API của một bản Revit, không cần Revit; kiểm tra luật header |
 | `tests/McpSmoke/`, `tests/smoke.sh` | Máy chủ MCP thật với vài kiểu Revit giả: tự kiểm tra, hai "cửa sổ" chuyển cổng, client MCP chính thức (TypeScript SDK) |
 | `build.ps1` | Build mọi bản Revit có trên máy vào `dist/<bản>/`; `-Check` chạy thêm CommandCheck |
+| `setup/` | Bộ cài **ClaudeUsingRevit-Setup.exe** (.NET Framework 4.8, một file, cửa sổ tiếng Việt, gỡ được từ Settings > Apps): `make-setup.sh` build mọi bản Revit + gói payload; logic ở `InstallerCore.cs` (test: `tests/setup-test.sh`) |
 
 **Trạng thái** (nút đầu tiên của tab, cập nhật mỗi giây): xanh lá *Đã kết nối* / *Đang chạy* · xanh dương *Chờ kết nối* (cửa sổ này giữ cổng) · vàng *Cửa sổ khác* (cửa sổ khác giữ cổng; cửa sổ này nhận khi cổng rảnh) · xám *Đã tắt* · đỏ *Lỗi*. Bấm vào: cửa sổ chi tiết (client, lệnh gần đây, bật / tắt, *Nhận kết nối về cửa sổ này*, chép lệnh `claude mcp add`, mở log).
 
@@ -30,5 +31,5 @@ Người dùng ──bấm nút──> extension/claude using revit.tab/<panel>.
 **Phát triển**
 - `install.ps1 -AddIn -Dev`: add-in đọc thẳng `extension/` và `revit-commands/` của repo; sửa là chạy, không cài lại. Chỉ sửa C# trong `src/` mới cần build + cài lại (đóng Revit).
 - Trước khi đẩy: `build.ps1 -Check` (hoặc trên Linux / CI: `dotnet build src/ClaudeUsingRevit -c Release -p:RevitVersion=2025` rồi `dotnet run --project tests/CommandCheck -c Release -- 2025`), `bash tests/smoke.sh` khi sửa máy chủ MCP.
-- GitHub Actions (`.github/workflows/claude-using-revit.yml`) làm cả hai ở mỗi lần push và để lại bản build *claude-using-revit-dist* (cài bằng `install.ps1 -AddIn -Dist <thư mục>`).
+- GitHub Actions (`.github/workflows/claude-using-revit.yml`) làm cả hai ở mỗi lần push, build bộ cài `.exe`, chạy `tests/setup-test.sh` và đưa file lên release *setup-latest* (link tải cố định).
 - Revit 2026+: lệnh và script còn dùng `ElementId.IntegerValue` (đã bị bỏ) → đổi sang `ElementId.Value`; CommandCheck 2026 chỉ ra từng dòng.

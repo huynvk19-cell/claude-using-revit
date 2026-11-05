@@ -1,12 +1,14 @@
 # Build the claude using revit add-in for every Revit version, compile every revit-commands/*.cs against that Revit's API,
-# run the MCP server smoke test, and keep the built add-in as a download (Actions > this run > Artifacts > claude-using-revit-dist).
-# Install a download without the .NET SDK: unzip it, then  install.ps1 -AddIn -Dist <unzipped folder>
+# run the MCP server smoke test, build the installer ClaudeUsingRevit-Setup.exe, test it, and publish it to the release
+# "setup-latest": https://github.com/<owner>/<repo>/releases/download/setup-latest/ClaudeUsingRevit-Setup.exe
 name: claude using revit
+permissions:
+  contents: write      # publish the installer to the release "setup-latest"
 on:
   push:
-    paths: ["addin/**", "revit-commands/**", ".github/workflows/claude-using-revit.yml"]
+    paths: ["addin/**", "revit-commands/**", "skills/**", "agents/**", "domain/**", "workflows/**", "templates/**", "tools/**", ".github/workflows/claude-using-revit.yml"]
   pull_request:
-    paths: ["addin/**", "revit-commands/**", ".github/workflows/claude-using-revit.yml"]
+    paths: ["addin/**", "revit-commands/**", "skills/**", "agents/**", "domain/**", "workflows/**", "templates/**", "tools/**", ".github/workflows/claude-using-revit.yml"]
   workflow_dispatch:
 
 jobs:
@@ -43,17 +45,26 @@ jobs:
       - name: MCP server smoke test
         run: bash addin/tests/smoke.sh
 
-      - name: Lay out dist/<version>
-        run: |
-          for v in 2023 2024 2025 2026 2027; do
-            tfm=net8.0; [ $v -lt 2025 ] && tfm=net48
-            d=addin/dist/$v
-            mkdir -p $d/roslyn
-            (cd addin/src/ClaudeUsingRevit/bin/Release/$v && tar cf - --exclude='*.pdb' --exclude=compile-refs.txt --exclude=runtimes .) | (cd $d && tar xf -)
-            cp addin/src/ClaudeUsingRevit.Compiler/bin/Release/$tfm/*.dll $d/roslyn/
-          done
+      - name: Build the installer (ClaudeUsingRevit-Setup.exe)
+        run: SETUP_VERSION=$(date +%Y.%m.%d).${{ github.run_number }} bash addin/setup/make-setup.sh
+
+      - name: Installer test (fake Windows folders)
+        run: bash addin/tests/setup-test.sh
 
       - uses: actions/upload-artifact@v4
         with:
-          name: claude-using-revit-dist
-          path: addin/dist
+          name: ClaudeUsingRevit-Setup
+          path: addin/dist/ClaudeUsingRevit-Setup.exe
+
+      - name: Publish to the release "setup-latest" (a fixed download link)
+        if: github.event_name != 'pull_request'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: setup-latest
+          name: "claude using revit - bản cài mới nhất"
+          prerelease: true
+          make_latest: false
+          body: |
+            Tải **ClaudeUsingRevit-Setup.exe**, bấm đúp, chọn bản Revit, bấm **Cài đặt**. Đóng Revit và Claude trước khi cài.
+            Build từ ${{ github.ref_name }} @ ${{ github.sha }}.
+          files: addin/dist/ClaudeUsingRevit-Setup.exe

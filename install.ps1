@@ -5,8 +5,8 @@
 #                     \commands\ (revit-commands\*.cs = the MCP tools), %APPDATA%\Autodesk\Revit\Addins\<version>\ClaudeUsingRevit.addin.
 #                     Close Revit first (it locks the DLL). Removes the old pyRevit extension ClaudeUsingRevit.extension.
 #   -Revit 2024,2025: the Revit versions for -AddIn (default: the ones installed)
-#   -Dist <folder>  : with -AddIn, install a ready build (<folder>\<version>\ClaudeUsingRevit.dll, e.g. the claude-using-revit-dist download of
-#                     the GitHub Actions run) instead of building: no .NET SDK needed
+#   -Dist <folder>  : with -AddIn, install a ready build (<folder>\<version>\ClaudeUsingRevit.dll) instead of building.
+#                     Most people need none of this file: ClaudeUsingRevit-Setup.exe (release setup-latest) does it all.
 #   -Dev            : with -AddIn, claude using revit reads extension\ and commands\ straight from this repo checkout
 #                     (config.json extensionDir / commandsDir): an edit applies on the next click / tool call.
 #   -RegisterClaude : add the MCP server to Claude Code (claude mcp add --transport http --scope user claude-using-revit ...)
