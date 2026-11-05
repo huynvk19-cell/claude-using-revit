@@ -23,6 +23,7 @@
       <!-- header (shared) -->
       <Grid.RowDefinitions>
         <RowDefinition Height="Auto"/>
+        <RowDefinition Height="*"/>
         <RowDefinition Height="Auto"/>
       </Grid.RowDefinitions>
       <Grid x:Name="header" Grid.Row="0" Margin="24,22,18,0" Background="Transparent">
@@ -41,8 +42,11 @@
                 ToolTip="Đóng (Esc)"/>
       </Grid>
 
+      <!-- the middle gives way on a low screen (lib/screen_fit.py); the buttons are outside it, always there -->
+      <ScrollViewer x:Name="body" Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="24,4,0,0" Padding="0,0,24,0">
+      <Grid>
       <!-- step 1: set up -->
-      <StackPanel x:Name="setup_panel" Grid.Row="1" Margin="24,4,24,22">
+      <StackPanel x:Name="setup_panel">
         <TextBlock Text="PHẠM VI" Style="{StaticResource Caption}"/>
         <Border Style="{StaticResource SegTrack}">
           <UniformGrid Columns="4">
@@ -73,8 +77,23 @@
             </StackPanel>
           </Grid>
         </Border>
+      </StackPanel>
 
-        <Grid Margin="0,18,0,0">
+      <!-- step 2: result -->
+      <StackPanel x:Name="result_panel" Visibility="Collapsed">
+        <TextBlock Text="BẤM MỘT VIEW ĐỂ MỞ VÀ CHỌN SẴN CÁC ĐỐI TƯỢNG CHƯA TAG" Style="{StaticResource Caption}"/>
+        <ScrollViewer MaxHeight="300" VerticalScrollBarVisibility="Auto">
+          <StackPanel x:Name="result_list"/>
+        </ScrollViewer>
+        <Border x:Name="notes_box" Style="{StaticResource WarnNote}" Margin="0,8,0,0" Visibility="Collapsed">
+          <TextBlock x:Name="notes" Foreground="#8A5A00" FontSize="12" TextWrapping="Wrap"/>
+        </Border>
+      </StackPanel>
+      </Grid>
+      </ScrollViewer>
+
+      <Grid Grid.Row="2" Margin="24,14,24,22">
+        <Grid x:Name="setup_actions">
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="*"/>
@@ -93,18 +112,7 @@
             </StackPanel>
           </Button>
         </Grid>
-      </StackPanel>
-
-      <!-- step 2: result -->
-      <StackPanel x:Name="result_panel" Grid.Row="1" Margin="24,4,24,22" Visibility="Collapsed">
-        <TextBlock Text="BẤM MỘT VIEW ĐỂ MỞ VÀ CHỌN SẴN CÁC ĐỐI TƯỢNG CHƯA TAG" Style="{StaticResource Caption}"/>
-        <ScrollViewer MaxHeight="300" VerticalScrollBarVisibility="Auto">
-          <StackPanel x:Name="result_list"/>
-        </ScrollViewer>
-        <Border x:Name="notes_box" Style="{StaticResource WarnNote}" Margin="0,8,0,0" Visibility="Collapsed">
-          <TextBlock x:Name="notes" Foreground="#8A5A00" FontSize="12" TextWrapping="Wrap"/>
-        </Border>
-        <Grid Margin="0,18,0,0">
+        <Grid x:Name="result_actions" Visibility="Collapsed">
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="*"/>
@@ -118,7 +126,7 @@
           </Button>
           <Button x:Name="done_btn" Grid.Column="2" Style="{StaticResource Primary}" Content="Xong"/>
         </Grid>
-      </StackPanel>
+      </Grid>
     </Grid>
   </ContentControl>
 </Window>

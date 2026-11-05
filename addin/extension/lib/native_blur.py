@@ -22,6 +22,8 @@ from System.Windows.Media import Brushes, Colors
 from System.Windows.Media.Imaging import BitmapCacheOption, BitmapImage
 from System.Windows.Shell import WindowChrome
 
+import screen_fit
+
 PANEL_ICON = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), u'claude using revit.tab', u'Panel.panel',
                           u'Open Panel.pushbutton', u'icon.png')
 
@@ -119,8 +121,9 @@ def drag(window):
         window.DragMove()
 
 
-def apply(window, done=None, resizable=False):
-    """Call before the window shows. The theme's GlassBase is the plain body where there is no blur. done(has blur)."""
+def apply(window, done=None, resizable=False, body=None):
+    """Call before the window shows. The theme's GlassBase is the plain body where there is no blur. done(has blur).
+    A window that is not resizable also follows its screen (screen_fit.py); body: the ScrollViewer of its middle."""
     window.WindowStyle = WindowStyle.SingleBorderWindow  # DWM blurs, rounds and shades a framed window
     chrome = WindowChrome()
     chrome.CaptionHeight = 0
@@ -141,3 +144,5 @@ def apply(window, done=None, resizable=False):
             done(ok)
     window.SourceInitialized += on
     window.MouseLeftButtonDown += lambda s, e: drag(window)
+    if not resizable:
+        screen_fit.fit(window, body)

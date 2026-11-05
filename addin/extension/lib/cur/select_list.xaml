@@ -6,38 +6,44 @@
         FontFamily="{StaticResource Ui}" FontSize="13" Foreground="{StaticResource Ink}"
         TextOptions.TextFormattingMode="Display">
   <ContentControl x:Name="glass" Style="{StaticResource GlassPanel}">
-    <StackPanel Margin="24,20,24,22">
-      <Grid x:Name="header" Background="Transparent">
-        <Grid.ColumnDefinitions>
-          <ColumnDefinition Width="Auto"/>
-          <ColumnDefinition Width="*"/>
-          <ColumnDefinition Width="Auto"/>
-        </Grid.ColumnDefinitions>
-        <ContentControl x:Name="icon" Style="{StaticResource AppIcon}"/>
-        <TextBlock x:Name="head_title" Grid.Column="1" Style="{StaticResource Title}" Margin="14,0,8,0"
-                   VerticalAlignment="Center" TextWrapping="Wrap"/>
-        <Button x:Name="close_btn" Grid.Column="2" Style="{StaticResource CloseBtn}" VerticalAlignment="Top"
-                ToolTip="Đóng (Esc)"/>
-      </Grid>
-      <TextBox x:Name="search" Margin="0,16,0,0" ToolTip="Lọc theo tên"/>
-      <Grid Margin="2,10,2,0">
-        <TextBlock x:Name="count" VerticalAlignment="Center" Opacity="0.7"/>
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-          <Button x:Name="all_btn" Style="{StaticResource Ghost}" Content="Chọn hết" Margin="0,0,6,0"/>
-          <Button x:Name="none_btn" Style="{StaticResource Ghost}" Content="Bỏ hết"/>
-        </StackPanel>
-      </Grid>
-      <Border Margin="0,8,0,0">
+    <Grid>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="*"/>
+        <RowDefinition Height="Auto"/>
+      </Grid.RowDefinitions>
+      <StackPanel Margin="24,20,24,0">
+        <Grid x:Name="header" Background="Transparent">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+          </Grid.ColumnDefinitions>
+          <ContentControl x:Name="icon" Style="{StaticResource AppIcon}"/>
+          <TextBlock x:Name="head_title" Grid.Column="1" Style="{StaticResource Title}" Margin="14,0,8,0"
+                     VerticalAlignment="Center" TextWrapping="Wrap"/>
+          <Button x:Name="close_btn" Grid.Column="2" Style="{StaticResource CloseBtn}" VerticalAlignment="Top"
+                  ToolTip="Đóng (Esc)"/>
+        </Grid>
+        <TextBox x:Name="search" Margin="0,16,0,0" ToolTip="Lọc theo tên"/>
+        <Grid Margin="2,10,2,0">
+          <TextBlock x:Name="count" VerticalAlignment="Center" Opacity="0.7"/>
+          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button x:Name="all_btn" Style="{StaticResource Ghost}" Content="Chọn hết" Margin="0,0,6,0"/>
+            <Button x:Name="none_btn" Style="{StaticResource Ghost}" Content="Bỏ hết"/>
+          </StackPanel>
+        </Grid>
+      </StackPanel>
+      <!-- the middle gives way on a low screen (screen_fit.py); the buttons are outside it, always there -->
+      <ScrollViewer x:Name="body" Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="24,8,0,0" Padding="0,0,24,0">
         <ScrollViewer Height="380" VerticalScrollBarVisibility="Auto">
           <StackPanel x:Name="rows" Margin="2,0,8,0"/>
         </ScrollViewer>
-      </Border>
-      <Grid Margin="0,20,0,0">
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-          <Button x:Name="cancel_btn" Style="{StaticResource Secondary}" Content="Huỷ" Margin="8,0,0,0"/>
-          <Button x:Name="ok_btn" Style="{StaticResource Primary}" Content="Chọn" Margin="8,0,0,0"/>
-        </StackPanel>
-      </Grid>
-    </StackPanel>
+      </ScrollViewer>
+      <StackPanel Grid.Row="2" Margin="24,14,24,22" Orientation="Horizontal" HorizontalAlignment="Right">
+        <Button x:Name="cancel_btn" Style="{StaticResource Secondary}" Content="Huỷ" Margin="8,0,0,0"/>
+        <Button x:Name="ok_btn" Style="{StaticResource Primary}" Content="Chọn" Margin="8,0,0,0"/>
+      </StackPanel>
+    </Grid>
   </ContentControl>
 </Window>

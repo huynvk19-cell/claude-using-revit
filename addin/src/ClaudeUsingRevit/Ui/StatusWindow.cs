@@ -97,21 +97,31 @@ namespace ClaudeUsingRevit.Ui
             log.Click += (s, e) => Open(Log.File);
             cmds.Click += (s, e) => Open(Paths.Commands);
 
+            // in proportion to the screen (as lib/screen_fit.py for the Python tools): only the list of calls gives way
+            var area = SystemParameters.WorkArea;
+            Width = Math.Min(area.Width - 16, 560 * Math.Max(1.0, Math.Min(1.6, area.Width / 1920)));
+            MaxHeight = area.Height - 16;
+
             var callsBox = new Border
             {
                 Margin = new Thickness(0, 6, 0, 0),
                 Padding = new Thickness(10, 8, 10, 8),
                 Background = new SolidColorBrush(Color.FromRgb(0xF3, 0xF6, 0xFA)),
                 CornerRadius = new CornerRadius(6),
-                Child = new ScrollViewer { MaxHeight = 260, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = _calls },
+                Child = new ScrollViewer { MaxHeight = 260 * area.Height / 1040, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = _calls },
             };
 
-            var root = new StackPanel { Margin = new Thickness(20, 16, 20, 18) };
-            root.Children.Add(head);
-            root.Children.Add(_note);
-            root.Children.Add(_info);
-            root.Children.Add(buttons);
-            root.Children.Add(new TextBlock { Text = "Lệnh gần đây", FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 8, 0, 0) });
+            var top = new StackPanel();
+            top.Children.Add(head);
+            top.Children.Add(_note);
+            top.Children.Add(_info);
+            top.Children.Add(buttons);
+            top.Children.Add(new TextBlock { Text = "Lệnh gần đây", FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 8, 0, 0) });
+            var root = new Grid { Margin = new Thickness(20, 16, 20, 18) };
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+            Grid.SetRow(callsBox, 1);
+            root.Children.Add(top);
             root.Children.Add(callsBox);
             Content = root;
 
