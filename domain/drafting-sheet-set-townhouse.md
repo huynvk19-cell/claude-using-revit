@@ -36,7 +36,7 @@ Danh mục ở §2 **thay cho** bộ hồ sơ lõi (`drafting-sheet-layout.md` �
 
 **Nhóm cửa đặt cuối bộ**, sau các chi tiết (thói quen của user). Cách này thay cho thứ tự nhóm mặc định trong `drafting-sheet-layout.md` §3.
 
-**Cột Điều kiện**: dòng có điều kiện chỉ bắt buộc khi điều kiện đó đúng (`drafting-sheet-layout.md` §2). Các dòng ghi "bổ sung 2026-11-05" là phần Claude thêm, chờ user duyệt. Card 01 vẫn hỏi user các dòng này.
+**Cột Điều kiện**: dòng có điều kiện chỉ bắt buộc khi điều kiện đó đúng (`drafting-sheet-layout.md` §2). User đã duyệt toàn bộ danh mục ngày 2026-11-05, kể cả 8 dòng bổ sung và mặt bằng lát sàn.
 
 | # | Nhóm | Bản vẽ | Tỷ lệ | GĐ | Điều kiện | Nội dung bắt buộc |
 |---|---|---|---|---|---|---|
@@ -52,33 +52,33 @@ Danh mục ở §2 **thay cho** bộ hồ sơ lõi (`drafting-sheet-layout.md` �
 | 10 | 2 | Mặt bằng sàn lầu 1…n (mỗi lầu một sheet) | 1:100–1:50 | CS | — | Ban công vươn ra (so với chỉ giới), lô gia, thông tầng, giếng trời |
 | 11 | 2 | Mặt bằng sàn tum | 1:100–1:50 | CS | có tum | — |
 | 12 | 2 | Mặt bằng mái, sân thượng | 1:100–1:50 | CS | — | Độ dốc, phễu thu, sê nô, ống đứng, mái tum, mái che giếng trời |
-| 13 | 2 | Mặt bằng trần hầm | 1:100–1:50 | TC | có hầm và hầm có trần (bổ sung 2026-11-05) | — |
-| 14 | 2 | Mặt bằng trần trệt | 1:100–1:50 | TC | — | Cao độ trần, vật liệu trần, giật cấp, đèn |
-| 15 | 2 | Mặt bằng trần lầu 1…n | 1:100–1:50 | TC | — | Như trên |
-| 16 | 2 | Mặt bằng trần tum | 1:100–1:50 | TC | tum có trần (bổ sung 2026-11-05) | — |
-| 17 | 3 | Mặt đứng chính (mặt tiền) | 1:100–1:50 | CS | bổ sung 2026-11-05 | Cao độ tầng, chiều cao tầng trệt, chỉ giới, vật liệu, biển hiệu (shophouse) |
-| 18 | 3 | Mặt đứng sau | 1:100–1:50 | CS | bổ sung 2026-11-05 | — |
-| 19 | 3 | Mặt đứng bên | 1:100–1:50 | CS | lô góc, hoặc nhà cao hơn nhà bên (bổ sung 2026-11-05) | — |
-| 20 | 4 | Mặt cắt dọc (qua thang và giếng trời) | 1:100–1:50 | CS | bổ sung 2026-11-05 | Cao độ tầng, chiều cao thông thuỷ, cao độ vỉa hè / nền / hầm |
-| 21 | 4 | Mặt cắt ngang | 1:100–1:50 | KT | bổ sung 2026-11-05 | Tường chung với nhà bên, ban công |
-| 22 | 5 | Chi tiết thang bộ 1…n (mỗi thang một sheet) | 1:50–1:20 | KT | — | Mặt bằng các tầng + mặt cắt của thang, lan can, tay vịn (`drafting-stair-plan`, `drafting-stair-section-*`) |
-| 23 | 5 | Chi tiết thang máy | 1:50 | KT | có thang máy | Mặt bằng hố thang các tầng, mặt cắt (pit, OH), cửa tầng |
-| 24 | 6 | Chi tiết nhà vệ sinh 1…n (mỗi loại WC một sheet) | 1:25–1:20 | TC | — | Mặt bằng phóng to, lát, triển khai tường, thiết bị, độ dốc thoát sàn, chống thấm |
-| 25 | 8 | Chi tiết bậc tam cấp | 1:20–1:10 | TC | — | — |
-| 26 | 8 | Chi tiết bồn hoa | 1:20–1:10 | TC | có bồn hoa | Lớp chống thấm, lỗ thoát nước |
-| 27 | 8 | Chi tiết ramp dốc | 1:50–1:20 | TC | có hầm / lối xe | Độ dốc, rãnh thu đầu / chân ram, chống trượt |
-| 28 | 8 | Chi tiết thu nước mưa | 1:20–1:5 | TC | — | Phễu thu, sê nô, ống đứng, cổ ống xuyên sàn |
-| 29 | 8 | Chi tiết ban công, lô gia | 1:20–1:10 | TC | — | Lan can (chiều cao, khe hở), độ dốc thoát nước, gờ chắn |
-| 30 | 8 | Chi tiết mái | 1:20–1:5 | TC | — | Chống thấm, diềm mái, mái tum, mái che giếng trời |
-| 31 | 8 | Chi tiết mặt tiền | 1:20–1:10 | TC | mặt tiền có lam / phào / mái đón / biển hiệu (bổ sung 2026-11-05) | — |
-| 32 | 8 | Chi tiết giếng trời | 1:20–1:10 | TC | có giếng trời (bổ sung 2026-11-05) | Mái kính / mái che, lan can, thoát nước |
-| 33 | 8 | Chi tiết tiếp giáp nhà bên, khe lún | 1:20–1:10 | TC | dự án nhiều căn / có nhà bên (bổ sung 2026-11-05) | Chống thấm tường chung, diềm, khe lún |
-| 34 | 7 | Bảng thống kê cửa đi, cửa sổ | — | KT | — | Mã cửa, kích thước, số lượng, vật liệu, vị trí (tầng) |
-| 35 | 7 | Chi tiết cửa đi, cửa sổ | 1:50–1:20 | TC | — | Mặt đứng từng mã cửa, chiều mở, phụ kiện; cửa cuốn / cửa xếp mặt tiền |
+| 13 | 2 | Mặt bằng lát sàn hầm, trệt, lầu 1…n, tum, sân thượng (mỗi tầng một sheet) | 1:100–1:50 | TC | — | Mã / vật liệu lát từng phòng, kích thước viên và điểm bắt đầu lát, cao độ hoàn thiện, độ dốc và ký hiệu dốc (WC, ban công, sân thượng), chỉ / nẹp chuyển vật liệu (`drafting-plan-floor-finish`) |
+| 14 | 2 | Mặt bằng trần hầm | 1:100–1:50 | TC | có hầm và hầm có trần | — |
+| 15 | 2 | Mặt bằng trần trệt | 1:100–1:50 | TC | — | Cao độ trần, vật liệu trần, giật cấp, đèn |
+| 16 | 2 | Mặt bằng trần lầu 1…n | 1:100–1:50 | TC | — | Như trên |
+| 17 | 2 | Mặt bằng trần tum | 1:100–1:50 | TC | tum có trần | — |
+| 18 | 3 | Mặt đứng chính (mặt tiền) | 1:100–1:50 | CS | — | Cao độ tầng, chiều cao tầng trệt, chỉ giới, vật liệu, biển hiệu (shophouse) |
+| 19 | 3 | Mặt đứng sau | 1:100–1:50 | CS | — | — |
+| 20 | 3 | Mặt đứng bên | 1:100–1:50 | CS | lô góc, hoặc nhà cao hơn nhà bên | — |
+| 21 | 4 | Mặt cắt dọc (qua thang và giếng trời) | 1:100–1:50 | CS | — | Cao độ tầng, chiều cao thông thuỷ, cao độ vỉa hè / nền / hầm |
+| 22 | 4 | Mặt cắt ngang | 1:100–1:50 | KT | — | Tường chung với nhà bên, ban công |
+| 23 | 5 | Chi tiết thang bộ 1…n (mỗi thang một sheet) | 1:50–1:20 | KT | — | Mặt bằng các tầng + mặt cắt của thang, lan can, tay vịn (`drafting-stair-plan`, `drafting-stair-section-*`) |
+| 24 | 5 | Chi tiết thang máy | 1:50 | KT | có thang máy | Mặt bằng hố thang các tầng, mặt cắt (pit, OH), cửa tầng |
+| 25 | 6 | Chi tiết nhà vệ sinh 1…n (mỗi loại WC một sheet) | 1:25–1:20 | TC | — | Mặt bằng phóng to, lát, triển khai tường, thiết bị, độ dốc thoát sàn, chống thấm |
+| 26 | 8 | Chi tiết bậc tam cấp | 1:20–1:10 | TC | — | — |
+| 27 | 8 | Chi tiết bồn hoa | 1:20–1:10 | TC | có bồn hoa | Lớp chống thấm, lỗ thoát nước |
+| 28 | 8 | Chi tiết ramp dốc | 1:50–1:20 | TC | có hầm / lối xe | Độ dốc, rãnh thu đầu / chân ram, chống trượt |
+| 29 | 8 | Chi tiết thu nước mưa | 1:20–1:5 | TC | — | Phễu thu, sê nô, ống đứng, cổ ống xuyên sàn |
+| 30 | 8 | Chi tiết ban công, lô gia | 1:20–1:10 | TC | — | Lan can (chiều cao, khe hở), độ dốc thoát nước, gờ chắn |
+| 31 | 8 | Chi tiết mái | 1:20–1:5 | TC | — | Chống thấm, diềm mái, mái tum, mái che giếng trời |
+| 32 | 8 | Chi tiết mặt tiền | 1:20–1:10 | TC | mặt tiền có lam / phào / mái đón / biển hiệu | — |
+| 33 | 8 | Chi tiết giếng trời | 1:20–1:10 | TC | có giếng trời | Mái kính / mái che, lan can, thoát nước |
+| 34 | 8 | Chi tiết tiếp giáp nhà bên, khe lún | 1:20–1:10 | TC | dự án nhiều căn / có nhà bên | Chống thấm tường chung, diềm, khe lún |
+| 35 | 7 | Bảng thống kê cửa đi, cửa sổ | — | KT | — | Mã cửa, kích thước, số lượng, vật liệu, vị trí (tầng) |
+| 36 | 7 | Chi tiết cửa đi, cửa sổ | 1:50–1:20 | TC | — | Mặt đứng từng mã cửa, chiều mở, phụ kiện; cửa cuốn / cửa xếp mặt tiền |
 
 **Hỏi user khi lập danh mục** (card 01). Các bản vẽ sau tuỳ hợp đồng và thói quen văn phòng:
 - mặt bằng kích thước tách riêng khỏi mặt bằng sàn;
-- mặt bằng lát sàn (hoàn thiện sàn);
 - mặt bằng xây tường;
 - mặt bằng bố trí nội thất;
 - chi tiết bếp;
@@ -89,9 +89,9 @@ Danh mục ở §2 **thay cho** bộ hồ sơ lõi (`drafting-sheet-layout.md` �
 
 | Nhóm | Bản vẽ | Tỷ lệ | GĐ | Nội dung bắt buộc |
 |---|---|---|---|---|
-| 1 | Mặt bằng tổ hợp dãy nhà | 1:200 | KT | Các căn ghép thành dãy, tường chung, khe lún giữa các căn |
-| 1 | Bảng phân loại căn theo mẫu | — | CS | Mã lô → mẫu nhà, diện tích, số tầng, đối xứng / không |
-| 3 | Mặt đứng dãy phố | 1:200 | CS | Nhiều căn liền nhau, cao độ chuẩn của dãy |
+| 37 | Mặt bằng tổ hợp dãy nhà | 1:200 | KT | Các căn ghép thành dãy, tường chung, khe lún giữa các căn |
+| 38 | Bảng phân loại căn theo mẫu | — | CS | Mã lô → mẫu nhà, diện tích, số tầng, đối xứng / không |
+| 39 | Mặt đứng dãy phố | 1:200 | CS | Nhiều căn liền nhau, cao độ chuẩn của dãy |
 
 ## 3. Layout đặc thù
 
