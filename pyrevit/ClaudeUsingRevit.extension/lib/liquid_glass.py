@@ -37,6 +37,10 @@ class GlassWindow(forms.WPFWindow):
 
     def __init__(self, xaml_source, literal_string=False, handle_esc=True):
         load_theme(self.Resources)  # before the XAML: its StaticResources need the theme
+        try:
+            native_blur.tool_icon(self, script.get_bundle_file("icon.png"))  # same picture as the ribbon button
+        except Exception:
+            native_blur.tool_icon(self)
         self.backdrop = False
         forms.WPFWindow.__init__(self, xaml_source, literal_string=literal_string, handle_esc=handle_esc)
         native_blur.apply(self, self._backdrop_set)
