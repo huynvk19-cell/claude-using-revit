@@ -1,6 +1,7 @@
-﻿# Draw the ribbon icons (96 x 96 icon.png) of the "claude using revit" tab with WPF, in the manner of Revit's own ribbon:
-# transparent background, grey objects with a dark slate outline and a soft top light, one accent (blue, red or gold).
-# Each icon is drawn on a 32 x 32 grid, the size Revit shows it at, so its lines stay crisp.
+﻿# Draw the ribbon icons (96 x 96 icon.png) of the "claude using revit" tab with WPF: the objects of Revit's own ribbon
+# (grey with a dark slate outline, one accent: blue, red or gold) on a plate of mica, slightly raised: light from the top
+# left, a darker side below, a soft shadow under the plate and under the object. Drawn on a 32 x 32 grid, the size Revit
+# shows it at.
 #   powershell -STA -File pyrevit\make_icons.ps1 [-Preview <png>]   then install.ps1 -PyRevit + pyRevit > Reload
 param([string]$Preview)
 $ErrorActionPreference = 'Stop'
@@ -94,7 +95,49 @@ $icons = [ordered]@{
 }
 
 function Icon($inner) {
-    $xaml = "<Viewbox xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' Width='96' Height='96'><Canvas Width='32' Height='32'>$inner</Canvas></Viewbox>"
+    $xaml = @"
+<Viewbox xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' Width='96' Height='96'>
+  <Grid Width='32' Height='32'>
+    <!-- shadow under the plate -->
+    <Border Margin='1.5,3,1.5,0' CornerRadius='3.5' Background='#000000' Opacity='0.28'>
+      <Border.Effect><BlurEffect Radius='1.6'/></Border.Effect>
+    </Border>
+    <!-- the side of the plate, then its face: frost lit from the top left, darker to the bottom right -->
+    <Border Margin='1,2.5,1,0.8' CornerRadius='3.5' Background='#8C95A1'/>
+    <Border Margin='1,1,1,2' CornerRadius='3.5'>
+      <Border.Background>
+        <LinearGradientBrush StartPoint='0,0' EndPoint='1,1'>
+          <GradientStop Color='#FFFFFF' Offset='0'/><GradientStop Color='#E9EDF2' Offset='0.45'/>
+          <GradientStop Color='#C6CDD6' Offset='1'/>
+        </LinearGradientBrush>
+      </Border.Background>
+    </Border>
+    <!-- light on the top edge, shade on the lower edge -->
+    <Border Margin='1,1,1,2' CornerRadius='3.5' BorderThickness='0.7'>
+      <Border.BorderBrush>
+        <LinearGradientBrush StartPoint='0,0' EndPoint='0,1'>
+          <GradientStop Color='#FFFFFFFF' Offset='0'/><GradientStop Color='#80FFFFFF' Offset='0.4'/>
+          <GradientStop Color='#338A93A0' Offset='1'/>
+        </LinearGradientBrush>
+      </Border.BorderBrush>
+    </Border>
+    <!-- the sheen across the mica -->
+    <Path Data='M 2.2,2 L 21,2 L 8,18 L 2.2,24 Z' Opacity='0.55' IsHitTestVisible='False'>
+      <Path.Fill>
+        <LinearGradientBrush StartPoint='0,0' EndPoint='1,1'>
+          <GradientStop Color='#A6FFFFFF' Offset='0'/><GradientStop Color='#00FFFFFF' Offset='1'/>
+        </LinearGradientBrush>
+      </Path.Fill>
+    </Path>
+    <!-- the object, a little smaller, standing on the plate -->
+    <Canvas Width='32' Height='32' RenderTransformOrigin='0.5,0.5' Margin='0,-0.6,0,0.6'>
+      <Canvas.RenderTransform><ScaleTransform ScaleX='0.76' ScaleY='0.76'/></Canvas.RenderTransform>
+      <Canvas.Effect><DropShadowEffect Color='#1E242C' BlurRadius='2.2' ShadowDepth='1' Direction='290' Opacity='0.5'/></Canvas.Effect>
+$inner
+    </Canvas>
+  </Grid>
+</Viewbox>
+"@
     $el = [Windows.Markup.XamlReader]::Parse($xaml)
     $el.Measure((New-Object Windows.Size 96, 96)); $el.Arrange((New-Object Windows.Rect 0, 0, 96, 96)); $el.UpdateLayout()
     $bmp = New-Object Windows.Media.Imaging.RenderTargetBitmap 96, 96, 96, 96, ([Windows.Media.PixelFormats]::Pbgra32)
