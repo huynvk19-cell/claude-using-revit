@@ -10,6 +10,7 @@
     <Grid>
       <Grid.RowDefinitions>
         <RowDefinition Height="Auto"/>
+        <RowDefinition Height="*"/>
         <RowDefinition Height="Auto"/>
       </Grid.RowDefinitions>
       <Grid x:Name="header" Grid.Row="0" Margin="24,22,18,0" Background="Transparent">
@@ -27,7 +28,9 @@
                 ToolTip="Đóng (Esc)"/>
       </Grid>
 
-      <StackPanel Grid.Row="1" Margin="24,4,24,22">
+      <!-- the middle scrolls when the screen is too low; the Xuất button is outside it, always there -->
+      <ScrollViewer x:Name="body" Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="24,4,0,0" Padding="0,0,24,0">
+      <StackPanel>
         <Grid Margin="0,18,0,8">
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
@@ -97,7 +100,10 @@
           </Grid>
         </Border>
 
-        <Grid Margin="0,18,0,0">
+      </StackPanel>
+      </ScrollViewer>
+
+        <Grid Grid.Row="2" Margin="24,14,24,22">
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="*"/>
@@ -116,7 +122,6 @@
             </StackPanel>
           </Button>
         </Grid>
-      </StackPanel>
     </Grid>
   </ContentControl>
 </Window>

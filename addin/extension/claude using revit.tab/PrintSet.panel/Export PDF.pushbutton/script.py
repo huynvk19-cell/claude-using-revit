@@ -12,12 +12,15 @@ and "dwg_export").
 """
 import os
 
+import clr
+
 from cur import forms, revit, script
 
-from System.Windows import (FontWeights, GridLength, GridUnitType, TextTrimming,
-                            Thickness, Visibility)
+from System.Windows import (FontWeights, GridLength, GridUnitType, PresentationSource,
+                            TextTrimming, Thickness, Visibility)
 from System.Windows.Controls import CheckBox, ColumnDefinition, Grid, TextBlock
 from System.Windows.Input import Key, Keyboard, ModifierKeys, Mouse, MouseButtonState
+from System.Windows.Interop import WindowInteropHelper
 
 import dwg_export as de
 import liquid_glass as lg
@@ -45,6 +48,7 @@ def pick_schedule():
 
 
 NO_SETUP = u"Mặc định của Revit (model chưa có template)"
+LIST_MAX, LIST_MIN = 420, 150     # height of the sheet list
 
 
 class SheetPicker(lg.GlassWindow):
@@ -114,6 +118,32 @@ class SheetPicker(lg.GlassWindow):
         self.sheets = sheets
         self.show_left_out()
         self.refresh()
+        self.ContentRendered += self.fit
+        self.SizeChanged += self.fit
+        self.body.ScrollChanged += self.fit     # the CAD row or a note came and the height is capped
+
+    def screen(self):
+        """(top, bottom) of the usable part of the window's screen, in WPF units."""
+        clr.AddReference("System.Windows.Forms")
+        from System.Windows.Forms import Screen
+        area = Screen.FromHandle(WindowInteropHelper(self).Handle).WorkingArea
+        k = PresentationSource.FromVisual(self).CompositionTarget.TransformFromDevice.M22
+        return area.Top * k, area.Bottom * k
+
+    def fit(self, sender=None, args=None):
+        """The whole window on the screen: the sheet list gives way first, then the middle
+        scrolls (the window's height is capped) and the Xuất button stays where it can be hit."""
+        top, bottom = self.screen()
+        room = bottom - top - 8
+        self.MaxHeight = room
+        fixed = self.ActualHeight - self.body.ViewportHeight + self.body.ExtentHeight - self.scroller.ActualHeight
+        want = max(LIST_MIN, min(LIST_MAX, room - fixed))
+        if abs(self.scroller.MaxHeight - want) > 1:
+            self.scroller.MaxHeight = want
+        if self.Top + self.ActualHeight > bottom:
+            self.Top = bottom - self.ActualHeight
+        if self.Top < top:
+            self.Top = top
 
     @property
     def group(self):
