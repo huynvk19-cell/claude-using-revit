@@ -13,6 +13,9 @@ Per sheet:
     with only some views drawn (the others blanked inside a transaction group
     that is rolled back, so the model is left as it was), then the parts are drawn
     over each other into one page (pdf_merge; parts sit in %TEMP% meanwhile);
+  - a sheet with an elevation or section view -> always one view per part, whatever
+    its weight, joined the same way (hidden-line drawing of these views is what kills
+    Revit most);
   - between sheets: .NET garbage collection + released API objects purged, free RAM
     checked; too little left -> stop cleanly, the next run carries on from there.
 
@@ -250,7 +253,7 @@ def crash_notes(doc, sheets):
 def mark_pass(doc, sheet, plan, view_ids, tiles=1):
     mem = crash_memory(doc)
     mem["pending"] = {"sheet": sheet.Id.IntegerValue, "views": list(view_ids), "tiles": tiles,
-                      "plan": plan_key(plan)}
+                      "plan": plan_key(plan), "alone": bool(plan.get("isolated"))}
     _crash_save(doc, mem)
 
 
@@ -292,7 +295,8 @@ def _learn_pending(doc, what):
 def _learn(doc, mem, p, label, what):
     """Narrow the crash memory one step for pass p; returns the line for the user."""
     sheets = mem.setdefault("sheets", [])
-    if len(p["views"]) == 1 or (p["views"] and p["sheet"] in sheets):
+    alone = p["sheet"] in sheets or p.get("alone")
+    if len(p["views"]) == 1 or (p["views"] and alone):
         # one view, or one group of dependent views of an isolated sheet
         names, n = [], 1
         for vid in p["views"]:
@@ -302,7 +306,7 @@ def _learn(doc, mem, p, label, what):
             names.append(v.Name if v is not None else str(vid))
         return u"{0}: {1} view \"{2}\" (lần {3}), lần sau chia view thành {4}x{4} ô theo vùng crop".format(
             label, what, u"\", \"".join(names), n, tiles_for(n))
-    if p["sheet"] in sheets:
+    if alone:
         return u"{0}: {1} khung tên / ghi chú của sheet".format(label, what)
     sheets.append(p["sheet"])
     return u"{0}: {1} sheet này, lần sau tách từng view để tìm view lỗi".format(label, what)
@@ -477,7 +481,8 @@ def assess(doc, sheet, weigher, limit, crash=None):
 
     Returns {"weight", "views": [(viewport, weight, notes)], "mode": whole | parts,
              "parts": [{"vps": [viewport ids], "tiles": per side}] (first = base part
-             with the title block), "tiled": [(view name, tiles)], "note"}.
+             with the title block), "isolated": each view alone, "tiled": [(view name,
+             tiles)], "note"}.
     """
     crash = crash or {}
     rows = []
@@ -488,8 +493,9 @@ def assess(doc, sheet, weigher, limit, crash=None):
     out = {"weight": total, "views": rows, "mode": "whole", "parts": None,
            "tiled": [], "note": u""}
     sid = sheet.Id.IntegerValue
-    isolate = sid in crash.get("sheets", []) or any(
+    crashed = sid in crash.get("sheets", []) or any(
         crashes(crash, vp.ViewId.IntegerValue) for vp, _, _ in rows)
+    isolate = crashed or any(_view_by_view(doc.GetElement(vp.ViewId)) for vp, _, _ in rows)
     if not isolate and (total <= limit or len(rows) < 2):
         if total > limit:
             out["note"] = u"một view nặng, không chia được"
@@ -515,7 +521,9 @@ def assess(doc, sheet, weigher, limit, crash=None):
                     out["tiled"] += [(doc.GetElement(vp.ViewId).Name, n) for vp, _ in unit]
             parts.append({"vps": [vp.Id for vp, _ in unit], "tiles": n})
         out["parts"] = parts
-        out["note"] = out["note"] or u"tách từng view (lần trước Revit văng)"
+        out["isolated"] = True
+        out["note"] = out["note"] or (u"tách từng view (lần trước Revit văng)" if crashed else
+                                      u"mặt đứng / mặt cắt: xuất từng view rồi gộp")
         return out
     if len(units) < 2:
         out["mode"] = "whole"
@@ -539,6 +547,11 @@ def assess(doc, sheet, weigher, limit, crash=None):
     if any(w > limit for _, w, _ in rows):
         out["note"] = u"có view vượt ngưỡng một mình"
     return out
+
+
+def _view_by_view(v):
+    """Elevations and sections (detail sections too) always go out one view per part."""
+    return v.ViewType in (ViewType.Elevation, ViewType.Section, ViewType.Detail)
 
 
 def _tile_blocker(v):
