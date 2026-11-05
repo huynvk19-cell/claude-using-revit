@@ -31,6 +31,10 @@ description: "Giá trị riêng của dự án cho bộ skill drafting. Copy fil
 | Tag tường (WT1, WT4, `drafting-plan-dims` 04): type tag tường cố định (để trống = type đang dùng, chưa có thì hỏi) · phần tên room vệ sinh (không tag tường) | `<tên type, không kèm tên family>` · `TOILET, WC` |
 | Ký hiệu độ dốc (SL2–SL4, `drafting-plan-dims` 05, `drafting-plan-floor-finish` 01): Spot Slope type cố định (để trống = type có sẵn hướng Down, đơn vị thập phân / %) | `<tên type>` |
 | Schedule danh mục bản vẽ / print set khớp với nó | `<vd. DRAWINGS LIST>` / `<tên print set>` |
+| Layout: loại công trình (+ hỗn hợp, loại con) · giai đoạn (`drafting-sheet-layout` 00) | `<nhà liên kế / biệt thự / nhà cao tầng / sân bay / công cộng: trường học, bệnh viện, TTTM / công nghiệp>` · `<YT / CS / KT / TC / HC>` |
+| Layout: khổ giấy · khung tên · vùng vẽ (lề, dải khung tên, cột ghi chú, mm) · khoảng hở giữa viewport (mm) | `<vd. A1>` · `<tên type khung tên>` · `<vd. lề 10, khung tên phải 180, ghi chú 120>` · `15` |
+| Layout: định dạng số sheet theo nhóm · mã mẫu nhà / hạng mục / khối | `<vd. tiền tố + nhóm + 2 chữ số>` · `<vd. mẫu A, B, góc>` |
+| Layout: vùng (scope box) · thứ tự sheet vùng · ngôn ngữ tên sheet | `<tên scope box>` · `<theo tầng rồi vùng / theo vùng rồi tầng>` · `<Việt / Anh / song ngữ>` |
 | Sổ tay dự án (nếu có) | `<link>` |
 
 ## Ghi chú riêng của dự án

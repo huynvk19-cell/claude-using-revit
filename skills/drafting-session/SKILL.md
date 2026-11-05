@@ -34,6 +34,7 @@ Do **not** read the whole `drafting-domain/` folder or every skill. Pick the tas
 | Reflected ceiling plans (khai triển mặt bằng trần): tag room… | `drafting-ceiling-plan` | `drafting-ceiling-plan.md` |
 | Room tags (fix outside / "?"), view titles | `drafting-tags-titles` | `drafting-annotation.md` |
 | Viewports, crops, templates, links, drawing list + print set | `drafting-views-sheets` | `drafting-views-sheets.md` |
+| Sheet set layout (layout bộ hồ sơ, dàn sheet): drawings the building type needs, sheet numbers / names, scale / paper / zones, viewport placement | `drafting-sheet-layout` | `drafting-sheet-layout.md` + one `drafting-sheet-set-<type>.md` (card 00) |
 | Checking by image | `drafting-visual-check` | — |
 
 - **Shared tasks first**: a job the ribbon tab "claude using revit" already does (print set = drawing list, sheet-list columns / No. / one value for all sheets, untagged scan / highlight, highlight / clear) is one `cur_task {task, args}` call: same code as the user's button, short result. `cur_task {task:"list_tasks"}` lists them. Never re-derive such a job step by step.
