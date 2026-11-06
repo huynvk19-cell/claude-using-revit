@@ -12,7 +12,7 @@ For each view:
 2. Read the result:
    - `missingSources` not empty: the structural model is not loaded or is hidden in the view; fix the source before going on.
    - `officialInView` > 0: the view already has regions of the official types; compare with the preview so nothing is doubled.
-   - `earthSources` = 0: the view has no earth region to take the outline from; only the hidden profiles get earth, so tell the user.
+   - `earthSources` = 0: the view has no earth region to take the outline from; only the hidden profiles get earth, so tell the user. An earth region of another type lends its outline through `earthSourceTypes`.
    - `splitRegions` > 0: Revit refused the loops of one type as one region; the merged profiles it cannot draw stay as separate regions (listed in `fails`); say so in the report.
    - `undergroundHidden`, `pileCapsSkipped`, `noMaterialFoundations`, `unknown`, `notMergedPairs`: keep for the report.
 3. `mode:"apply"` with the same arguments.
