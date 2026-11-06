@@ -1,6 +1,6 @@
 ---
 name: drafting-section-general
-description: "Develop general building section drawings (khai triển mặt cắt chung, usually 1:200) via Revit MCP, one step card at a time. Cards: structural fill (SF1–SF9: one filled region per type per view over cut structural framing, slabs, foundations and structural walls; touching ones merge; concrete and steel apart; no pile caps; underground only the ground or bottom slab and what connects to it; an earth region covers the rest). Use for khai triển mặt cắt chung, mặt cắt chung, fill kết cấu, tô kết cấu, tô dầm sàn móng bị cắt, filled region kết cấu, structural fill."
+description: "Develop general building section drawings (khai triển mặt cắt chung, usually 1:200) via Revit MCP, one step card at a time. Cards: structural fill (SF1–SF9: one filled region per view over cut concrete framing, slabs, foundations and structural walls; touching ones merge; no steel; no pile caps; underground only the ground or bottom slab and what connects to it; an earth region covers the rest). Use for khai triển mặt cắt chung, mặt cắt chung, fill kết cấu, tô kết cấu, tô dầm sàn móng bị cắt, filled region kết cấu, structural fill."
 ---
 
 # General sections (khai triển mặt cắt chung)
@@ -13,7 +13,7 @@ Standard: `~/.claude/drafting-domain/drafting-section-general.md` (Vietnamese).
 
 Load `drafting-session` first. Take these values from the project `drafting-profile.md` (`templates/drafting-profile.md`), row "Fill kết cấu":
 - the structural models (`sources`);
-- the filled region types for concrete, steel and earth;
+- the filled region types for concrete and earth;
 - the boundary line style;
 - the ground floor level and the name patterns of pile caps and piles;
 - the mark type suffix.
