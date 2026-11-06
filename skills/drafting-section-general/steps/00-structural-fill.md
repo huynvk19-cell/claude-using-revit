@@ -13,7 +13,7 @@ For each view:
    - `missingSources` not empty: the structural model is not loaded or is hidden in the view; fix the source before going on.
    - `officialInView` > 0: the view already has regions of the official types; compare with the preview so nothing is doubled.
    - `earthSources` = 0: the view has no earth region to take the outline from; only the hidden profiles get earth, so tell the user.
-   - `splitRegions` > 0: Revit refused the loops of one type as one region; say so in the report.
+   - `splitRegions` > 0: Revit refused the loops of one type as one region; the merged profiles it cannot draw stay as separate regions (listed in `fails`); say so in the report.
    - `undergroundHidden`, `pileCapsSkipped`, `noMaterialFoundations`, `unknown`, `notMergedPairs`: keep for the report.
 3. `mode:"apply"` with the same arguments.
 4. Export the view (`export_sheet_images {sheetNumbers:[], viewIds:[viewId], pixelWidth:9000}`) and look at crops of the floors, the foundations and the roof. Zoomed exports of a section can come out blank; crop the full export instead.
@@ -36,6 +36,7 @@ The view cuts no structural element: `structural_cut_fill` returns 0 regions.
 
 ## Never
 
+- Fill an element the cut plane does not pass through (the first rule of this card): seen beyond the plane, or only touching it, is not cut.
 - Fill finish floors or site floors (road, pavement, soil): only models in `sources` are read, never add an architectural or site model to them.
 - Fill pile caps or piles, even where they touch a slab.
 - Merge concrete with steel, or ask the user whether to.
