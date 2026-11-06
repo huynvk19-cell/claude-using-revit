@@ -26,7 +26,7 @@ The command gives regions their mark types itself. **Do not run `mark_types mark
 - The view has one concrete region and one earth region drawn under it.
 - Every hidden underground element, pile cap and pile is covered by the earth region on the image.
 - Profiles that touch merge, with no line between them. Steel is not filled.
-- A pile cap under a lift or stair core wall is filled as its slab (`coreCapsFilled`).
+- A pile cap under a lift or stair core is filled as its slab only when no slab passes above it between the core walls (`coreCapsFilled`).
 - Underground, only the slab under the ground floor or the bottom basement slab is filled, plus what connects to it, directly or through other filled elements (a slab, the wall beside it, the beam under that wall), with joints up to 50 mm counted as connected (`touchGapMm`); no other pile cap and no pile is filled.
 - All new regions use the profile's line style and a mark type.
 - On the image, regions sit on their elements and cover no tag, dim or text.
@@ -39,7 +39,7 @@ The view cuts no structural element: `structural_cut_fill` returns 0 regions.
 
 - Fill an element the cut plane does not pass through (the first rule of this card): seen beyond the plane, or only touching it, is not cut.
 - Fill finish floors or site floors (road, pavement, soil): only models in `sources` are read, never add an architectural or site model to them.
-- Fill piles, or pile caps that carry no core wall, even where they touch a slab.
+- Fill piles, pile caps that carry no core wall, or pile caps with a slab above them, even where they touch a slab.
 - Fill structural steel, or ask the user whether to.
 - Use Hide in View or a template filter to hide what the earth region covers, or edit the linked elements.
 - Edit or delete the earth region another drafter drew: it only lends its outline.
