@@ -15,6 +15,7 @@
       "earthSourceTypes": { "type": "array", "items": { "type": "string" }, "description": "Other region types that lend the earth outline" },
       "groundLevel": { "type": "string", "description": "Host level name of the ground floor" },
       "pileCapPatterns": { "type": "array", "items": { "type": "string" }, "description": "Regex on family : type of pile caps, filled only under a core wall" },
+      "fillCoreCaps": { "type": "boolean", "description": "Fill pile caps under a core, default true; false = no pile cap at all" },
       "pilePatterns": { "type": "array", "items": { "type": "string" }, "description": "Regex on family : type of piles, never filled" },
       "slabBandMm": { "type": "number", "description": "Depth of the kept slab bands, default 1000" },
       "touchGapMm": { "type": "number", "description": "Underground gap that still counts as touching a slab, default 50" },
@@ -37,7 +38,7 @@
 //    level or above the lowest slab are kept; every other underground profile is kept only if it connects to a kept slab, directly or through other kept profiles
 //    (touching, or within touchGapMm: joint gap).
 //    Piles (pilePatterns) are never filled. A pile cap (pileCapPatterns) is filled only as the slab of a core: it touches
-//    a structural wall that rises above groundLevel, directly or through walls stacked under it, and no slab passes above the cap between those walls (coreCapsFilled); it then also counts as a kept slab. Each region type gets ONE region per view, all its loops
+//    a structural wall that rises above groundLevel, directly or through walls stacked under it, and no slab at or below the ground level passes above the cap between those walls (coreCapsFilled); it then also counts as a kept slab. Each region type gets ONE region per view, all its loops
 //    in it. splitRegions > 0 = Revit refused them together: merged profiles it cannot draw stay as separate parts in
 //    their own regions (listed in fails), everything else stays one region.
 //    Earth: one masking region of <earthType><suffix>, drawn first so the structure stays on top. Its outline = the
@@ -184,10 +185,10 @@ public static class StructuralCutFill
             // A core has no slab of its own: between its walls on the cap, no slab may pass above the cap.
             var onCap = coreWalls.Where(w => Connected(c, w, 50.0 / MM, 0.5 / MM)).ToList();
             bool isCore = false;
-            if (onCap.Count > 0)
+            if (onCap.Count > 0 && (args["fillCoreCaps"] == null || (bool)args["fillCoreCaps"]))
             {
                 double mid = (onCap.Min(w => w.X0) + onCap.Max(w => w.X1)) / 2;
-                isCore = !items.Any(i => i.IsSlab && i.ZTop > c.ZTop && i.X0 <= mid && i.X1 >= mid);
+                isCore = !items.Any(i => i.IsSlab && i.ZTop > c.ZTop && i.ZTop <= groundZ + 1.0 / MM && Covers(i, mid, inv));
             }
             if (isCore) { items.Add(c); nCoreCap++; }
             else { nCap++; covered.Add(c); }
@@ -441,6 +442,21 @@ public static class StructuralCutFill
             }, fails, "earth part")) made++;
         }
         return made;
+    }
+
+    // One cut face can hold several outer loops (a slab with an opening), so test the loops, not the face's box.
+    static bool Covers(Item slab, double x, Transform inv)
+    {
+        foreach (var pf in Caps(slab.S))
+        {
+            var boxes = pf.GetEdgesAsCurveLoops().Select(l => Box(l, inv)).ToList();
+            foreach (var b in boxes)
+            {
+                if (b[0] > x || b[2] < x) continue;
+                if (!boxes.Any(o => o != b && Inside(o, b) && o[0] <= x && o[2] >= x)) return true;
+            }
+        }
+        return false;
     }
 
     static double[] Box(CurveLoop cl, Transform inv)
