@@ -16,7 +16,7 @@ Read first (only these two):
 ## Fewest calls first
 
 - Confirm the sheet or view with the user once if the request is ambiguous or the window title changes, before reading anything.
-- Stair plans and stair sections along the flights: run `view_develop` first (one view, one call, one Undo step). Revit does the filtering; read only its result. The skill's cards and standard are for what its `Left` still lists.
+- Every drawing kind (stair plans and sections, elevations, building sections, floor plans, ceiling plans): run `view_develop {viewId, mode, imagePath, profile}` first (one view, one call, one Undo step; the profile's `view_develop` row). `preview` rolls everything back and still writes the image, so look at that before `apply`. Revit does the filtering; read only its result. The skill's cards and standard are for what its `Left` still lists.
 - Never export images while the user works in the same Revit window: each export brings a view to the front.
 - A one-off command used more than once goes in the commands folder: do not re-send its source.
 
