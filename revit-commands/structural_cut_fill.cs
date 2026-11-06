@@ -79,6 +79,8 @@ public static class StructuralCutFill
         if (v == null) return new JObject { ["error"] = "view not found" };
         if (v.ViewType != ViewType.Section && v.ViewType != ViewType.Detail)
             return new JObject { ["error"] = "not a section view: " + v.ViewType };
+        // Dependent views share the regions of their primary view: fill the primary, over its full crop.
+        if (v.GetPrimaryViewId() != ElementId.InvalidElementId) v = (View)doc.GetElement(v.GetPrimaryViewId());
         bool apply = (string)args["mode"] == "apply";
         var cb = v.CropBox; var inv = cb.Transform.Inverse; org = v.Origin; dir = v.ViewDirection;
         double oz = inv.OfPoint(org).Z;

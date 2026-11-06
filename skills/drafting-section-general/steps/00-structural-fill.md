@@ -2,7 +2,7 @@
 
 **Skill** `drafting-section-general` · **Standard** `drafting-section-general.md` SF1–SF10
 **Tools** `structural_cut_fill`, `export_sheet_images`
-**Applies to** every general building section view of the job, usually at 1:200, one view per call.
+**Applies to** every general building section view of the job, usually at 1:200, one view per call. Dependent views share the regions of their primary view, so run the primary once (the command switches to it).
 
 ## Do
 
