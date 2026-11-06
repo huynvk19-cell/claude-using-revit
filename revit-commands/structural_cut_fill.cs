@@ -30,7 +30,8 @@
 //    merge. A foundation without material counts as concrete (noMaterialFoundations); any other element without a
 //    known material is left out and listed in `unknown`.
 //    Underground (top of the section at or below groundLevel): slabs (Floor class) within slabBandMm under the ground
-//    level or above the lowest slab are kept; every other underground profile is kept only if it touches a kept slab or stands within touchGapMm of it (joint gap).
+//    level or above the lowest slab are kept; every other underground profile is kept only if it connects to a kept slab, directly or through other kept profiles
+//    (touching, or within touchGapMm: joint gap).
 //    Foundations matching pileCapPatterns are never filled. Each region type gets ONE region per view, all its loops
 //    in it (splitRegions > 0 = Revit refused the loops together, so that type got one region per profile).
 //    Regions use the mark types <type><suffix> (created when missing, an existing one keeps its hatch). Re-running
@@ -247,25 +248,35 @@ public static class StructuralCutFill
         var slabs = under.Where(i => i.IsSlab).ToList();
         double low = slabs.Count > 0 ? slabs.Min(i => i.ZTop) : groundZ;
         var seeds = slabs.Where(i => i.ZTop >= groundZ - band || i.ZTop <= low + band).ToList();
-        var hidden = new JObject();
-        foreach (var it in under.Where(i => !seeds.Contains(i)).ToList())
+        var rest = under.Where(i => !seeds.Contains(i)).ToList();
+        bool grew = true;
+        while (grew)
         {
-            bool touches = false;
-            foreach (var sl in seeds)
+            grew = false;
+            foreach (var it in rest.ToList())
             {
-                double gx = Math.Max(it.X0 - sl.X1, sl.X0 - it.X1), gy = Math.Max(it.Y0 - sl.Y1, sl.Y0 - it.Y1), g = Math.Max(gx, gy);
-                if (g > gap) continue;
-                if (g > tol) { touches = true; break; }
-                Solid u = null;
-                try { u = BooleanOperationsUtils.ExecuteBooleanOperation(it.S, sl.S, BooleanOperationsType.Union); } catch { }
-                if (u != null && Caps(u).Count < Caps(it.S).Count + Caps(sl.S).Count) { touches = true; break; }
+                if (!seeds.Any(sl => Connected(it, sl, gap, tol))) continue;
+                seeds.Add(it); rest.Remove(it); grew = true;
             }
-            if (touches) continue;
+        }
+        var hidden = new JObject();
+        foreach (var it in rest)
+        {
             items.Remove(it);
             var key = (string)it.Members[0]["type"];
             hidden[key] = (hidden[key] != null ? (int)hidden[key] : 0) + 1;
         }
         return hidden;
+    }
+
+    static bool Connected(Item a, Item b, double gap, double tol)
+    {
+        double gx = Math.Max(a.X0 - b.X1, b.X0 - a.X1), gy = Math.Max(a.Y0 - b.Y1, b.Y0 - a.Y1), g = Math.Max(gx, gy);
+        if (g > gap) return false;
+        if (g > tol) return true;
+        Solid u = null;
+        try { u = BooleanOperationsUtils.ExecuteBooleanOperation(a.S, b.S, BooleanOperationsType.Union); } catch { }
+        return u != null && Caps(u).Count < Caps(a.S).Count + Caps(b.S).Count;
     }
 
     // Union pairs of one kind whose boxes touch; a union that keeps two faces on the cut plane did not really touch.
