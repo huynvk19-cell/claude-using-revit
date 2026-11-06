@@ -14,6 +14,7 @@
       "groundLevel": { "type": "string", "description": "Host level name of the ground floor" },
       "pileCapPatterns": { "type": "array", "items": { "type": "string" }, "description": "Regex on family : type of pile caps and piles, never filled" },
       "slabBandMm": { "type": "number", "description": "Depth of the kept slab bands, default 1000" },
+      "touchGapMm": { "type": "number", "description": "Underground gap that still counts as touching a slab, default 50" },
       "logPath": { "type": "string" }
     },
     "required": ["mode", "viewId", "sources", "concreteType", "steelType", "suffix", "lineStyle", "groundLevel", "pileCapPatterns"]
@@ -29,7 +30,7 @@
 //    merge. A foundation without material counts as concrete (noMaterialFoundations); any other element without a
 //    known material is left out and listed in `unknown`.
 //    Underground (top of the section at or below groundLevel): slabs (Floor class) within slabBandMm under the ground
-//    level or above the lowest slab are kept; every other underground profile is kept only if it touches a kept slab.
+//    level or above the lowest slab are kept; every other underground profile is kept only if it touches a kept slab or stands within touchGapMm of it (joint gap).
 //    Foundations matching pileCapPatterns are never filled. Each region type gets ONE region per view, all its loops
 //    in it (splitRegions > 0 = Revit refused the loops together, so that type got one region per profile).
 //    Regions use the mark types <type><suffix> (created when missing, an existing one keeps its hatch). Re-running
@@ -131,7 +132,7 @@ public static class StructuralCutFill
                 }
             }
         }
-        var hiddenTypes = FilterUnderground(items, groundZ, band);
+        var hiddenTypes = FilterUnderground(items, groundZ, band, (args["touchGapMm"] != null ? (double)args["touchGapMm"] : 50.0) / MM);
         int nHidden = hiddenTypes.Properties().Sum(g => (int)g.Value);
         int profiles = items.Count;
         int merges = Merge(items, out var notMerged);
@@ -239,7 +240,7 @@ public static class StructuralCutFill
     }
 
     // Underground rule SF7: keep slabs near the ground level and at the bottom, and what touches those slabs.
-    static JObject FilterUnderground(List<Item> items, double groundZ, double band)
+    static JObject FilterUnderground(List<Item> items, double groundZ, double band, double gap)
     {
         double tol = 1.0 / MM;
         var under = items.Where(i => i.ZTop <= groundZ + tol).ToList();
@@ -252,7 +253,9 @@ public static class StructuralCutFill
             bool touches = false;
             foreach (var sl in seeds)
             {
-                if (it.X0 > sl.X1 + tol || sl.X0 > it.X1 + tol || it.Y0 > sl.Y1 + tol || sl.Y0 > it.Y1 + tol) continue;
+                double gx = Math.Max(it.X0 - sl.X1, sl.X0 - it.X1), gy = Math.Max(it.Y0 - sl.Y1, sl.Y0 - it.Y1), g = Math.Max(gx, gy);
+                if (g > gap) continue;
+                if (g > tol) { touches = true; break; }
                 Solid u = null;
                 try { u = BooleanOperationsUtils.ExecuteBooleanOperation(it.S, sl.S, BooleanOperationsType.Union); } catch { }
                 if (u != null && Caps(u).Count < Caps(it.S).Count + Caps(sl.S).Count) { touches = true; break; }
