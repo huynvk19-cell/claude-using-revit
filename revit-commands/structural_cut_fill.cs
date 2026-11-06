@@ -37,7 +37,7 @@
 //    level or above the lowest slab are kept; every other underground profile is kept only if it connects to a kept slab, directly or through other kept profiles
 //    (touching, or within touchGapMm: joint gap).
 //    Piles (pilePatterns) are never filled. A pile cap (pileCapPatterns) is filled only as the slab of a core: it touches
-//    a structural wall that rises above groundLevel, directly or through walls stacked under it (coreCapsFilled); it then also counts as a kept slab. Each region type gets ONE region per view, all its loops
+//    a structural wall that rises above groundLevel, directly or through walls stacked under it, and no slab passes above the cap between those walls (coreCapsFilled); it then also counts as a kept slab. Each region type gets ONE region per view, all its loops
 //    in it. splitRegions > 0 = Revit refused them together: merged profiles it cannot draw stay as separate parts in
 //    their own regions (listed in fails), everything else stays one region.
 //    Earth: one masking region of <earthType><suffix>, drawn first so the structure stays on top. Its outline = the
@@ -181,7 +181,15 @@ public static class StructuralCutFill
         }
         foreach (var c in capItems)
         {
-            if (coreWalls.Any(w => Connected(c, w, 50.0 / MM, 0.5 / MM))) { items.Add(c); nCoreCap++; }
+            // A core has no slab of its own: between its walls on the cap, no slab may pass above the cap.
+            var onCap = coreWalls.Where(w => Connected(c, w, 50.0 / MM, 0.5 / MM)).ToList();
+            bool isCore = false;
+            if (onCap.Count > 0)
+            {
+                double mid = (onCap.Min(w => w.X0) + onCap.Max(w => w.X1)) / 2;
+                isCore = !items.Any(i => i.IsSlab && i.ZTop > c.ZTop && i.X0 <= mid && i.X1 >= mid);
+            }
+            if (isCore) { items.Add(c); nCoreCap++; }
             else { nCap++; covered.Add(c); }
         }
         var hiddenTypes = FilterUnderground(items, covered, groundZ, band, (args["touchGapMm"] != null ? (double)args["touchGapMm"] : 50.0) / MM);
