@@ -10,6 +10,7 @@
       "concreteType": { "type": "string", "description": "Official filled region type for concrete" },
       "suffix": { "type": "string", "description": "Mark type suffix from the profile" },
       "lineStyle": { "type": "string", "description": "Line style of the region boundary" },
+      "steelPatterns": { "type": "array", "items": { "type": "string" }, "description": "Regex on material and family : type of steel, default METAL, STEEL, S355-like" },
       "earthType": { "type": "string", "description": "Official filled region type of the earth" },
       "groundLevel": { "type": "string", "description": "Host level name of the ground floor" },
       "pileCapPatterns": { "type": "array", "items": { "type": "string" }, "description": "Regex on family : type of pile caps and piles, never filled" },
@@ -24,11 +25,11 @@
 */
 // ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
 // Standard: drafting-section-general.md SF1-SF8. Scans Structural Framing, Floors, Structural Foundations and Walls
-//    with the Structural parameter on (concrete when the material or the type name says CONCRETE) of
+//    with the Structural parameter on of
 //    `sources` (visible loaded links, or HOST) and takes the section of each element at the view's cut plane.
-//    Structural Material METAL/STEEL: never filled (steelSkipped). CONCRETE -> concreteType. A foundation without
-//    material counts as concrete (noMaterialFoundations); any other element without a known material is left out and
-//    listed in `unknown`.
+//    Steel (steelPatterns on the material or on family : type): never filled (steelSkipped). CONCRETE -> concreteType.
+//    A structural wall or a foundation with another material counts as concrete (noMaterialFoundations lists the
+//    foundations); any other element without a known material is left out and listed in `unknown`.
 //    Only solids with volume on both sides of the cut plane count: an element merely touching the plane is not cut.
 //    Underground (top of the section at or below groundLevel): slabs (Floor class) within slabBandMm under the ground
 //    level or above the lowest slab are kept; every other underground profile is kept only if it connects to a kept slab, directly or through other kept profiles
@@ -94,6 +95,7 @@ public static class StructuralCutFill
         if (ground == null) return new JObject { ["error"] = "level not found: " + args["groundLevel"] };
         double groundZ = ground.ProjectElevation, band = (args["slabBandMm"] != null ? (double)args["slabBandMm"] : 1000.0) / MM;
         var capRx = ((JArray)args["pileCapPatterns"]).Select(p => new Regex((string)p, RegexOptions.IgnoreCase)).ToList();
+        var steelRx = (args["steelPatterns"] != null ? ((JArray)args["steelPatterns"]).Select(p => (string)p) : new[] { "METAL", "STEEL", "^S[0-9]{3}" }).Select(p => new Regex(p, RegexOptions.IgnoreCase)).ToList();
         int nCap = 0;
         var covered = new List<Item>();
         var wanted = ((JArray)args["sources"]).Select(s => (string)s).ToList();
@@ -130,8 +132,8 @@ public static class StructuralCutFill
                 var matP = e.get_Parameter(BuiltInParameter.STRUCTURAL_MATERIAL_PARAM) ?? ty?.get_Parameter(BuiltInParameter.STRUCTURAL_MATERIAL_PARAM);
                 string mat = matP != null && matP.AsElementId() != ElementId.InvalidElementId ? d.GetElement(matP.AsElementId())?.Name ?? "" : "";
                 bool isFound = e.Category.Id.IntegerValue == (int)BuiltInCategory.OST_StructuralFoundation;
-                bool steel = Has(mat, "METAL") || Has(mat, "STEEL");
-                bool conc = Has(mat, "CONCRETE") || (isWall && Has(name, "CONCRETE"));
+                                bool steel = steelRx.Any(r => r.IsMatch(mat) || r.IsMatch(name));
+                bool conc = Has(mat, "CONCRETE") || isWall;
 
                 var caps = CutProfiles(e, opt, planeL, T, inv, cb, fails, name);
                 if (caps.Count == 0) continue;

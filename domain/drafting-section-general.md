@@ -20,7 +20,7 @@ Skill: `drafting-section-general`; mỗi nhóm quy tắc dưới đây là một
 |---|---|
 | SF1 | **Quan trọng nhất: chỉ tô cấu kiện thật sự bị mặt phẳng cắt của view cắt qua**, trong crop, theo mặt cắt thật. Cấu kiện nhìn thấy phía sau, hoặc chỉ có mặt nằm đúng trên mặt phẳng cắt, không tô. Chỉ gồm Structural Framing, Floors kết cấu, Structural Foundations và Walls có tham số Structural bật bằng bê tông của model kết cấu, theo SF3 và SF7. |
 | SF2 | **Không tô sàn hoàn thiện**, sàn site (đường, vỉa hè, đất): chúng không phải kết cấu. **Không tô móng đài cọc, cọc**, kể cả khi chạm sàn. |
-| SF3 | **Chỉ tô bê tông, kết cấu thép không tô** (theo Structural Material). Móng không có vật liệu trong model: tính là bê tông và nêu trong báo cáo. |
+| SF3 | **Chỉ tô bê tông, kết cấu thép không tô** (nhận theo vật liệu hoặc tên family/type: METAL, STEEL, S355…). Tường kết cấu không phải thép tính là bê tông. Móng không có vật liệu trong model: tính là bê tông và nêu trong báo cáo. |
 | SF4 | Các cấu kiện cùng type **chạm nhau thì hoà thành một vùng**, không có nét giữa (dầm + sàn, sàn + móng, tường + dầm). Cấu kiện không chạm nhau trong model thì giữ riêng. |
 | SF5 | Nét biên vùng **đậm số 8**. Tên line style lấy từ profile. |
 | SF6 | Vùng mới dùng type đánh dấu (R10). Type đánh dấu giữ nguyên hatch user đã sửa khi chạy lại. Không đụng filled region type khác và vùng của người khác. |
