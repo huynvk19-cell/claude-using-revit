@@ -13,7 +13,7 @@ Standard: `~/.claude/drafting-domain/drafting-section-general.md` (Vietnamese).
 
 Load `drafting-session` first. Take these values from the project `drafting-profile.md` (`templates/drafting-profile.md`), row "Fill kết cấu":
 - the structural models (`sources`);
-- the filled region types for concrete and earth;
+- the filled region types for concrete and earth (a model without an earth type gets one on the fill pattern `Earth` Revit ships with);
 - the boundary line style;
 - the ground floor level and the name patterns of pile caps and piles;
 - the mark type suffix.

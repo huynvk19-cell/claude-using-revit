@@ -12,6 +12,7 @@
       "lineStyle": { "type": "string", "description": "Line style of the region boundary" },
       "steelPatterns": { "type": "array", "items": { "type": "string" }, "description": "Regex on material and family : type of steel, default METAL, STEEL, S355-like" },
       "earthType": { "type": "string", "description": "Official filled region type of the earth" },
+      "earthSourceTypes": { "type": "array", "items": { "type": "string" }, "description": "Other region types that lend the earth outline" },
       "groundLevel": { "type": "string", "description": "Host level name of the ground floor" },
       "pileCapPatterns": { "type": "array", "items": { "type": "string" }, "description": "Regex on family : type of pile caps and piles, never filled" },
       "slabBandMm": { "type": "number", "description": "Depth of the kept slab bands, default 1000" },
@@ -38,7 +39,7 @@
 //    in it. splitRegions > 0 = Revit refused them together: merged profiles it cannot draw stay as separate parts in
 //    their own regions (listed in fails), everything else stays one region.
 //    Earth: one masking region of <earthType><suffix>, drawn first so the structure stays on top. Its outline = the
-//    outer loops of the earth regions already on the view (left untouched), holes dropped, plus every hidden profile
+//    outer loops of the earth regions already on the view (earthType or earthSourceTypes, left untouched), holes dropped, plus every hidden profile
 //    and pile cap, so those are covered. earthSources 0 = no earth region on the view: only the hidden profiles get it.
 //    Regions use the mark types <type><suffix> (created when missing, an existing one keeps its hatch). Re-running
 //    replaces the regions of those mark types on the view that this user created; every other region stays.
@@ -165,7 +166,8 @@ public static class StructuralCutFill
             markE.IsMasking = true;
             var inView = new FilteredElementCollector(doc, v.Id).OfClass(typeof(FilledRegion)).Cast<FilledRegion>().ToList();
             official = inView.Count(r => r.GetTypeId() == offC.Id);
-            earthSrc = inView.Where(r => r.GetTypeId() == offE.Id).ToList();
+            var srcNames = args["earthSourceTypes"] != null ? ((JArray)args["earthSourceTypes"]).Select(n => (string)n).ToList() : new List<string>();
+            earthSrc = inView.Where(r => r.GetTypeId() == offE.Id || srcNames.Contains((doc.GetElement(r.GetTypeId()) as ElementType)?.Name)).ToList();
             foreach (var r in inView.Where(r => r.GetTypeId() == markC.Id || r.GetTypeId() == markE.Id))
             {
                 if (doc.IsWorkshared && WorksharingUtils.GetWorksharingTooltipInfo(doc, r.Id).Creator != app.Application.Username) { kept++; continue; }
