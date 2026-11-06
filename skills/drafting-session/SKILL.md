@@ -13,6 +13,13 @@ Read first (only these two):
   - If it is missing, copy `~/.claude/drafting-domain/templates/drafting-profile.md` into the project.
   - Ask the user once for the blanks.
 
+## Fewest calls first
+
+- Confirm the sheet or view with the user once if the request is ambiguous or the window title changes, before reading anything.
+- Stair plans and stair sections along the flights: run `view_develop` first (one view, one call, one Undo step). Revit does the filtering; read only its result. The skill's cards and standard are for what its `Left` still lists.
+- Never export images while the user works in the same Revit window: each export brings a view to the front.
+- A one-off command used more than once goes in the commands folder: do not re-send its source.
+
 ## Load only what the task needs
 
 Do **not** read the whole `drafting-domain/` folder or every skill. Pick the task's row, load that skill, and let it open its one standard file.
