@@ -1,6 +1,6 @@
 /* mcp-tool
 {
-  "description": "Fill cut structural framing, floors, foundations, walls on ONE section view: one region per type, touching profiles merge; an earth region covers what stays hidden underground. preview | apply.",
+  "description": "Fill cut concrete framing, floors, foundations, walls on ONE section view as one region (no steel); an earth region covers what stays hidden underground. preview | apply.",
   "inputSchema": {
     "type": "object",
     "properties": {
@@ -8,7 +8,6 @@
       "viewId": { "type": "integer" },
       "sources": { "type": "array", "items": { "type": "string" }, "description": "Structural model titles (link title, or HOST)" },
       "concreteType": { "type": "string", "description": "Official filled region type for concrete" },
-      "steelType": { "type": "string", "description": "Official filled region type for steel" },
       "suffix": { "type": "string", "description": "Mark type suffix from the profile" },
       "lineStyle": { "type": "string", "description": "Line style of the region boundary" },
       "earthType": { "type": "string", "description": "Official filled region type of the earth" },
@@ -18,7 +17,7 @@
       "touchGapMm": { "type": "number", "description": "Underground gap that still counts as touching a slab, default 50" },
       "logPath": { "type": "string" }
     },
-    "required": ["mode", "viewId", "sources", "concreteType", "steelType", "suffix", "lineStyle", "earthType", "groundLevel", "pileCapPatterns"]
+    "required": ["mode", "viewId", "sources", "concreteType", "suffix", "lineStyle", "earthType", "groundLevel", "pileCapPatterns"]
   },
   "timeoutSeconds": 600
 }
@@ -27,9 +26,9 @@
 // Standard: drafting-section-general.md SF1-SF8. Scans Structural Framing, Floors, Structural Foundations and Walls
 //    with the Structural parameter on (concrete when the material or the type name says CONCRETE) of
 //    `sources` (visible loaded links, or HOST) and takes the section of each element at the view's cut plane.
-//    Region type by Structural Material: CONCRETE -> concreteType, METAL/STEEL -> steelType. Concrete and steel never
-//    merge. A foundation without material counts as concrete (noMaterialFoundations); any other element without a
-//    known material is left out and listed in `unknown`.
+//    Structural Material METAL/STEEL: never filled (steelSkipped). CONCRETE -> concreteType. A foundation without
+//    material counts as concrete (noMaterialFoundations); any other element without a known material is left out and
+//    listed in `unknown`.
 //    Only solids with volume on both sides of the cut plane count: an element merely touching the plane is not cut.
 //    Underground (top of the section at or below groundLevel): slabs (Floor class) within slabBandMm under the ground
 //    level or above the lowest slab are kept; every other underground profile is kept only if it connects to a kept slab, directly or through other kept profiles
@@ -84,9 +83,8 @@ public static class StructuralCutFill
         if (string.IsNullOrEmpty(suffix)) return new JObject { ["error"] = "suffix is required" };
         var types = new FilteredElementCollector(doc).OfClass(typeof(FilledRegionType)).Cast<FilledRegionType>().ToList();
         var offC = types.FirstOrDefault(t => t.Name == (string)args["concreteType"]);
-        var offS = types.FirstOrDefault(t => t.Name == (string)args["steelType"]);
         var offE = types.FirstOrDefault(t => t.Name == (string)args["earthType"]);
-        if (offC == null || offS == null || offE == null) return new JObject { ["error"] = "filled region type not found" };
+        if (offC == null || offE == null) return new JObject { ["error"] = "filled region type not found" };
 
         var lineCat = doc.Settings.Categories.get_Item(BuiltInCategory.OST_Lines).SubCategories.Cast<Category>().FirstOrDefault(c => c.Name == (string)args["lineStyle"]);
         if (lineCat == null) return new JObject { ["error"] = "line style not found: " + args["lineStyle"] };
@@ -111,7 +109,7 @@ public static class StructuralCutFill
         var opt = new Options { DetailLevel = ViewDetailLevel.Fine, IncludeNonVisibleObjects = false };
         var fails = new JArray(); var unknown = new JArray(); var noMat = new JArray();
         var items = new List<Item>();
-        int nFr = 0, nFl = 0, nFo = 0, nWa = 0;
+        int nFr = 0, nFl = 0, nFo = 0, nWa = 0, nSteel = 0;
         var cats = new List<BuiltInCategory> { BuiltInCategory.OST_StructuralFraming, BuiltInCategory.OST_Floors, BuiltInCategory.OST_StructuralFoundation, BuiltInCategory.OST_Walls };
         foreach (var s in sources)
         {
@@ -138,9 +136,10 @@ public static class StructuralCutFill
                 var caps = CutProfiles(e, opt, planeL, T, inv, cb, fails, name);
                 if (caps.Count == 0) continue;
                 if (isFound && capRx.Any(r => r.IsMatch(name))) { nCap++; covered.AddRange(caps); continue; }
-                string kind = steel ? "steel" : conc ? "concrete" : isFound ? "concrete" : null;
+                if (steel) { nSteel++; continue; }
+                string kind = conc || isFound ? "concrete" : null;
                 if (kind == null) { unknown.Add(e.Id.IntegerValue + " " + name + " material: " + mat); continue; }
-                if (!steel && !conc) noMat.Add(e.Id.IntegerValue + " " + name);
+                if (!conc) noMat.Add(e.Id.IntegerValue + " " + name);
                 if (isFound) nFo++; else if (isWall) nWa++; else if (e.Category.Id.IntegerValue == (int)BuiltInCategory.OST_Floors) nFl++; else nFr++;
                 foreach (var c in caps)
                 {
@@ -156,16 +155,16 @@ public static class StructuralCutFill
         int merges = Merge(items, out var notMerged);
 
         tg = new TransactionGroup(doc, "Update structural cut regions"); tg.Start();
-        FilledRegionType markC = null, markS = null, markE = null;
+        FilledRegionType markC = null, markE = null;
         int official = 0, kept = 0; var earthSrc = new List<FilledRegion>(); var oldIds = new JArray();
         bool ready = Step(doc, () =>
         {
-            markC = MarkType(types, offC, suffix); markS = MarkType(types, offS, suffix); markE = MarkType(types, offE, suffix);
+            markC = MarkType(types, offC, suffix); markE = MarkType(types, offE, suffix);
             markE.IsMasking = true;
             var inView = new FilteredElementCollector(doc, v.Id).OfClass(typeof(FilledRegion)).Cast<FilledRegion>().ToList();
-            official = inView.Count(r => r.GetTypeId() == offC.Id || r.GetTypeId() == offS.Id);
+            official = inView.Count(r => r.GetTypeId() == offC.Id);
             earthSrc = inView.Where(r => r.GetTypeId() == offE.Id).ToList();
-            foreach (var r in inView.Where(r => r.GetTypeId() == markC.Id || r.GetTypeId() == markS.Id || r.GetTypeId() == markE.Id))
+            foreach (var r in inView.Where(r => r.GetTypeId() == markC.Id || r.GetTypeId() == markE.Id))
             {
                 if (doc.IsWorkshared && WorksharingUtils.GetWorksharingTooltipInfo(doc, r.Id).Creator != app.Application.Username) { kept++; continue; }
                 oldIds.Add(r.Id.IntegerValue); doc.Delete(r.Id);
@@ -174,12 +173,12 @@ public static class StructuralCutFill
         if (!ready) { tg.RollBack(); return new JObject { ["error"] = "could not prepare the view", ["fails"] = fails }; }
         int earthSources = 0;
         var earthMade = DrawEarth(doc, v, earthSrc, covered, markE.Id, inv, fails, out earthSources);
-        var log = new JArray(); int nC = 0, nS = 0, split = 0;
-        foreach (var kind in new[] { "concrete", "steel" })
+        var log = new JArray(); int nC = 0, split = 0;
+        foreach (var kind in new[] { "concrete" })
         {
             var group = items.Where(i => i.Kind == kind).ToList();
             if (group.Count == 0) continue;
-            var tid = kind == "concrete" ? markC.Id : markS.Id;
+            var tid = markC.Id;
             var made = new List<ElementId>();
             bool one = Step(doc, () =>
             {
@@ -213,7 +212,7 @@ public static class StructuralCutFill
                             if (Step(doc, () => { var fr = FilledRegion.Create(doc, tid, v.Id, pf.GetEdgesAsCurveLoops().ToList()); fr.SetLineStyleId(lineId); nid = fr.Id; }, fails, "part of " + (string)it.Members[0]["id"])) made.Add(nid);
                         }
             }
-            if (kind == "concrete") nC += made.Count; else nS += made.Count;
+            nC += made.Count;
             log.Add(new JObject { ["kind"] = kind, ["regions"] = new JArray(made.Select(i => i.IntegerValue)), ["members"] = new JArray(group.SelectMany(i => i.Members)) });
         }
         if (apply) tg.Assimilate(); else tg.RollBack();
@@ -222,7 +221,7 @@ public static class StructuralCutFill
         {
             ["mode"] = apply ? "apply" : "preview", ["view"] = v.Name, ["scale"] = v.Scale,
             ["framing"] = nFr, ["floors"] = nFl, ["foundations"] = nFo, ["walls"] = nWa, ["profiles"] = profiles, ["merges"] = merges,
-            ["concreteRegions"] = nC, ["steelRegions"] = nS, ["earthRegions"] = earthMade, ["earthSources"] = earthSources, ["replaced"] = oldIds.Count, ["keptOthers"] = kept, ["officialInView"] = official,
+            ["concreteRegions"] = nC, ["steelSkipped"] = nSteel, ["earthRegions"] = earthMade, ["earthSources"] = earthSources, ["replaced"] = oldIds.Count, ["keptOthers"] = kept, ["officialInView"] = official,
             ["notMergedPairs"] = notMerged.Count, ["splitRegions"] = split,
             ["pileCapsSkipped"] = nCap, ["undergroundHidden"] = nHidden, ["undergroundHiddenTypes"] = hiddenTypes,
             ["noMaterialFoundations"] = noMat, ["unknown"] = unknown, ["missingSources"] = new JArray(missing), ["fails"] = fails
