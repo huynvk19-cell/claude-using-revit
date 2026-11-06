@@ -430,7 +430,8 @@ public static class ViewDevelop
                         if (missing.Count > 0) ask.Add("vế " + string.Join(", ", missing.Distinct()) + ": cổ bậc nằm trên mặt cắt không vẽ, không dim chiều dài được ở view này");
                         double width = chainRuns.Max(r => r.C1 - r.C0);
                         var far = all.Where(x => x.Len > width * 0.8).OrderBy(x => x.A).ToList();
-                        if (pts.Count >= 2 && far.Count > 0)
+                        // a cut run: what lies beyond the cut is not drawn, so no landing segment to it
+                        if (pts.Count >= 2 && far.Count > 0 && chainRuns.All(r => r.State == "full"))
                         {
                             if (far.First().A < pts.Keys.First() - 50) pts[Math.Round(far.First().A, 1)] = far.First().Stable;
                             if (far.Last().A > pts.Keys.Last() + 50) pts[Math.Round(far.Last().A, 1)] = far.Last().Stable;
