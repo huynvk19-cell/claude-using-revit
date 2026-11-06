@@ -39,7 +39,7 @@ Skills and domain standards that let Claude Code do drawing production like a dr
 | `drafting-dims` | Dim cao độ, đổi type dim (dim trục → `drafting-grid-dims`) |
 | `drafting-opening-dims` | Dim cửa sổ, cửa đi, cửa cuốn trên mặt đứng/mặt cắt (dim đứng + dim ngang) |
 | `drafting-opening-tags` | Tag cửa sổ, cửa đi, cửa cuốn trên mặt đứng/mặt cắt (T1–T8) |
-| `drafting-section-general` | **Khai triển mặt cắt chung** (thường 1/200): thẻ Fill kết cấu bị cắt (SF1–SF8) |
+| `drafting-section-general` | **Khai triển mặt cắt chung** (thường 1/200): thẻ Fill kết cấu bị cắt (SF1–SF9) |
 | `drafting-stair-section-parallel` | **Mặt cắt dọc** thang bộ (cắt song song stair path, LA–LC): chiều cao vế `169.4mm x 16R = 2710 (EQUAL RISERS)`, cao độ tầng, chiều dài vế, thông thuỷ dưới chiếu nghỉ, tay vịn; tag vế, P01, cao độ, F../C.., cửa; số bậc liên tục |
 | `drafting-stair-section-cross` | **Mặt cắt ngang** thang bộ (cắt không song song stair path, vế nhìn thẳng đầu, XA–XC): chuỗi chiều cao từng dải vế có công thức, cao độ tầng, chuỗi thông thuỷ | dày chiếu nghỉ liên tục, bề rộng tới tay vịn, tường; tag vế chữ đứng hai bên, tay vịn, cao độ, F../C..; số bậc Start and End trên vế thấy cổ bậc |
 | `drafting-stair-plan` | **Mặt bằng** lõi thang bộ (SA1–SD; mặt cắt thang sẽ là skill riêng): 3 vế + mọi chiếu nghỉ thấy được (kể cả dưới View Depth), dim tay vịn không cần dim tay, dim thông thuỷ (CLEAR chỉ trên bề rộng vế; mép lan can → mép bậc → tường), chiều dài vế có công thức (bậc trên cùng ngang chiếu nghỉ không tính), chuỗi chiếu nghỉ / tổng khép tới tường, tường/cửa tới trục; tag vế, tay vịn, cao độ, cửa, hoàn thiện; đếm/đánh số bậc từng vế; stair path chỉ có mũi tên |
@@ -86,7 +86,7 @@ Thêm quy trình mới: một file `workflows/<tên>.md` (dòng 0 = `drafting-st
 | `drafting-dimensions.md` | Chuẩn dim cao độ, type dim (dim trục → `drafting-grid-dims.md`) |
 | `drafting-opening-dims.md` | 5 quy tắc dim cửa sổ, cửa đi (Q1–Q5) |
 | `drafting-opening-tags.md` | 8 quy tắc tag cửa sổ, cửa đi (T1–T8) |
-| `drafting-section-general.md` | Mặt cắt chung: fill kết cấu bị cắt (SF1–SF8) |
+| `drafting-section-general.md` | Mặt cắt chung: fill kết cấu bị cắt (SF1–SF9) |
 | `drafting-annotation.md` | Room tag (đặt và chấm điểm tag TR1–TR8, sửa tag), cao độ sàn trên mặt bằng (FL1–FL3), ký hiệu độ dốc (SL1–SL5), view title, leader vuông góc |
 | `drafting-plan-dims.md` | Mặt bằng kích thước: dim cửa tới tường, trục (PD1–PD6), tag cửa (PT1–PT6), tag room, cao độ sàn, tag tường (WT1–WT5), ký hiệu độ dốc |
 | `drafting-ceiling-plan.md` | Mặt bằng trần: các thẻ bước (hiện có tag room) |

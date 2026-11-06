@@ -1,6 +1,6 @@
 /* mcp-tool
 {
-  "description": "Fill cut structural framing, floors, foundations, walls on ONE section view: one region per type, touching profiles merge, underground filtered. preview | apply.",
+  "description": "Fill cut structural framing, floors, foundations, walls on ONE section view: one region per type, touching profiles merge; an earth region covers what stays hidden underground. preview | apply.",
   "inputSchema": {
     "type": "object",
     "properties": {
@@ -11,13 +11,14 @@
       "steelType": { "type": "string", "description": "Official filled region type for steel" },
       "suffix": { "type": "string", "description": "Mark type suffix from the profile" },
       "lineStyle": { "type": "string", "description": "Line style of the region boundary" },
+      "earthType": { "type": "string", "description": "Official filled region type of the earth" },
       "groundLevel": { "type": "string", "description": "Host level name of the ground floor" },
       "pileCapPatterns": { "type": "array", "items": { "type": "string" }, "description": "Regex on family : type of pile caps and piles, never filled" },
       "slabBandMm": { "type": "number", "description": "Depth of the kept slab bands, default 1000" },
       "touchGapMm": { "type": "number", "description": "Underground gap that still counts as touching a slab, default 50" },
       "logPath": { "type": "string" }
     },
-    "required": ["mode", "viewId", "sources", "concreteType", "steelType", "suffix", "lineStyle", "groundLevel", "pileCapPatterns"]
+    "required": ["mode", "viewId", "sources", "concreteType", "steelType", "suffix", "lineStyle", "earthType", "groundLevel", "pileCapPatterns"]
   },
   "timeoutSeconds": 600
 }
@@ -34,6 +35,9 @@
 //    (touching, or within touchGapMm: joint gap).
 //    Foundations matching pileCapPatterns are never filled. Each region type gets ONE region per view, all its loops
 //    in it (splitRegions > 0 = Revit refused the loops together, so that type got one region per profile).
+//    Earth: one masking region of <earthType><suffix>, drawn first so the structure stays on top. Its outline = the
+//    outer loops of the earth regions already on the view (left untouched), holes dropped, plus every hidden profile
+//    and pile cap, so those are covered. earthSources 0 = no earth region on the view: only the hidden profiles get it.
 //    Regions use the mark types <type><suffix> (created when missing, an existing one keeps its hatch). Re-running
 //    replaces the regions of those mark types on the view that this user created; every other region stays.
 //    officialInView > 0 = regions of the official types already there: the new set may double them, check first.
@@ -54,7 +58,16 @@ public static class StructuralCutFill
 
     static XYZ org, dir;
 
+    static Transaction tx;
+
     public static object Run(UIApplication app, JObject args)
+    {
+        tx = null;
+        try { return Go(app, args); }
+        catch { if (tx != null && tx.GetStatus() == TransactionStatus.Started) tx.RollBack(); throw; }
+    }
+
+    static object Go(UIApplication app, JObject args)
     {
         var doc = app.ActiveUIDocument.Document;
         var v = doc.GetElement(new ElementId((int)args["viewId"])) as View;
@@ -70,7 +83,8 @@ public static class StructuralCutFill
         var types = new FilteredElementCollector(doc).OfClass(typeof(FilledRegionType)).Cast<FilledRegionType>().ToList();
         var offC = types.FirstOrDefault(t => t.Name == (string)args["concreteType"]);
         var offS = types.FirstOrDefault(t => t.Name == (string)args["steelType"]);
-        if (offC == null || offS == null) return new JObject { ["error"] = "filled region type not found" };
+        var offE = types.FirstOrDefault(t => t.Name == (string)args["earthType"]);
+        if (offC == null || offS == null || offE == null) return new JObject { ["error"] = "filled region type not found" };
 
         var lineCat = doc.Settings.Categories.get_Item(BuiltInCategory.OST_Lines).SubCategories.Cast<Category>().FirstOrDefault(c => c.Name == (string)args["lineStyle"]);
         if (lineCat == null) return new JObject { ["error"] = "line style not found: " + args["lineStyle"] };
@@ -81,6 +95,7 @@ public static class StructuralCutFill
         double groundZ = ground.ProjectElevation, band = (args["slabBandMm"] != null ? (double)args["slabBandMm"] : 1000.0) / MM;
         var capRx = ((JArray)args["pileCapPatterns"]).Select(p => new Regex((string)p, RegexOptions.IgnoreCase)).ToList();
         int nCap = 0;
+        var covered = new List<Item>();
         var wanted = ((JArray)args["sources"]).Select(s => (string)s).ToList();
         var sources = new List<Tuple<string, Document, Transform>>();
         if (wanted.Contains("HOST")) sources.Add(Tuple.Create("HOST", doc, Transform.Identity));
@@ -120,7 +135,7 @@ public static class StructuralCutFill
 
                 var caps = CutProfiles(e, opt, planeL, T, inv, cb, fails, name);
                 if (caps.Count == 0) continue;
-                if (isFound && capRx.Any(r => r.IsMatch(name))) { nCap++; continue; }
+                if (isFound && capRx.Any(r => r.IsMatch(name))) { nCap++; covered.AddRange(caps); continue; }
                 string kind = steel ? "steel" : conc ? "concrete" : isFound ? "concrete" : null;
                 if (kind == null) { unknown.Add(e.Id.IntegerValue + " " + name + " material: " + mat); continue; }
                 if (!steel && !conc) noMat.Add(e.Id.IntegerValue + " " + name);
@@ -133,21 +148,25 @@ public static class StructuralCutFill
                 }
             }
         }
-        var hiddenTypes = FilterUnderground(items, groundZ, band, (args["touchGapMm"] != null ? (double)args["touchGapMm"] : 50.0) / MM);
+        var hiddenTypes = FilterUnderground(items, covered, groundZ, band, (args["touchGapMm"] != null ? (double)args["touchGapMm"] : 50.0) / MM);
         int nHidden = hiddenTypes.Properties().Sum(g => (int)g.Value);
         int profiles = items.Count;
         int merges = Merge(items, out var notMerged);
 
-        var tx = new Transaction(doc, "Update structural cut regions"); tx.Start();
-        var markC = MarkType(types, offC, suffix); var markS = MarkType(types, offS, suffix);
+        tx = new Transaction(doc, "Update structural cut regions"); tx.Start();
+        var markC = MarkType(types, offC, suffix); var markS = MarkType(types, offS, suffix); var markE = MarkType(types, offE, suffix);
+        markE.IsMasking = true;
         var inView = new FilteredElementCollector(doc, v.Id).OfClass(typeof(FilledRegion)).Cast<FilledRegion>().ToList();
         int official = inView.Count(r => r.GetTypeId() == offC.Id || r.GetTypeId() == offS.Id);
+        var earthSrc = inView.Where(r => r.GetTypeId() == offE.Id).ToList();
         var oldIds = new JArray(); var kept = 0;
-        foreach (var r in inView.Where(r => r.GetTypeId() == markC.Id || r.GetTypeId() == markS.Id))
+        foreach (var r in inView.Where(r => r.GetTypeId() == markC.Id || r.GetTypeId() == markS.Id || r.GetTypeId() == markE.Id))
         {
             if (doc.IsWorkshared && WorksharingUtils.GetWorksharingTooltipInfo(doc, r.Id).Creator != app.Application.Username) { kept++; continue; }
             oldIds.Add(r.Id.IntegerValue); doc.Delete(r.Id);
         }
+        int earthSources = 0;
+        var earthMade = DrawEarth(doc, v, earthSrc, covered, markE.Id, inv, fails, out earthSources);
         var log = new JArray(); int nC = 0, nS = 0, split = 0;
         foreach (var kind in new[] { "concrete", "steel" })
         {
@@ -179,7 +198,7 @@ public static class StructuralCutFill
         {
             ["mode"] = apply ? "apply" : "preview", ["view"] = v.Name, ["scale"] = v.Scale,
             ["framing"] = nFr, ["floors"] = nFl, ["foundations"] = nFo, ["walls"] = nWa, ["profiles"] = profiles, ["merges"] = merges,
-            ["concreteRegions"] = nC, ["steelRegions"] = nS, ["replaced"] = oldIds.Count, ["keptOthers"] = kept, ["officialInView"] = official,
+            ["concreteRegions"] = nC, ["steelRegions"] = nS, ["earthRegions"] = earthMade, ["earthSources"] = earthSources, ["replaced"] = oldIds.Count, ["keptOthers"] = kept, ["officialInView"] = official,
             ["notMergedPairs"] = notMerged.Count, ["splitRegions"] = split,
             ["pileCapsSkipped"] = nCap, ["undergroundHidden"] = nHidden, ["undergroundHiddenTypes"] = hiddenTypes,
             ["noMaterialFoundations"] = noMat, ["unknown"] = unknown, ["missingSources"] = new JArray(missing), ["fails"] = fails
@@ -241,7 +260,7 @@ public static class StructuralCutFill
     }
 
     // Underground rule SF7: keep slabs near the ground level and at the bottom, and what touches those slabs.
-    static JObject FilterUnderground(List<Item> items, double groundZ, double band, double gap)
+    static JObject FilterUnderground(List<Item> items, List<Item> covered, double groundZ, double band, double gap)
     {
         double tol = 1.0 / MM;
         var under = items.Where(i => i.ZTop <= groundZ + tol).ToList();
@@ -262,12 +281,71 @@ public static class StructuralCutFill
         var hidden = new JObject();
         foreach (var it in rest)
         {
-            items.Remove(it);
+            items.Remove(it); covered.Add(it);
             var key = (string)it.Members[0]["type"];
             hidden[key] = (hidden[key] != null ? (int)hidden[key] : 0) + 1;
         }
         return hidden;
     }
+
+    // Earth first, so the structure drawn after it stays on top. Others' earth regions only lend their outline.
+    static int DrawEarth(Document doc, View v, List<FilledRegion> sources, List<Item> covered, ElementId typeId, Transform inv, JArray fails, out int nSources)
+    {
+        nSources = sources.Count;
+        var solids = new List<Solid>();
+        ElementId style = null;
+        foreach (var r in sources)
+        {
+            if (style == null)
+            {
+                var ce = r.GetDependentElements(new ElementClassFilter(typeof(CurveElement))).Select(i => doc.GetElement(i)).OfType<CurveElement>().FirstOrDefault();
+                if (ce != null) style = ce.LineStyle.Id;
+            }
+            var loops = r.GetBoundaries().ToList();
+            foreach (var cl in loops)
+            {
+                var box = Box(cl, inv);
+                if (loops.Any(o => o != cl && Inside(box, Box(o, inv)))) continue;
+                var p = cl.First().GetEndPoint(0);
+                var flat = CurveLoop.CreateViaTransform(cl, Transform.CreateTranslation(dir.Multiply((org - p).DotProduct(dir))));
+                try { solids.Add(GeometryCreationUtilities.CreateExtrusionGeometry(new List<CurveLoop> { flat }, dir, 100.0 / MM)); }
+                catch (Exception ex) { fails.Add("earth outline: " + ex.Message); }
+            }
+        }
+        foreach (var it in covered) solids.Add(it.S);
+        if (solids.Count == 0) return 0;
+        var merged = new List<Solid> { solids[0] };
+        foreach (var so in solids.Skip(1))
+        {
+            try { merged[0] = BooleanOperationsUtils.ExecuteBooleanOperation(merged[0], so, BooleanOperationsType.Union); }
+            catch { merged.Add(so); }
+        }
+        int made = 0;
+        try
+        {
+            var fr = FilledRegion.Create(doc, typeId, v.Id, merged.SelectMany(Caps).SelectMany(pf => pf.GetEdgesAsCurveLoops()).ToList());
+            if (style != null) fr.SetLineStyleId(style);
+            made++;
+        }
+        catch (Exception ex)
+        {
+            fails.Add("earth as one region: " + ex.Message);
+            foreach (var pf in merged.SelectMany(Caps))
+            {
+                try { var fr = FilledRegion.Create(doc, typeId, v.Id, pf.GetEdgesAsCurveLoops().ToList()); if (style != null) fr.SetLineStyleId(style); made++; }
+                catch (Exception ex2) { fails.Add("earth part: " + ex2.Message); }
+            }
+        }
+        return made;
+    }
+
+    static double[] Box(CurveLoop cl, Transform inv)
+    {
+        var pts = cl.Select(c => inv.OfPoint(c.GetEndPoint(0))).ToList();
+        return new[] { pts.Min(p => p.X), pts.Min(p => p.Y), pts.Max(p => p.X), pts.Max(p => p.Y) };
+    }
+
+    static bool Inside(double[] a, double[] b) { return a[0] >= b[0] && a[1] >= b[1] && a[2] <= b[2] && a[3] <= b[3]; }
 
     static bool Connected(Item a, Item b, double gap, double tol)
     {
