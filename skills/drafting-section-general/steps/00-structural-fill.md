@@ -1,8 +1,8 @@
 # 00 · Structural fill (fill kết cấu bị cắt)
 
-**Skill** `drafting-elevation-general` · **Standard** `drafting-elevation-general.md` SF1–SF6
+**Skill** `drafting-section-general` · **Standard** `drafting-section-general.md` SF1–SF6
 **Tools** `structural_cut_fill`, `export_sheet_images`
-**Applies to** every general section view of the job, usually at 1:200, one view per call. An elevation that cuts nothing ends with 0 regions.
+**Applies to** every general building section view of the job, usually at 1:200, one view per call.
 
 ## Do
 

@@ -19,7 +19,7 @@
 }
 */
 // ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
-// Standard: drafting-elevation-general.md SF1-SF6. Scans Structural Framing, Floors and Structural Foundations of
+// Standard: drafting-section-general.md SF1-SF6. Scans Structural Framing, Floors and Structural Foundations of
 //    `sources` (visible loaded links, or HOST) and takes the section of each element at the view's cut plane.
 //    Region type by Structural Material: CONCRETE -> concreteType, METAL/STEEL -> steelType. Concrete and steel never
 //    merge. A foundation without material counts as concrete (noMaterialFoundations); any other element without a
@@ -48,8 +48,8 @@ public static class StructuralCutFill
         var doc = app.ActiveUIDocument.Document;
         var v = doc.GetElement(new ElementId((int)args["viewId"])) as View;
         if (v == null) return new JObject { ["error"] = "view not found" };
-        if (v.ViewType != ViewType.Section && v.ViewType != ViewType.Elevation && v.ViewType != ViewType.Detail)
-            return new JObject { ["error"] = "not a section or elevation view: " + v.ViewType };
+        if (v.ViewType != ViewType.Section && v.ViewType != ViewType.Detail)
+            return new JObject { ["error"] = "not a section view: " + v.ViewType };
         bool apply = (string)args["mode"] == "apply";
         var cb = v.CropBox; var inv = cb.Transform.Inverse; org = v.Origin; dir = v.ViewDirection;
         double oz = inv.OfPoint(org).Z;

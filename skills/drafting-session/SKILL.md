@@ -22,7 +22,7 @@ Do **not** read the whole `drafting-domain/` folder or every skill. Pick the tas
 | A whole job, several topics in order (facade, plans, stair core, comment round) | `drafting-workflow` | its one file in `workflows/` |
 | Start / end of a work session | `drafting-start` / `drafting-end` | — |
 | A round of comments (PDF, TASKS.md) | `drafting-review-round` | per task, the row below |
-| General elevations / sections (khai triển mặt đứng chung, thường 1/200): fill kết cấu bị cắt… | `drafting-elevation-general` | `drafting-elevation-general.md` |
+| General sections (khai triển mặt cắt chung, thường 1/200): fill kết cấu bị cắt… | `drafting-section-general` | `drafting-section-general.md` |
 | Grid dims | `drafting-grid-dims` | `drafting-grid-dims.md` |
 | Level dims, dim types | `drafting-dims` | `drafting-dimensions.md` |
 | Door/window dims (elevation, section; plans → `drafting-plan-dims`) | `drafting-opening-dims` | `drafting-opening-dims.md` |

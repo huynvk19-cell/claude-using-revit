@@ -1,18 +1,18 @@
 ---
-name: drafting-elevation-general
-description: "Chuẩn khai triển mặt đứng chung, mặt cắt chung (thường tỉ lệ 1/200). Hiện có: fill kết cấu bị cắt (SF1–SF6). General elevation and section standard."
+name: drafting-section-general
+description: "Chuẩn khai triển mặt cắt chung (thường tỉ lệ 1/200). Hiện có: fill kết cấu bị cắt (SF1–SF6). General section standard."
 metadata:
   updated: "2026-11-06"
   related: ["drafting-opening-dims", "drafting-opening-tags", "drafting-views-sheets", "drafting-work-rules"]
 ---
 
-# Khai triển mặt đứng chung (General elevations and sections)
+# Khai triển mặt cắt chung (General sections)
 
 **Trạng thái: đã có thẻ đầu tiên.** Mỗi quy tắc mới được thêm thành một mục khi đã chốt với user.
 
-Áp dụng cho mặt đứng và mặt cắt chung của công trình đặt trên sheet, thường tỉ lệ **1/200**. Không áp dụng cho mặt cắt thang (`drafting-stair-section-parallel.md`, `drafting-stair-section-cross.md`).
+Áp dụng cho mặt cắt chung của công trình đặt trên sheet, thường tỉ lệ **1/200**. Không áp dụng cho mặt cắt thang (`drafting-stair-section-parallel.md`, `drafting-stair-section-cross.md`).
 
-Skill: `drafting-elevation-general`; mỗi nhóm quy tắc dưới đây là một thẻ bước của skill.
+Skill: `drafting-section-general`; mỗi nhóm quy tắc dưới đây là một thẻ bước của skill.
 
 ## Fill kết cấu bị cắt (thẻ 00, user 2026-11-06)
 
