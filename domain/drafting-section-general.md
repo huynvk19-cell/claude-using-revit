@@ -1,6 +1,6 @@
 ---
 name: drafting-section-general
-description: "Chuẩn khai triển mặt cắt chung (thường tỉ lệ 1/200). Hiện có: fill kết cấu bị cắt (SF1–SF6). General section standard."
+description: "Chuẩn khai triển mặt cắt chung (thường tỉ lệ 1/200). Hiện có: fill kết cấu bị cắt (SF1–SF8). General section standard."
 metadata:
   updated: "2026-11-06"
   related: ["drafting-opening-dims", "drafting-opening-tags", "drafting-views-sheets", "drafting-work-rules"]
@@ -18,11 +18,13 @@ Skill: `drafting-section-general`; mỗi nhóm quy tắc dưới đây là một
 
 | Mã | Quy tắc |
 |---|---|
-| SF1 | Tô filled region theo **mặt cắt thật** của cấu kiện bị mặt phẳng cắt của view cắt qua, trong crop. Chỉ gồm Structural Framing, Floors kết cấu và Structural Foundations của model kết cấu. |
-| SF2 | **Không tô sàn hoàn thiện**, sàn site (đường, vỉa hè, đất): chúng không phải kết cấu. |
+| SF1 | Tô filled region theo **mặt cắt thật** của cấu kiện bị mặt phẳng cắt của view cắt qua, trong crop. Chỉ gồm Structural Framing, Floors kết cấu và Structural Foundations của model kết cấu, theo SF7. |
+| SF2 | **Không tô sàn hoàn thiện**, sàn site (đường, vỉa hè, đất): chúng không phải kết cấu. **Không tô móng đài cọc, cọc**, kể cả khi chạm sàn. |
 | SF3 | **Bê tông và thép là hai vùng riêng**, mỗi loại một type theo Structural Material. Không gộp, không hỏi lại. Móng không có vật liệu trong model: tính là bê tông và nêu trong báo cáo. |
 | SF4 | Các cấu kiện cùng type **chạm nhau thì hoà thành một vùng**, không có nét giữa (dầm + sàn, sàn + móng, bản thép + thép góc). Cấu kiện không chạm nhau trong model thì giữ riêng. |
 | SF5 | Nét biên vùng **đậm số 8**. Tên line style lấy từ profile. |
 | SF6 | Vùng mới dùng type đánh dấu (R10). Type đánh dấu giữ nguyên hatch user đã sửa khi chạy lại. Không đụng filled region type khác và vùng của người khác. |
+| SF7 | **Dưới mặt đất** (đỉnh mặt cắt không cao hơn tầng trệt): chỉ tô sàn kết cấu dưới tầng trệt, hoặc sàn tầng cuối của tầng hầm. Cấu kiện dưới đất khác chỉ tô khi chạm các sàn đó, không chạm thì bỏ. |
+| SF8 | **Mỗi view một filled region cho mỗi type**, để dễ quan sát: một vùng bê tông, một vùng thép, chứa mọi đường bao của loại đó. |
 
 Lệnh: `structural_cut_fill` (mỗi lần một view).
