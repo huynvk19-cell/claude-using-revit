@@ -18,7 +18,7 @@ Skill: `drafting-section-general`; mỗi nhóm quy tắc dưới đây là một
 
 | Mã | Quy tắc |
 |---|---|
-| SF1 | Tô filled region theo **mặt cắt thật** của cấu kiện bị mặt phẳng cắt của view cắt qua, trong crop. Chỉ gồm Structural Framing, Floors kết cấu và Structural Foundations của model kết cấu, theo SF7. |
+| SF1 | Tô filled region theo **mặt cắt thật** của cấu kiện bị mặt phẳng cắt của view cắt qua, trong crop. Chỉ gồm Structural Framing, Floors kết cấu, Structural Foundations và Walls có tham số Structural bật của model kết cấu, theo SF7. |
 | SF2 | **Không tô sàn hoàn thiện**, sàn site (đường, vỉa hè, đất): chúng không phải kết cấu. **Không tô móng đài cọc, cọc**, kể cả khi chạm sàn. |
 | SF3 | **Bê tông và thép là hai vùng riêng**, mỗi loại một type theo Structural Material. Không gộp, không hỏi lại. Móng không có vật liệu trong model: tính là bê tông và nêu trong báo cáo. |
 | SF4 | Các cấu kiện cùng type **chạm nhau thì hoà thành một vùng**, không có nét giữa (dầm + sàn, sàn + móng, bản thép + thép góc). Cấu kiện không chạm nhau trong model thì giữ riêng. |

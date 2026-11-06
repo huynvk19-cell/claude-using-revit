@@ -1,6 +1,6 @@
 /* mcp-tool
 {
-  "description": "Fill cut structural framing, floors, foundations on ONE section view: one region per type, touching profiles merge, underground filtered. preview | apply.",
+  "description": "Fill cut structural framing, floors, foundations, walls on ONE section view: one region per type, touching profiles merge, underground filtered. preview | apply.",
   "inputSchema": {
     "type": "object",
     "properties": {
@@ -22,7 +22,8 @@
 }
 */
 // ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
-// Standard: drafting-section-general.md SF1-SF8. Scans Structural Framing, Floors and Structural Foundations of
+// Standard: drafting-section-general.md SF1-SF8. Scans Structural Framing, Floors, Structural Foundations and Walls
+//    with the Structural parameter on (concrete when the material or the type name says CONCRETE) of
 //    `sources` (visible loaded links, or HOST) and takes the section of each element at the view's cut plane.
 //    Region type by Structural Material: CONCRETE -> concreteType, METAL/STEEL -> steelType. Concrete and steel never
 //    merge. A foundation without material counts as concrete (noMaterialFoundations); any other element without a
@@ -91,14 +92,16 @@ public static class StructuralCutFill
         var opt = new Options { DetailLevel = ViewDetailLevel.Fine, IncludeNonVisibleObjects = false };
         var fails = new JArray(); var unknown = new JArray(); var noMat = new JArray();
         var items = new List<Item>();
-        int nFr = 0, nFl = 0, nFo = 0;
-        var cats = new List<BuiltInCategory> { BuiltInCategory.OST_StructuralFraming, BuiltInCategory.OST_Floors, BuiltInCategory.OST_StructuralFoundation };
+        int nFr = 0, nFl = 0, nFo = 0, nWa = 0;
+        var cats = new List<BuiltInCategory> { BuiltInCategory.OST_StructuralFraming, BuiltInCategory.OST_Floors, BuiltInCategory.OST_StructuralFoundation, BuiltInCategory.OST_Walls };
         foreach (var s in sources)
         {
             var T = s.Item3; var Ti = T.Inverse; var d = s.Item2;
             var planeL = Plane.CreateByNormalAndOrigin(Ti.OfVector(dir).Normalize(), Ti.OfPoint(org));
             foreach (var e in new FilteredElementCollector(d).WhereElementIsNotElementType().WherePasses(new ElementMulticategoryFilter(cats)))
             {
+                bool isWall = e.Category.Id.IntegerValue == (int)BuiltInCategory.OST_Walls;
+                if (isWall && (!(e is Wall) || e.get_Parameter(BuiltInParameter.WALL_STRUCTURAL_SIGNIFICANT)?.AsInteger() != 1)) continue;
                 var bb = e.get_BoundingBox(null); if (bb == null) continue;
                 var pts = new List<XYZ>();
                 foreach (var x in new[] { bb.Min.X, bb.Max.X }) foreach (var y in new[] { bb.Min.Y, bb.Max.Y }) foreach (var z in new[] { bb.Min.Z, bb.Max.Z }) pts.Add(inv.OfPoint(T.OfPoint(new XYZ(x, y, z))));
@@ -111,7 +114,7 @@ public static class StructuralCutFill
                 string mat = matP != null && matP.AsElementId() != ElementId.InvalidElementId ? d.GetElement(matP.AsElementId())?.Name ?? "" : "";
                 bool isFound = e.Category.Id.IntegerValue == (int)BuiltInCategory.OST_StructuralFoundation;
                 bool steel = Has(mat, "METAL") || Has(mat, "STEEL");
-                bool conc = Has(mat, "CONCRETE");
+                bool conc = Has(mat, "CONCRETE") || (isWall && Has(name, "CONCRETE"));
 
                 var caps = CutProfiles(e, opt, planeL, T, inv, cb, fails, name);
                 if (caps.Count == 0) continue;
@@ -119,7 +122,7 @@ public static class StructuralCutFill
                 string kind = steel ? "steel" : conc ? "concrete" : isFound ? "concrete" : null;
                 if (kind == null) { unknown.Add(e.Id.IntegerValue + " " + name + " material: " + mat); continue; }
                 if (!steel && !conc) noMat.Add(e.Id.IntegerValue + " " + name);
-                if (isFound) nFo++; else if (e.Category.Id.IntegerValue == (int)BuiltInCategory.OST_Floors) nFl++; else nFr++;
+                if (isFound) nFo++; else if (isWall) nWa++; else if (e.Category.Id.IntegerValue == (int)BuiltInCategory.OST_Floors) nFl++; else nFr++;
                 foreach (var c in caps)
                 {
                     c.Kind = kind; c.IsSlab = e is Floor;
@@ -173,7 +176,7 @@ public static class StructuralCutFill
         var res = new JObject
         {
             ["mode"] = apply ? "apply" : "preview", ["view"] = v.Name, ["scale"] = v.Scale,
-            ["framing"] = nFr, ["floors"] = nFl, ["foundations"] = nFo, ["profiles"] = profiles, ["merges"] = merges,
+            ["framing"] = nFr, ["floors"] = nFl, ["foundations"] = nFo, ["walls"] = nWa, ["profiles"] = profiles, ["merges"] = merges,
             ["concreteRegions"] = nC, ["steelRegions"] = nS, ["replaced"] = oldIds.Count, ["keptOthers"] = kept, ["officialInView"] = official,
             ["notMergedPairs"] = notMerged.Count, ["splitRegions"] = split,
             ["pileCapsSkipped"] = nCap, ["undergroundHidden"] = nHidden, ["undergroundHiddenTypes"] = hiddenTypes,
