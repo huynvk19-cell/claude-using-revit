@@ -30,11 +30,13 @@
 //    Region type by Structural Material: CONCRETE -> concreteType, METAL/STEEL -> steelType. Concrete and steel never
 //    merge. A foundation without material counts as concrete (noMaterialFoundations); any other element without a
 //    known material is left out and listed in `unknown`.
+//    Only solids with volume on both sides of the cut plane count: an element merely touching the plane is not cut.
 //    Underground (top of the section at or below groundLevel): slabs (Floor class) within slabBandMm under the ground
 //    level or above the lowest slab are kept; every other underground profile is kept only if it connects to a kept slab, directly or through other kept profiles
 //    (touching, or within touchGapMm: joint gap).
 //    Foundations matching pileCapPatterns are never filled. Each region type gets ONE region per view, all its loops
-//    in it (splitRegions > 0 = Revit refused the loops together, so that type got one region per profile).
+//    in it. splitRegions > 0 = Revit refused them together: merged profiles it cannot draw stay as separate parts in
+//    their own regions (listed in fails), everything else stays one region.
 //    Earth: one masking region of <earthType><suffix>, drawn first so the structure stays on top. Its outline = the
 //    outer loops of the earth regions already on the view (left untouched), holes dropped, plus every hidden profile
 //    and pile cap, so those are covered. earthSources 0 = no earth region on the view: only the hidden profiles get it.
@@ -54,17 +56,17 @@ using Newtonsoft.Json.Linq;
 public static class StructuralCutFill
 {
     const double MM = 304.8;
-    class Item { public Solid S; public string Kind; public double X0, X1, Y0, Y1, ZTop; public bool IsSlab; public JArray Members = new JArray(); }
+    class Item { public Solid S; public string Kind; public double X0, X1, Y0, Y1, ZTop; public bool IsSlab; public JArray Members = new JArray(); public List<Solid> Parts = new List<Solid>(); }
 
     static XYZ org, dir;
 
-    static Transaction tx;
+    static TransactionGroup tg;
 
     public static object Run(UIApplication app, JObject args)
     {
-        tx = null;
+        tg = null;
         try { return Go(app, args); }
-        catch { if (tx != null && tx.GetStatus() == TransactionStatus.Started) tx.RollBack(); throw; }
+        catch { if (tg != null && tg.GetStatus() == TransactionStatus.Started) tg.RollBack(); throw; }
     }
 
     static object Go(UIApplication app, JObject args)
@@ -153,18 +155,23 @@ public static class StructuralCutFill
         int profiles = items.Count;
         int merges = Merge(items, out var notMerged);
 
-        tx = new Transaction(doc, "Update structural cut regions"); tx.Start();
-        var markC = MarkType(types, offC, suffix); var markS = MarkType(types, offS, suffix); var markE = MarkType(types, offE, suffix);
-        markE.IsMasking = true;
-        var inView = new FilteredElementCollector(doc, v.Id).OfClass(typeof(FilledRegion)).Cast<FilledRegion>().ToList();
-        int official = inView.Count(r => r.GetTypeId() == offC.Id || r.GetTypeId() == offS.Id);
-        var earthSrc = inView.Where(r => r.GetTypeId() == offE.Id).ToList();
-        var oldIds = new JArray(); var kept = 0;
-        foreach (var r in inView.Where(r => r.GetTypeId() == markC.Id || r.GetTypeId() == markS.Id || r.GetTypeId() == markE.Id))
+        tg = new TransactionGroup(doc, "Update structural cut regions"); tg.Start();
+        FilledRegionType markC = null, markS = null, markE = null;
+        int official = 0, kept = 0; var earthSrc = new List<FilledRegion>(); var oldIds = new JArray();
+        bool ready = Step(doc, () =>
         {
-            if (doc.IsWorkshared && WorksharingUtils.GetWorksharingTooltipInfo(doc, r.Id).Creator != app.Application.Username) { kept++; continue; }
-            oldIds.Add(r.Id.IntegerValue); doc.Delete(r.Id);
-        }
+            markC = MarkType(types, offC, suffix); markS = MarkType(types, offS, suffix); markE = MarkType(types, offE, suffix);
+            markE.IsMasking = true;
+            var inView = new FilteredElementCollector(doc, v.Id).OfClass(typeof(FilledRegion)).Cast<FilledRegion>().ToList();
+            official = inView.Count(r => r.GetTypeId() == offC.Id || r.GetTypeId() == offS.Id);
+            earthSrc = inView.Where(r => r.GetTypeId() == offE.Id).ToList();
+            foreach (var r in inView.Where(r => r.GetTypeId() == markC.Id || r.GetTypeId() == markS.Id || r.GetTypeId() == markE.Id))
+            {
+                if (doc.IsWorkshared && WorksharingUtils.GetWorksharingTooltipInfo(doc, r.Id).Creator != app.Application.Username) { kept++; continue; }
+                oldIds.Add(r.Id.IntegerValue); doc.Delete(r.Id);
+            }
+        }, fails, "prepare");
+        if (!ready) { tg.RollBack(); return new JObject { ["error"] = "could not prepare the view", ["fails"] = fails }; }
         int earthSources = 0;
         var earthMade = DrawEarth(doc, v, earthSrc, covered, markE.Id, inv, fails, out earthSources);
         var log = new JArray(); int nC = 0, nS = 0, split = 0;
@@ -174,25 +181,42 @@ public static class StructuralCutFill
             if (group.Count == 0) continue;
             var tid = kind == "concrete" ? markC.Id : markS.Id;
             var made = new List<ElementId>();
-            try
+            bool one = Step(doc, () =>
             {
                 var fr = FilledRegion.Create(doc, tid, v.Id, group.SelectMany(i => Caps(i.S)).SelectMany(pf => pf.GetEdgesAsCurveLoops()).ToList());
                 fr.SetLineStyleId(lineId); made.Add(fr.Id);
-            }
-            catch (Exception ex)
+            }, fails, kind + " as one region");
+            if (!one)
             {
-                split++; fails.Add(kind + " as one region: " + ex.Message);
+                // Find the merged profiles Revit cannot draw; those stay as their separate parts, the rest stay one region.
+                split++; made.Clear();
+                var probes = new List<ElementId>(); var bad = new List<Item>();
                 foreach (var it in group)
-                    foreach (var pf in Caps(it.S))
-                    {
-                        try { var fr = FilledRegion.Create(doc, tid, v.Id, pf.GetEdgesAsCurveLoops().ToList()); fr.SetLineStyleId(lineId); made.Add(fr.Id); }
-                        catch (Exception ex2) { fails.Add("single " + (string)it.Members[0]["id"] + ": " + ex2.Message); }
-                    }
+                {
+                    var ids = string.Join(",", it.Members.Select(m => (string)m["id"]));
+                    var made1 = new List<ElementId>();
+                    bool ok1 = Step(doc, () => { foreach (var pf in Caps(it.S)) made1.Add(FilledRegion.Create(doc, tid, v.Id, pf.GetEdgesAsCurveLoops().ToList()).Id); }, fails, "merged " + ids);
+                    if (ok1) probes.AddRange(made1); else bad.Add(it);
+                }
+                Step(doc, () => { foreach (var id in probes) doc.Delete(id); }, fails, "probes");
+                var good = group.Where(i => !bad.Contains(i)).ToList();
+                bool goodOne = good.Count > 0 && Step(doc, () =>
+                {
+                    var fr = FilledRegion.Create(doc, tid, v.Id, good.SelectMany(i => Caps(i.S)).SelectMany(pf => pf.GetEdgesAsCurveLoops()).ToList());
+                    fr.SetLineStyleId(lineId); made.Add(fr.Id);
+                }, fails, kind + " without the merged profiles it refused");
+                foreach (var it in goodOne ? bad : group)
+                    foreach (var part in it.Parts.Count > 1 && bad.Contains(it) ? it.Parts : new List<Solid> { it.S })
+                        foreach (var pf in Caps(part))
+                        {
+                            ElementId nid = null;
+                            if (Step(doc, () => { var fr = FilledRegion.Create(doc, tid, v.Id, pf.GetEdgesAsCurveLoops().ToList()); fr.SetLineStyleId(lineId); nid = fr.Id; }, fails, "part of " + (string)it.Members[0]["id"])) made.Add(nid);
+                        }
             }
             if (kind == "concrete") nC += made.Count; else nS += made.Count;
             log.Add(new JObject { ["kind"] = kind, ["regions"] = new JArray(made.Select(i => i.IntegerValue)), ["members"] = new JArray(group.SelectMany(i => i.Members)) });
         }
-        if (apply) tx.Commit(); else tx.RollBack();
+        if (apply) tg.Assimilate(); else tg.RollBack();
 
         var res = new JObject
         {
@@ -212,6 +236,36 @@ public static class StructuralCutFill
         return res;
     }
 
+    // One transaction per step; a region Revit cannot draw rolls back here instead of opening an error dialog.
+    class RollBackOnError : IFailuresPreprocessor
+    {
+        public FailureProcessingResult PreprocessFailures(FailuresAccessor a)
+        {
+            foreach (var f in a.GetFailureMessages())
+            {
+                if (f.GetSeverity() == FailureSeverity.Warning) a.DeleteWarning(f);
+                else return FailureProcessingResult.ProceedWithRollBack;
+            }
+            return FailureProcessingResult.Continue;
+        }
+    }
+
+    static bool Step(Document doc, Action act, JArray fails, string what)
+    {
+        using (var t = new Transaction(doc, "Update structural cut regions"))
+        {
+            var o = t.GetFailureHandlingOptions();
+            o.SetFailuresPreprocessor(new RollBackOnError()); o.SetClearAfterRollback(true);
+            t.SetFailureHandlingOptions(o);
+            t.Start();
+            try { act(); }
+            catch (Exception ex) { t.RollBack(); fails.Add(what + ": " + ex.Message); return false; }
+            if (t.Commit() == TransactionStatus.Committed) return true;
+            fails.Add(what + ": Revit cannot draw it");
+            return false;
+        }
+    }
+
     static bool Has(string s, string w) { return s.IndexOf(w, StringComparison.OrdinalIgnoreCase) >= 0; }
 
     static FilledRegionType MarkType(List<FilledRegionType> types, FilledRegionType official, string suffix)
@@ -229,6 +283,10 @@ public static class StructuralCutFill
             Solid cut = null;
             try { cut = BooleanOperationsUtils.CutWithHalfSpace(so, planeL); } catch (Exception ex) { fails.Add(e.Id.IntegerValue + " slice: " + ex.Message); continue; }
             if (cut == null || cut.Volume < 1e-9) continue;
+            // Really cut through: the solid must have volume on both sides of the plane, not only a face lying on it.
+            Solid back = null;
+            try { back = BooleanOperationsUtils.CutWithHalfSpace(so, Plane.CreateByNormalAndOrigin(planeL.Normal.Negate(), planeL.Origin)); } catch { }
+            if (back == null || back.Volume < 1e-6 || cut.Volume < 1e-6) continue;
             foreach (Face f in cut.Faces)
             {
                 var pf = f as PlanarFace; if (pf == null) continue;
@@ -251,6 +309,7 @@ public static class StructuralCutFill
                 try
                 {
                     var it = new Item { S = GeometryCreationUtilities.CreateExtrusionGeometry(loops, dir, 100.0 / MM), X0 = x0, X1 = x1, Y0 = y0, Y1 = y1, ZTop = zt };
+                    it.Parts.Add(it.S);
                     res.Add(it);
                 }
                 catch (Exception ex) { fails.Add(e.Id.IntegerValue + " " + name + " prism: " + ex.Message); }
@@ -321,20 +380,18 @@ public static class StructuralCutFill
             catch { merged.Add(so); }
         }
         int made = 0;
-        try
+        if (Step(doc, () =>
         {
             var fr = FilledRegion.Create(doc, typeId, v.Id, merged.SelectMany(Caps).SelectMany(pf => pf.GetEdgesAsCurveLoops()).ToList());
             if (style != null) fr.SetLineStyleId(style);
-            made++;
-        }
-        catch (Exception ex)
+        }, fails, "earth as one region")) return 1;
+        foreach (var pf in merged.SelectMany(Caps))
         {
-            fails.Add("earth as one region: " + ex.Message);
-            foreach (var pf in merged.SelectMany(Caps))
+            if (Step(doc, () =>
             {
-                try { var fr = FilledRegion.Create(doc, typeId, v.Id, pf.GetEdgesAsCurveLoops().ToList()); if (style != null) fr.SetLineStyleId(style); made++; }
-                catch (Exception ex2) { fails.Add("earth part: " + ex2.Message); }
-            }
+                var fr = FilledRegion.Create(doc, typeId, v.Id, pf.GetEdgesAsCurveLoops().ToList());
+                if (style != null) fr.SetLineStyleId(style);
+            }, fails, "earth part")) made++;
         }
         return made;
     }
@@ -378,6 +435,7 @@ public static class StructuralCutFill
                     if (u == null || Caps(u).Count >= Caps(a.S).Count + Caps(b.S).Count) { seen.Add(key); notMerged.Add(key); continue; }
                     a.S = u; a.X0 = Math.Min(a.X0, b.X0); a.X1 = Math.Max(a.X1, b.X1); a.Y0 = Math.Min(a.Y0, b.Y0); a.Y1 = Math.Max(a.Y1, b.Y1);
                     foreach (var m in b.Members) a.Members.Add(m);
+                    a.Parts.AddRange(b.Parts);
                     items.RemoveAt(j); merges++; again = true; break;
                 }
         }
