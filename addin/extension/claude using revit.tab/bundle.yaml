@@ -1,5 +1,6 @@
 layout:
   - Panel
+  - Workflow
   - Highlight
   - Filter
   - Untagged

@@ -2,9 +2,11 @@
 #   ws.ps1 show   -Title '...' -Message '...' [-Step '1/3']
 #   ws.ps1 update -Message '...' [-Step '2/3'] [-Title '...']
 #   ws.ps1 close
+#   -Workflow, -Skill, -Card, -Checklist: what is running, for the Workflow window of the add-in; kept by update
 param(
   [Parameter(Mandatory = $true, Position = 0)][ValidateSet('show', 'update', 'close')][string]$Action,
-  [string]$Title, [string]$Message, [string]$Step
+  [string]$Title, [string]$Message, [string]$Step,
+  [string]$Workflow, [string]$Skill, [string]$Card, [string]$Checklist
 )
 $dir = $PSScriptRoot
 $file = Join-Path $dir 'status.json'
@@ -28,6 +30,9 @@ $o = [ordered]@{
   message = if ($Message) { $Message } elseif ($cur) { $cur.message } else { '' }
   step    = if ($PSBoundParameters.ContainsKey('Step')) { $Step } elseif ($cur -and $Action -eq 'update') { $cur.step } else { '' }
   state   = 'open'
+}
+foreach ($k in 'Workflow', 'Skill', 'Card', 'Checklist') {
+  $o[$k.ToLower()] = if ($PSBoundParameters.ContainsKey($k)) { $PSBoundParameters[$k] } elseif ($cur -and $Action -eq 'update') { $cur.($k.ToLower()) } else { '' }
 }
 Save $o
 if (-not (Running)) {

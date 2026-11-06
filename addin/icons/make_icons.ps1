@@ -68,6 +68,9 @@ $icons = [ordered]@{
     'Panel.panel\Open Panel.pushbutton' = (Table @('0,0', '1,0', '2,0')) +
         (Layer ((P 'M 17,29.5 L 18,25 L 26.5,16.5 Q 28,15 29.5,16.5 L 30.2,17.2 Q 31.5,18.7 30,20.2 L 21.5,28.7 Z' $gold) +
                 (P 'M 17,29.5 L 18,25 L 21.5,28.7 Z' (Grad '#FFF1CF' '#E9C58A'))) 0.45)
+    # a workflow: a blue step leading to two cards
+    'Workflow.panel\Workflow.pushbutton' = (Layer (P 'M 9.5,11 L 9.5,23.5 L 15,23.5 M 9.5,16 L 15,16' $slate)) +
+        (Layer (Box 3.5 3.5 13 8.5 2.4 $blue)) + (Layer (Box 14 12 15 7.5 2.2 $paper)) + (Layer (Box 14 20.5 15 7.5 2.2 $paper))
     # an object under the red see-through region
     'Highlight.panel\Highlight.pushbutton' = (Cube 16 16 10) +
         "<Rectangle Canvas.Left='3.5' Canvas.Top='5' Width='25' Height='22' RadiusX='4' RadiusY='4' Fill='#55E5453A' Stroke='#E6D13438' StrokeThickness='1'/>"

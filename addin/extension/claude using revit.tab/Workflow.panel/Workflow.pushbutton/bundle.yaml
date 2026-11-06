@@ -1,0 +1,5 @@
+title: "Workflow"
+tooltip: >-
+  Mở cửa sổ Workflow: các quy trình, skill và step card đang cài trên máy, mỗi mức một cửa sổ nhỏ, nổi trên Revit và vẫn làm
+  việc trong Revit được. Từ đó giao việc cho Claude qua project chat.
+author: claude using revit

@@ -64,6 +64,8 @@ Notes:
 
 Tick a cell **right after** its gate is met for that view, not at the end of the turn.
 
+At the start of each card, tell the status window what is running: `work_status {action:"update", message, step, workflow:"<file name>", skill, card:"<NN>", checklist:"<full path>"}` (Workflow window of the add-in reads it). A step without a card: leave `card` empty.
+
 ## Run — step by step over all views
 
 1. **Step-major.** Take the first card and do it on **every view of its part**; only then the next card. Never finish one view through all steps while the others wait.
