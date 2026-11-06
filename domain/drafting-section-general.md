@@ -24,7 +24,7 @@ Skill: `drafting-section-general`; mỗi nhóm quy tắc dưới đây là một
 | SF4 | Các cấu kiện cùng type **chạm nhau thì hoà thành một vùng**, không có nét giữa (dầm + sàn, sàn + móng, bản thép + thép góc). Cấu kiện không chạm nhau trong model thì giữ riêng. |
 | SF5 | Nét biên vùng **đậm số 8**. Tên line style lấy từ profile. |
 | SF6 | Vùng mới dùng type đánh dấu (R10). Type đánh dấu giữ nguyên hatch user đã sửa khi chạy lại. Không đụng filled region type khác và vùng của người khác. |
-| SF7 | **Dưới mặt đất** (đỉnh mặt cắt không cao hơn tầng trệt): chỉ tô sàn kết cấu dưới tầng trệt, hoặc sàn tầng cuối của tầng hầm. Cấu kiện dưới đất khác chỉ tô khi chạm các sàn đó, không chạm thì bỏ. |
+| SF7 | **Dưới mặt đất** (đỉnh mặt cắt không cao hơn tầng trệt): chỉ tô sàn kết cấu dưới tầng trệt, hoặc sàn tầng cuối của tầng hầm. Cấu kiện dưới đất khác chỉ tô khi chạm các sàn đó, hoặc đứng sát sàn với khe không quá 50 mm (khe co giãn, vd. tường 200 cách sàn nền 20 mm); xa hơn thì bỏ. |
 | SF8 | **Mỗi view một filled region cho mỗi type**, để dễ quan sát: một vùng bê tông, một vùng thép, chứa mọi đường bao của loại đó. |
 
 Lệnh: `structural_cut_fill` (mỗi lần một view).

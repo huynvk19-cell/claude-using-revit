@@ -23,7 +23,7 @@ The command gives regions their mark types itself. **Do not run `mark_types mark
 
 - Every Structural Framing, structural Floor, Structural Foundation and Wall with Structural on cut by the view and inside the crop is filled, except what SF2 and SF7 leave out (`fails` empty, `unknown` listed in the report).
 - The view has one region per type: one concrete, one steel. Concrete and steel use their own types; profiles of one type that touch merge, with no line between them.
-- Underground, only the slab under the ground floor or the bottom basement slab is filled, plus what touches it; no pile cap or pile is filled.
+- Underground, only the slab under the ground floor or the bottom basement slab is filled, plus what touches it or stands within a 50 mm joint of it (`touchGapMm`); no pile cap or pile is filled.
 - All new regions use the profile's line style and a mark type.
 - On the image, regions sit on their elements and cover no tag, dim or text.
 
