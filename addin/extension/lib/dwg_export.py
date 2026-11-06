@@ -21,12 +21,17 @@ accoreconsole (no AutoCAD window, needed on the PC):
 A part that should show something but came out empty counts as a failed pass, so a sheet
 is never written with a view missing.
 
+AutoCAD's console leaves helpers running (AcEventSync, AcQMod) that keep the folder they
+were started in: the console starts in its own folder and each sheet joins in a folder of
+its own, and failing to clean one up never touches the sheet, which is already saved.
+
 Images: Revit writes them next to the DWG by absolute path. They are copied to the
 export folder and linked relatively, so the folder can be sent as it is.
 """
 import os
 import re
 import shutil
+import time
 
 from Autodesk.Revit.DB import (BuiltInParameter, DWGExportOptions, ExportDWGSettings,
                                FilteredElementCollector)
@@ -226,12 +231,12 @@ _ANALYZE = u"""(setvar "CMDECHO" 0)
 """
 _DXF_OUT = u"""(setvar "FILEDIA" 0)
 (setvar "CMDECHO" 0)
-(command "_.DXFOUT" "base.dxf" "16")
+(command "_.DXFOUT" (strcat (getvar "DWGPREFIX") "base.dxf") "16")
 """
 _DXF_IN = u"""(setvar "FILEDIA" 0)
 (setvar "CMDECHO" 0)
 (setvar "ISAVEBAK" 0)
-(command "_.SAVEAS" "{0}" "base2.dwg")
+(command "_.SAVEAS" "{0}" (strcat (getvar "DWGPREFIX") "base2.dwg"))
 """
 _MERGE = u"""(setvar "FILEDIA" 0)
 (setvar "CMDECHO" 0)
@@ -247,7 +252,7 @@ _MERGE = u"""(setvar "FILEDIA" 0)
 (write-line (strcat "BASE " (itoa (dxr-all))) dxr-log)
 (setvar "TILEMODE" 1)
 """
-_INSERT = u"""(progn (setq dxr-n (dxr-count "Model")) (command "_.-INSERT" "{0}" "{1:.6f},{2:.6f},0" "1" "1" "0") (write-line (strcat "PART {0} " (itoa (- (dxr-count "Model") dxr-n))) dxr-log) (princ))
+_INSERT = u"""(progn (setq dxr-n (dxr-count "Model")) (command "_.-INSERT" (strcat "{0}=" (getvar "DWGPREFIX") "{0}") "{1:.6f},{2:.6f},0" "1" "1" "0") (write-line (strcat "PART {0} " (itoa (- (dxr-count "Model") dxr-n))) dxr-log) (princ))
 """
 _END = u"""(setvar "CTAB" dxr-tab)
 (dxr-images "{0}")
@@ -282,7 +287,7 @@ def _console(exe, folder, name, script):
     psi = ProcessStartInfo(exe, u'/i "{0}" /s "{1}" /l en-US'.format(os.path.join(folder, name), scr))
     psi.UseShellExecute = False
     psi.CreateNoWindow = True
-    psi.WorkingDirectory = folder
+    psi.WorkingDirectory = os.path.dirname(exe)     # its helpers stay on in this folder
     p = Process.Start(psi)
     if not p.WaitForExit(TIMEOUT_MS):
         p.Kill()
@@ -481,9 +486,7 @@ class DwgOut(pe.PdfOut):
 
     def join(self, doc, sheet, plan, target, files):
         # short ASCII names in a folder of its own: the scripts only see those
-        work = os.path.join(pe.PARTS_DIR, u"join")
-        if os.path.isdir(work):
-            Directory.Delete(work, True)
+        work = os.path.join(pe.PARTS_DIR, u"join{0}".format(int(time.time() * 1000)))
         os.makedirs(work)
         names, tiled = [], []
         tiles = _tile_flags(plan)
@@ -512,9 +515,14 @@ class DwgOut(pe.PdfOut):
             if os.path.exists(src):
                 shutil.copyfile(src, os.path.join(self.root or target, img))
         path = self.path(target, sheet)
+        part = path + u".tmp"           # never a half-written DWG under the real name
+        shutil.copyfile(os.path.join(work, u"base2.dwg"), part)
         pe._remove(path)
-        shutil.copyfile(os.path.join(work, u"base2.dwg"), path)
-        Directory.Delete(work, True)
+        os.rename(part, path)
+        try:
+            Directory.Delete(work, True)
+        except Exception:
+            pass                        # clear_cache gets it once nothing holds it
         return path
 
     def _empty(self, doc, sheet, plan, views, what):

@@ -67,7 +67,10 @@ import pdf_merge
 MM = 304.8
 LIMIT = 250000          # weight one export pass may carry on a PC with 8 GB free
 MIN_FREE_MB = 1500      # stop before the next sheet below this much free RAM
-PARTS_ROOT = os.path.join(os.environ.get("TEMP", u"C:\\Temp"), u"claude-using-revit", u"pdf-parts")
+# one place for all windows (Revit's own TEMP is another folder per session), so part files
+# left by a crash are found and deleted
+PARTS_ROOT = os.path.join(os.environ.get("LOCALAPPDATA") or os.environ.get("TEMP", u"C:\\Temp"), u"Temp",
+                          u"claude-using-revit", u"pdf-parts")
 PARTS_DIR = os.path.join(PARTS_ROOT, str(Process.GetCurrentProcess().Id))
 SETTINGS = os.path.join(os.environ.get("APPDATA", u""), u"claude-using-revit", u"pdf_export.json")
 
@@ -1048,6 +1051,7 @@ def run(doc, sheets, folder, group=None, progress=None, cancelled=None, limit=No
     if closed:
         stopped = u"workset của model đang đóng, view sẽ in thiếu phần tử: " + u", ".join(closed)
     stopped = stopped or out.check(doc) or None
+    last_error = None
     with LowPriority():
         for i, s in enumerate([] if stopped else sheets):
             sid = s.Id.IntegerValue
@@ -1098,6 +1102,7 @@ def run(doc, sheets, folder, group=None, progress=None, cancelled=None, limit=No
                         split.append((s, len(plan["parts"])))
                     if plan["tiled"]:
                         tiled.append((s, plan["tiled"]))
+                    last_error = None
                     break
                 except ExportFailed as ex:
                     # Revit refused a pass but lives: narrow it now, as after a crash
@@ -1113,11 +1118,19 @@ def run(doc, sheets, folder, group=None, progress=None, cancelled=None, limit=No
                     tidy(app)
                 except Exception as ex:
                     clear_pass(doc, out.kind)    # an error Revit survived is not a crash
-                    jr.set(sid, state="failed", error=u"{0}".format(ex))
-                    failed.append((s, u"{0}".format(ex)))
+                    err = u"{0}".format(ex)
+                    jr.set(sid, state="failed", error=err)
+                    failed.append((s, err))
+                    # the same error twice is not about the sheet: every next sheet would be
+                    # drawn for nothing, for hours, and a crash would hide it
+                    if err == last_error:
+                        stopped = u"2 sheet liên tiếp cùng một lỗi: " + err
+                    last_error = err
                     break
             crash = crash_memory(doc, out.kind)
             clear_cache(app)
+            if stopped:
+                break
     if not stopped and not failed:
         jr.data["done"] = True
         jr.save()
