@@ -62,6 +62,7 @@ public static class StructuralCutFill
     class Item { public Solid S; public string Kind; public double X0, X1, Y0, Y1, ZTop; public bool IsSlab, IsWall, IsCoreCap; public JArray Members = new JArray(); public List<Solid> Parts = new List<Solid>(); }
 
     static XYZ org, dir;
+    static Transform viewInv;
 
     static TransactionGroup tg;
 
@@ -82,7 +83,7 @@ public static class StructuralCutFill
         // Dependent views share the regions of their primary view: fill the primary, over its full crop.
         if (v.GetPrimaryViewId() != ElementId.InvalidElementId) v = (View)doc.GetElement(v.GetPrimaryViewId());
         bool apply = (string)args["mode"] == "apply";
-        var cb = v.CropBox; var inv = cb.Transform.Inverse; org = v.Origin; dir = v.ViewDirection;
+        var cb = v.CropBox; var inv = cb.Transform.Inverse; viewInv = inv; org = v.Origin; dir = v.ViewDirection;
         double oz = inv.OfPoint(org).Z;
 
         string suffix = (string)args["suffix"];
@@ -468,9 +469,15 @@ public static class StructuralCutFill
 
     static bool Inside(double[] a, double[] b) { return a[0] >= b[0] && a[1] >= b[1] && a[2] <= b[2] && a[3] <= b[3]; }
 
+    // Gap between the outlines' boxes, loop by loop: a slab cut around a beam is one face with several outer loops.
     static bool Connected(Item a, Item b, double gap, double tol)
     {
-        double gx = Math.Max(a.X0 - b.X1, b.X0 - a.X1), gy = Math.Max(a.Y0 - b.Y1, b.Y0 - a.Y1), g = Math.Max(gx, gy);
+        double whole = Math.Max(Math.Max(a.X0 - b.X1, b.X0 - a.X1), Math.Max(a.Y0 - b.Y1, b.Y0 - a.Y1));
+        if (whole > gap) return false;
+        var la = Caps(a.S).SelectMany(pf => pf.GetEdgesAsCurveLoops()).Select(l => Box(l, viewInv)).ToList();
+        var lb = Caps(b.S).SelectMany(pf => pf.GetEdgesAsCurveLoops()).Select(l => Box(l, viewInv)).ToList();
+        double g = 1e12;
+        foreach (var p in la) foreach (var q in lb) g = Math.Min(g, Math.Max(Math.Max(p[0] - q[2], q[0] - p[2]), Math.Max(p[1] - q[3], q[1] - p[3])));
         if (g > gap) return false;
         if (g > tol) return true;
         Solid u = null;
