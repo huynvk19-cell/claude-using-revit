@@ -14,7 +14,8 @@
       "earthType": { "type": "string", "description": "Official filled region type of the earth" },
       "earthSourceTypes": { "type": "array", "items": { "type": "string" }, "description": "Other region types that lend the earth outline" },
       "groundLevel": { "type": "string", "description": "Host level name of the ground floor" },
-      "pileCapPatterns": { "type": "array", "items": { "type": "string" }, "description": "Regex on family : type of pile caps and piles, never filled" },
+      "pileCapPatterns": { "type": "array", "items": { "type": "string" }, "description": "Regex on family : type of pile caps, filled only under a core wall" },
+      "pilePatterns": { "type": "array", "items": { "type": "string" }, "description": "Regex on family : type of piles, never filled" },
       "slabBandMm": { "type": "number", "description": "Depth of the kept slab bands, default 1000" },
       "touchGapMm": { "type": "number", "description": "Underground gap that still counts as touching a slab, default 50" },
       "logPath": { "type": "string" }
@@ -35,7 +36,8 @@
 //    Underground (top of the section at or below groundLevel): slabs (Floor class) within slabBandMm under the ground
 //    level or above the lowest slab are kept; every other underground profile is kept only if it connects to a kept slab, directly or through other kept profiles
 //    (touching, or within touchGapMm: joint gap).
-//    Foundations matching pileCapPatterns are never filled. Each region type gets ONE region per view, all its loops
+//    Piles (pilePatterns) are never filled. A pile cap (pileCapPatterns) is filled only as the slab of a core: it touches
+//    a structural wall that rises above groundLevel, directly or through walls stacked under it (coreCapsFilled); it then also counts as a kept slab. Each region type gets ONE region per view, all its loops
 //    in it. splitRegions > 0 = Revit refused them together: merged profiles it cannot draw stay as separate parts in
 //    their own regions (listed in fails), everything else stays one region.
 //    Earth: one masking region of <earthType><suffix>, drawn first so the structure stays on top. Its outline = the
@@ -57,7 +59,7 @@ using Newtonsoft.Json.Linq;
 public static class StructuralCutFill
 {
     const double MM = 304.8;
-    class Item { public Solid S; public string Kind; public double X0, X1, Y0, Y1, ZTop; public bool IsSlab; public JArray Members = new JArray(); public List<Solid> Parts = new List<Solid>(); }
+    class Item { public Solid S; public string Kind; public double X0, X1, Y0, Y1, ZTop; public bool IsSlab, IsWall, IsCoreCap; public JArray Members = new JArray(); public List<Solid> Parts = new List<Solid>(); }
 
     static XYZ org, dir;
 
@@ -96,6 +98,8 @@ public static class StructuralCutFill
         if (ground == null) return new JObject { ["error"] = "level not found: " + args["groundLevel"] };
         double groundZ = ground.ProjectElevation, band = (args["slabBandMm"] != null ? (double)args["slabBandMm"] : 1000.0) / MM;
         var capRx = ((JArray)args["pileCapPatterns"]).Select(p => new Regex((string)p, RegexOptions.IgnoreCase)).ToList();
+        var pileRx = (args["pilePatterns"] != null ? (JArray)args["pilePatterns"] : new JArray()).Select(p => new Regex((string)p, RegexOptions.IgnoreCase)).ToList();
+        var capItems = new List<Item>();
         var steelRx = (args["steelPatterns"] != null ? ((JArray)args["steelPatterns"]).Select(p => (string)p) : new[] { "METAL", "STEEL", "^S[0-9]{3}" }).Select(p => new Regex(p, RegexOptions.IgnoreCase)).ToList();
         int nCap = 0;
         var covered = new List<Item>();
@@ -138,7 +142,17 @@ public static class StructuralCutFill
 
                 var caps = CutProfiles(e, opt, planeL, T, inv, cb, fails, name);
                 if (caps.Count == 0) continue;
-                if (isFound && capRx.Any(r => r.IsMatch(name))) { nCap++; covered.AddRange(caps); continue; }
+                if (isFound && pileRx.Any(r => r.IsMatch(name))) { nCap++; covered.AddRange(caps); continue; }
+                if (isFound && capRx.Any(r => r.IsMatch(name)))
+                {
+                    foreach (var c in caps)
+                    {
+                        c.Kind = "concrete"; c.IsCoreCap = true;
+                        c.Members.Add(new JObject { ["src"] = s.Item1, ["id"] = e.Id.IntegerValue, ["cat"] = e.Category.Name, ["type"] = name, ["mat"] = mat });
+                        capItems.Add(c);
+                    }
+                    continue;
+                }
                 if (steel) { nSteel++; continue; }
                 string kind = conc || isFound ? "concrete" : null;
                 if (kind == null) { unknown.Add(e.Id.IntegerValue + " " + name + " material: " + mat); continue; }
@@ -146,11 +160,29 @@ public static class StructuralCutFill
                 if (isFound) nFo++; else if (isWall) nWa++; else if (e.Category.Id.IntegerValue == (int)BuiltInCategory.OST_Floors) nFl++; else nFr++;
                 foreach (var c in caps)
                 {
-                    c.Kind = kind; c.IsSlab = e is Floor;
+                    c.Kind = kind; c.IsSlab = e is Floor; c.IsWall = isWall;
                     c.Members.Add(new JObject { ["src"] = s.Item1, ["id"] = e.Id.IntegerValue, ["cat"] = e.Category.Name, ["type"] = name, ["mat"] = mat });
                     items.Add(c);
                 }
             }
+        }
+        int nCoreCap = 0;
+        // Core walls: structural walls rising above the ground level, and the walls stacked under them.
+        var coreWalls = items.Where(i => i.IsWall && i.ZTop > groundZ + 1.0 / MM).ToList();
+        var otherWalls = items.Where(i => i.IsWall && !coreWalls.Contains(i)).ToList();
+        for (bool grew = true; grew;)
+        {
+            grew = false;
+            foreach (var w in otherWalls.ToList())
+            {
+                if (!coreWalls.Any(c => Connected(w, c, 0.5 / MM, 0.5 / MM))) continue;
+                coreWalls.Add(w); otherWalls.Remove(w); grew = true;
+            }
+        }
+        foreach (var c in capItems)
+        {
+            if (coreWalls.Any(w => Connected(c, w, 50.0 / MM, 0.5 / MM))) { items.Add(c); nCoreCap++; }
+            else { nCap++; covered.Add(c); }
         }
         var hiddenTypes = FilterUnderground(items, covered, groundZ, band, (args["touchGapMm"] != null ? (double)args["touchGapMm"] : 50.0) / MM);
         int nHidden = hiddenTypes.Properties().Sum(g => (int)g.Value);
@@ -159,7 +191,7 @@ public static class StructuralCutFill
 
         tg = new TransactionGroup(doc, "Update structural cut regions"); tg.Start();
         FilledRegionType markC = null, markE = null;
-        int official = 0, kept = 0; var earthSrc = new List<FilledRegion>(); var oldIds = new JArray();
+        int official = 0, kept = 0; var earthLoops = new List<List<CurveLoop>>(); ElementId earthStyle = null; var oldIds = new JArray();
         bool ready = Step(doc, () =>
         {
             markC = MarkType(types, offC, suffix); markE = MarkType(types, offE, suffix);
@@ -167,7 +199,18 @@ public static class StructuralCutFill
             var inView = new FilteredElementCollector(doc, v.Id).OfClass(typeof(FilledRegion)).Cast<FilledRegion>().ToList();
             official = inView.Count(r => r.GetTypeId() == offC.Id);
             var srcNames = args["earthSourceTypes"] != null ? ((JArray)args["earthSourceTypes"]).Select(n => (string)n).ToList() : new List<string>();
-            earthSrc = inView.Where(r => r.GetTypeId() == offE.Id || srcNames.Contains((doc.GetElement(r.GetTypeId()) as ElementType)?.Name)).ToList();
+            // Outline: the earth regions already on the view, or this command's own earlier earth region when they are gone.
+            var earthSrc = inView.Where(r => r.GetTypeId() == offE.Id || srcNames.Contains((doc.GetElement(r.GetTypeId()) as ElementType)?.Name)).ToList();
+            if (earthSrc.Count == 0) earthSrc = inView.Where(r => r.GetTypeId() == markE.Id).ToList();
+            foreach (var r in earthSrc)
+            {
+                earthLoops.Add(r.GetBoundaries().ToList());
+                if (earthStyle == null)
+                {
+                    var ce = r.GetDependentElements(new ElementClassFilter(typeof(CurveElement))).Select(i => doc.GetElement(i)).OfType<CurveElement>().FirstOrDefault();
+                    if (ce != null) earthStyle = ce.LineStyle.Id;
+                }
+            }
             foreach (var r in inView.Where(r => r.GetTypeId() == markC.Id || r.GetTypeId() == markE.Id))
             {
                 if (doc.IsWorkshared && WorksharingUtils.GetWorksharingTooltipInfo(doc, r.Id).Creator != app.Application.Username) { kept++; continue; }
@@ -176,7 +219,7 @@ public static class StructuralCutFill
         }, fails, "prepare");
         if (!ready) { tg.RollBack(); return new JObject { ["error"] = "could not prepare the view", ["fails"] = fails }; }
         int earthSources = 0;
-        var earthMade = DrawEarth(doc, v, earthSrc, covered, markE.Id, inv, fails, out earthSources);
+        var earthMade = DrawEarth(doc, v, earthLoops, earthStyle, covered, markE.Id, inv, fails, out earthSources);
         var log = new JArray(); int nC = 0, split = 0;
         foreach (var kind in new[] { "concrete" })
         {
@@ -227,7 +270,7 @@ public static class StructuralCutFill
             ["framing"] = nFr, ["floors"] = nFl, ["foundations"] = nFo, ["walls"] = nWa, ["profiles"] = profiles, ["merges"] = merges,
             ["concreteRegions"] = nC, ["steelSkipped"] = nSteel, ["earthRegions"] = earthMade, ["earthSources"] = earthSources, ["replaced"] = oldIds.Count, ["keptOthers"] = kept, ["officialInView"] = official,
             ["notMergedPairs"] = notMerged.Count, ["splitRegions"] = split,
-            ["pileCapsSkipped"] = nCap, ["undergroundHidden"] = nHidden, ["undergroundHiddenTypes"] = hiddenTypes,
+            ["pileCapsSkipped"] = nCap, ["coreCapsFilled"] = nCoreCap, ["undergroundHidden"] = nHidden, ["undergroundHiddenTypes"] = hiddenTypes,
             ["noMaterialFoundations"] = noMat, ["unknown"] = unknown, ["missingSources"] = new JArray(missing), ["fails"] = fails
         };
         var lp = (string)args["logPath"];
@@ -328,7 +371,7 @@ public static class StructuralCutFill
         var under = items.Where(i => i.ZTop <= groundZ + tol).ToList();
         var slabs = under.Where(i => i.IsSlab).ToList();
         double low = slabs.Count > 0 ? slabs.Min(i => i.ZTop) : groundZ;
-        var seeds = slabs.Where(i => i.ZTop >= groundZ - band || i.ZTop <= low + band).ToList();
+        var seeds = slabs.Where(i => i.ZTop >= groundZ - band || i.ZTop <= low + band).Concat(under.Where(i => i.IsCoreCap)).ToList();
         var rest = under.Where(i => !seeds.Contains(i)).ToList();
         bool grew = true;
         while (grew)
@@ -351,19 +394,12 @@ public static class StructuralCutFill
     }
 
     // Earth first, so the structure drawn after it stays on top. Others' earth regions only lend their outline.
-    static int DrawEarth(Document doc, View v, List<FilledRegion> sources, List<Item> covered, ElementId typeId, Transform inv, JArray fails, out int nSources)
+    static int DrawEarth(Document doc, View v, List<List<CurveLoop>> sources, ElementId style, List<Item> covered, ElementId typeId, Transform inv, JArray fails, out int nSources)
     {
         nSources = sources.Count;
         var solids = new List<Solid>();
-        ElementId style = null;
-        foreach (var r in sources)
+        foreach (var loops in sources)
         {
-            if (style == null)
-            {
-                var ce = r.GetDependentElements(new ElementClassFilter(typeof(CurveElement))).Select(i => doc.GetElement(i)).OfType<CurveElement>().FirstOrDefault();
-                if (ce != null) style = ce.LineStyle.Id;
-            }
-            var loops = r.GetBoundaries().ToList();
             foreach (var cl in loops)
             {
                 var box = Box(cl, inv);

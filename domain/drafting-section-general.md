@@ -1,6 +1,6 @@
 ---
 name: drafting-section-general
-description: "Chuẩn khai triển mặt cắt chung (thường tỉ lệ 1/200). Hiện có: fill kết cấu bị cắt (SF1–SF9). General section standard."
+description: "Chuẩn khai triển mặt cắt chung (thường tỉ lệ 1/200). Hiện có: fill kết cấu bị cắt (SF1–SF10). General section standard."
 metadata:
   updated: "2026-11-06"
   related: ["drafting-opening-dims", "drafting-opening-tags", "drafting-views-sheets", "drafting-work-rules"]
@@ -19,13 +19,14 @@ Skill: `drafting-section-general`; mỗi nhóm quy tắc dưới đây là một
 | Mã | Quy tắc |
 |---|---|
 | SF1 | **Quan trọng nhất: chỉ tô cấu kiện thật sự bị mặt phẳng cắt của view cắt qua**, trong crop, theo mặt cắt thật. Cấu kiện nhìn thấy phía sau, hoặc chỉ có mặt nằm đúng trên mặt phẳng cắt, không tô. Chỉ gồm Structural Framing, Floors kết cấu, Structural Foundations và Walls có tham số Structural bật bằng bê tông của model kết cấu, theo SF3 và SF7. |
-| SF2 | **Không tô sàn hoàn thiện**, sàn site (đường, vỉa hè, đất): chúng không phải kết cấu. **Không tô móng đài cọc, cọc**, kể cả khi chạm sàn. |
+| SF2 | **Không tô sàn hoàn thiện**, sàn site (đường, vỉa hè, đất): chúng không phải kết cấu. **Không tô cọc. Không tô móng đài cọc**, kể cả khi chạm sàn, trừ đài móng làm sàn đáy của lõi thang (SF10). |
 | SF3 | **Chỉ tô bê tông, kết cấu thép không tô** (nhận theo vật liệu hoặc tên family/type: METAL, STEEL, S355…). Tường kết cấu không phải thép tính là bê tông. Móng không có vật liệu trong model: tính là bê tông và nêu trong báo cáo. |
 | SF4 | Các cấu kiện cùng type **chạm nhau thì hoà thành một vùng**, không có nét giữa (dầm + sàn, sàn + móng, tường + dầm). Cấu kiện không chạm nhau trong model thì giữ riêng. |
 | SF5 | Nét biên vùng **đậm số 8**. Tên line style lấy từ profile. |
 | SF6 | Vùng mới dùng type đánh dấu (R10). Type đánh dấu giữ nguyên hatch user đã sửa khi chạy lại. Không đụng filled region type khác và vùng của người khác. |
 | SF7 | **Dưới mặt đất** (đỉnh mặt cắt không cao hơn tầng trệt): chỉ tô sàn kết cấu dưới tầng trệt, hoặc sàn tầng cuối của tầng hầm. Cấu kiện dưới đất khác chỉ tô khi **kết nối** với các sàn đó, trực tiếp hoặc nối tiếp qua cấu kiện đã giữ (vd. sàn nền → tường kết cấu → dầm dưới tường). Khe không quá 50 mm vẫn tính là kết nối (khe co giãn, vd. tường 200 cách sàn nền 20 mm). Không kết nối thì bỏ. |
 | SF9 | **Filled region đất** vẽ đè lên để **che** những gì phải ẩn dưới đất (cấu kiện không kết nối, đài cọc, cọc), không dùng template hay Hide in View. Lấy đường bao ngoài của vùng đất có sẵn trên view, bỏ các lỗ, cộng thêm hình các cấu kiện bị ẩn. Vùng đất phải che được (masking) và nằm dưới vùng kết cấu. Model chưa có type đất thì tạo type `Earth` theo fill pattern Earth có sẵn của Revit. Vùng đất của người khác giữ nguyên. |
+| SF10 | **Đài móng dưới lõi thang máy, thang bộ thì tô**: lõi lẽ ra có sàn kết cấu bên dưới nhưng kết cấu vẽ đài móng làm luôn, nên đài móng có tường kết cấu của lõi đứng trên (tường đi lên quá tầng trệt, kể cả qua đoạn tường dưới đất nối tiếp) được tính như sàn và tô. |
 | SF8 | **Mỗi view một filled region bê tông**, để dễ quan sát, chứa mọi đường bao, cộng một vùng đất. Riêng hình gộp mà Revit không vẽ được thì tách thành các vùng riêng và nêu trong báo cáo. |
 
 Lệnh: `structural_cut_fill` (mỗi lần một view).
