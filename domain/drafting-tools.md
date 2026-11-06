@@ -60,7 +60,7 @@ Việc mà user làm bằng nút trên tab **claude using revit** thì Claude g�
 |---|---|
 | `hello_revit` | Phiên bản Revit, document đang mở, active view. |
 | `revit_docs` | Cửa sổ Revit đang giữ cổng MCP: `list` (PID, trạng thái MCP + các cửa sổ khác, document chưa lưu / active / đường dẫn) · `open` (cloud GUID hoặc path, `activate`; luôn mở **mọi workset**; **không bao giờ mở lại** model đã mở: đang mở ở cửa sổ này → chỉ kích hoạt, đang mở ở cửa sổ khác → từ chối kèm PID; cửa sổ chưa rõ document → từ chối. Danh sách mọi cửa sổ: `%APPDATA%\claude-using-revit\open-docs\<pid>.json`, do add-in claude using revit (khởi động + mở / đóng document) + chính lệnh này ghi; xem bằng `revit-port.ps1 status`) · `close` (`title`; từ chối khi chưa lưu trừ khi `discardChanges` sau khi user đồng ý; doc đang active cần `switchTo`). Ai giữ cổng / nhả cổng: `tools/revit-port/revit-port.ps1`. |
-| `work_status` | Cửa sổ "Đang xử lý": show / update / close. |
+| `work_status` | Cửa sổ "Đang xử lý": show / update / close. `workflow`, `skill`, `card`, `checklist`: việc đang chạy, cửa sổ Workflow của add-in đọc. |
 | `export_sheet_images` | Xuất PNG sheet `{sheetNumbers, folder, pixelWidth}`. |
 | `view_region_image` | Xuất PNG một vùng của view. |
 | `mark_types` | Type đánh dấu (R10): `snapshot` đợt ≤10 view → `mark` phần tử mới sang `<type><hậu tố>` (preview / apply) → `list` → `restore` về chính thức (preview / apply, `deleteEmpty`). `ensure` tạo trước type kiểm tra của dim. |
@@ -129,7 +129,7 @@ Việc mà user làm bằng nút trên tab **claude using revit** thì Claude g�
 
 | Lệnh | Việc |
 |---|---|
-| `view_develop` | Một lệnh cho một view (mặt bằng thang, mặt cắt dọc thang), chạy hết trong Revit: bài tham số (thiếu gì, ghi gì, bám vào đâu), bài vị trí (xếp theo dải, không chồng lấn, đo tag bằng cách đặt thử rồi hoàn tác), đặt, đánh dấu, kiểm tra. Trả về `Placed`, `Ask`, `Left`, `Overlaps`; cả nhóm là một bước Undo. preview / apply / undo. Chạy lại không tạo trùng. |
+| `view_develop` | Một lệnh cho một view (mặt bằng thang, mặt cắt dọc thang), chạy hết trong Revit: bài tham số (thiếu gì, ghi gì, bám vào đâu), bài vị trí (xếp theo dải, không chồng lấn, đo tag bằng cách đặt thử rồi hoàn tác), đặt, đánh dấu, kiểm tra. Trả về `Placed`, `Ask`, `Left`, `Overlaps`; cả nhóm là một bước Undo. preview / apply / undo. Chạy lại không tạo trùng. Kết quả mới nhất của mỗi view nằm ở `%APPDATA%\claude-using-revitiew-develop\`, cửa sổ Workflow đọc. |
 | `stair_plan_annotate` | Lõi thang bộ (1V): stair path Fixed Up Direction, tắt chữ UP/DOWN (SD); số bậc từng vế, V1 phía đối diện V3 (C, `numberSide`); tag vế thang ngoài tường bên, leader vào phần nhìn thấy (SB1, `runTagPlace`). preview / apply / undo. Truyền `pathTypeName` / `runTagTypeName` theo bản vẽ cùng sheet. `viewIds` → nhiều mặt bằng một lần gọi (log `-<viewId>`). |
 | `stair_numbers_match` | Số bậc (1V): chép Display Rule, Number Size, Justify, Orientation… từ một số bậc mẫu của dự án (`sourceId`) và đặt Reference từng vế (Left/Right Quarter…). preview / apply / undo. |
 | `dims_at_positions` | Dim (1V) đặt theo toạ độ khung view (như `stair_plan_audit`): mỗi vị trí phải có tham chiếu thật (mặt/nét tường, lan can, vế thang – fallback mặt 3D, sàn, cửa, cột, trục); `{mm, id}` ép đúng phần tử; không tìm thấy → báo các tham chiếu gần nhất. `typeName` bắt buộc. `src:"3d"|"view"` theo từng điểm, `use3D`, `refDims` (dùng lại tham chiếu của dim vẽ tay). Bỏ nét thuộc subcategory bị ẩn. preview / apply / undo. **Sau khi tạo kiểm tra dim có hiện không** (`view_elem_boxes`: Box ≠ null). |

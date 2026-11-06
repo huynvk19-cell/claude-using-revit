@@ -198,6 +198,33 @@ public static class ViewDevelop
 
     public static object Run(UIApplication app, JObject args)
     {
+        Module = "";
+        var result = RunModule(app, args);
+        Record(app, args, result);
+        return result;
+    }
+
+    // The last result of each view, for the Workflow window of the add-in (lib/workflow_lib.py). Never fails the run.
+    static string Module = "";
+    static void Record(UIApplication app, JObject args, object result)
+    {
+        try
+        {
+            string dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "claude-using-revit", "view-develop");
+            var doc = app.ActiveUIDocument.Document;
+            string name = (args["viewId"] ?? "0") + "-" + string.Concat(doc.Title.Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '_' : c)) + ".json";
+            string mode = (string)args["mode"] ?? "preview";
+            if (mode == "undo") { if (File.Exists(Path.Combine(dir, name))) File.Delete(Path.Combine(dir, name)); return; }
+            var o = JObject.FromObject(result);
+            o["viewId"] = args["viewId"]; o["doc"] = doc.Title; o["module"] = Module; o["at"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm");
+            Directory.CreateDirectory(dir);
+            File.WriteAllText(Path.Combine(dir, name), o.ToString());
+        }
+        catch { }
+    }
+
+    static object RunModule(UIApplication app, JObject args)
+    {
         var sw = Stopwatch.StartNew();
         var doc = app.ActiveUIDocument.Document;
         if (args["profile"] is JObject prof) foreach (var kv in prof) if (args[kv.Key] == null) args[kv.Key] = kv.Value;
@@ -224,12 +251,14 @@ public static class ViewDevelop
         Plan = V.ViewType == ViewType.FloorPlan || V.ViewType == ViewType.CeilingPlan;
         string stairText = ((string)args["stairViewText"] ?? "STAIR").ToUpper();
         bool stairView = V.Name.ToUpper().Contains(stairText);
+        Module = !stairView ? (V.ViewType == ViewType.CeilingPlan ? "ceiling" : Plan ? "plan" : "building") : V.ViewType == ViewType.CeilingPlan ? "ceiling" : "stair-plan";
         if (!stairView) return Plan ? PlanGeneralModule(app, doc, args, mode, logPath, outPath, sw) : BuildingModule(app, doc, args, mode, logPath, outPath, sw);
         if (!Plan)
         {
             // along or across the flights: the direction of the seen runs against the view
             var seenRuns = new FilteredElementCollector(doc, V.Id).OfCategory(BuiltInCategory.OST_Stairs).WhereElementIsNotElementType().OfType<Stairs>().SelectMany(st => st.GetStairsRuns()).Select(i => doc.GetElement(i) as StairsRun).Where(r => r != null).ToList();
             bool across = seenRuns.Count > 0 && seenRuns.All(r => { var pc = r.GetStairsPath().Cast<Curve>().ToList(); var d = (pc.Last().GetEndPoint(1) - pc.First().GetEndPoint(0)).Normalize(); return Math.Abs(d.DotProduct(Rg)) < 0.5; });
+            Module = across ? "stair-cross" : "stair-along";
             return across ? CrossModule(app, doc, args, mode, logPath, outPath, sw) : SectionModule(app, doc, args, mode, logPath, outPath, sw);
         }
         if (V.ViewType == ViewType.CeilingPlan) return PlanGeneralModule(app, doc, args, mode, logPath, outPath, sw);

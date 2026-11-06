@@ -85,27 +85,76 @@ function Set-Bobber([double]$dy) {
 }
 Set-Bobber 0
 
-# ---------- window ----------
+# ---------- window ---------- (same look as the add-in's tool windows: lib/liquid_glass.xaml, lib/native_blur.py)
+Add-Type -Namespace WorkStatus -Name Native -MemberDefinition @'
+[DllImport("dwmapi.dll")] public static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
+[DllImport("user32.dll", EntryPoint = "GetWindowLongW")] public static extern int GetWindowLong(IntPtr hwnd, int index);
+[DllImport("user32.dll", EntryPoint = "SetWindowLongW")] public static extern int SetWindowLong(IntPtr hwnd, int index, int value);
+'@
+function Brush([string]$c) { $b = New-Object System.Windows.Media.SolidColorBrush ([System.Windows.Media.ColorConverter]::ConvertFromString($c)); $b.Freeze(); return $b }
+$ink = Brush '#1D1D1F'; $ink2 = Brush '#6E6E73'; $fill2 = Brush '#1F767680'; $tile = Brush '#61FFFFFF'; $rim = Brush '#24000000'
+$accent = New-Object System.Windows.Media.LinearGradientBrush ([System.Windows.Media.ColorConverter]::ConvertFromString('#2E95FF')), ([System.Windows.Media.ColorConverter]::ConvertFromString('#0071E3')), 90
+$font = New-Object System.Windows.Media.FontFamily 'Segoe UI Variable Text, Segoe UI'
+$display = New-Object System.Windows.Media.FontFamily 'Segoe UI Variable Display, Segoe UI'
+
 $st = Read-Status
 $w = New-Object System.Windows.Window
 $w.Title = 'Đang xử lý'
-$w.Width = 430; $w.Height = 150
-$w.ResizeMode = 'NoResize'; $w.WindowStyle = 'ToolWindow'
+$w.Width = 440; $w.Height = 148
+$w.ResizeMode = 'NoResize'; $w.WindowStyle = 'SingleBorderWindow'
 $w.Topmost = $true; $w.ShowActivated = $false; $w.ShowInTaskbar = $true
 $wa = [System.Windows.SystemParameters]::WorkArea
 $w.Left = $wa.Right - $w.Width - 12; $w.Top = $wa.Bottom - $w.Height - 12
-$w.Background = New-Object System.Windows.Media.SolidColorBrush ([System.Windows.Media.ColorConverter]::ConvertFromString('#FAF9F5'))
+$w.Background = [System.Windows.Media.Brushes]::Transparent
+$w.FontFamily = $font; $w.Foreground = $ink
+$w.SetValue([System.Windows.Media.TextOptions]::TextFormattingModeProperty, [System.Windows.Media.TextFormattingMode]::Display)
+$chrome = New-Object System.Windows.Shell.WindowChrome
+$chrome.CaptionHeight = 0; $chrome.ResizeBorderThickness = 0; $chrome.CornerRadius = 0; $chrome.GlassFrameThickness = -1; $chrome.UseAeroCaptionButtons = $false
+[System.Windows.Shell.WindowChrome]::SetWindowChrome($w, $chrome)
+$w.Add_SourceInitialized({
+  $hwnd = (New-Object System.Windows.Interop.WindowInteropHelper $w).Handle
+  $blur = $false
+  try {
+    [void][WorkStatus.Native]::SetWindowLong($hwnd, -16, ([WorkStatus.Native]::GetWindowLong($hwnd, -16) -band (-bnot 0x00080000)))   # no DWM close button
+    $v = 0; [void][WorkStatus.Native]::DwmSetWindowAttribute($hwnd, 20, [ref]$v, 4)      # light: the ink is dark
+    $v = 2; [void][WorkStatus.Native]::DwmSetWindowAttribute($hwnd, 33, [ref]$v, 4)      # round corners
+    $v = 3; $blur = [WorkStatus.Native]::DwmSetWindowAttribute($hwnd, 38, [ref]$v, 4) -eq 0   # Acrylic
+  } catch { }
+  if ($blur) { [System.Windows.Interop.HwndSource]::FromHwnd($hwnd).CompositionTarget.BackgroundColor = [System.Windows.Media.Colors]::Transparent }
+  else { $w.Background = Brush '#F4F5F8' }
+})
+$w.Add_MouseLeftButtonDown({ try { $w.DragMove() } catch { } })
 
-$root = New-Object System.Windows.Controls.DockPanel; $root.Margin = '10,8,12,8'
-$pic = New-Object System.Windows.Controls.Border; $pic.Child = $canvas; $pic.Margin = '0,0,12,0'; $pic.CornerRadius = 6
-$pic.Background = New-Object System.Windows.Media.SolidColorBrush ([System.Windows.Media.ColorConverter]::ConvertFromString('#EAF4FB'))
+$root = New-Object System.Windows.Controls.DockPanel; $root.Margin = '12,12,14,12'
+$pic = New-Object System.Windows.Controls.Border; $pic.Child = $canvas; $pic.Margin = '0,0,14,0'; $pic.CornerRadius = 12
+$pic.Background = Brush '#EAF4FB'; $pic.VerticalAlignment = 'Center'
 $pic.ClipToBounds = $true
 [System.Windows.Controls.DockPanel]::SetDock($pic, 'Left'); [void]$root.Children.Add($pic)
+$closeBtn = [System.Windows.Markup.XamlReader]::Parse(@'
+<Button xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" Width="26" Height="26" Cursor="Hand" ToolTip="Đóng" Foreground="#6E6E73" VerticalAlignment="Top">
+  <Button.Template>
+    <ControlTemplate TargetType="Button">
+      <Grid>
+        <Ellipse x:Name="e" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Fill="#61FFFFFF" Stroke="#24000000" StrokeThickness="1"/>
+        <TextBlock Text="&#xE711;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="9" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+      </Grid>
+      <ControlTemplate.Triggers>
+        <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="e" Property="Fill" Value="#99FFFFFF"/></Trigger>
+      </ControlTemplate.Triggers>
+    </ControlTemplate>
+  </Button.Template>
+</Button>
+'@)
+$closeBtn.Add_Click({ $w.Close() })
+[System.Windows.Controls.DockPanel]::SetDock($closeBtn, 'Right'); $closeBtn.Margin = '8,0,0,0'; [void]$root.Children.Add($closeBtn)
 $sp = New-Object System.Windows.Controls.StackPanel; $sp.VerticalAlignment = 'Center'
-$tTitle = New-Object System.Windows.Controls.TextBlock; $tTitle.FontWeight = 'Bold'; $tTitle.FontSize = 13; $tTitle.TextTrimming = 'CharacterEllipsis'
-$tMsg = New-Object System.Windows.Controls.TextBlock; $tMsg.FontSize = 12; $tMsg.Margin = '0,4,0,6'; $tMsg.TextWrapping = 'Wrap'; $tMsg.MaxHeight = 34
-$bar = New-Object System.Windows.Controls.ProgressBar; $bar.IsIndeterminate = $true; $bar.Height = 8
-$tFoot = New-Object System.Windows.Controls.TextBlock; $tFoot.FontSize = 11; $tFoot.Foreground = [System.Windows.Media.Brushes]::Gray; $tFoot.Margin = '0,5,0,0'
+$tTitle = New-Object System.Windows.Controls.TextBlock; $tTitle.FontFamily = $display; $tTitle.FontWeight = 'SemiBold'; $tTitle.FontSize = 15; $tTitle.TextTrimming = 'CharacterEllipsis'; $tTitle.Foreground = $ink
+$tMsg = New-Object System.Windows.Controls.TextBlock; $tMsg.FontSize = 12; $tMsg.Margin = '0,3,0,8'; $tMsg.TextWrapping = 'Wrap'; $tMsg.MaxHeight = 34; $tMsg.Foreground = $ink
+# the theme's bar (liquid_glass.xaml, Bar) with a running piece: it has no end to reach
+$bar = New-Object System.Windows.Controls.Border; $bar.Height = 6; $bar.CornerRadius = 3; $bar.Background = $fill2; $bar.ClipToBounds = $true
+$barRun = New-Object System.Windows.Controls.Border; $barRun.Width = 70; $barRun.CornerRadius = 3; $barRun.Background = $accent; $barRun.HorizontalAlignment = 'Left'
+$barMove = New-Object System.Windows.Media.TranslateTransform; $barRun.RenderTransform = $barMove; $bar.Child = $barRun
+$tFoot = New-Object System.Windows.Controls.TextBlock; $tFoot.FontSize = 11; $tFoot.Foreground = $ink2; $tFoot.Margin = '0,6,0,0'
 foreach ($c in $tTitle, $tMsg, $bar, $tFoot) { [void]$sp.Children.Add($c) }
 [void]$root.Children.Add($sp)
 $w.Content = $root
@@ -134,6 +183,7 @@ $anim.Interval = [TimeSpan]::FromMilliseconds(120)
 $anim.Add_Tick({
   $script:tick++
   $t = $script:tick
+  if ($bar.ActualWidth -gt 0) { $span = $bar.ActualWidth + 70; $barMove.X = (($t * 9) % $span) - 70 }
   $phase = $t % 70                      # a bite every ~8.4 s
   if ($phase -ge 60) { Set-Bobber ((($phase - 60) % 2) * $S + $S); $bang.Visibility = 'Visible' }
   else { Set-Bobber ([math]::Round([math]::Sin($t / 4.0) * 1.5) * 1.0); $bang.Visibility = 'Hidden' }

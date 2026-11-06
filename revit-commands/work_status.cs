@@ -23,7 +23,11 @@
       "step": {
         "type": "string",
         "description": "optional progress text, e.g. '3/12'"
-      }
+      },
+      "workflow": { "type": "string", "description": "running workflow file name, e.g. floor-plan" },
+      "skill": { "type": "string", "description": "running skill, e.g. drafting-plan-dims" },
+      "card": { "type": "string", "description": "running card number, e.g. 02" },
+      "checklist": { "type": "string", "description": "the workflow checklist file (full path)" }
     },
     "required": [
       "action"
@@ -35,7 +39,8 @@
 // ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
 // Small 'work in progress' window shown on top of every app (standalone Windows process, not tied to Revit). action
 //    show: open/replace with title + message; update: change message/step; close: close it. Neutral wording only. Same
-//    window as %USERPROFILE%\Tools\WorkStatus\ws.ps1.
+//    window as %USERPROFILE%\Tools\WorkStatus\ws.ps1. workflow, skill, card, checklist: what is running, read by the
+//    Workflow window of the add-in (lib/workflow_lib.py); kept by update until changed.
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -71,6 +76,8 @@ public static class WorkStatus
             ["step"] = (string)args["step"] ?? (action == "update" ? (string)cur?["step"] : "") ?? "",
             ["state"] = "open"
         };
+        foreach (var key in new[] { "workflow", "skill", "card", "checklist" })
+            o[key] = (string)args[key] ?? (action == "update" ? (string)cur?[key] : null) ?? "";
         File.WriteAllText(file, o.ToString(), new System.Text.UTF8Encoding(false));
 
         bool running = false;
