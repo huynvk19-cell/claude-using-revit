@@ -5,7 +5,9 @@ description: "Detail a stair SECTION cut parallel to the stair path (longitudina
 
 # Stair section parallel to the stair path (LA–LC)
 
-**Tools** (load all in one ToolSearch call): `annot_copy_in_view`, `annot_place`, `annotation_overlaps`, `dims_text`, `dims_text_move`, `elevation_opening_tags`, `export_sheet_images`, `finish_mark_place`, `finish_marks_snap`, `level_dims_add`, `rail_top_at`, `stair_section_annotate`, `stair_section_info`, `tag_leaders_info`, `view_dims_snapshot`, `view_elem_boxes`.
+**Start here, before reading the standard or any card:** `view_develop {viewId, mode:"preview", dimType, runTagType:<RISER type>, railTagType, spotType, numberSourceId, suffix, me}` with the profile's values, then `mode:"apply", logPath`, then one view image at the end. It places what is missing (LB1, LB2, LA3, LA4, LA5, LB3, LC, stairs with or without walls) as one Undo step and returns `Placed`, `Ask`, `Left`, `Overlaps`. Put `Ask` to the user once. Open a card only for a rule still in `Left`, and the standard only if that card is not enough.
+
+**Tools** (load all in one ToolSearch call): `view_develop`, `annot_copy_in_view`, `annot_place`, `annotation_overlaps`, `dims_text`, `dims_text_move`, `elevation_opening_tags`, `export_sheet_images`, `finish_mark_place`, `finish_marks_snap`, `level_dims_add`, `rail_top_at`, `stair_section_annotate`, `stair_section_info`, `tag_leaders_info`, `view_dims_snapshot`, `view_elem_boxes`.
 
 **Section views cut along the flights only.** Plans → `drafting-stair-plan`. A section cut across the flights (flights seen end-on) → `drafting-stair-section-cross`.
 

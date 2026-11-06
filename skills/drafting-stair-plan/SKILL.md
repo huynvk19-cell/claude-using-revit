@@ -5,7 +5,9 @@ description: "Detail a stair core PLAN view (plan only, NOT a stair section) via
 
 # Stair core plan (SA1–SD)
 
-**Tools** (load all in one ToolSearch call): `annot_place`, `annotation_overlaps`, `detail_lines_set`, `dim_stable_refs`, `dims_at_positions`, `dims_copy_refs`, `dims_edit`, `dims_rail_refs`, `dims_text`, `dims_text_move`, `export_sheet_images`, `number_systems_copy`, `stair_gap_x`, `stair_plan_annotate`, `stair_plan_audit`, `tag_leaders_info`, `view_elem_boxes`, `view_range_info`.
+**Start here, before reading the standard or any card:** `view_develop {viewId, mode:"preview", dimType, runTagType, railTagType, pathType, suffix, me}` with the profile's values, then `mode:"apply", logPath`, then one view image at the end. It places what is missing (path, run tags, railing tags, run length chain, wall thickness) as one Undo step and returns `Placed`, `Ask`, `Left`, `Overlaps`. Put `Ask` to the user once. Open a card only for a rule still in `Left`, and the standard only if that card is not enough. Flights along the view's vertical: not covered yet, use the cards.
+
+**Tools** (load all in one ToolSearch call): `view_develop`, `annot_place`, `annotation_overlaps`, `detail_lines_set`, `dim_stable_refs`, `dims_at_positions`, `dims_copy_refs`, `dims_edit`, `dims_rail_refs`, `dims_text`, `dims_text_move`, `export_sheet_images`, `number_systems_copy`, `stair_gap_x`, `stair_plan_annotate`, `stair_plan_audit`, `tag_leaders_info`, `view_elem_boxes`, `view_range_info`.
 
 **Plan views only.** Stair sections are a different job: along the flights → `drafting-stair-section-parallel`; across the flights → `drafting-stair-section-cross`. If the view is a section or elevation, stop and say so.
 
