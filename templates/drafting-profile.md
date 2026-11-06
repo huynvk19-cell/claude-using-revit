@@ -29,7 +29,7 @@ description: "Giá trị riêng của dự án cho bộ skill drafting. Copy fil
 | Mặt bằng: vùng chỉ dim trục (không dim / tag cửa, `drafting-plan-dims` 00–01) | `<vd. vùng xưởng, x > 61 m>` |
 | Cao độ sàn (FL1–FL3): type cao độ (để trống = user chọn) · ngưỡng phòng nhỏ trong phòng khác (m²) · tên room buồng thang chứa · tên view lõi thang chứa · ký hiệu cao độ hiện trạng ngoài nhà | `<vd. Plan>` · `5` → `minAreaM2` · `STAIR` → `stairRoomText` · `STAIRCASE` → `stairViewText` · `<id generic annotation, không có thì bỏ>` → `civilSymbolId` |
 | Tag tường (WT1, WT4, `drafting-plan-dims` 04): type tag tường cố định (để trống = type đang dùng, chưa có thì hỏi) · phần tên room vệ sinh (không tag tường) | `<tên type, không kèm tên family>` · `TOILET, WC` |
-| Fill kết cấu (SF1–SF6, `drafting-section-general` 00): model kết cấu (`sources`) · type bê tông · type thép · line style nét 8 | `<tên model>` · `<type>` · `<type>` · `<line style>` |
+| Fill kết cấu (SF1–SF8, `drafting-section-general` 00): model kết cấu (`sources`) · type bê tông · type thép · line style nét 8 · level tầng trệt · regex tên đài cọc, cọc | `<tên model>` · `<type>` · `<type>` · `<line style>` · `<level>` · `<regex>` |
 | Ký hiệu độ dốc (SL2–SL4, `drafting-plan-dims` 05, `drafting-plan-floor-finish` 01): Spot Slope type cố định (để trống = type có sẵn hướng Down, đơn vị thập phân / %) | `<tên type>` |
 | Schedule danh mục bản vẽ / print set khớp với nó | `<vd. DRAWINGS LIST>` / `<tên print set>` |
 | Sổ tay dự án (nếu có) | `<link>` |
