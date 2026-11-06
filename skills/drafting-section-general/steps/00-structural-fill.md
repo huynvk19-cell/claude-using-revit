@@ -8,7 +8,7 @@
 
 For each view:
 
-1. `structural_cut_fill {mode:"preview", viewId, sources, concreteType, earthType, suffix, lineStyle, groundLevel, pileCapPatterns, pilePatterns, fillCoreCaps, logPath}`, values from the profile row "Fill kết cấu".
+1. `structural_cut_fill {mode:"preview", viewId, sources, concreteType, earthType, suffix, lineStyle, groundLevel, pileCapPatterns, pilePatterns, logPath}`, values from the profile row "Fill kết cấu".
 2. Read the result:
    - `missingSources` not empty: the structural model is not loaded or is hidden in the view; fix the source before going on.
    - `officialInView` > 0: the view already has regions of the official types; compare with the preview so nothing is doubled.

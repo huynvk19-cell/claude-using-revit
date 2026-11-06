@@ -15,7 +15,6 @@
       "earthSourceTypes": { "type": "array", "items": { "type": "string" }, "description": "Other region types that lend the earth outline" },
       "groundLevel": { "type": "string", "description": "Host level name of the ground floor" },
       "pileCapPatterns": { "type": "array", "items": { "type": "string" }, "description": "Regex on family : type of pile caps, filled only under a core wall" },
-      "fillCoreCaps": { "type": "boolean", "description": "Fill pile caps under a core, default true; false = no pile cap at all" },
       "pilePatterns": { "type": "array", "items": { "type": "string" }, "description": "Regex on family : type of piles, never filled" },
       "slabBandMm": { "type": "number", "description": "Depth of the kept slab bands, default 1000" },
       "touchGapMm": { "type": "number", "description": "Underground gap that still counts as touching a slab, default 50" },
@@ -185,7 +184,7 @@ public static class StructuralCutFill
             // A core has no slab of its own: between its walls on the cap, no slab may pass above the cap.
             var onCap = coreWalls.Where(w => Connected(c, w, 50.0 / MM, 0.5 / MM)).ToList();
             bool isCore = false;
-            if (onCap.Count > 0 && (args["fillCoreCaps"] == null || (bool)args["fillCoreCaps"]))
+            if (onCap.Count > 0)
             {
                 double mid = (onCap.Min(w => w.X0) + onCap.Max(w => w.X1)) / 2;
                 isCore = !items.Any(i => i.IsSlab && i.ZTop > c.ZTop && i.ZTop <= groundZ + 1.0 / MM && Covers(i, mid, inv));
