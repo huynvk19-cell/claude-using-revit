@@ -39,6 +39,7 @@ Skills and domain standards that let Claude Code do drawing production like a dr
 | `drafting-dims` | Dim cao độ, đổi type dim (dim trục → `drafting-grid-dims`) |
 | `drafting-opening-dims` | Dim cửa sổ, cửa đi, cửa cuốn trên mặt đứng/mặt cắt (dim đứng + dim ngang) |
 | `drafting-opening-tags` | Tag cửa sổ, cửa đi, cửa cuốn trên mặt đứng/mặt cắt (T1–T8) |
+| `drafting-elevation-general` | **Khai triển mặt đứng chung, mặt cắt chung** (thường 1/200): thẻ Fill kết cấu bị cắt (SF1–SF6) |
 | `drafting-stair-section-parallel` | **Mặt cắt dọc** thang bộ (cắt song song stair path, LA–LC): chiều cao vế `169.4mm x 16R = 2710 (EQUAL RISERS)`, cao độ tầng, chiều dài vế, thông thuỷ dưới chiếu nghỉ, tay vịn; tag vế, P01, cao độ, F../C.., cửa; số bậc liên tục |
 | `drafting-stair-section-cross` | **Mặt cắt ngang** thang bộ (cắt không song song stair path, vế nhìn thẳng đầu, XA–XC): chuỗi chiều cao từng dải vế có công thức, cao độ tầng, chuỗi thông thuỷ | dày chiếu nghỉ liên tục, bề rộng tới tay vịn, tường; tag vế chữ đứng hai bên, tay vịn, cao độ, F../C..; số bậc Start and End trên vế thấy cổ bậc |
 | `drafting-stair-plan` | **Mặt bằng** lõi thang bộ (SA1–SD; mặt cắt thang sẽ là skill riêng): 3 vế + mọi chiếu nghỉ thấy được (kể cả dưới View Depth), dim tay vịn không cần dim tay, dim thông thuỷ (CLEAR chỉ trên bề rộng vế; mép lan can → mép bậc → tường), chiều dài vế có công thức (bậc trên cùng ngang chiếu nghỉ không tính), chuỗi chiếu nghỉ / tổng khép tới tường, tường/cửa tới trục; tag vế, tay vịn, cao độ, cửa, hoàn thiện; đếm/đánh số bậc từng vế; stair path chỉ có mũi tên |
@@ -57,7 +58,7 @@ Skill nhiều bước thì mỗi bước là **một file riêng** trong `skills
 - Duyệt, sửa một bước = sửa một file trên GitHub; lịch sử (commit, diff) theo từng bước.
 - Quy trình chỉ gọi skill; thứ tự thẻ nằm trong `SKILL.md`, "xong khi" / "chỉ bỏ khi" chỉ nằm trong thẻ.
 
-Đã tách: `drafting-stair-plan`, `drafting-stair-section-parallel`, `drafting-stair-section-cross` (mỗi skill 16 thẻ), `drafting-views-sheets` (8), `drafting-grid-dims` (4), `drafting-opening-dims` (4), `drafting-opening-tags` (6), `drafting-tags-titles` (2), `drafting-plan-dims` (6), `drafting-plan-floor-finish` (2), `drafting-ceiling-plan` (1). Skill một bước (`drafting-dims`) và các skill mở/đóng phiên (`drafting-start`, `drafting-end`, `drafting-visual-check`, `drafting-review-round`) giữ nguyên.
+Đã tách: `drafting-stair-plan`, `drafting-stair-section-parallel`, `drafting-stair-section-cross` (mỗi skill 16 thẻ), `drafting-views-sheets` (8), `drafting-grid-dims` (4), `drafting-opening-dims` (4), `drafting-opening-tags` (6), `drafting-tags-titles` (2), `drafting-plan-dims` (6), `drafting-plan-floor-finish` (2), `drafting-ceiling-plan` (1), `drafting-elevation-general` (1). Skill một bước (`drafting-dims`) và các skill mở/đóng phiên (`drafting-start`, `drafting-end`, `drafting-visual-check`, `drafting-review-round`) giữ nguyên.
 
 ### Quy trình (Workflows)
 
@@ -65,7 +66,7 @@ Quy trình là lớp trên skill: nó **chỉ gọi skill** — skill nào, theo
 
 | Quy trình | Gọi skill (thẻ) theo thứ tự |
 |---|---|
-| `elevation-section` | start (gom view / sheet) → views-sheets (00–04) → grid-dims → dims (cao độ) → opening-dims → opening-tags → tags-titles (title) → views-sheets (07) → visual-check → end |
+| `elevation-section` | start (gom view / sheet) → views-sheets (00–04) → elevation-general (fill kết cấu) → grid-dims → dims (cao độ) → opening-dims → opening-tags → tags-titles (title) → views-sheets (07) → visual-check → end |
 | `floor-plan` | start (gom view / sheet) → views-sheets (00–04) → grid-dims → plan-dims (dim cửa → tag cửa → tag room → cao độ sàn → tag tường → độ dốc) → plan-floor-finish (cao độ sàn, độ dốc, mặt bằng hoàn thiện) → tags-titles (room tag, title) → views-sheets (07) → visual-check → end |
 | `ceiling-plan` | start (gom view / sheet) → views-sheets (00–04) → grid-dims → ceiling-plan (tag room) → tags-titles (room tag, title) → views-sheets (07) → visual-check → end |
 | `stair-core` | start (gom view / sheet) → stair-plan → stair-section-parallel → stair-section-cross → visual-check → end |
@@ -85,6 +86,7 @@ Thêm quy trình mới: một file `workflows/<tên>.md` (dòng 0 = `drafting-st
 | `drafting-dimensions.md` | Chuẩn dim cao độ, type dim (dim trục → `drafting-grid-dims.md`) |
 | `drafting-opening-dims.md` | 5 quy tắc dim cửa sổ, cửa đi (Q1–Q5) |
 | `drafting-opening-tags.md` | 8 quy tắc tag cửa sổ, cửa đi (T1–T8) |
+| `drafting-elevation-general.md` | Mặt đứng, mặt cắt chung: fill kết cấu bị cắt (SF1–SF6) |
 | `drafting-annotation.md` | Room tag (đặt và chấm điểm tag TR1–TR8, sửa tag), cao độ sàn trên mặt bằng (FL1–FL3), ký hiệu độ dốc (SL1–SL5), view title, leader vuông góc |
 | `drafting-plan-dims.md` | Mặt bằng kích thước: dim cửa tới tường, trục (PD1–PD6), tag cửa (PT1–PT6), tag room, cao độ sàn, tag tường (WT1–WT5), ký hiệu độ dốc |
 | `drafting-ceiling-plan.md` | Mặt bằng trần: các thẻ bước (hiện có tag room) |
