@@ -2,7 +2,7 @@
 name: drafting-sheet-set-townhouse
 description: "Bộ hồ sơ kiến trúc nhà liên kế (nhà phố, nhà ống, liền kề dự án, shophouse): danh mục điển hình theo thứ tự sheet (user), bản vẽ cần có theo giai đoạn, tỷ lệ, cách xếp sheet cho lô hẹp dài, mẫu nhà / lô góc, hay sót. Townhouse sheet set."
 metadata:
-  updated: "2026-11-05"
+  updated: "2026-11-07"
   related: ["drafting-sheet-layout"]
 ---
 
@@ -95,7 +95,7 @@ Danh mục ở §2 **thay cho** bộ hồ sơ lõi (`drafting-sheet-layout.md` �
 
 ## 3. Layout đặc thù
 
-- **Khổ giấy**: nhà đơn lẻ dùng A3 (đôi khi A2). Dự án dùng A1, với nhiều mẫu nhà trên cùng một khổ.
+- **Khổ giấy**: **A2** cho cả bộ (user, 2026-11-07). Profile chưa ghi khổ thì dùng A2; khổ khác chỉ khi user duyệt.
 - **Mặt bằng lô hẹp**:
   - đặt 2–4 mặt bằng tầng cạnh nhau trên một sheet ngang, cùng tỷ lệ, cùng hướng;
   - trục chữ (A, B…) nằm cùng một hàng ngang (LO5);
