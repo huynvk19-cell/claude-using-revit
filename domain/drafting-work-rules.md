@@ -30,12 +30,11 @@ Việc cần sửa model (vd. room không có tên → tag "?") → ghi vào **v
 ## 2. Nhịp làm việc (Working loop)
 
 1. **Re-anchor**: gọi `get_active_view` hoặc tra lại id view. Không dùng lại id từ lượt trước.
-2. **Cửa sổ trạng thái** (nếu có): show → update từng bước → close cuối lượt.
-3. **Preview → Apply**:
+2. **Preview → Apply**:
    - Chưa chắc thì chạy `preview` trước.
    - `apply` luôn kèm `logPath`.
-4. **Phần tử mới dùng type đánh dấu** (R10, §2c) cho tới khi user duyệt. Lệnh nhận tên dim type → truyền **type kiểm tra** = type đánh dấu của dim type chính thức.
-5. **Kiểm tra bằng ảnh**: xuất ảnh các view của đợt trong một lần gọi → subagent đọc → sửa → xuất lại view bị sửa.
+3. **Phần tử mới dùng type đánh dấu** (R10, §2c) cho tới khi user duyệt. Lệnh nhận tên dim type → truyền **type kiểm tra** = type đánh dấu của dim type chính thức.
+4. **Kiểm tra bằng ảnh**: xuất ảnh các view của đợt trong một lần gọi → subagent đọc → sửa → xuất lại view bị sửa.
 6. **Ghi log**:
    - `review/<ngày>_<mã>/<Txx>-*.json`
    - một mục trong `log/YYYY-MM.md`

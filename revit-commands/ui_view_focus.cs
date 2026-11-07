@@ -1,34 +1,17 @@
 /* mcp-tool
 {
-  "description": "UI only: open a view zoomed to its crop (open); hide/show Properties and Project Browser (panes, which).",
+  "description": "UI only: open a view zoomed to its crop.",
   "inputSchema": {
     "type": "object",
     "properties": {
       "action": {
         "type": "string",
         "enum": [
-          "open",
-          "panes",
-          "toggle"
+          "open"
         ]
-      },
-      "which": {
-        "type": "string",
-        "enum": [
-          "properties",
-          "browser"
-        ],
-        "description": "panes: only this pane (default both)"
       },
       "viewId": {
         "type": "number"
-      },
-      "panes": {
-        "type": "string",
-        "enum": [
-          "hide",
-          "show"
-        ]
       }
     },
     "required": [
@@ -41,13 +24,7 @@
 */
 // ---- Details (kept out of the MCP header so the tool list stays short; read when unsure) ----
 // UI helper so the user can watch progress. action open: make viewId the active view and zoom to its crop region (call
-//    twice when the view was not active: the zoom needs the view window). action 'panes': hide or show the Properties
-//    palette and/or the Project Browser (panes: 'hide' | 'show'; which: properties | browser, default both) and report
-//    each pane's state before and after. action 'toggle' flips a View > User Interface checkbox blindly: prefer
-//    'panes'. No model change.
-// Parameters:
-//   which: panes: only this pane (default both); toggle: View > User Interface > Properties / Project Browser (flips
-//    the checkbox)
+//    twice when the view was not active: the zoom needs the view window). No model change.
 using System;
 using System.Linq;
 using Autodesk.Revit.DB;
@@ -59,34 +36,6 @@ public static class UiViewFocus
     public static object Run(UIApplication app, JObject args)
     {
         var uidoc = app.ActiveUIDocument;
-        string action = (string)args["action"];
-        if (action == "toggle")
-        {
-            // View > User Interface checkboxes (one posted command per call; it runs right after this call returns)
-            var which = (string)args["which"] == "browser" ? PostableCommand.ProjectBrowser : PostableCommand.TogglePropertiesPalette;
-            app.PostCommand(RevitCommandId.LookupPostableCommandId(which));
-            return new { Posted = which.ToString() };
-        }
-        if (action == "panes")
-        {
-            bool show = (string)args["panes"] == "show";
-            var res = new System.Collections.Generic.List<string>();
-            string only = (string)args["which"];
-            var ids = new System.Collections.Generic.List<DockablePaneId>();
-            if (only != "browser") ids.Add(DockablePanes.BuiltInDockablePanes.PropertiesPalette);
-            if (only != "properties") ids.Add(DockablePanes.BuiltInDockablePanes.ProjectBrowser);
-            foreach (var id in ids)
-            {
-                try
-                {
-                    var p = app.GetDockablePane(id); bool before = p.IsShown();
-                    if (show && !before) p.Show(); else if (!show && before) p.Hide();
-                    res.Add(p.GetTitle() + ": was " + (before ? "shown" : "hidden") + ", now " + (p.IsShown() ? "shown" : "hidden"));
-                }
-                catch (Exception e) { res.Add("error: " + e.Message); }
-            }
-            return new { Panes = res };
-        }
         var v = uidoc.Document.GetElement(new ElementId((int)args["viewId"])) as View;
         if (v == null) return new { Error = "view not found" };
         bool switched = false;

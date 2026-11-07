@@ -60,7 +60,7 @@ Việc mà user làm bằng nút trên tab **claude using revit** thì Claude g�
 |---|---|
 | `hello_revit` | Phiên bản Revit, document đang mở, active view. |
 | `revit_docs` | Cửa sổ Revit đang giữ cổng MCP: `list` (PID, trạng thái MCP + các cửa sổ khác, document chưa lưu / active / đường dẫn) · `open` (cloud GUID hoặc path, `activate`; luôn mở **mọi workset**; **không bao giờ mở lại** model đã mở: đang mở ở cửa sổ này → chỉ kích hoạt, đang mở ở cửa sổ khác → từ chối kèm PID; cửa sổ chưa rõ document → từ chối. Danh sách mọi cửa sổ: `%APPDATA%\claude-using-revit\open-docs\<pid>.json`, do add-in claude using revit (khởi động + mở / đóng document) + chính lệnh này ghi; xem bằng `revit-port.ps1 status`) · `close` (`title`; từ chối khi chưa lưu trừ khi `discardChanges` sau khi user đồng ý; doc đang active cần `switchTo`). Ai giữ cổng / nhả cổng: `tools/revit-port/revit-port.ps1`. |
-| `work_status` | Cửa sổ "Đang xử lý": show / update / close. `workflow`, `skill`, `card`, `checklist`: việc đang chạy, cửa sổ Workflow của add-in đọc. |
+| `run_state` | Ghi việc đang chạy của workflow, không hiện gì trên màn hình: `set` (`workflow`, `skill`, `card`, `checklist`, `message`, `step`) / `clear`. Cửa sổ Workflow của add-in đọc; tự cập nhật nội dung đợi khi còn việc đang chạy. |
 | `export_sheet_images` | Xuất PNG sheet `{sheetNumbers, folder, pixelWidth}`. |
 | `view_region_image` | Xuất PNG một vùng của view. |
 | `mark_types` | Type đánh dấu (R10): `snapshot` đợt ≤10 view → `mark` phần tử mới sang `<type><hậu tố>` (preview / apply) → `list` → `restore` về chính thức (preview / apply, `deleteEmpty`). `ensure` tạo trước type kiểm tra của dim. |
@@ -151,7 +151,7 @@ Việc mà user làm bằng nút trên tab **claude using revit** thì Claude g�
 | `room_tags_score` | (read-only) Chấm điểm từng room tag theo TR1–TR8 (`drafting-annotation.md` §2): tối đa khi leader 0 trong room, giảm đều về 0 ở `zeroAtMm`; thẳng hàng +2; trên tường / cạnh sàn (trần), leader trùng leader / dọc tường / qua chấm leader khác → 0; cắt qua hẳn room khác −3 mỗi room (không tính room dưới thân tag); `CardScore` = trung bình, room chưa tag → 0; `Accepted` khi > `acceptAbove`; `outPath` ghi điểm từng tag. |
 | `room_tags_list` | (read-only) Room tag trong view: danh sách số room đã tag (`detail` = id tag, room, type). Dùng đối chiếu view OVERALL với view chi tiết 201/202. |
 | `viewport_titles_place` | Bật và căn title (`ignoreCrop`). |
-| `ui_view_focus` | Mở view + zoom theo crop để user theo dõi (`open`); ẩn/hiện Properties, Project Browser và báo trạng thái trước/sau (`panes` hide/show, `which` properties/browser). Dùng trong `drafting-start` / `drafting-end`. |
+| `ui_view_focus` | Mở view + zoom theo crop để user theo dõi (`open`). |
 
 ## View và trục
 

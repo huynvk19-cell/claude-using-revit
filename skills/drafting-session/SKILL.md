@@ -68,7 +68,7 @@ Do **not** read the whole `drafting-domain/` folder or every skill. Pick the tas
 1. Re-anchor: `hello_revit` or `get_active_view`. Never reuse ids from an earlier turn or a summary without checking.
 2. Find the task source (comment PDF, TASKS.md or the user's message) and the latest log in `review/<date>_<code>/`.
 3. **Form the batch**: up to 10 views of the same ViewType (floor plans with floor plans, sections with sections, elevations with elevations) and the same topic. More views → several batches, one after another. Show the batches in one short table.
-4. Open the batch views, hide Properties and Project Browser, show the status window: follow `drafting-start`.
+4. Open the batch views: follow `drafting-start`.
 5. **Snapshot** the batch before any change: `mark_types {action:"snapshot", viewIds:[batch], statePath:<review>/batch-<n>-snapshot.json}`.
 
 ## During
@@ -96,7 +96,7 @@ Before calling a batch finished, check all three for each of its views:
 2. Add new lessons:
    - general → the matching domain file;
    - project-only → the profile.
-3. Close the status window. The panes stay hidden between turns; when the user ends the work session (kết thúc làm việc), follow `drafting-end`, which brings them back.
+3. When the user ends the work session (kết thúc làm việc), follow `drafting-end`.
 4. Report:
    - exact Revit names (sheet no. – name, view, View Template);
    - one table for the batch: view → what was done → counts, and the marked elements per mark type;

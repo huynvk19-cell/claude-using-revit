@@ -45,7 +45,6 @@ metadata:
 | Vế/chiếu nghỉ không cho tham chiếu từ hình học theo view | Hình học `Options{View=v}` của `StairsRun`/`StairsLanding` là nét 2D không có `Reference`. | Lấy mặt 3D (`Options{ComputeReferences=true}` không có View): mặt cổ bậc vuông góc hướng đi (`dims_at_positions` tự fallback). |
 | Ảnh vùng view (`view_region_image`) trắng trơn, view của user bị zoom ra chỗ trống | `x,y` của tool là **toạ độ model**; khung toạ độ của `stair_plan_audit` / `view_crop_info` là khung view (Right/Up từ `View.Origin`), có thể lệch rất xa. | Dùng ảnh sheet (`export_sheet_images` + `crop.ps1`) hoặc đổi toạ độ trước. |
 | Sau `export_sheet_images` (sheet), user thấy sheet trống thay vì view đang làm | Xuất ảnh sheet đưa sheet lên trước. | Khi đang làm: xuất **view** (`sheetNumbers:[], viewIds:[id]`) — view vẫn ở trước. Xuất sheet chỉ khi cần cả sheet, rồi `ui_view_focus open` lại. |
-| `ui_view_focus panes hide` báo "was hidden" nhưng Properties / Project Browser vẫn hiện | Tool dò trạng thái pane sai (2026-10-07). | Kiểm tra bằng ảnh màn hình; đóng pane bằng nút X nếu cần. |
 | Chữ dim tiếng Việt trong script PowerShell bị lỗi | PowerShell 5.1 đọc file không có BOM. | Lưu `.ps1` dạng UTF-8 with BOM. |
 
 ## Mẹo (Tips)
