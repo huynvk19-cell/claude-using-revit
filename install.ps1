@@ -10,11 +10,10 @@
 #   -Dev            : with -AddIn, claude using revit reads extension\ and commands\ straight from this repo checkout
 #                     (config.json extensionDir / commandsDir): an edit applies on the next click / tool call.
 #   -RegisterClaude : add the MCP server to Claude Code (claude mcp add --transport http --scope user claude-using-revit ...)
-#   -WorkStatus     : also install the status window scripts to %USERPROFILE%\Tools\WorkStatus
 #   -DwgBindXref    : also install the DWG bind-xref tool + its Explorer right-click menu (HKCU, no admin)
 #   -WebApp         : optional, a web server for the tools in a browser or on an iPad in the LAN, to
 #                     %APPDATA%\claude-using-revit\webapp; the add-in needs none of it
-param([switch]$AddIn, [string[]]$Revit, [string]$Dist, [switch]$Dev, [switch]$RegisterClaude, [switch]$WorkStatus, [switch]$DwgBindXref, [switch]$WebApp)
+param([switch]$AddIn, [string[]]$Revit, [string]$Dist, [switch]$Dev, [switch]$RegisterClaude, [switch]$DwgBindXref, [switch]$WebApp)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $claude = Join-Path $env:USERPROFILE '.claude'
@@ -116,11 +115,9 @@ if ($RegisterClaude) {
     else { "claude CLI not found: claude mcp add --transport http --scope user claude-using-revit http://127.0.0.1:$port/mcp" }
 }
 
-if ($WorkStatus) {
-    $ws = Join-Path $env:USERPROFILE 'Tools\WorkStatus'
-    New-Item -ItemType Directory -Force $ws | Out-Null
-    Copy-Item (Join-Path $root 'tools\work-status\*.ps1') -Destination $ws -Force
-    "work status -> $ws"
+# the status window of older versions is gone: its scripts, its copy in the domain folder, its MCP command
+foreach ($old in (Join-Path $env:USERPROFILE 'Tools\WorkStatus'), (Join-Path $domain 'tools\work-status'), (Join-Path $data 'commands\work_status.cs')) {
+    if (Test-Path $old) { Remove-Item $old -Recurse -Force; "removed $old" }
 }
 if ($DwgBindXref) { & (Join-Path $root 'tools\dwg-bind-xref\install-menu.ps1') }
 if ($WebApp) {

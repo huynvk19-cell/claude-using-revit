@@ -7,7 +7,7 @@ description: "Run a whole drafting job as a fixed workflow: gather every view / 
 
 A **workflow** is one file in `~/.claude/drafting-domain/workflows/`: the **skills** of one job in order, which of their cards to run (default all), the views each applies to, and why this order. It holds no step content: the steps are the skills' **step cards** (`skills/<skill>/steps/`), each with its own **done when** and **skip only if**. This skill runs it: **gather the views / sheets once (step 0), then one card on all of them in one pass, then the next card**.
 
-**Tools**: none of its own. Each step loads its skill's **Tools** line when the step starts.
+**Tools**: `run_state`. Each step loads its skill's **Tools** line when the step starts.
 
 Load `drafting-session` first if it is not loaded yet (hard rules, batches, mark types).
 
@@ -64,7 +64,7 @@ Notes:
 
 Tick a cell **right after** its gate is met for that view, not at the end of the turn.
 
-At the start of each card, tell the status window what is running: `work_status {action:"update", message, step, workflow:"<file name>", skill, card:"<NN>", checklist:"<full path>"}` (Workflow window of the add-in reads it). A step without a card: leave `card` empty.
+At the start of each card, note what is running: `run_state {action:"set", message, step, workflow:"<file name>", skill, card:"<NN>", checklist:"<full path>"}` (nothing on screen: the Workflow window of the add-in reads it). A step without a card: leave `card` empty. When the turn ends or the job stops: `run_state {action:"clear"}`.
 
 ## Run — step by step over all views
 

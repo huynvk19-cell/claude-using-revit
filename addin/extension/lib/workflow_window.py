@@ -3,8 +3,7 @@
 
 Each window shows one level only; a card's sections stay closed until clicked. Opening an item reuses the open window
 of that level unless it is pinned. Everything comes from the files (workflow_lib.py), so no window here needs Revit's API
-and they read the same while Revit is busy; a command holding Revit's thread stops this window too until it ends, and the
-live progress of a run is the job of the status window outside Revit.
+and they read the same while Revit is busy; a command holding Revit's thread stops this window too until it ends.
 
 "Giao cho Claude" writes the message for the project chat and copies it: the project starts the thread and takes it from
 there. setup() runs from startup.py and costs little; the startup engine stays alive, so the timer keeps working.

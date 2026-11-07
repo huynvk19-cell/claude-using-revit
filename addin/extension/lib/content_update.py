@@ -3,7 +3,7 @@
 
 startup.py calls start(): at most once per CHECK_HOURS over all Revit windows, a background thread compares the newest
 commit on GitHub with the one last installed, downloads the repo's zip when they differ and copies the content files over
-(what install.ps1 copies without -AddIn, and revit-commands/). Nothing happens while the status window says a job is running: it
+(what install.ps1 copies without -AddIn, and revit-commands/). Nothing happens while run_state says a job is running: it
 is tried again on the next start. A skill's folder is mirrored, so a removed card goes too. The add-in's own code
 (addin/) is never replaced here, Revit locks it: a change there only leaves a note, shown by the Workflow window.
 Every failure is quiet (no network, rate limit) and is tried again later. config.json: "autoUpdate": false turns it off, and a
@@ -33,7 +33,6 @@ TIMEOUT_MS = 20000
 STATE = os.path.join(lib.DATA_DIR, u'content-update.json')
 LOCK = os.path.join(lib.DATA_DIR, u'content-update.lock')
 CLAUDE = os.path.join(lib.HOME, u'.claude')
-WORK_STATUS = os.path.join(lib.HOME, u'Tools', u'WorkStatus')
 LOCK_STALE_S = 600
 
 
@@ -175,8 +174,6 @@ def install(root):
     commands = os.path.join(lib.DATA_DIR, u'commands')
     if os.path.isdir(commands):         # the skills name these commands; they compile on the next call
         _copy_tree(os.path.join(root, u'revit-commands'), commands)
-    if os.path.isdir(WORK_STATUS):
-        _copy_tree(os.path.join(root, u'tools', u'work-status'), WORK_STATUS)
     after = _cards(skills_to)
     return len([k for k in set(before) | set(after) if before.get(k) != after.get(k)])
 

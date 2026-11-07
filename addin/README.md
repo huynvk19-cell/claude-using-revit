@@ -26,7 +26,7 @@ Người dùng ──bấm nút──> extension/claude using revit.tab/<panel>.
 
 **Trạng thái** (nút đầu tiên của tab, cập nhật mỗi giây, vẽ thành nút gạt trên tấm mica như các nút khác, gạt sang phải khi cửa sổ này giữ cổng): xanh lá *Đã kết nối* / *Đang chạy* · xanh dương *Chờ kết nối* (cửa sổ này giữ cổng) · vàng *Cửa sổ khác* (cửa sổ khác giữ cổng; cửa sổ này nhận khi cổng rảnh) · xám *Đã tắt* · đỏ *Lỗi*. Bấm vào: cửa sổ chi tiết (client, lệnh gần đây, bật / tắt, *Nhận kết nối về cửa sổ này*, chép lệnh `claude mcp add`, mở log).
 
-**Cửa sổ C#** dùng cùng theme với cửa sổ Python: `Ui/Glass.cs` nạp `lib/liquid_glass.xaml` và bật Acrylic như `lib/native_blur.py`. Cửa sổ *Đang xử lý* (`tools/work-status/host.ps1`) là tiến trình riêng nên chép lại màu và cách dựng của theme.
+**Cửa sổ C#** dùng cùng theme với cửa sổ Python: `Ui/Glass.cs` nạp `lib/liquid_glass.xaml` và bật Acrylic như `lib/native_blur.py`.
 
 **Dữ liệu** `%APPDATA%\claude-using-revit\`: `config.json` (`port`, `autoStart`, `extensionDir`, `commandsDir`, `tabName`), `bin\<bản>\`, `extension\`, `commands\`, `logs\` (C#: `claude-using-revit-<ngày>.log`, Python: `python.log`), `instances\<pid>.json` (vai trò từng cửa sổ), `open-docs\`, `web-bridge\`, `tool-config\` (cài đặt từng nút), `control.key`, `view-develop\` (kết quả mới nhất của `view_develop` từng view), `content-update.json` (bản đã cập nhật từ GitHub).
 

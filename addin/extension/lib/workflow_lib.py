@@ -2,21 +2,22 @@
 """What the Workflow windows show: the installed workflows, skills and step cards, read from their files.
 
 Nothing is listed by hand: a new card, skill or workflow in ~/.claude appears on the next read. Also here: the run
-state of the status window (Tools/WorkStatus/status.json), a workflow's checklist file, and the results view_develop
+state the run_state command writes (run-state.json), a workflow's checklist file, and the results view_develop
 leaves in %APPDATA%/claude-using-revit/view-develop/. No Revit and no WPF, so it also runs on plain Python.
 """
 import io
 import json
 import os
 import re
+import time
 
 HOME = os.path.expanduser(u'~')
 APPDATA = os.environ.get('APPDATA') or os.path.join(HOME, 'AppData', 'Roaming')
 SKILLS_DIR = os.path.join(HOME, u'.claude', u'skills')
 WORKFLOWS_DIR = os.path.join(HOME, u'.claude', u'drafting-domain', u'workflows')
-STATUS_FILE = os.path.join(HOME, u'Tools', u'WorkStatus', u'status.json')
-STATUS_PID = os.path.join(HOME, u'Tools', u'WorkStatus', u'host.pid')
 DATA_DIR = os.path.join(APPDATA, u'claude-using-revit')
+RUN_STATE = os.path.join(DATA_DIR, u'run-state.json')
+RUN_STALE_S = 6 * 3600          # a run that ended without clearing its state
 RESULTS_DIR = os.path.join(DATA_DIR, u'view-develop')
 INSTANCES_DIR = os.path.join(DATA_DIR, u'instances')
 
@@ -252,27 +253,15 @@ def _load_json(path):
         return None
 
 
-def _alive(pid):
-    try:
-        import System.Diagnostics as D     # IronPython: the status window's process is still there
-        return not D.Process.GetProcessById(pid).HasExited
-    except ImportError:
-        return True
-    except Exception:
-        return False
-
-
 def run_status():
-    """What the status window says, when it is open: {title, message, step, workflow, skill, card, checklist}."""
-    st = _load_json(STATUS_FILE)
-    if not isinstance(st, dict) or st.get('state') != u'open':
-        return None
+    """The step of the running job, from the run_state command: {message, step, workflow, skill, card, checklist}."""
     try:
-        if not _alive(int(read(STATUS_PID).strip())):
+        if time.time() - os.path.getmtime(RUN_STATE) > RUN_STALE_S:
             return None
     except Exception:
         return None
-    return st
+    st = _load_json(RUN_STATE)
+    return st if isinstance(st, dict) else None
 
 
 _CELL = re.compile(r'^\|\s*(\w+)(?:\.(\d\d))?\s*\|[^|]*\|(.*)\|\s*$')
