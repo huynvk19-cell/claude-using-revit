@@ -3,6 +3,7 @@
       TextOptions.TextFormattingMode="Display">
   <Grid.RowDefinitions>
     <RowDefinition Height="Auto"/>
+    <RowDefinition Height="Auto"/>
     <RowDefinition Height="*"/>
     <RowDefinition Height="Auto"/>
   </Grid.RowDefinitions>
@@ -48,6 +49,66 @@
               <ControlTemplate.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
                   <Setter TargetName="t" Property="TextDecorations" Value="Underline"/>
+                </Trigger>
+              </ControlTemplate.Triggers>
+            </ControlTemplate>
+          </Setter.Value>
+        </Setter>
+      </Style>
+      <!-- the workflows, one click each -->
+      <Style x:Key="WfChip" TargetType="RadioButton">
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Foreground" Value="{StaticResource Ink}"/>
+        <Setter Property="Margin" Value="0,0,5,5"/>
+        <Setter Property="Template">
+          <Setter.Value>
+            <ControlTemplate TargetType="RadioButton">
+              <Border x:Name="b" CornerRadius="14" Padding="12,5" Background="{StaticResource TileFill}"
+                      BorderBrush="{StaticResource TileRim}" BorderThickness="1" RenderTransformOrigin="0.5,0.5">
+                <ContentPresenter VerticalAlignment="Center"/>
+              </Border>
+              <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                  <Setter TargetName="b" Property="Background" Value="{StaticResource TileHover}"/>
+                </Trigger>
+                <Trigger Property="IsChecked" Value="True">
+                  <Setter TargetName="b" Property="Background" Value="{DynamicResource AccentSoft}"/>
+                  <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource AccentEdge}"/>
+                  <Setter Property="Foreground" Value="{DynamicResource AccentText}"/>
+                  <Setter Property="FontWeight" Value="SemiBold"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                  <Setter TargetName="b" Property="RenderTransform" Value="{StaticResource Press}"/>
+                </Trigger>
+              </ControlTemplate.Triggers>
+            </ControlTemplate>
+          </Setter.Value>
+        </Setter>
+      </Style>
+      <!-- a small round button of the header -->
+      <Style x:Key="HeadBtn" TargetType="Button">
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Foreground" Value="{StaticResource Ink2}"/>
+        <Setter Property="Width" Value="32"/>
+        <Setter Property="Height" Value="32"/>
+        <Setter Property="Template">
+          <Setter.Value>
+            <ControlTemplate TargetType="Button">
+              <Grid x:Name="g" RenderTransformOrigin="0.5,0.5">
+                <Ellipse x:Name="e" Fill="{StaticResource TileFill}" Stroke="{StaticResource TileRim}" StrokeThickness="1"/>
+                <TextBlock Text="&#xE8E5;" FontFamily="{StaticResource Icons}" FontSize="13"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+              </Grid>
+              <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                  <Setter TargetName="e" Property="Fill" Value="{StaticResource TileHover}"/>
+                  <Setter Property="Foreground" Value="{StaticResource Ink}"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                  <Setter TargetName="g" Property="RenderTransform" Value="{StaticResource Press}"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                  <Setter TargetName="g" Property="Opacity" Value="0.35"/>
                 </Trigger>
               </ControlTemplate.Triggers>
             </ControlTemplate>
@@ -102,25 +163,28 @@
       <TextBlock x:Name="head_sub" Style="{StaticResource Subtitle}" TextWrapping="Wrap" TextTrimming="None" Visibility="Collapsed"/>
     </StackPanel>
     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Top">
+      <Button x:Name="b_file" Style="{StaticResource HeadBtn}" Margin="0,0,6,0" ToolTip="Mở file"/>
       <ToggleButton x:Name="b_pin" Style="{StaticResource Pin}" Margin="0,0,6,0" ToolTip="Ghim: giữ cửa sổ này khi mở mục khác"/>
       <Button x:Name="b_close" Style="{StaticResource CloseBtn}" ToolTip="Đóng (Esc)"/>
     </StackPanel>
   </Grid>
 
   <!-- the middle gives way on a low screen (screen_fit.py); the buttons are outside it, always there -->
-  <ScrollViewer x:Name="body" Grid.Row="1" Margin="20,12,0,4" Padding="0,0,16,0" VerticalScrollBarVisibility="Auto">
+  <WrapPanel x:Name="top" Grid.Row="1" Margin="20,12,16,0" Visibility="Collapsed"/>
+  <ScrollViewer x:Name="body" Grid.Row="2" Margin="20,8,0,4" Padding="0,0,16,0" VerticalScrollBarVisibility="Auto">
     <StackPanel x:Name="stack"/>
   </ScrollViewer>
 
-  <Grid x:Name="bar" Grid.Row="2" Margin="20,8,20,16">
+  <Grid x:Name="bar" Grid.Row="3" Margin="20,8,20,16">
     <Grid.ColumnDefinitions>
       <ColumnDefinition Width="*"/>
       <ColumnDefinition Width="Auto"/>
     </Grid.ColumnDefinitions>
-    <TextBlock x:Name="msg" Foreground="{StaticResource Ink2}" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center" Margin="4,0,10,0"/>
-    <StackPanel Grid.Column="1" Orientation="Horizontal">
-      <Button x:Name="b_open" Style="{StaticResource Secondary}" Content="Mở file" Margin="0,0,8,0"/>
-      <Button x:Name="b_give" Style="{StaticResource Primary}" Content="Giao cho Claude"/>
+    <StackPanel VerticalAlignment="Center" Margin="4,0,10,0">
+      <TextBlock x:Name="sel_name" FontWeight="SemiBold" Foreground="{StaticResource Ink}" TextWrapping="Wrap" Visibility="Collapsed"/>
+      <Button x:Name="sel_reset" Style="{StaticResource Crumb}" HorizontalAlignment="Left" Visibility="Collapsed"/>
+      <TextBlock x:Name="msg" Foreground="{StaticResource Ink2}" FontSize="12" TextWrapping="Wrap"/>
     </StackPanel>
+    <Button x:Name="b_give" Grid.Column="1" Style="{StaticResource Primary}" Content="Giao cho Claude" VerticalAlignment="Center"/>
   </Grid>
 </Grid>
