@@ -216,6 +216,7 @@ def _check():
         state['addinSince'] = time.time()
     state.update({'sha': sha, 'changed': changed, 'when': time.time(), 'at': DateTime.Now.ToString(u'dd/MM HH:mm')})
     state.pop('waiting', None)
+    state.pop('error', None)
     _save(state)
 
 
@@ -237,8 +238,11 @@ def _run():
         _check()
     except Exception as ex:
         try:
+            state = _state()
+            state['error'] = u'{0}'.format(ex)
+            _save(state)
             from cur import get_logger
-            get_logger('claude-using-revit').info('content update: %s', ex)
+            get_logger('claude-using-revit').warning('content update: %s', ex)
         except Exception:
             pass
     finally:
