@@ -2,7 +2,8 @@
 """The windows of the button Workflow: Workflow -> Skill -> Card, each its own small window owned by Revit.
 
 Each window shows one level only; a card's sections stay closed until clicked. Opening an item reuses the open window
-of that level unless it is pinned. Everything comes from the files (workflow_lib.py), so no window here needs Revit's API
+of that level unless it is pinned. The Workflow window is the hub, one only: its bar names the item last chosen in any
+window and holds the one button "Giao cho Claude"; the other windows carry no buttons at the bottom. Everything comes from the files (workflow_lib.py), so no window here needs Revit's API
 and they read the same while Revit is busy; a command holding Revit's thread stops this window too until it ends.
 
 "Giao cho Claude" writes the message for the project chat and copies it: the project starts the thread and takes it from
@@ -240,12 +241,23 @@ class Pane(object):
         find = self.root.FindName
         self.stack, self.body, self.msg = find('stack'), find('body'), find('msg')
         self.title, self.sub, self.crumbs = find('head_title'), find('head_sub'), find('crumbs')
-        self.b_pin, self.b_open, self.b_give = find('b_pin'), find('b_open'), find('b_give')
+        self.b_pin, self.b_open, self.b_give = find('b_pin'), find('b_file'), find('b_give')
+        self.top, self.bar = find('top'), find('bar')
+        self.sel_name, self.sel_reset = find('sel_name'), find('sel_reset')
+        self.chips = {}
+        if kind in ('workflow', 'give'):
+            self.b_pin.Visibility = Visibility.Collapsed
+        else:
+            self.bar.Visibility = Visibility.Collapsed
+            self.body.Margin = Thickness(20, 8, 0, 16)
+        if kind == 'give':
+            self.b_open.Visibility = Visibility.Collapsed
+        self.sel_reset.Content = u'Chọn cả workflow này'
+        self.sel_reset.Click += lambda s, e: self._pick_workflow(self.item)
         self.window = self._make_window(parent) if host.uiapp is not None or host.show_windows else None
         find('b_close').Click += lambda s, e: self.close()
         self.b_open.Click += self._open_file
         self.b_give.Click += self._copy if kind == 'give' else self._give
-        self.combo = None
         self.result_combo = None
 
     def _make_window(self, parent):
@@ -273,6 +285,8 @@ class Pane(object):
             w.WindowStartupLocation = WindowStartupLocation.CenterOwner if self.host.uiapp is not None else WindowStartupLocation.CenterScreen
         native_blur.apply(w, body=self.body)
         w.KeyDown += self._key
+        if self.kind in ('skill', 'card'):
+            w.Activated += lambda s, e: self.host.select(self)
         w.Closed += lambda s, e: self.host.forget(self)
         return w
 
@@ -469,7 +483,8 @@ class Pane(object):
     def render(self):
         try:
             self.stack.Children.Clear()
-            self.msg.Text = self.host.note()
+            if self.kind == 'workflow':
+                self.msg.Text = self.host.note()
             getattr(self, '_render_' + self.kind)()
         except Exception as ex:
             _log(ex)
@@ -477,24 +492,10 @@ class Pane(object):
 
     def _render_workflow(self):
         lib_ = self.host.library
-        self._head(u'Workflow', u'Chọn quy trình, bấm một skill để xem card')
-        self.b_give.IsEnabled = self.item != lib.OTHER
+        self._head(u'Workflow', u'Bấm một skill để xem card')
         self.b_open.IsEnabled = self.item != lib.OTHER
-        if self.combo is None:
-            self.combo = ComboBox()
-            self.combo.Margin = Thickness(0, 0, 0, 10)
-            native_blur.combo(self.combo)
-            self.combo.SelectionChanged += self._picked
-        self._filling = True
-        names = [w.name for w in lib_.workflows] + [lib.OTHER]
-        keys = [w.key for w in lib_.workflows] + [lib.OTHER]
-        self.keys = keys
-        self.combo.Items.Clear()
-        for n in names:
-            self.combo.Items.Add(n)
-        self.combo.SelectedIndex = keys.index(self.item) if self.item in keys else 0
-        self._filling = False
-        self.stack.Children.Add(self.combo)
+        self._fill_chips([(w.key, w.name) for w in lib_.workflows] + [(lib.OTHER, lib.OTHER)])
+        self.update_bar()
         if self.item == lib.OTHER:
             self._render_other()
             return
@@ -534,13 +535,39 @@ class Pane(object):
             self.stack.Children.Add(self._row(c, card.name, sub=lib.short(s),
                                               click=(lambda x, y: (lambda: self.host.open_card(x, y, None, self)))(s, c)))
 
-    def _picked(self, sender, e):
-        if self._filling or self.combo.SelectedIndex < 0:
-            return
-        self.item = self.keys[self.combo.SelectedIndex]
-        self.host.last_workflow = self.item
+    def _fill_chips(self, items):
+        """One capsule per workflow, kept across renders."""
+        if [k for k, _ in items] != getattr(self, 'chip_keys', None):
+            self.chip_keys = [k for k, _ in items]
+            self.chips = {}
+            self.top.Children.Clear()
+            for key, name in items:
+                r = RadioButton()
+                r.Style = self.res('WfChip')
+                r.GroupName = u'wf{0}'.format(id(self))
+                r.Content = name
+                r.Click += (lambda k: (lambda s, e: self._pick_workflow(k)))(key)
+                self.chips[key] = r
+                self.top.Children.Add(r)
+            self.top.Visibility = Visibility.Visible
+        for key, r in self.chips.items():
+            r.IsChecked = key == self.item
+
+    def _pick_workflow(self, key):
+        self.item = key
+        self.host.last_workflow = key
         self.opened = set()
+        self.host.select(self if key != lib.OTHER else None)
         self.render()
+
+    def update_bar(self):
+        """The hub's bar: what the button hands to Claude."""
+        chosen = self.host.selected
+        self.b_give.IsEnabled = chosen is not None
+        self.sel_name.Text = chosen[1] if chosen else u''
+        self.sel_name.Visibility = Visibility.Visible if chosen else Visibility.Collapsed
+        here = self.host.library.workflow(self.item) if self.host.library else None
+        self.sel_reset.Visibility = Visibility.Visible if here is not None and (not chosen or chosen[1] != here.name) else Visibility.Collapsed
 
     def _render_skill(self):
         name, wf_key, row = self.item
@@ -611,6 +638,7 @@ class Pane(object):
             return None
         if self.result_index >= len(found):
             self.result_index = 0
+        labels = [r.label() for r in found]
         if self.result_combo is None:
             self.result_combo = ComboBox()
             self.result_combo.MaxWidth = 250
@@ -620,10 +648,12 @@ class Pane(object):
         self._result_filling = True
         if self.result_combo.Parent is not None:
             self.result_combo.Parent.Children.Remove(self.result_combo)
-        self.result_combo.Items.Clear()
-        for r in found:
-            self.result_combo.Items.Add(r.label())
-        self.result_combo.SelectedIndex = self.result_index
+        if [i for i in self.result_combo.Items] != labels:
+            self.result_combo.Items.Clear()
+            for label in labels:
+                self.result_combo.Items.Add(label)
+        if self.result_combo.SelectedIndex != self.result_index:
+            self.result_combo.SelectedIndex = self.result_index
         self._result_filling = False
         Grid.SetColumn(self.result_combo, 1)
         top.Children.Add(self.result_combo)
@@ -732,6 +762,15 @@ class Pane(object):
             except Exception as ex:
                 self.msg.Text = u'Không mở được file: {0}'.format(ex)
 
+    def _display(self):
+        """The item's name on the hub's bar."""
+        if self.kind == 'workflow':
+            return self.host.library.workflow(self.item).name
+        if self.kind == 'skill':
+            return lib.short(self.item[0])
+        name, cid, _ = self.item
+        return u'{0} · {1}'.format(self.host.library.skills[name].cards[cid].title, lib.short(name))
+
     def _subject(self):
         if self.kind == 'workflow':
             w = self.host.library.workflow(self.item)
@@ -745,14 +784,13 @@ class Pane(object):
         return u'Chạy card {0} {1} của skill `{2}`.'.format(cid, self.host.library.skills[name].cards[cid].name, name)
 
     def _give(self, sender, e):
-        self.host.open_give(self._subject(), self)
+        if self.host.selected:
+            self.host.open_give(self.host.selected[0], self)
 
     # -- hand-off --------------------------------------------------------------------------------------------------------
     def _render_give(self):
         subject = self.item
         self._head(u'Giao cho Claude', subject)
-        self.b_pin.Visibility = Visibility.Collapsed
-        self.b_open.Visibility = Visibility.Collapsed
         self.b_give.Content = u'Chép tin nhắn'
         model, shown, is_sheet = lib.parse_title(self.host.revit_title())
         self.model = model
@@ -824,6 +862,7 @@ class Host(object):
         self.status = None
         self.results = []
         self.last_workflow = None
+        self.selected = None        # (the message's first line, the name on the bar): what the button hands to Claude
         self._stamp = None
         self.closed = False
         self.dispatcher = None
@@ -851,7 +890,7 @@ class Host(object):
 
     def _pane(self, kind, parent=None):
         for p in self.panes:
-            if p.kind == kind and not p.pinned:
+            if p.kind == kind and (kind in ('workflow', 'give') or not p.pinned):
                 return p
         p = Pane(self, kind, parent)
         self.panes.append(p)
@@ -879,7 +918,7 @@ class Host(object):
                 self.status = st
                 self.results = lib.results()
                 for p in list(self.panes):
-                    if p.kind != 'give':
+                    if p.kind != 'give' and not (p.result_combo is not None and p.result_combo.IsDropDownOpen):
                         keep = p.body.VerticalOffset
                         p.render()
                         p.body.ScrollToVerticalOffset(keep)
@@ -893,11 +932,25 @@ class Host(object):
             fn()
 
     # -- what the panes open ---------------------------------------------------------------------------------------------
+    def select(self, pane):
+        """The item the hub's button hands to Claude: pane's, or nothing."""
+        try:
+            self.selected = (pane._subject(), pane._display()) if pane is not None else None
+        except Exception as ex:      # the item is gone from the files
+            _log(ex)
+            self.selected = None
+        for p in self.panes:
+            if p.kind == 'workflow':
+                p.update_bar()
+
     def open_workflow(self, key=None):
         st = self.status
+        chosen = key
         key = key or (st.get('workflow') if st else None) or self.last_workflow or (self.library.workflows[0].key if self.library.workflows else lib.OTHER)
         p = self._pane('workflow')
         p.set_item(key)
+        if (chosen or self.selected is None) and key != lib.OTHER:
+            self.select(p)
         self._start_timer(p)
         p.show()
         return p
@@ -905,6 +958,7 @@ class Host(object):
     def open_skill(self, name, wf_key, row, parent):
         p = self._pane('skill', parent)
         p.set_item((name, wf_key, row))
+        self.select(p)
         self._start_timer(p)
         p.show()
         return p
@@ -912,6 +966,7 @@ class Host(object):
     def open_card(self, name, cid, wf_key, parent):
         p = self._pane('card', parent)
         p.set_item((name, cid, wf_key))
+        self.select(p)
         self._start_timer(p)
         p.show()
         return p
