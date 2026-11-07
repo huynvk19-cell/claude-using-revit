@@ -1,6 +1,6 @@
 ---
 name: drafting-workflow
-description: "Run a whole drafting job as a fixed workflow: gather every view / sheet of the job once, then skills in a set order, each step done in one pass on all views before the next, with a done-when gate and a checklist file so nothing is skipped and work resumes after a break. Workflows: facade elevations/sections, floor plans, ceiling plans, stair core, comment round. Use for quy trình, làm trọn bộ, gom view, gom sheet, làm hết mặt đứng, triển khai mặt bằng, mặt bằng trần, làm lõi thang, tiếp tục quy trình, workflow."
+description: "Run a whole drafting job as a fixed workflow: gather every view / sheet of the job once, then skills in a set order, each step done in one pass on all views before the next, with a done-when gate and a checklist file (nothing skipped, resumable). Workflows: facade elevations/sections, floor plans, ceiling plans, stair core, sheet layout, comment round. Use for quy trình, làm trọn bộ, gom view, gom sheet, làm hết mặt đứng, triển khai mặt bằng, mặt bằng trần, làm lõi thang, layout bộ hồ sơ, tiếp tục quy trình, workflow."
 ---
 
 # Drafting workflow (quy trình)
@@ -19,6 +19,7 @@ Load `drafting-session` first if it is not loaded yet (hard rules, batches, mark
 | Floor plans | `workflows/floor-plan.md` |
 | Reflected ceiling plans (mặt bằng trần) | `workflows/ceiling-plan.md` |
 | Stair core: plans + sections along + sections across | `workflows/stair-core.md` |
+| Sheet set layout for the building type (layout bộ hồ sơ, dàn sheet) | `workflows/sheet-layout.md` |
 | A round of reviewer comments (PDF, TASKS.md) | `workflows/review-round.md` |
 
 - Read **only** the chosen file. Unclear which one, or the job fits none → ask; do not mix two workflows in one checklist.
