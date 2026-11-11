@@ -2,7 +2,7 @@
 name: drafting-sheet-layout
 description: "Chuẩn layout bộ hồ sơ kiến trúc trên sheet: loại công trình → bộ hồ sơ, giai đoạn hồ sơ, nhóm và đánh số bản vẽ, bộ hồ sơ lõi, khổ giấy, tỷ lệ, bố cục viewport trên sheet (LO1–LO12), chia vùng + key plan + matchline (Z1–Z5), tên sheet, danh mục. Sheet set and sheet layout standard."
 metadata:
-  updated: "2026-11-05"
+  updated: "2026-11-11"
   related: ["drafting-sheet-create", "drafting-view-create", "drafting-sheet-place", "drafting-views-sheets", "drafting-annotation", "drafting-work-rules", "drafting-sheet-set-townhouse", "drafting-sheet-set-villa", "drafting-sheet-set-highrise", "drafting-sheet-set-airport", "drafting-sheet-set-public", "drafting-sheet-set-industrial"]
 ---
 
@@ -162,6 +162,22 @@ File bộ hồ sơ của từng loại công trình **cộng thêm hoặc sửa*
   - Tiêu đề cột ghi bằng chữ in hoa như trên; tiêu đề bảng `DANH MỤC BẢN VẼ`. Cột ký (Checked / Approved / Designed / Drawn By) ẩn.
 - **Nhóm theo bộ bản vẽ** (user, 2026-11-11): bảng nhóm theo Sheet Collection (Revit 2025 trở lên); Revit 2023–2024 dùng tham số sheet `NHÓM BẢN VẼ` (text), giá trị = số nhóm §3 + tên, vd. `2 - MẶT BẰNG`. Mỗi nhóm có dòng tiêu đề, trong nhóm sắp theo số sheet.
 - **Danh mục dài hơn vùng vẽ**: chia bảng thành cột trên cùng sheet, chỗ cắt nằm giữa hai nhóm (không cắt đôi một nhóm), các cột cùng mép trên.
+
+## 8b. Bảng ghi chú, ký hiệu chung của công trình nhỏ (KH1–KH7, user 2026-11-11)
+
+Áp dụng cho hồ sơ quy mô nhỏ: **nhà liên kế, biệt thự**. Ghi chú và mọi ký hiệu gom về **một bảng** trên sheet "Ghi chú, ký hiệu chung" (loại `notes`), không tách mỗi nhóm một sheet. Bảng gồm 5 nhóm, đúng thứ tự:
+
+| # | Nhóm | Mỗi dòng gồm |
+|---|---|---|
+| KH1 | **Ký hiệu của Revit** dùng trong hồ sơ: room tag, level, trục, callout, mặt cắt, mặt đứng, view title, tag cửa đi / cửa sổ, tag tường, cao độ, độ dốc, mũi tên Bắc… | Ký hiệu đúng family / type đang dùng + tên gọi, ý nghĩa từng ô chữ trong ký hiệu |
+| KH2 | **Sàn hoàn thiện** | Filled region đúng pattern của vật liệu sàn hoàn thiện + tên vật liệu |
+| KH3 | **Trần** | Như KH2, cho vật liệu trần |
+| KH4 | **Tường** | Như KH2, cho vật liệu hoàn thiện tường |
+| KH5 | **Thiết bị**: chiếu sáng, quạt, cửa thông gió, AP… | Ký hiệu thiết bị như thể hiện trên mặt bằng + tên thiết bị |
+
+- **KH6 — Chỉ ghi cái có thật**: mỗi dòng ứng với một ký hiệu, vật liệu hoặc thiết bị **đang được dùng** trong model / trên các sheet của bộ hồ sơ; tên lấy từ model (R8). Không chép cả thư viện; thứ có trên bản vẽ mà thiếu trong bảng là lỗi ĐỦ.
+- **KH7 — Trình bày** (`drafting-work-rules.md` §2a): mỗi nhóm có tiêu đề; hai cột `KÝ HIỆU | DIỄN GIẢI`, ký hiệu chung một trục giữa, chữ chung mép trái, các dòng cách đều. Bảng dài hơn vùng vẽ → chia cột trên cùng sheet, chỗ cắt nằm giữa hai nhóm, các cột cùng mép trên.
+- Ghi chú chung và chữ viết tắt đứng cùng sheet, trước bảng ký hiệu.
 
 ## 9. Xong khi (layout của bộ hồ sơ)
 

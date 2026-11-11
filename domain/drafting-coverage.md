@@ -31,7 +31,7 @@ Mức là của **nội dung trong view**. Các khâu quanh nó (tạo sheet, t�
 |---|---|---|---|---|---|---|---|
 | `cover` | Tờ bìa | — | — | — | — | 1 | chuẩn nội dung bìa |
 | `sheet-list` | Danh mục bản vẽ, print set | `drafting-views-sheets` | `sheet-layout` | `cur_task` | `print_set_info` | 4 | — |
-| `notes` | Ghi chú chung, ký hiệu, legend, key plan, sơ đồ chia vùng | — | — | — | — | 1 | chuẩn + lệnh cho legend và drafting view |
+| `notes` | Ghi chú chung, ký hiệu, legend, key plan, sơ đồ chia vùng | — | — | — | — | 1 | skill + lệnh cho legend và drafting view (nội dung bảng ký hiệu nhà liên kế / biệt thự đã có chuẩn: `drafting-sheet-layout.md` §8b) |
 | `schedule` | Bảng chỉ tiêu, bảng vật liệu, bảng phân loại căn | — | — | — | — | 1 | skill (task đọc / ghi schedule đã có: `cur_task`) |
 | `site` | Tổng mặt bằng, vị trí, định vị, sân vườn, tổ hợp dãy | — | — | — | — | 1 | chuẩn: chỉ giới, khoảng lùi, toạ độ mốc, cao độ nền |
 | `plan` | Mặt bằng tầng (cả hầm, khối đế, tầng điển hình, theo vùng) | `drafting-grid-dims`, `drafting-tags-titles` | `floor-plan` | `view_develop`, `grid_dims_band` | `grid_dims_audit` | 4 | — |
