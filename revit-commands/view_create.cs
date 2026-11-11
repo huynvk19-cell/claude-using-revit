@@ -1,6 +1,6 @@
 /* mcp-tool
 {
-  "description": "Create the views of a sheet register: plans, duplicates, dependents, elevations, sections, callouts, drafting, legend / schedule copies, with name, template, scale, scope box, crop. preview | apply | undo.",
+  "description": "Create the views of a sheet register: plans, duplicates, dependents, elevations, sections, callouts, drafting, legend / schedule copies, new schedules / drawing lists, with name, template, scale, scope box, crop. preview | apply | undo.",
   "inputSchema": {
     "type": "object",
     "properties": {
@@ -36,6 +36,10 @@
 //                                            = a plan callout of the parent's family; detail (and any callout in a
 //                                            section / elevation) = a detail view. z default: the plan's level.
 //                drafting                    nothing else
+//                sheetList                   a new drawing list (schedule of sheets), fields [names] default
+//                                            ["Sheet Number", "Sheet Name"]
+//                schedule                    a new schedule: category (BuiltInCategory name, e.g. OST_Doors, or the
+//                                            category name), fields [names]; a field not in the category = Warn
 //    name        required, unique in the model (VC2). A view of the same kind that already has this name is REUSED:
 //                nothing is created, its id comes back (VC1). The name on a view of another kind = error.
 //    template    view template name. Named but not in the model = error, the view is not created (VC3).
@@ -71,6 +75,7 @@ public static class ViewCreate
         public Dictionary<int, int> TypeUse;
         public HashSet<int> Placed;
         public double MinZ, MaxZ;
+        public string FieldWarn;
 
         public Level Level(JToken t)
         {
@@ -189,9 +194,11 @@ public static class ViewCreate
                         st.Start();
                         try
                         {
+                            c.FieldWarn = null;
                             v = Make(c, it, kind, src, out markerId);
                             if (v == null) throw new Exception("Revit returned no view");
                             warn = Setup(doc, v, it, kind, name, tpl, scope);
+                            if (c.FieldWarn != null) warn = warn == null ? c.FieldWarn : warn + "; " + c.FieldWarn;
                             st.Commit();
                         }
                         catch { st.RollBack(); throw; }
@@ -240,6 +247,8 @@ public static class ViewCreate
             case "drafting": return ViewType.DraftingView;
             case "legendCopy": return ViewType.Legend;
             case "scheduleCopy": return ViewType.Schedule;
+            case "sheetList": return ViewType.Schedule;
+            case "schedule": return ViewType.Schedule;
             case "detail": return ViewType.Detail;
             case "duplicate":
             case "dependent":
@@ -248,7 +257,7 @@ public static class ViewCreate
             case "callout":
                 if (src == null) throw new Exception("sourceViewId: not a view");
                 return src is ViewPlan ? src.ViewType : ViewType.Detail;
-            default: throw new Exception("kind: floorPlan | ceilingPlan | duplicate | dependent | elevation | section | callout | detail | drafting | legendCopy | scheduleCopy");
+            default: throw new Exception("kind: floorPlan | ceilingPlan | duplicate | dependent | elevation | section | callout | detail | drafting | legendCopy | scheduleCopy | sheetList | schedule");
         }
     }
 
@@ -359,8 +368,48 @@ public static class ViewCreate
             }
             case "drafting":
                 return ViewDrafting.Create(doc, c.Type(ViewFamily.Drafting, typeName).Id);
+            case "sheetList":
+            {
+                var vs = ViewSchedule.CreateSheetList(doc);
+                AddFields(doc, vs, it["fields"] as JArray ?? new JArray("Sheet Number", "Sheet Name"), c);
+                return vs;
+            }
+            case "schedule":
+            {
+                string cat = ((string)it["category"] ?? "").Trim();
+                if (cat.Length == 0) throw new Exception("category missing");
+                ElementId catId;
+                BuiltInCategory bic;
+                if (Enum.TryParse(cat, out bic)) catId = new ElementId(bic);
+                else
+                {
+                    var found = doc.Settings.Categories.Cast<Category>().FirstOrDefault(x => string.Equals(x.Name, cat, StringComparison.OrdinalIgnoreCase));
+                    if (found == null) throw new Exception("category not found: " + cat);
+                    catId = found.Id;
+                }
+                var vs = ViewSchedule.CreateSchedule(doc, catId);
+                AddFields(doc, vs, it["fields"] as JArray, c);
+                return vs;
+            }
         }
         throw new Exception("kind not handled: " + kind);
+    }
+
+    /// <summary>Schedule fields by their names, in order; names not offered by the schedule go to c.FieldWarn.</summary>
+    static void AddFields(Document doc, ViewSchedule vs, JArray names, Ctx c)
+    {
+        c.FieldWarn = null;
+        if (names == null) return;
+        var def = vs.Definition;
+        var offered = def.GetSchedulableFields();
+        var missing = new List<string>();
+        foreach (var n in names.Select(x => ((string)x ?? "").Trim()).Where(x => x.Length > 0))
+        {
+            var f = offered.FirstOrDefault(x => string.Equals(x.GetName(doc), n, StringComparison.OrdinalIgnoreCase));
+            if (f == null) { missing.Add(n); continue; }
+            def.AddField(f);
+        }
+        if (missing.Count > 0) c.FieldWarn = "fields not found: " + string.Join(", ", missing);
     }
 
     /// <summary>Name, scale, scope box, template, crop, parameters. Returns a warning or null.</summary>
