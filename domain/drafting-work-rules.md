@@ -98,13 +98,13 @@ Một bản vẽ chỉ được báo "xong" khi đạt cả ba. Kiểm tra trư�
 
 ## 2d. Tên family theo chuẩn riêng (user, 2026-11-11)
 
-- Mọi family loadable trong model mang tên `<MÃ> - <MÔ TẢ IN HOA>`: mã 3 chữ theo category, một dấu ` - `, mô tả tiếng Anh in hoa, các ý cách nhau bằng ` - ` (vd. `ASY - TAG DOOR`, `DOR - DOUBLE FLUSH`, `ASY - TITLE BLOCKS - A2`). Không giữ tiền tố thư viện (`M_`, `RPC`, tên hãng ở đầu); tên hãng, mã sản phẩm đưa xuống cuối mô tả.
+- Mọi family loadable trong model mang tên `<MÃ> - <MÔ TẢ IN HOA>`: mã 3 chữ theo category, một dấu ` - `, mô tả tiếng Anh in hoa, các ý cách nhau bằng ` - ` (vd. `ANN - TAG DOOR`, `DOR - DOUBLE FLUSH`, `ANN - TITLE BLOCKS - A2`). Không giữ tiền tố thư viện (`M_`, `RPC`, tên hãng ở đầu); tên hãng, mã sản phẩm đưa xuống cuối mô tả.
 - Family hệ thống (curtain panel, mullion hệ thống, mass) giữ tên Revit. **Ký hiệu mặt đứng (Elevation Marks) giữ family mặc định của Revit** (vd. `M_Elevation Mark Body_Circle-12mm`), không đổi sang bộ riêng, không đổi tên (user, 2026-11-11). Family annotation không dùng nữa (bị thay bằng bộ ASY) thì xoá khỏi model, không để hai bộ song song.
 - Bảng mã (theo model ES; dòng *đề xuất* là mã mới, user chưa duyệt):
 
 | Mã | Category |
 |---|---|
-| ASY | Mọi category annotation: tag, đầu trục, level, mặt cắt, mặt đứng, callout, view title, spot, generic annotation, khung tên |
+| ANN | Mọi category annotation (bộ ký hiệu lấy từ thư viện khác thì đổi tiền tố sang ANN, vd. `ASY - …` → `ANN - …`; user, 2026-11-11): tag, đầu trục, level, mặt cắt, mặt đứng, callout, view title, spot, generic annotation, khung tên |
 | DIT | Detail Items |
 | DOR | Doors · WIN Windows · FUR Furniture · FUS Furniture Systems · PLF Plumbing Fixtures · SEQ Specialty Equipment |
 | RAI | Balusters, Railings, Supports · PRO Profiles · CWM Curtain Wall Mullions · CWP Curtain Panels |
