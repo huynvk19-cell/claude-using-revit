@@ -8,6 +8,12 @@ metadata:
 
 # Chuẩn ghi chú (Annotation standards)
 
+## 0. Chữ trong hồ sơ (user, 2026-11-11)
+
+- Mọi chữ của hồ sơ dùng font **Arial**, **width factor 0.8**: text note, dim, spot, schedule (tiêu đề, đầu cột, nội dung), tag, view title, khung tên.
+- Type chữ / dim mới tạo (kể cả type đánh dấu, `drafting-work-rules.md` §2c) cũng theo quy tắc này; chiều cao chữ giữ theo type gốc.
+- Kiểm khi nhận model: type nào khác Arial / 0.8 thì đổi type đó (không đổi từng phần tử). Family annotation (tag, view title, khung tên) đổi trong family rồi nạp lại.
+
 ## 1. Tag cửa đi / cửa sổ — mặt đứng, mặt cắt
 
 Đã tách ra file riêng **`drafting-opening-tags.md`** (quy tắc T1–T8) và skill `drafting-opening-tags`.

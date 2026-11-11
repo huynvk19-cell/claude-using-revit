@@ -60,6 +60,8 @@ Một bản vẽ chỉ được báo "xong" khi đạt cả ba. Kiểm tra trư�
 
 ## 2c. Làm theo đợt và type đánh dấu (user, 2026-10-14)
 
+- Mọi type chữ / dim tạo mới dùng Arial, width factor 0.8 (`drafting-annotation.md` §0).
+
 **Đợt (batch)**
 - Không làm xong từng view rồi báo. Gom tối đa **10 view cùng loại** (cùng ViewType, cùng chủ đề) thành một đợt; nhiều hơn → chia nhiều đợt. Không trộn mặt bằng với mặt cắt trong một đợt.
 - Mỗi bước của skill chạy cho cả đợt: khảo sát cả đợt → preview cả đợt → apply cả đợt → kiểm tra cả đợt → **một** báo cáo cho đợt.
