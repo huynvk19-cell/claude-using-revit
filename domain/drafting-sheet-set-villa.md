@@ -25,25 +25,25 @@ File này cộng thêm vào bộ hồ sơ lõi (`drafting-sheet-layout.md` §4).
 
 ## 2. Bộ bản vẽ (cộng vào bộ lõi)
 
-| Nhóm | Bản vẽ | Tỷ lệ | GĐ | Nội dung bắt buộc |
-|---|---|---|---|---|
-| 1 | Tổng mặt bằng lô + sân vườn | 1:200–1:100 | CS | Nhà, sân, lối vào xe, cổng, hồ bơi, cây xanh, cao độ sân, hướng Bắc |
-| 1 | Mặt bằng hoàn thiện sân vườn | 1:100 | TC | Vật liệu lát, bồn cây, rãnh thoát nước, cao độ, độ dốc |
-| 1 | Cổng, tường rào: mặt bằng, mặt đứng, mặt cắt | 1:50–1:20 | KT | — |
-| 1 | Nhà bảo vệ, gara, chòi nghỉ (nếu tách khối) | 1:50 | KT | Bộ nhỏ: mặt bằng, mặt đứng, mặt cắt |
-| 2 | Mặt bằng các tầng | 1:100–1:50 | CS | Lệch tầng ghi cao độ từng phần, phần thông tầng |
-| 2 | Mặt bằng mái | 1:100 | CS | Các mặt mái, độ dốc %, đỉnh / sống / khe mái, sê nô, máng xối, ống đứng |
-| 2 | Mặt bằng trần (trần trang trí, giật cấp) | 1:50 | TC | Cao độ trần từng cấp, phào trần, đèn hắt |
-| 3 | Mặt đứng 4 hướng (song lập: 3) | 1:100–1:50 | CS | Cao độ đỉnh mái, vật liệu, ngói, phào |
-| 4 | Mặt cắt ≥ 2 (dọc + ngang), qua thang và thông tầng | 1:50 | CS | Cao độ, độ dốc mái, chiều cao thông thuỷ |
-| 4 | Mặt cắt qua mái phức tạp, qua lệch tầng | 1:50 | KT | — |
-| 5 | Thang (thường là thang trang trí, thang xoắn): mặt bằng + mặt cắt | 1:25–1:20 | KT | Lan can, tay vịn, ốp bậc |
-| 6 | Vệ sinh, bếp, phòng thay đồ: mặt bằng + triển khai tường | 1:25–1:20 | TC | — |
-| 6 | Hồ bơi: mặt bằng, mặt cắt, chi tiết tràn và máng thu | 1:50–1:10 | KT | Cao độ nước, lối xuống, phòng máy |
-| 7 | Cửa, vách kính lớn, cửa trượt ra sân vườn | 1:50–1:20 | KT | — |
-| 8 | Chi tiết mái: diềm, sê nô, máng xối, ngói, khe mái, chống thấm | 1:20–1:5 | TC | — |
-| 8 | Chi tiết phào chỉ, cột, lan can, ban công (tân cổ điển) | 1:10–1:2 | TC | Profile phào ở 1:2 hoặc 1:1 |
-| 8 | Chi tiết lam, mái đua, ô văng (hiện đại) | 1:20–1:5 | TC | — |
+| Nhóm | Bản vẽ | Tỷ lệ | GĐ | Nội dung bắt buộc | Loại |
+|---|---|---|---|---|---|
+| 1 | Tổng mặt bằng lô + sân vườn | 1:200–1:100 | CS | Nhà, sân, lối vào xe, cổng, hồ bơi, cây xanh, cao độ sân, hướng Bắc | `site` |
+| 1 | Mặt bằng hoàn thiện sân vườn | 1:100 | TC | Vật liệu lát, bồn cây, rãnh thoát nước, cao độ, độ dốc | `site` |
+| 1 | Cổng, tường rào: mặt bằng, mặt đứng, mặt cắt | 1:50–1:20 | KT | — | `subset` |
+| 1 | Nhà bảo vệ, gara, chòi nghỉ (nếu tách khối) | 1:50 | KT | Bộ nhỏ: mặt bằng, mặt đứng, mặt cắt | `subset` |
+| 2 | Mặt bằng các tầng | 1:100–1:50 | CS | Lệch tầng ghi cao độ từng phần, phần thông tầng | `plan` |
+| 2 | Mặt bằng mái | 1:100 | CS | Các mặt mái, độ dốc %, đỉnh / sống / khe mái, sê nô, máng xối, ống đứng | `roof` |
+| 2 | Mặt bằng trần (trần trang trí, giật cấp) | 1:50 | TC | Cao độ trần từng cấp, phào trần, đèn hắt | `ceiling` |
+| 3 | Mặt đứng 4 hướng (song lập: 3) | 1:100–1:50 | CS | Cao độ đỉnh mái, vật liệu, ngói, phào | `elevation` |
+| 4 | Mặt cắt ≥ 2 (dọc + ngang), qua thang và thông tầng | 1:50 | CS | Cao độ, độ dốc mái, chiều cao thông thuỷ | `section` |
+| 4 | Mặt cắt qua mái phức tạp, qua lệch tầng | 1:50 | KT | — | `section` |
+| 5 | Thang (thường là thang trang trí, thang xoắn): mặt bằng + mặt cắt | 1:25–1:20 | KT | Lan can, tay vịn, ốp bậc | `stair` |
+| 6 | Vệ sinh, bếp, phòng thay đồ: mặt bằng + triển khai tường | 1:25–1:20 | TC | — | `enlarged` |
+| 6 | Hồ bơi: mặt bằng, mặt cắt, chi tiết tràn và máng thu | 1:50–1:10 | KT | Cao độ nước, lối xuống, phòng máy | `subset` |
+| 7 | Cửa, vách kính lớn, cửa trượt ra sân vườn | 1:50–1:20 | KT | — | `door` |
+| 8 | Chi tiết mái: diềm, sê nô, máng xối, ngói, khe mái, chống thấm | 1:20–1:5 | TC | — | `detail` |
+| 8 | Chi tiết phào chỉ, cột, lan can, ban công (tân cổ điển) | 1:10–1:2 | TC | Profile phào ở 1:2 hoặc 1:1 | `detail` |
+| 8 | Chi tiết lam, mái đua, ô văng (hiện đại) | 1:20–1:5 | TC | — | `detail` |
 
 ## 3. Layout đặc thù
 

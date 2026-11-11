@@ -9,7 +9,7 @@ description: "Detail a stair SECTION cut ACROSS the flights (flights seen end-on
 
 **Section views whose cut is NOT parallel to the stair path** (flights seen end-on). Along the flights → `drafting-stair-section-parallel`; plans → `drafting-stair-plan`.
 
-Standard: `~/.claude/drafting-domain/drafting-stair-section-cross.md` (Vietnamese). Its rules and its "Mẫu tham chiếu" decide every case. Read it first. Open `drafting-opening-tags.md` only if the section shows doors or windows (XB6).
+Standard: `~/.claude/drafting-domain/drafting-stair-section-cross.md` (Vietnamese). Its rules and its "Mẫu tham chiếu" decide every case. Read it by section (`drafting-session`, Standards by section): §0 and "Mẫu tham chiếu" once per job, then the rule the card names. Open `drafting-opening-tags.md` only if the section shows doors or windows (XB6).
 
 Load `drafting-session` first. From the project `drafting-profile.md` take the **check** dim type, the run tag types per floor block, the finish-mark code parameter and the numbers' source (a finished cross-section of the project, if any).
 

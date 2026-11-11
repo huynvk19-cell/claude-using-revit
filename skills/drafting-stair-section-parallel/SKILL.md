@@ -11,7 +11,7 @@ description: "Detail a stair SECTION cut parallel to the stair path (longitudina
 
 **Section views cut along the flights only.** Plans → `drafting-stair-plan`. A section cut across the flights (flights seen end-on) → `drafting-stair-section-cross`.
 
-Standard: `~/.claude/drafting-domain/drafting-stair-section-parallel.md` (Vietnamese). Its rules and its "Mẫu tham chiếu" decide every case. Read it first. Open `drafting-opening-tags.md` only if the section shows doors or windows (LB6).
+Standard: `~/.claude/drafting-domain/drafting-stair-section-parallel.md` (Vietnamese). Its rules and its "Mẫu tham chiếu" decide every case. Read it by section (`drafting-session`, Standards by section): §0 and "Mẫu tham chiếu" once per job, then the rule the card names. Open `drafting-opening-tags.md` only if the section shows doors or windows (LB6).
 
 Load `drafting-session` first. From the project `drafting-profile.md` take the **check** dim type, and whether LA4 carries `CLEAR` (default: no, as the sample).
 

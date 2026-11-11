@@ -99,9 +99,10 @@ Thêm quy trình mới: một file `workflows/<tên>.md` (dòng 0 = `drafting-st
 | `drafting-views-sheets.md` | Viewport, crop, dependent view, template |
 | `drafting-sheet-layout.md` | Layout bộ hồ sơ: loại công trình → file bộ hồ sơ, giai đoạn (YT / CS / KT / TC / HC), nhóm và đánh số bản vẽ, bộ hồ sơ lõi, khổ giấy, tỷ lệ, bố cục trên sheet (LO1–LO12), chia vùng + key plan + matchline (Z1–Z5), tên sheet, **sổ bộ hồ sơ** (§11) |
 | `drafting-sheet-create.md` | Khởi tạo sheet từ sổ (SC1–SC10): gom sheet, số, tên, khung tên, tạo qua danh mục, tham số sheet |
-| `drafting-view-create.md` | Tạo view cho sheet (VC1–VC12): bảng bản vẽ → loại view Revit, tạo từ đâu, template, tỷ lệ, crop, tên; hợp đồng lệnh `view_create` (chưa có) |
-| `drafting-sheet-place.md` | Đặt view lên sheet (VP1–VP10): bảng bố trí mm, thứ tự đặt, căn theo điểm trục, legend / schedule; hợp đồng lệnh `viewport_place` (chưa có) |
+| `drafting-view-create.md` | Tạo view cho sheet (VC1–VC12): bảng bản vẽ → loại view Revit, tạo từ đâu, template, tỷ lệ, crop, tên; lệnh `view_create` |
+| `drafting-sheet-place.md` | Đặt view lên sheet (VP1–VP10): bảng bố trí mm, thứ tự đặt, căn theo điểm trục, legend / schedule; lệnh `viewport_place` |
 | `drafting-sheet-set-<loại>.md` | Bộ bản vẽ riêng của từng loại công trình (cộng vào bộ lõi): `townhouse` nhà liên kế, `villa` biệt thự, `highrise` nhà cao tầng, `airport` sân bay, `public` trường học / bệnh viện / TTTM, `industrial` nhà xưởng / kho. Mỗi job chỉ mở một file |
+| `drafting-coverage.md` | Ma trận độ phủ: loại bản vẽ (cột `Loại` của các file bộ hồ sơ) → skill, workflow, lệnh làm, lệnh kiểm, mức Claude làm được (1–4); chuỗi khâu chung từ sổ tới PDF |
 | `drafting-tools.md` | Danh mục lệnh MCP theo chủ đề |
 | `drafting-api-pitfalls.md` | Bẫy Revit API và cách tránh |
 
@@ -157,6 +158,15 @@ Mỗi dự án cần một file `drafting-profile.md`: copy từ `templates/` v�
 - **Trả về chính thức** (khi đã duyệt): chọn một phần tử → Select All Instances → In Entire Project → đổi sang type chính thức; hoặc `mark_types {action:"restore"}` làm cho mọi type đánh dấu một lần.
 - Không đánh dấu được: detail line (chỉ có line style) và chỉnh sửa trên phần tử có sẵn (dời tag, đầu trục 2D, crop): xem log `apply`.
 
+## Ma trận độ phủ (Coverage)
+
+`domain/drafting-coverage.md` cho biết với mỗi loại bản vẽ Claude làm được tới đâu: mức 4 = trọn vòng (lệnh làm + lệnh kiểm + workflow), mức 1 = mới có tên trong bộ hồ sơ, nội dung phải làm tay.
+
+- Mỗi dòng bản vẽ trong bộ hồ sơ lõi và trong file của từng loại công trình có cột `Loại` trỏ tới một dòng của ma trận.
+- Khi lập sổ bộ hồ sơ, Claude ghi `Loại` và `Mức` cho từng sheet và báo ngay: bao nhiêu sheet làm trọn, làm một phần, làm tay.
+- Khi triển khai từ sổ, Claude tra `Loại` để lấy đúng workflow và skill; dòng mức 1 đi vào Việc tồn, không tự nghĩ cách làm.
+- Ô trống của ma trận là danh sách việc cần xây tiếp. `python addin/tests/coverage_check.py` in ma trận theo từng loại công trình và kiểm rằng tên skill / lệnh có thật, mức đủ điều kiện, dòng nào cũng có `Loại` (CI chạy ở mỗi lần push).
+
 ## Tiết kiệm token (Token use)
 
 Mỗi bước Claude gọi tool, toàn bộ phần đầu phiên (danh sách tool, mô tả skill, CLAUDE.md) và hội thoại được gửi lại cho model. Phần cố định càng dài, mỗi bước càng tốn; hội thoại càng dài (kết quả lệnh, ảnh), mỗi bước sau càng tốn.
@@ -164,10 +174,12 @@ Mỗi bước Claude gọi tool, toàn bộ phần đầu phiên (danh sách too
 | Phần | Tốn (mỗi bước) | Cách giảm | Trạng thái |
 |---|---|---|---|
 | Tool có sẵn của máy chủ MCP | add-in cũ 192 tool (~36.6k token nếu nạp sẵn); claude using revit 3 tool | **A**: add-in riêng, ít tool có sẵn | đã làm |
-| 99 lệnh của repo (header `mcp-tool`) | ~11.8k token nếu nạp sẵn; chỉ tên (~0.8k) khi tool search bật; mỗi lệnh đã nạp ~140 token | **B**: header ngắn, giải thích ở `// ---- Details` | đã làm |
+| Lệnh của repo (header `mcp-tool`) | ~11.8k token nếu nạp sẵn; chỉ tên (~0.8k) khi tool search bật; mỗi lệnh đã nạp ~140 token | **B**: header ngắn, giải thích ở `// ---- Details` | đã làm |
 | Tool search của Claude Code | — | **C**: giữ bật (mặc định), kiểm tra bằng `/context` | kiểm tra trên máy |
 | Nạp lệnh từng cái một (mỗi lần một lượt) | 1 lượt / lệnh | **D**: dòng **Tools** trong mỗi skill → nạp hết trong 1 lần ToolSearch | đã làm |
-| Mô tả skill (gửi mỗi request) | 6.8k → 5.3k ký tự | mô tả ngắn, luật nằm trong thân skill | đã làm |
+| Mô tả skill + subagent (gửi mỗi request, cả phiên không làm Revit) | 9.5k → 8.6k ký tự cho 23 skill; mỗi mô tả ≤ 500 | mô tả ngắn + từ khoá gọi, luật nằm trong thân skill | đã làm, CI kiểm (`budget_check.py`) |
+| Chuẩn dài (`drafting-stair-plan.md` ~28k ký tự, mặt cắt thang ~25k, …) bị đọc cả file | ~10k token cho chuẩn dài nhất (ước tính) | **G**: đọc theo mục: dàn ý (`grep -n '^#'`) + phần mở đầu + đúng mục luật mà thẻ bước nêu | đã làm (`drafting-session`, "Standards by section") |
+| Nội dung lặp giữa `drafting-session`, `drafting-start`, `drafting-work-rules.md`, mục Score của 106 thẻ bước | mỗi phiên / mỗi thẻ | **H**: nói một lần, chỗ khác chỉ trỏ tới § | đã làm |
 | Ảnh kiểm tra (mỗi ảnh ~1.5–2k token, ở lại trong hội thoại) | theo số ảnh | **E**: subagent `drafting-visual-checker` (Sonnet) đọc ảnh, chỉ trả chữ | đã làm |
 | Kết quả lệnh | theo lệnh | **F**: mặc định ngắn (số lượng + lỗi), chi tiết sau cờ `verbose`/`detail` | luật cho lệnh mới (`CLAUDE.md`) |
 
@@ -185,6 +197,12 @@ Claude Code bản mới **mặc định** hoãn nạp tool MCP: đầu phiên ch
 Kiểm tra: gõ `/context` trong phiên có máy chủ `claude-using-revit`. Tool MCP phải hiện là deferred (hoãn), không chiếm hàng chục nghìn token. Nếu cấu hình `claude-using-revit` có `"alwaysLoad": true` thì bỏ đi. Cập nhật Claude Code (`claude update`) nếu bản cũ.
 
 Dự phòng khi không bật được tool search: mọi lệnh cũng gọi được qua một tool `run_dynamic_command {name, args}`; có thể cho claude using revit chỉ đăng ký tool đó thay vì mỗi lệnh một tool (`addin/src/ClaudeUsingRevit/Mcp/ToolRegistry.cs`); Claude tra tham số trong `drafting-tools.md` và header `.cs`.
+
+### G, H — Đọc đúng phần cần, không lặp
+
+- Chuẩn trên ~120 dòng không đọc cả file: thẻ bước nêu mã luật (`SB1`, `G3`…), Claude đọc dàn ý, phần mở đầu (cách đọc view, bảng tóm tắt luật), "Mẫu tham chiếu", rồi chỉ mục của luật đang làm. "Bài học" thì `grep` theo triệu chứng. Vì vậy mỗi luật giữ một heading riêng trong chuẩn.
+- Điều đã có trong `drafting-work-rules.md` (đọc đầu mỗi phiên) không chép lại trong skill hay thẻ bước.
+- `python addin/tests/budget_check.py` kiểm: mô tả skill ≤ 500 ký tự, mô tả lệnh ≤ 250, mô tả tham số ≤ 80 và không bị cắt cụt (`…`), tên lệnh trên dòng **Tools** có thật (tên sai = một lượt ToolSearch vô ích). CI chạy ở mỗi lần push.
 
 ### Cách làm việc ít token
 

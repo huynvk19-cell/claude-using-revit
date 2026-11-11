@@ -1,6 +1,6 @@
 ---
 name: drafting-opening-tags
-description: "Tag every visible window and door (incl. roll-up doors) on elevation and section views: exactly one tag per visible opening, above + centred + touching with a short leader (large roll-up doors: tag inside the door), lifted or beside when blocked, never over dims/tags/hard elements, same height per row; fix duplicates/wrong tags. Use for tag cửa, tag cửa sổ, tag cửa đi, tag cửa cuốn, thiếu tag, tag trùng, tag đè dim, căn tag, door tags, window tags."
+description: "Tag every visible window and door (incl. roll-up doors) on elevation and section views, rules T1–T8: one tag per opening, above, centred, short leader, never over dims/tags, same height per row; fix duplicate / wrong tags. Use for tag cửa, tag cửa sổ, tag cửa đi, tag cửa cuốn, thiếu tag, tag trùng, tag đè dim, căn tag, door tags, window tags."
 ---
 
 # Opening tags (elevations / sections)

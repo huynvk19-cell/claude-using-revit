@@ -1,6 +1,6 @@
 ---
 name: drafting-plan-floor-finish
-description: "Develop floor finish plan drawings (khai triển mặt bằng hoàn thiện sàn) via Revit MCP, one step card at a time. Sibling of drafting-plan-dims. Cards: floor spot elevations (FL1–FL3: one per room, stair enclosures inside + outside), slope marks (SL1–SL5: spot slope, direction down, on roofs, ramps, sloped floors). Use for khai triển mặt bằng hoàn thiện sàn, mặt bằng hoàn thiện, hoàn thiện sàn, F tag sàn, tag cao độ sàn, cao độ phòng, ký hiệu độ dốc, spot slope, floor finish plan, floor finish marks."
+description: "Floor finish plans (khai triển mặt bằng hoàn thiện sàn) via Revit MCP, card by card; sibling of drafting-plan-dims. Cards: floor spot elevations (FL1–FL3, one per room), slope marks (SL1–SL5, spot slope pointing down). Use for mặt bằng hoàn thiện, hoàn thiện sàn, F tag sàn, tag cao độ sàn, cao độ phòng, ký hiệu độ dốc, spot slope, floor finish plan, floor finish marks."
 ---
 
 # Floor finish plan (khai triển mặt bằng hoàn thiện sàn)

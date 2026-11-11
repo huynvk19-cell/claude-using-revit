@@ -2,7 +2,7 @@
 name: drafting-sheet-place
 description: "Chuẩn đặt view lên sheet từ sổ bộ hồ sơ: điều kiện trước khi đặt, bảng bố trí (toạ độ mm trên sheet), thứ tự đặt, căn chuỗi mặt bằng theo điểm trục, căn hàng mặt đứng / mặt cắt, legend / key plan / schedule, viewport type, kiểm sau khi đặt (VP1–VP10); lệnh có / chưa có. Viewport placement standard."
 metadata:
-  updated: "2026-11-05"
+  updated: "2026-11-11"
   related: ["drafting-sheet-layout", "drafting-sheet-create", "drafting-view-create", "drafting-views-sheets"]
 ---
 
@@ -39,7 +39,7 @@ Skill: `drafting-sheet-place`.
 
 ## 3. Lệnh
 
-**Đã có**
+**Đọc và chỉnh**
 | Việc | Lệnh |
 |---|---|
 | Đọc view / viewport / type trên sheet | `sheet_views_ids` (`includeAll` để thấy cả legend, schedule) |
@@ -47,13 +47,16 @@ Skill: `drafting-sheet-place`.
 | Title | `viewport_title_audit`, `viewport_titles_place` |
 | Ảnh sheet để kiểm | `export_sheet_images` |
 
-**Chưa có: lệnh `viewport_place`** (cần viết trong `revit-commands/`). Đây là hợp đồng để card dùng khi có lệnh:
+**Lệnh `viewport_place`** (đặt view, legend, schedule lên sheet; chi tiết ở phần `// ---- Details` của `revit-commands/viewport_place.cs`):
+- Toạ độ giấy tính bằng mm từ **góc dưới trái của khung tên** trên sheet.
 - `items[]`, mỗi item gồm:
   - `sheet` (số sheet hoặc id), `viewId`;
-  - vị trí: `centerMm {x, y}`, **hoặc** `gridPoint {gridA, gridB, atMm {x, y}}` (đặt sao cho giao 2 trục rơi đúng điểm giấy);
+  - vị trí: `centerMm {x, y}` (tâm hộp viewport, không tính title), **hoặc** `gridPoint {gridA, gridB, atMm {x, y}}` (giao 2 trục rơi đúng điểm giấy, VP5), **hoặc** `gridPoint {gridA, level, atMm}` (mặt đứng / mặt cắt: trục tại cao độ level, VP6);
   - `viewportType`;
-  - `move: true` để dời viewport đã có thay vì đặt mới.
-- `mode`: `preview` | `apply` | `undo`; `logPath`.
-- Kết quả: id viewport, hộp trên giấy (mm), va chạm với khung tên / viewport khác (ngắn).
+  - `move: true` để dời viewport đã có trên sheet đó thay vì đặt mới.
+- Chung cho cả lần gọi: `viewportType` mặc định, `areaMm {minX, minY, maxX, maxY}` (vùng vẽ của profile), `me` (tên user Revit: viewport người khác sửa lần cuối không bị dời, trả về `Ask`, VP9).
+- `mode`: `preview` | `apply` | `undo`; `logPath`. `preview` làm thật rồi huỷ, nên hộp và va chạm là số thật.
+- Kết quả: `Ids` theo thứ tự item, `Problems` gồm `Error` (view đang ở sheet khác thì nêu số sheet, VP1), `Reused`, `Ask`, `Outside` (mm vượt vùng vẽ theo [trái, dưới, phải, trên]), `Overlaps` (id viewport / schedule bị chồng). Hộp trên giấy từng item: `verbose` hoặc `outPath`.
+- Không làm: mũi tên Bắc và các ký hiệu khác (không phải view); title (dùng `viewport_titles_place`).
 
-Chưa có lệnh thì: Claude đưa bảng bố trí → user kéo view từ Project Browser và căn theo điểm → Claude đọc lại (`sheet_views_ids`, ảnh sheet) và kiểm theo VP10.
+`Outside` / `Overlaps` nghĩa là bảng bố trí sai: sửa bảng (VP3) rồi đặt lại, không dời bằng mắt.

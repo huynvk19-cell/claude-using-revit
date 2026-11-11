@@ -64,24 +64,26 @@ Bộ hồ sơ được xếp theo thứ tự đọc: từ cái chung đến cái
 
 ## 4. Bộ hồ sơ lõi: mọi công trình đều có (HS4)
 
-| Nhóm | Bản vẽ | Tỷ lệ | GĐ |
-|---|---|---|---|
-| 0 | Bìa + danh mục bản vẽ | — | CS |
-| 0 | Ghi chú chung, ký hiệu, chữ viết tắt | — | KT |
-| 0 | Bảng vật liệu / hoàn thiện chung | — | KT |
-| 1 | Tổng mặt bằng: chỉ giới, lộ giới, khoảng lùi, cao độ nền, hướng Bắc | 1:500–1:200 | CS |
-| 1 | Mặt bằng định vị (toạ độ, kích thước tới ranh) | 1:200–1:100 | KT |
-| 2 | Mặt bằng mỗi tầng: trục, kích thước tổng, tên + diện tích phòng, cao độ sàn | 1:100 | CS |
-| 2 | Mặt bằng mái: độ dốc, thoát nước, sê nô, ống đứng | 1:100 | CS |
-| 2 | Mặt bằng kích thước (khai triển) mỗi tầng | 1:100–1:50 | TC |
-| 2 | Mặt bằng hoàn thiện sàn mỗi tầng | 1:100–1:50 | TC |
-| 2 | Mặt bằng trần mỗi tầng | 1:100–1:50 | TC |
-| 3 | Mặt đứng: mọi hướng nhìn thấy được (hướng nào giáp nhà bên thì xem file của loại) | 1:100 | CS |
-| 4 | Mặt cắt: ít nhất 1 dọc + 1 ngang, có ít nhất một mặt cắt qua thang | 1:100 | CS |
-| 5 | Thang bộ: mặt bằng + mặt cắt | 1:50 | KT |
-| 6 | Vệ sinh: mặt bằng phóng to + triển khai tường | 1:50–1:25 | TC |
-| 7 | Thống kê cửa + mặt đứng cửa | 1:50 | KT |
-| 8 | Chi tiết cấu tạo: tường, sàn, mái, chống thấm, lan can | 1:20–1:5 | TC |
+| Nhóm | Bản vẽ | Tỷ lệ | GĐ | Loại |
+|---|---|---|---|---|
+| 0 | Bìa + danh mục bản vẽ | — | CS | `cover`, `sheet-list` |
+| 0 | Ghi chú chung, ký hiệu, chữ viết tắt | — | KT | `notes` |
+| 0 | Bảng vật liệu / hoàn thiện chung | — | KT | `schedule` |
+| 1 | Tổng mặt bằng: chỉ giới, lộ giới, khoảng lùi, cao độ nền, hướng Bắc | 1:500–1:200 | CS | `site` |
+| 1 | Mặt bằng định vị (toạ độ, kích thước tới ranh) | 1:200–1:100 | KT | `site` |
+| 2 | Mặt bằng mỗi tầng: trục, kích thước tổng, tên + diện tích phòng, cao độ sàn | 1:100 | CS | `plan` |
+| 2 | Mặt bằng mái: độ dốc, thoát nước, sê nô, ống đứng | 1:100 | CS | `roof` |
+| 2 | Mặt bằng kích thước (khai triển) mỗi tầng | 1:100–1:50 | TC | `plan-dims` |
+| 2 | Mặt bằng hoàn thiện sàn mỗi tầng | 1:100–1:50 | TC | `plan-finish` |
+| 2 | Mặt bằng trần mỗi tầng | 1:100–1:50 | TC | `ceiling` |
+| 3 | Mặt đứng: mọi hướng nhìn thấy được (hướng nào giáp nhà bên thì xem file của loại) | 1:100 | CS | `elevation` |
+| 4 | Mặt cắt: ít nhất 1 dọc + 1 ngang, có ít nhất một mặt cắt qua thang | 1:100 | CS | `section` |
+| 5 | Thang bộ: mặt bằng + mặt cắt | 1:50 | KT | `stair` |
+| 6 | Vệ sinh: mặt bằng phóng to + triển khai tường | 1:50–1:25 | TC | `enlarged` |
+| 7 | Thống kê cửa + mặt đứng cửa | 1:50 | KT | `door` |
+| 8 | Chi tiết cấu tạo: tường, sàn, mái, chống thấm, lan can | 1:20–1:5 | TC | `detail` |
+
+Cột `Loại` (ở bảng này và ở mọi file bộ hồ sơ) là khoá loại bản vẽ trong `drafting-coverage.md` §2: skill, lệnh và mức Claude làm được. Dòng mới luôn có `Loại`.
 
 File bộ hồ sơ của từng loại công trình **cộng thêm hoặc sửa** bảng này; không chép lại các dòng của bảng lõi. Ngoại lệ: file có mục **Danh mục điển hình** (danh mục user đã duyệt) thì danh mục đó **thay hẳn** bảng lõi, và thứ tự các dòng của nó là thứ tự sheet.
 
@@ -175,7 +177,7 @@ Sổ bộ hồ sơ là **một file** cho mỗi job: `sheet-register-<YYYY-MM-DD
 
 | Cột | Ai điền (skill · thẻ) |
 |---|---|
-| `ID` (thứ tự trong bộ), `Nhóm`, `Bản vẽ`, `Tầng / vùng / mẫu`, `Tỷ lệ`, `GĐ`, `Nguồn` (dòng chuẩn) | `drafting-sheet-layout` 01 |
+| `ID` (thứ tự trong bộ), `Nhóm`, `Bản vẽ`, `Tầng / vùng / mẫu`, `Tỷ lệ`, `GĐ`, `Nguồn` (dòng chuẩn), `Loại`, `Mức` (`drafting-coverage.md` §2) | `drafting-sheet-layout` 01 |
 | `Có sẵn` (ok / chưa đặt / chưa có view / thừa) | `drafting-sheet-layout` 02 |
 | `Khổ giấy`, `Vừa khổ`, `Vùng` | `drafting-sheet-layout` 03 |
 | `Số sheet`, `Tên sheet`, `Sheet id` | `drafting-sheet-create` |

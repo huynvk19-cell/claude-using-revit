@@ -1,6 +1,6 @@
 # 06 · Legends, drafting views, schedules (legend, bảng thống kê)
 
-**Skill** `drafting-view-create` · **Standard** `drafting-view-create.md` §1 · **Tools** `cur_task`, `query_elements_with_filter` · **Planned** `view_create`
+**Skill** `drafting-view-create` · **Standard** `drafting-view-create.md` §1 · **Tools** `view_create`, `cur_task`, `query_elements_with_filter`
 **Applies to** the creation table rows of kind legend, drafting, schedule (ghi chú ký hiệu, cấu tạo, chi tiết cửa, key plan, thống kê cửa).
 
 ## Do
@@ -11,8 +11,8 @@
 3. **Schedules**: door and window schedules as a copy of the project's schedule template (`scheduleCopy`). Check them with `cur_task {task:"schedule_list"}`.
 4. Names by VC2, template `legend` / `detail`, scale of the register.
 
-   Without `view_create`: hand the user the list (kind, copy from, name). Read back with `query_elements_with_filter` / `cur_task schedule_list`.
-5. Write the ids into the register.
+5. `view_create`, `preview` → `apply` with `logPath`: `kind:"legendCopy"` / `"scheduleCopy"` with `sourceViewId`, `kind:"drafting"`.
+6. Write the ids into the register.
 
 ## Done when
 
@@ -29,4 +29,4 @@ The table has no legend, drafting or schedule row.
 
 ## Score (0–10)
 
-No deductions of its own yet: 10 when every **Done when** line holds; otherwise lower it and say which line failed. **Accepted only above 7**; below, dissect and run again (`drafting-work-rules.md` §2b2). Ask the user for the deductions of this card when they review it, then write them here.
+No deductions of its own yet: 10 when every **Done when** line holds. **Accepted only above 7** (`drafting-work-rules.md` §2b2).

@@ -5,9 +5,9 @@ description: "Create the views the sheets need, from the sheet register (tạo v
 
 # Create views (tạo view cho sheet)
 
-**Tools** (load all in one ToolSearch call): `crop_side_to_grids`, `query_elements_with_filter`, `sheet_browser_names`, `view_crop_info`.
+**Tools** (load all in one ToolSearch call): `view_create`, `crop_side_to_grids`, `query_elements_with_filter`, `sheet_browser_names`, `view_crop_info`.
 
-**Planned command** (not yet in `revit-commands/`; contract in the standard §3): `view_create`. Until it exists, the creating cards hand the user a creation table and check what the user made.
+Every creating card uses `view_create {items, mode}` (contract: the standard §3): `preview` first, then `apply` with `logPath`, up to 10 views per call. `Reused` = a view of that name already exists: take its id, nothing is created (VC1). An item that comes back as `Error` and cannot be fixed from the profile goes to the user as one row (kind, from, level, template, scale, name).
 
 Standard: `~/.claude/drafting-domain/drafting-view-create.md` (Vietnamese): table §1 drawing → Revit view, rules VC1–VC12.
 

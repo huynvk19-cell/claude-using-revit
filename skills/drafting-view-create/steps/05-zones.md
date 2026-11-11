@@ -1,6 +1,6 @@
 # 05 · Dependent views per zone (view theo vùng)
 
-**Skill** `drafting-view-create` · **Standard** `drafting-view-create.md` VC9, `drafting-sheet-layout.md` §7 · **Tools** `view_crop_info` · **Planned** `view_create`
+**Skill** `drafting-view-create` · **Standard** `drafting-view-create.md` VC9, `drafting-sheet-layout.md` §7 · **Tools** `view_create`, `view_crop_info`
 **Applies to** the register rows with a `Vùng` (zoned plans).
 
 ## Do
@@ -10,9 +10,7 @@
 3. Check every dependent:
    - its scope box is the zone of its register row;
    - the zone scheme is the same on every level and every plan kind (Z1).
-4. With `view_create` (`kind:"dependent"`): `preview` → `apply`.
-
-   Without it: hand the user the parent → zone list. Read back with `view_crop_info` (scope box per view).
+4. `view_create {items:[{kind:"dependent", sourceViewId:<parent>, scopeBox, name}]}`: `preview` → `apply` with `logPath`. Read back with `view_crop_info` (scope box per view).
 
 ## Done when
 
@@ -29,4 +27,4 @@ No row has a zone (`drafting-sheet-layout` card 03 found no zone needed).
 
 ## Score (0–10)
 
-No deductions of its own yet: 10 when every **Done when** line holds; otherwise lower it and say which line failed. **Accepted only above 7**; below, dissect and run again (`drafting-work-rules.md` §2b2). Ask the user for the deductions of this card when they review it, then write them here.
+No deductions of its own yet: 10 when every **Done when** line holds. **Accepted only above 7** (`drafting-work-rules.md` §2b2).

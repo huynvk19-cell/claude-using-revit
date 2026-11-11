@@ -19,8 +19,10 @@ static class Program
     {
         var core = new InstallerCore { Log = s => Console.WriteLine("   | " + s) };
         string appData = Environment.GetEnvironmentVariable("APPDATA"), home = Environment.GetEnvironmentVariable("USERPROFILE");
+        int payloadCommands;
         using (var zip = ZipFile.OpenRead(a[0]))
         {
+            payloadCommands = zip.Entries.Count(e => e.FullName.StartsWith("commands/") && e.FullName.EndsWith(".cs"));
             var payloadRevit = InstallerCore.PayloadRevit(zip);
             Check("payload has Revit 2023-2027", string.Join(",", payloadRevit) == "2023,2024,2025,2026,2027", string.Join(",", payloadRevit));
             var found = core.InstalledRevit();
@@ -43,8 +45,9 @@ static class Program
         Check("ribbon tab", File.Exists(Path.Combine(data, "extension", "claude using revit.tab", "PrintSet.panel", "Export PDF.pushbutton", "script.py")));
         Check("host package cur", File.Exists(Path.Combine(data, "extension", "lib", "cur", "forms.py")));
         Check("stale extension file removed", !File.Exists(Path.Combine(data, "extension", "stale.py")));
-        Check("commands", Directory.GetFiles(Path.Combine(data, "commands"), "*.cs").Length == 99 && !File.Exists(Path.Combine(data, "commands", "old_cmd.cs")),
-              Directory.GetFiles(Path.Combine(data, "commands"), "*.cs").Length.ToString());
+        int installedCommands = Directory.GetFiles(Path.Combine(data, "commands"), "*.cs").Length;      // every command of the payload, no stale one
+        Check("commands", payloadCommands > 0 && installedCommands == payloadCommands && !File.Exists(Path.Combine(data, "commands", "old_cmd.cs")),
+              installedCommands + " installed, " + payloadCommands + " in the payload");
         Check("config.json kept (custom port)", File.ReadAllText(Path.Combine(data, "config.json")).Contains("8975"));
         Check("old pyRevit extension removed", !Directory.Exists(Path.Combine(appData, "pyRevit", "Extensions", "ClaudeUsingRevit.extension")));
         Check("skills", File.Exists(Path.Combine(home, ".claude", "skills", "drafting-session", "SKILL.md")));

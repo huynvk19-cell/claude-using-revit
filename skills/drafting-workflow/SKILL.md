@@ -1,6 +1,6 @@
 ---
 name: drafting-workflow
-description: "Run a whole drafting job as a fixed workflow: gather every view / sheet of the job once, then skills in a set order, each step done in one pass on all views before the next, with a done-when gate and a checklist file (nothing skipped, resumable). Workflows: facade elevations/sections, floor plans, ceiling plans, stair core, sheet layout, comment round. Use for quy trình, làm trọn bộ, gom view, gom sheet, làm hết mặt đứng, triển khai mặt bằng, mặt bằng trần, làm lõi thang, layout bộ hồ sơ, tiếp tục quy trình, workflow."
+description: "Run a whole drafting job as a fixed workflow: gather every view / sheet once, then skills in a set order, one step on all views before the next, done-when gates, resumable checklist. Workflows: facade elevations/sections, floor plans, ceiling plans, stair core, sheet layout, comment round. Use for quy trình, làm trọn bộ, gom view, gom sheet, làm hết mặt đứng, triển khai mặt bằng, mặt bằng trần, làm lõi thang, layout bộ hồ sơ, tiếp tục quy trình, workflow."
 ---
 
 # Drafting workflow (quy trình)
@@ -23,6 +23,7 @@ Load `drafting-session` first if it is not loaded yet (hard rules, batches, mark
 | A round of reviewer comments (PDF, TASKS.md) | `workflows/review-round.md` |
 
 - Read **only** the chosen file. Unclear which one, or the job fits none → ask; do not mix two workflows in one checklist.
+- From a **sheet register** ("triển khai bộ hồ sơ"): each row's `Loại` → its workflow and skills in `~/.claude/drafting-domain/drafting-coverage.md` §2; group the rows by workflow and run the workflows one after another. A level 1 row has no skill: never improvise its content, list it under Việc tồn.
 - A single-topic task ("dim trục view này") needs no workflow: use the topic's skill from the `drafting-session` table.
 
 ## Step 0 — gather the views and sheets once

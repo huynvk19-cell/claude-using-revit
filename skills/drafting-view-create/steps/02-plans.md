@@ -1,6 +1,6 @@
 # 02 · Plans: floor, finish, roof, ceiling, site (mặt bằng)
 
-**Skill** `drafting-view-create` · **Standard** `drafting-view-create.md` §1, VC2, VC5, VC6 · **Tools** `view_crop_info`, `crop_side_to_grids`, `query_elements_with_filter` · **Planned** `view_create`
+**Skill** `drafting-view-create` · **Standard** `drafting-view-create.md` §1, VC2, VC5, VC6 · **Tools** `view_create`, `view_crop_info`, `crop_side_to_grids`, `query_elements_with_filter`
 **Applies to** the creation table rows of kind floor plan, duplicate, ceiling plan (MB sàn, lát sàn, mái, trần, tổng thể, định vị).
 
 ## Do
@@ -17,9 +17,11 @@
    - scale of the register;
    - crop on + annotation crop on.
 3. **One crop for the whole series** (VC5): the crop of the first floor plan (reference) is copied to every plan of the series. Same scope box if the profile has one; otherwise the same crop box (check with `view_crop_info`: same min / max in model mm).
-4. With `view_create`: one call per batch of up to 10 views, `preview` then `apply` with `logPath`.
-
-   Without it: hand the user this card's rows of the creation table (kind, level, template, scale, name). Read back with `query_elements_with_filter` once the user says done.
+4. `view_create`, one call per batch of up to 10 views, `preview` then `apply` with `logPath`:
+   - floor, roof, site plans: `kind:"floorPlan"`, `level`; ceiling plans: `kind:"ceilingPlan"`, `level`;
+   - finish plans: `kind:"duplicate"`, `sourceViewId` = the floor plan of the level;
+   - every item: `name`, `template`, `scale`, `scopeBox` when the profile has one.
+   `Similar` in the result = plans of that level not on a sheet yet: look at them before creating a second one (VC1).
 5. Write `View id`, `Tên view`, `Template`, `Crop` (on / same as reference) into the register.
 
 ## Done when
@@ -38,4 +40,4 @@ The table has no plan row.
 
 ## Score (0–10)
 
-No deductions of its own yet: 10 when every **Done when** line holds; otherwise lower it and say which line failed. **Accepted only above 7**; below, dissect and run again (`drafting-work-rules.md` §2b2). Ask the user for the deductions of this card when they review it, then write them here.
+No deductions of its own yet: 10 when every **Done when** line holds. **Accepted only above 7** (`drafting-work-rules.md` §2b2).

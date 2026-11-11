@@ -47,11 +47,11 @@
         "items": {
           "type": "string"
         },
-        "description": "Family name parts (e.g"
+        "description": "family name parts (e.g. 'ROLL UP') dimensioned to their nominal size"
       },
       "verticalEachMinHeight": {
         "type": "number",
-        "description": "mm: openings at least this tall get their own vertical dim even in perType mode (e.g"
+        "description": "mm: openings this tall or taller get their own vertical dim even in perType mode"
       },
       "moveExisting": {
         "type": "boolean",

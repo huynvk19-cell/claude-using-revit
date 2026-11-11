@@ -1,6 +1,6 @@
 # 04 · Callouts, interior elevations, details (thang, WC, chi tiết)
 
-**Skill** `drafting-view-create` · **Standard** `drafting-view-create.md` §1, VC2, VC8 · **Tools** `view_crop_info`, `query_elements_with_filter` · **Planned** `view_create`
+**Skill** `drafting-view-create` · **Standard** `drafting-view-create.md` §1, VC2, VC8 · **Tools** `view_create`, `view_crop_info`, `query_elements_with_filter`
 **Applies to** the creation table rows of kind callout, interior elevation, detail, drafting (thang bộ, thang máy, WC, chi tiết).
 
 ## Do
@@ -18,14 +18,12 @@
    - detail section or detail callout from the plan / section / elevation where the part shows;
    - a standard detail not taken from the model → drafting view;
    - template `detail`, scale of the register.
-4. With `view_create`: `preview` → `apply` with `logPath`.
-
-   Without it: hand the user the table:
-
-   | Tên | Loại | Từ view | Vùng / qua | Tỷ lệ | Template |
-   |---|---|---|---|---|---|
-
-   Read back with `query_elements_with_filter`.
+4. `view_create`, `preview` → `apply` with `logPath`:
+   - callout plan: `kind:"callout"`, `sourceViewId` = the floor plan, `box {min, max}` (model mm);
+   - detail callout: `kind:"detail"`, `sourceViewId` = the plan / section / elevation, `box` (in a section give `z` too);
+   - stair, lift, detail sections: `kind:"section"`, `line`;
+   - interior elevations: `kind:"elevation"`, one item per wall, `viewType` = the project's interior elevation type;
+   - drafting views: `kind:"drafting"`.
 5. Write the ids into the register sub-rows.
 
 ## Done when
@@ -43,4 +41,4 @@ The table has no callout or detail row.
 
 ## Score (0–10)
 
-No deductions of its own yet: 10 when every **Done when** line holds; otherwise lower it and say which line failed. **Accepted only above 7**; below, dissect and run again (`drafting-work-rules.md` §2b2). Ask the user for the deductions of this card when they review it, then write them here.
+No deductions of its own yet: 10 when every **Done when** line holds. **Accepted only above 7** (`drafting-work-rules.md` §2b2).

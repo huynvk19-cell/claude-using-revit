@@ -1,11 +1,11 @@
 /* mcp-tool
 {
-  "description": "ONE plan view: place room tags so the tag BODY centre sits at a given point (model mm), optional straight leader to an end point inside the room: the leader is made exactly vertical or horizontal on the sheet by aligning the body centre with the end (the leader starts from the body centre). preview | apply (logPath) | undo (logPath).",
+  "description": "ONE plan view: place room tags with the BODY centre at a point (model mm), optional leader to an end inside the room, kept exactly vertical / horizontal. preview | apply (logPath) | undo.",
   "inputSchema": {
     "type": "object",
     "properties": {
       "viewId": { "type": "number" },
-      "items": { "type": "array", "items": { "type": "object" }, "description": "{roomId, typeName, cx, cy, ex?, ey?, path?} model mm; ex/ey = leader end inside the room; path HV | VH = one right-angle bend (H then V or V then H), else straight" },
+      "items": { "type": "array", "items": { "type": "object" }, "description": "{roomId, typeName, cx, cy, ex?, ey?, path?} mm; ex/ey: leader end; path: HV|VH" },
       "mode": { "type": "string", "enum": ["preview", "apply", "undo"] },
       "logPath": { "type": "string" },
       "itemsPath": { "type": "string", "description": "read items from this JSON file (room_tags_missing outPath)" },
@@ -17,6 +17,9 @@
 }
 */
 // ---- Details ----
+// items: cx/cy = tag body centre, ex/ey = leader end inside the room (model mm). The leader starts from the body centre
+// and is made exactly vertical or horizontal on the sheet by aligning the body centre with the end. path HV | VH =
+// one right-angle bend (H then V, or V then H); no path = straight.
 // itemsPath: a JSON file holding an items array, or an object with "Items" (room_tags_missing outPath). Items in the
 // room_tags_missing / annot_place form {elementId, typeName, right, up, leader, endRight, endUp} (view frame mm) are
 // converted to {roomId, cx, cy, ex, ey, path} (model mm) here. Leader end / elbow take the room point height (rooms

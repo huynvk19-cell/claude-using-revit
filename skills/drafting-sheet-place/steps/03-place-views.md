@@ -1,19 +1,21 @@
 # 03 · Place the views (đặt view)
 
-**Skill** `drafting-sheet-place` · **Standard** `drafting-sheet-place.md` VP5–VP7, VP9 · **Tools** `sheet_views_ids`, `set_viewport_type` · **Planned** `viewport_place`
+**Skill** `drafting-sheet-place` · **Standard** `drafting-sheet-place.md` VP5–VP7, VP9 · **Tools** `viewport_place`, `sheet_views_ids`, `set_viewport_type`
 **Applies to** every ready row of card 00.
 
 ## Do
 
-1. Place each view on its sheet at its `Vị trí`:
-   - with `viewport_place`: centre point, or `gridPoint` (two reference grids at `P`) for plan series; the viewport type of the profile for its kind;
-   - one call per batch of up to 10 views, `preview` → `apply` with `logPath`.
-2. Without `viewport_place`:
-   - hand the user the plan sheet by sheet (view → sheet → point);
-   - the user drags each view from the Project Browser onto its sheet, near the point;
-   - then the user moves it until the point matches. Plan series: the reference grid intersection on `P`; Revit's guide grid on the sheet helps.
-3. Read back: `sheet_views_ids` per prefix → `Viewport id`, `Viewport type` into the register.
-4. Viewport type ≠ the profile's → `set_viewport_type` (preview → apply with `logPath`).
+1. Place each view on its sheet at its `Vị trí` with `viewport_place`, one call per batch of up to 10 views, `preview` → `apply` with `logPath`:
+   - single views: `centerMm {x, y}`;
+   - plan series: `gridPoint {gridA, gridB, atMm: P}` with the two reference grids, the same `P` on every sheet of the series (VP5);
+   - elevations / sections that share a sheet: `gridPoint {gridA, level, atMm}` so that ±0.000 and the grid line up (VP6);
+   - `viewportType` = the profile's type for the view's kind.
+2. Read the result:
+   - `Error: view is already on sheet …` → the register is wrong for that row (LO11): fix the row, never take the view off the other sheet;
+   - `Reused` → the view was on the sheet already: card 04 moves it if it is off;
+   - `Outside` / `Overlaps` → back to card 01 for that sheet.
+3. `Ids` → `Viewport id` into the register, with the `Viewport type`.
+4. A viewport that was on its sheet before and has another type than the profile's → `set_viewport_type` (preview → apply with `logPath`).
 
 ## Done when
 
@@ -30,4 +32,4 @@ No row is ready (card 00).
 
 ## Score (0–10)
 
-No deductions of its own yet: 10 when every **Done when** line holds; otherwise lower it and say which line failed. **Accepted only above 7**; below, dissect and run again (`drafting-work-rules.md` §2b2). Ask the user for the deductions of this card when they review it, then write them here.
+No deductions of its own yet: 10 when every **Done when** line holds. **Accepted only above 7** (`drafting-work-rules.md` §2b2).

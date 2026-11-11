@@ -1,6 +1,6 @@
 # 03 · Elevations and sections (mặt đứng, mặt cắt)
 
-**Skill** `drafting-view-create` · **Standard** `drafting-view-create.md` §1, VC2, VC5, VC7 · **Tools** `view_crop_info`, `query_elements_with_filter` · **Planned** `view_create`
+**Skill** `drafting-view-create` · **Standard** `drafting-view-create.md` §1, VC2, VC5, VC7 · **Tools** `view_create`, `view_crop_info`, `query_elements_with_filter`
 **Applies to** the creation table rows of kind elevation, section.
 
 ## Do
@@ -14,14 +14,10 @@
    - line on the ground floor plan, crop from the lowest floor (basement / footing) to the top of the roof;
    - far clip to the next wall line.
 3. Names by VC7 (`MẶT ĐỨNG CHÍNH`, `MẶT CẮT A-A`…), template `elevation` / `section`, scale of the register.
-4. With `view_create`: `preview` (markers / lines in model mm) → `apply` with `logPath`.
-
-   Without it: hand the user the table:
-
-   | Tên | Hướng nhìn | Đặt trên view | Qua (trục / phòng) | Crop đáy → đỉnh | Far clip |
-   |---|---|---|---|---|---|
-
-   Read back with `query_elements_with_filter` / `view_crop_info`.
+4. `view_create`, `preview` → `apply` with `logPath` (model mm, from the grids and levels read in card 00):
+   - elevation: `kind:"elevation"`, `sourceViewId` = the ground floor plan, `marker {x, y, direction, depth, width, bottom, top}`; `direction` = where the view **looks**;
+   - section: `kind:"section"`, `line {start, end, depth, bottom, top}`; the view looks to the **left** of start → end.
+   Check crop and far clip with `view_crop_info`.
 5. Write the ids and names into the register.
 
 ## Done when
@@ -39,4 +35,4 @@ The table has no elevation or section row.
 
 ## Score (0–10)
 
-No deductions of its own yet: 10 when every **Done when** line holds; otherwise lower it and say which line failed. **Accepted only above 7**; below, dissect and run again (`drafting-work-rules.md` §2b2). Ask the user for the deductions of this card when they review it, then write them here.
+No deductions of its own yet: 10 when every **Done when** line holds. **Accepted only above 7** (`drafting-work-rules.md` §2b2).

@@ -37,39 +37,39 @@ File này cộng thêm vào bộ hồ sơ lõi (`drafting-sheet-layout.md` §4).
 
 ## 2. Bộ bản vẽ (cộng vào bộ lõi)
 
-| Nhóm | Bản vẽ | Tỷ lệ | GĐ | Nội dung bắt buộc |
-|---|---|---|---|---|
-| 0 | Bảng chỉ tiêu: công suất (triệu khách/năm), giờ cao điểm, diện tích từng khu chức năng, số quầy / cửa ra / băng chuyền | — | CS | — |
-| 0 | Sơ đồ chia vùng + key plan chuẩn của cả dự án | không tỷ lệ | CS | Tên vùng giữ nguyên toàn bộ hồ sơ (Z5) |
-| 1 | Mặt bằng tổng thể cảng: nhà ga, sân đỗ, đường lăn, đường giao thông phía ngoài, nhà xe, công trình phụ trợ | 1:5000–1:2000 | CS | — |
-| 1 | Tổng mặt bằng nhà ga + phía ngoài (đường dẫn, cầu cạn đến / đi, bãi xe) | 1:1000–1:500 | CS | — |
-| 2 | Mặt bằng tổng mỗi tầng (chỉ dẫn vùng, Z4) | 1:1000–1:500 | CS | — |
-| 2 | Mặt bằng mỗi tầng theo vùng | 1:200 (CS) · 1:100 (KT, TC) | CS | Matchline, key plan |
-| 2 | Mặt bằng phân luồng: đi, đến, nối chuyến, quốc tế / quốc nội, VIP, nhân viên (màu + legend) | 1:1000–1:500 | CS | — |
-| 2 | Mặt bằng phân khu an ninh: landside / airside, cách ly, điểm soi chiếu, cửa kiểm soát | 1:1000–1:500 | CS | — |
-| 2 | Mặt bằng hệ hành lý (nền phối hợp BHS): băng chuyền, phòng phân loại, băng trả hành lý | 1:500–1:200 | KT | — |
-| 2 | Mặt bằng mái: module mái, cửa lấy sáng, thoát nước, đường đi bảo trì | 1:500 tổng + 1:200 theo vùng | CS | — |
-| 2 | Mặt bằng trần theo vùng (module trần, cao độ, cửa thăm) | 1:200–1:100 | TC | — |
-| 2 | Mặt bằng thoát nạn / PCCC mỗi tầng (khoang cháy, lối thoát, khoảng cách) | 1:500 | CS | — |
-| 2 | Mặt bằng biển chỉ dẫn (wayfinding) | 1:500–1:200 | TC | — |
-| 3 | Mặt đứng tổng mọi hướng (phía ngoài, phía sân đỗ) | 1:1000–1:500 | CS | — |
-| 3 | Mặt đứng theo đoạn | 1:200 | KT | — |
-| 3 | Triển khai mặt dựng kính lớn | 1:100–1:50 | TC | — |
-| 4 | Mặt cắt tổng ngang nhà ga (đường phía ngoài → sảnh → phòng chờ → cầu ống lồng → sân đỗ) | 1:500 | CS | Cao độ các tầng, đường, sân đỗ |
-| 4 | Mặt cắt tổng dọc | 1:500 | CS | — |
-| 4 | Mặt cắt chi tiết theo vùng / theo trục | 1:200–1:100 | KT | — |
-| 5 | Thang cuốn, băng chuyền người đi bộ, thang máy, thang bộ thoát nạn: mặt bằng + mặt cắt | 1:100–1:50 | KT | — |
-| 6 | Khu làm thủ tục (quầy check-in, băng cân hành lý) | 1:100–1:50 | KT | — |
-| 6 | Khu soi chiếu an ninh, xuất nhập cảnh, hải quan | 1:100–1:50 | KT | — |
-| 6 | Phòng chờ cửa ra + cầu ống lồng / cửa ra xe buýt sân đỗ | 1:100–1:50 | KT | — |
-| 6 | Khu nhận hành lý | 1:100 | KT | — |
-| 6 | Phòng chờ hạng thương gia / VIP | 1:50 | TC | — |
-| 6 | Khu vệ sinh công cộng điển hình (cả phòng người khuyết tật, phòng mẹ và bé) | 1:50–1:25 | TC | — |
-| 6 | Khu thương mại / ăn uống: mặt bằng phân lô gian hàng | 1:200–1:100 | KT | — |
-| 7 | Cửa, vách kính, cửa an ninh / kiểm soát (thống kê kèm cấp an ninh, chống cháy) | 1:50 | KT | — |
-| 8 | Chi tiết mái lớn: máng thu, cửa lấy sáng, diềm, chống thấm, khe co giãn | 1:20–1:5 | TC | — |
-| 8 | Chi tiết mặt dựng kính lớn: neo, chân, đỉnh, khe co giãn | 1:20–1:5 | TC | — |
-| 8 | Chi tiết khe co giãn kết cấu giữa các khối | 1:10–1:5 | TC | — |
+| Nhóm | Bản vẽ | Tỷ lệ | GĐ | Nội dung bắt buộc | Loại |
+|---|---|---|---|---|---|
+| 0 | Bảng chỉ tiêu: công suất (triệu khách/năm), giờ cao điểm, diện tích từng khu chức năng, số quầy / cửa ra / băng chuyền | — | CS | — | `schedule` |
+| 0 | Sơ đồ chia vùng + key plan chuẩn của cả dự án | không tỷ lệ | CS | Tên vùng giữ nguyên toàn bộ hồ sơ (Z5) | `notes` |
+| 1 | Mặt bằng tổng thể cảng: nhà ga, sân đỗ, đường lăn, đường giao thông phía ngoài, nhà xe, công trình phụ trợ | 1:5000–1:2000 | CS | — | `site` |
+| 1 | Tổng mặt bằng nhà ga + phía ngoài (đường dẫn, cầu cạn đến / đi, bãi xe) | 1:1000–1:500 | CS | — | `site` |
+| 2 | Mặt bằng tổng mỗi tầng (chỉ dẫn vùng, Z4) | 1:1000–1:500 | CS | — | `plan` |
+| 2 | Mặt bằng mỗi tầng theo vùng | 1:200 (CS) · 1:100 (KT, TC) | CS | Matchline, key plan | `plan` |
+| 2 | Mặt bằng phân luồng: đi, đến, nối chuyến, quốc tế / quốc nội, VIP, nhân viên (màu + legend) | 1:1000–1:500 | CS | — | `thematic` |
+| 2 | Mặt bằng phân khu an ninh: landside / airside, cách ly, điểm soi chiếu, cửa kiểm soát | 1:1000–1:500 | CS | — | `thematic` |
+| 2 | Mặt bằng hệ hành lý (nền phối hợp BHS): băng chuyền, phòng phân loại, băng trả hành lý | 1:500–1:200 | KT | — | `thematic` |
+| 2 | Mặt bằng mái: module mái, cửa lấy sáng, thoát nước, đường đi bảo trì | 1:500 tổng + 1:200 theo vùng | CS | — | `roof` |
+| 2 | Mặt bằng trần theo vùng (module trần, cao độ, cửa thăm) | 1:200–1:100 | TC | — | `ceiling` |
+| 2 | Mặt bằng thoát nạn / PCCC mỗi tầng (khoang cháy, lối thoát, khoảng cách) | 1:500 | CS | — | `thematic` |
+| 2 | Mặt bằng biển chỉ dẫn (wayfinding) | 1:500–1:200 | TC | — | `thematic` |
+| 3 | Mặt đứng tổng mọi hướng (phía ngoài, phía sân đỗ) | 1:1000–1:500 | CS | — | `elevation` |
+| 3 | Mặt đứng theo đoạn | 1:200 | KT | — | `elevation` |
+| 3 | Triển khai mặt dựng kính lớn | 1:100–1:50 | TC | — | `facade` |
+| 4 | Mặt cắt tổng ngang nhà ga (đường phía ngoài → sảnh → phòng chờ → cầu ống lồng → sân đỗ) | 1:500 | CS | Cao độ các tầng, đường, sân đỗ | `section` |
+| 4 | Mặt cắt tổng dọc | 1:500 | CS | — | `section` |
+| 4 | Mặt cắt chi tiết theo vùng / theo trục | 1:200–1:100 | KT | — | `section` |
+| 5 | Thang cuốn, băng chuyền người đi bộ, thang máy, thang bộ thoát nạn: mặt bằng + mặt cắt | 1:100–1:50 | KT | — | `vertical`, `stair` |
+| 6 | Khu làm thủ tục (quầy check-in, băng cân hành lý) | 1:100–1:50 | KT | — | `enlarged` |
+| 6 | Khu soi chiếu an ninh, xuất nhập cảnh, hải quan | 1:100–1:50 | KT | — | `enlarged` |
+| 6 | Phòng chờ cửa ra + cầu ống lồng / cửa ra xe buýt sân đỗ | 1:100–1:50 | KT | — | `enlarged` |
+| 6 | Khu nhận hành lý | 1:100 | KT | — | `enlarged` |
+| 6 | Phòng chờ hạng thương gia / VIP | 1:50 | TC | — | `enlarged` |
+| 6 | Khu vệ sinh công cộng điển hình (cả phòng người khuyết tật, phòng mẹ và bé) | 1:50–1:25 | TC | — | `enlarged` |
+| 6 | Khu thương mại / ăn uống: mặt bằng phân lô gian hàng | 1:200–1:100 | KT | — | `thematic` |
+| 7 | Cửa, vách kính, cửa an ninh / kiểm soát (thống kê kèm cấp an ninh, chống cháy) | 1:50 | KT | — | `door` |
+| 8 | Chi tiết mái lớn: máng thu, cửa lấy sáng, diềm, chống thấm, khe co giãn | 1:20–1:5 | TC | — | `detail` |
+| 8 | Chi tiết mặt dựng kính lớn: neo, chân, đỉnh, khe co giãn | 1:20–1:5 | TC | — | `detail` |
+| 8 | Chi tiết khe co giãn kết cấu giữa các khối | 1:10–1:5 | TC | — | `detail` |
 
 ## 3. Layout đặc thù
 

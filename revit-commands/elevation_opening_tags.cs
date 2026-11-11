@@ -20,7 +20,7 @@
       },
       "addLeader": {
         "type": "boolean",
-        "description": "Give every processed tag a free-end vertical leader ending leaderInsetMm inside the…"
+        "description": "give each processed tag a vertical free-end leader (end leaderInsetMm inside)"
       },
       "leaderInsetMm": {
         "type": "number",
@@ -83,7 +83,7 @@
       },
       "maxGapMm": {
         "type": "number",
-        "description": "Paper mm: an existing tag (no leader) farther than this from its element is reported 'far'"
+        "description": "paper mm: an existing tag (no leader) farther than this from its element = 'far'"
       },
       "fixExisting": {
         "type": "boolean",

@@ -2,7 +2,7 @@
 name: drafting-view-create
 description: "Chuẩn tạo view cho sheet từ sổ bộ hồ sơ: mỗi loại bản vẽ → loại view Revit (floor plan, ceiling plan, duplicate, dependent, elevation, section, callout, detail, drafting, legend, schedule), tạo từ đâu, level, template, tỷ lệ, crop, tên view; quy tắc VC1–VC12; lệnh có / chưa có. View creation standard."
 metadata:
-  updated: "2026-11-05"
+  updated: "2026-11-11"
   related: ["drafting-sheet-layout", "drafting-sheet-create", "drafting-views-sheets", "drafting-tools"]
 ---
 
@@ -60,19 +60,23 @@ Tên template là **khoá trong profile**: profile ghi tên template thật củ
 
 ## 3. Lệnh
 
-**Đã có**
+**Đọc và chỉnh**
 | Việc | Lệnh |
 |---|---|
 | Đọc view, level, template | `query_elements_with_filter` (category `Views`, `Levels`); `sheet_browser_names` |
 | Đọc crop, scope box, tỷ lệ | `view_crop_info` |
 | Kéo cạnh crop tới trục | `crop_side_to_grids` |
 
-**Chưa có: lệnh `view_create`** (cần viết trong `revit-commands/`). Đây là hợp đồng để card dùng khi có lệnh:
+**Lệnh `view_create`** (tạo view; chi tiết đầy đủ ở phần `// ---- Details` của `revit-commands/view_create.cs`):
 - `items[]`, mỗi item gồm:
   - `kind`: `floorPlan` | `ceilingPlan` | `duplicate` | `dependent` | `elevation` | `section` | `callout` | `detail` | `drafting` | `legendCopy` | `scheduleCopy`;
-  - `name`, `level`, `sourceViewId`, `scopeBox`, `template`, `scale`;
-  - `marker {x, y, direction}` (mặt đứng) / `line {start, end, depth}` (mặt cắt) / `box {min, max}` (callout), toạ độ mm model.
-- `mode`: `preview` | `apply` | `undo`; `logPath`.
-- Kết quả: id view đã tạo, view trùng đã dùng lại, lỗi theo từng item (ngắn, ≤ 1,5k ký tự).
+  - `name`, `level`, `sourceViewId`, `scopeBox`, `template`, `scale`, `viewType`, `params {tên tham số: giá trị}` (nhóm Project Browser, VC10);
+  - `marker {x, y, direction, depth, width, bottom, top}` (mặt đứng; `direction` = hướng **nhìn**: `east` | `north` | `west` | `south`, số độ hoặc `{x, y}`);
+  - `line {start, end, depth, bottom, top}` (mặt cắt; view nhìn về **bên trái** của hướng start → end);
+  - `box {min, max}` (callout, detail). Toạ độ mm model; `bottom` / `top` là mm so với gốc nội bộ.
+- `mode`: `preview` | `apply` | `undo`; `logPath` (bắt buộc với apply, undo).
+- Kết quả: `Ids` theo thứ tự item, `Problems` gồm `Error`, `Warn`, `Reused` (view cùng tên cùng loại đã có: dùng lại, VC1), `Similar` (mặt bằng cùng level chưa đặt lên sheet: xem trước khi tạo cái thứ hai).
+- Tự làm: tên (VC2), template (VC3: template nêu tên mà không có trong model → lỗi, không tạo view), tỷ lệ (VC4: lệch do template → `Warn`), scope box, bật crop + annotation crop (VC5).
+- Không làm được: tạo legend mới (Revit API không cho; chỉ copy legend đã có); crop theo trục thì dùng `crop_side_to_grids` sau khi tạo.
 
-Chưa có lệnh thì card nào cần tạo view sẽ: lập bảng tạo view (loại, tạo từ, level, template, tỷ lệ, tên) → user tạo trong Revit → Claude đọc lại bằng các lệnh đã có và kiểm theo VC12.
+Item báo `Error` mà không sửa được từ profile: đưa đúng dòng đó cho user tạo tay (loại, tạo từ, level, template, tỷ lệ, tên), rồi đọc lại bằng các lệnh ở trên và kiểm theo VC12.
