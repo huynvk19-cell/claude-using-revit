@@ -10,6 +10,7 @@ metadata:
 
 ## 0. Chữ trong hồ sơ (user, 2026-11-11)
 
+- **Chữ thông thường cao 2.5 mm giấy** (user, 2026-11-11, mọi loại hồ sơ kiến trúc): ghi chú, dim, spot, tag, nội dung bảng. Chữ lớn hơn chỉ cho tiêu đề (tên view, tên bảng, tiêu đề nhóm), nhỏ hơn chỉ khi ký hiệu không đủ chỗ.
 - Mọi chữ của hồ sơ dùng font **Arial**, **width factor 0.8**: text note, dim, spot, schedule (tiêu đề, đầu cột, nội dung), tag, view title, khung tên.
 - Type chữ / dim mới tạo (kể cả type đánh dấu, `drafting-work-rules.md` §2c) cũng theo quy tắc này; chiều cao chữ giữ theo type gốc.
 - Kiểm khi nhận model: type nào khác Arial / 0.8 thì đổi type đó (không đổi từng phần tử). Family annotation (tag, view title, khung tên) đổi trong family rồi nạp lại.
