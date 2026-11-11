@@ -24,6 +24,7 @@ description: "Verify Revit drawing changes visually: export sheets to PNG, crop 
    - dims or tags on openings that are not visible;
    - duplicates of existing dims;
    - titles that are off-centre or overlapping;
-   - grid bubbles that overlap.
+   - grid bubbles that overlap;
+   - items of one kind out of line (ngay hàng thẳng lối, `drafting-work-rules.md` §2a): dim lines, tags, spot elevations, bubbles, viewports and titles that sit a little off their row or column, or rows unevenly spaced.
 6. **Fix, re-export only the affected sheet or view, and check again** (subagent again).
 7. **Report what you could not fix** under "Cần xem".

@@ -2,6 +2,8 @@
 
 This repo holds drafting **workflows** (`workflows/`, English: skills in a set order), **skills** (`skills/`, English), **subagents** (`agents/`), **standards** (`domain/`, Vietnamese), MCP **commands** (`revit-commands/`, C#) and the Revit add-in **claude using revit** (`addin/`: C# host in `addin/src/`, ribbon tools + shared tasks in Python in `addin/extension/`). claude using revit is at once the ribbon tab and the MCP server (`http://127.0.0.1:8970/mcp`, server name `claude-using-revit`); it needs neither pyRevit nor another Revit MCP. Installed copies live in `~/.claude/skills/`, `~/.claude/agents/`, `~/.claude/drafting-domain/` and `%APPDATA%\claude-using-revit\`.
 
+**Character of the repo: ngay hàng thẳng lối** (rows and columns). Every component of an architectural drawing sits on a shared line with its kind, evenly spaced (`domain/drafting-work-rules.md` §2a). A new standard, card or command that places something says what it lines up with.
+
 ## Read only what the task needs
 
 - Never read the whole repo, all of `domain/`, all of `skills/`, all of `workflows/` or all the step cards of a skill.

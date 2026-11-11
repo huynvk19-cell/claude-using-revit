@@ -2,7 +2,7 @@
 name: drafting-work-rules
 description: "Quy tắc làm việc khi Claude triển khai bản vẽ Revit như một kiến trúc sư triển khai (drafting architect): giới hạn quyền, nhịp làm việc, báo cáo. Hard rules and working loop."
 metadata:
-  updated: "2026-10-14"
+  updated: "2026-11-11"
   related: ["drafting-dimensions", "drafting-annotation", "drafting-views-sheets", "drafting-tools", "drafting-api-pitfalls"]
 ---
 
@@ -42,6 +42,24 @@ Việc cần sửa model (vd. room không có tên → tag "?") → ghi vào **v
    - Thêm một dòng vào file domain tương ứng nếu áp dụng cho mọi dự án.
    - Thêm vào profile nếu chỉ riêng dự án này.
 
+## 2a. Tính cách: ngay hàng thẳng lối (user, 2026-11-11)
+
+Mọi thành phần của bản vẽ kiến trúc nằm theo **hàng** và **lối** (cột): cùng loại, cùng hàng thì chung một đường gióng ngang hoặc dọc so với khổ giấy; khoảng cách giữa các hàng đều nhau. Không đặt "gần đúng", không so le. Đây là phần **ĐẸP** của §2b và áp dụng cho mọi chủ đề, kể cả chủ đề chưa có luật riêng.
+
+| Thành phần | Thẳng theo gì | Luật |
+|---|---|---|
+| Dòng dim | Các lớp song song, cách đều 7 mm giấy; các chuỗi cùng lớp nối thành một đường | §2b, `drafting-dimensions.md` |
+| Tag cửa cùng hàng | Cùng cao độ | `drafting-opening-tags.md` T7 |
+| Room tag | Thẳng hàng hoặc thẳng cột với tag bên cạnh | `drafting-annotation.md` TR2 |
+| Cao độ, ký hiệu, ghi chú cùng loại | Chung một đường ngang hoặc dọc khi đứng gần nhau | — |
+| Leader | Chỉ ngang / dọc, nhiều nhất một điểm gấp | `drafting-annotation.md`, "Leader của tag" |
+| Bubble trục | Mỗi phía một hàng, ngoài crop | `drafting-grid-dims.md`, "Một hàng mỗi phía" |
+| Viewport, title trên sheet | Level / trục cùng tên thẳng hàng; cùng điểm gốc giữa các sheet | `drafting-sheet-layout.md` LO4, LO5 |
+
+- **Thứ tự ưu tiên**: đúng chủ thể và không đè nhau trước, thẳng hàng sau. Vd. dim cửa gần cửa quan trọng hơn thẳng hàng với dim khác (`drafting-opening-dims.md`).
+- Phần tử mới đặt cạnh phần tử có sẵn cùng loại → **bám theo hàng / lối đã có**, không mở hàng mới lệch vài mm.
+- Kiểm tra: toạ độ từ tool (`view_elem_boxes`, `view_dims_snapshot`, `room_tags_score`), lệch ≤ 1 mm giấy mới coi là thẳng; rồi ảnh view. Còn lệch mà không sửa được → "Cần xem".
+
 ## 2b. Tiêu chí hoàn thành: ĐỦ – ĐÚNG – ĐẸP (user, 2026-10-07)
 
 Một bản vẽ chỉ được báo "xong" khi đạt cả ba. Kiểm tra trước khi báo cáo, cho từng view của đợt.
@@ -50,7 +68,7 @@ Một bản vẽ chỉ được báo "xong" khi đạt cả ba. Kiểm tra trư�
 |---|---|---|
 | **ĐỦ** | Mọi mục của chuẩn (dim, tag, cao độ, hoàn thiện, path, số bậc…) đều có trên view. **Không bỏ qua mục nào im lặng**: mục không làm được → hỏi user hoặc ghi rõ vào "Việc tồn" kèm lý do. Không tự kết luận "dự án không dùng" khi chưa xem bản vẽ cùng loại của dự án. | Audit của chuẩn (vd. `stair_plan_audit`) không còn `missing`, trừ mục user đã duyệt bỏ. Đối chiếu với view cùng sheet đã hoàn chỉnh. |
 | **ĐÚNG** | Số liệu lấy từ model (không đếm bằng mắt, không bịa). Dim bám hình học thật, đúng mép theo chuẩn (vd. thông thuỷ: lan can → mép bậc/chiếu nghỉ → tường hoàn thiện). Giá trị khớp tính toán (± 1 mm). Mã/tên đúng type, đúng tham số. Mọi dim/tag **thật sự được vẽ** (Box ≠ null, thấy trên ảnh). | Audit `OK`; `view_elem_boxes` (Box ≠ null); ảnh view. |
-| **ĐẸP** | Không chữ/tag/dim đè nhau hay đè nét chính; các dòng dim cách đều (7 mm giấy), thẳng hàng; chữ đoạn ngắn được tách ra; leader ngắn, không cắt chữ; tag gần chủ thể; cùng kiểu trình bày với các view đã có trên cùng sheet. | `annotation_overlaps` = 0; ảnh view (xuất **view**, không xuất sheet). |
+| **ĐẸP** | Không chữ/tag/dim đè nhau hay đè nét chính; **ngay hàng thẳng lối** (§2a): các dòng dim cách đều (7 mm giấy), thẳng hàng, tag / ký hiệu cùng loại chung đường gióng; chữ đoạn ngắn được tách ra; leader ngắn, không cắt chữ; tag gần chủ thể; cùng kiểu trình bày với các view đã có trên cùng sheet. | `annotation_overlaps` = 0; ảnh view (xuất **view**, không xuất sheet). |
 
 ## 2b2. Điểm thẻ bước 0–10 (user 2026-10-21)
 
