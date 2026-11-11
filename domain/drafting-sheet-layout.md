@@ -124,7 +124,7 @@ File bộ hồ sơ của từng loại công trình **cộng thêm hoặc sửa*
 
 | Mã | Quy tắc |
 |---|---|
-| LO1 | **Vùng vẽ** = trong khung, trừ dải khung tên và cột ghi chú (nếu có), trừ lề tới khung. Lề và kích thước dải khung tên lấy theo profile; mặc định lề ≥ 10 mm giấy. **Khổ A2: viền khung cách mép giấy 5 mm** (user, 2026-11-11), khung tên A2 sửa theo. Không viewport, title, legend nào được ra ngoài vùng vẽ. |
+| LO1 | **Vùng vẽ** = trong khung, trừ dải khung tên và cột ghi chú (nếu có), trừ lề tới khung. Lề và kích thước dải khung tên lấy theo profile; mặc định lề ≥ 10 mm giấy. **Khổ A2: viền khung cách mép giấy 5 mm** (user, 2026-11-11), khung tên A2 sửa theo; mọi chữ của khung tên (kể cả ngày in) nằm trong khung, không ra lề. Không viewport, title, legend nào được ra ngoài vùng vẽ. |
 | LO2 | **Một sheet một chủ đề, một tỷ lệ chính.** View phụ (key plan, chi tiết nhỏ) được có tỷ lệ khác, nhưng tỷ lệ phải ghi trên title của view đó. |
 | LO3 | **Thứ tự đọc**: trái → phải, trên → dưới. View chính (lớn nhất) đặt ở trên–trái hoặc chiếm giữa sheet. Mặt đứng xếp theo thứ tự trục (1→n, rồi A→n). Mặt cắt xếp theo số hiệu. Chi tiết xếp theo số. |
 | LO4 | **Cùng vị trí giữa các sheet**: mặt bằng các tầng cùng loại (bố trí, kích thước, hoàn thiện, trần) đặt trên các sheet sao cho cùng một giao trục gốc nằm đúng cùng một điểm trên giấy (lật trang thấy trục chồng khít). Mặt bằng các vùng (§7) cũng vậy, theo từng vùng. |
@@ -136,7 +136,7 @@ File bộ hồ sơ của từng loại công trình **cộng thêm hoặc sửa*
 | LO10 | **Mật độ**: view chiếm khoảng 40–85 % vùng vẽ. Sheet quá trống → gộp với các view nhỏ cùng chủ đề. Sheet quá chật → tách sang sheet tiếp theo của cùng nhóm. |
 | LO11 | **Mỗi view chỉ nằm trên một sheet.** Cùng một vùng cần hiện ở nhiều nơi → dùng dependent view hoặc duplicate; không đặt hai lần. Legend thì được đặt trên nhiều sheet. |
 | LO12 | **Tham chiếu**: sau khi đặt hoặc dời view, các ký hiệu mặt cắt, callout, mặt đứng phải trỏ đúng số sheet / số view (Revit tự cập nhật). Ký hiệu nào còn trỏ tới view chưa đặt lên sheet → đưa vào việc tồn. |
-| LO13 | **Đường chia vùng** (user, 2026-11-11): sheet có từ 2 view (hoặc bảng) trở lên thì vùng vẽ được chia bằng nét mảnh (line style `Thin Lines`) như cắt miếng bánh: mỗi đường chạy suốt từ mép tới mép của vùng đang chia, nằm giữa khe hở của hai nhóm view; chia tiếp từng phần cho tới khi mỗi ô chứa đúng một view kèm title. Không đường nào cắt qua view, title, dim, bubble. Lệnh `sheet_zone_lines` (chạy lại sau mỗi lần dời view). |
+| LO13 | **Không kẻ đường chia vùng giữa các view** (user, 2026-11-11: các đường kẻ không có nhiều ý nghĩa). Các view tách nhau bằng khoảng hở (LO6), mỗi view một ô bố cục; không thêm detail line trên sheet. |
 
 ## 7. Chia vùng công trình lớn (Z1–Z5)
 
