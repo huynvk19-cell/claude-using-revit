@@ -25,6 +25,11 @@ jobs:
         with:
           node-version: 20
 
+      - name: Token budget + workflow library (descriptions, command headers, Tools lines, cards)
+        run: |
+          python3 addin/tests/budget_check.py
+          python3 addin/tests/workflow_lib_check.py
+
       - name: Build the add-in (Revit 2023-2027)
         run: |
           for v in 2023 2024 2025 2026 2027; do

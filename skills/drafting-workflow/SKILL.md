@@ -1,6 +1,6 @@
 ---
 name: drafting-workflow
-description: "Run a whole drafting job as a fixed workflow: gather every view / sheet of the job once, then skills in a set order, each step done in one pass on all views before the next, with a done-when gate and a checklist file (nothing skipped, resumable). Workflows: facade elevations/sections, floor plans, ceiling plans, stair core, sheet layout, comment round. Use for quy trình, làm trọn bộ, gom view, gom sheet, làm hết mặt đứng, triển khai mặt bằng, mặt bằng trần, làm lõi thang, layout bộ hồ sơ, tiếp tục quy trình, workflow."
+description: "Run a whole drafting job as a fixed workflow: gather every view / sheet once, then skills in a set order, one step on all views before the next, done-when gates, resumable checklist. Workflows: facade elevations/sections, floor plans, ceiling plans, stair core, sheet layout, comment round. Use for quy trình, làm trọn bộ, gom view, gom sheet, làm hết mặt đứng, triển khai mặt bằng, mặt bằng trần, làm lõi thang, layout bộ hồ sơ, tiếp tục quy trình, workflow."
 ---
 
 # Drafting workflow (quy trình)

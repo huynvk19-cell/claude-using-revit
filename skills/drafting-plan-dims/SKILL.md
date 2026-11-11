@@ -1,6 +1,6 @@
 ---
 name: drafting-plan-dims
-description: "Develop floor plan dimension drawings (khai triển mặt bằng kích thước) via Revit MCP, one step card at a time. Cards: door/window dims to walls and grids (PD1–PD6), door/window tags (PT1–PT6), tag room (TR1–TR8, shortest leader, scored), floor spot elevations (FL1–FL3), wall tags (WT1–WT5), slope marks (SL1–SL5). Use for khai triển mặt bằng kích thước, mặt bằng kích thước, dim cửa trên mặt bằng, dim cửa tới trục, dim cửa tới tường, tag cửa mặt bằng, tag room, tag phòng còn thiếu, tag cao độ sàn, tag tường, wall tag, ký hiệu độ dốc, spot slope, floor plan dims."
+description: "Floor plan dimension drawings (khai triển mặt bằng kích thước) via Revit MCP, card by card: door/window dims (PD) and tags (PT), tag room (TR), floor spot elevations (FL), wall tags (WT), slope marks (SL). Use for mặt bằng kích thước, dim cửa trên mặt bằng, dim cửa tới trục, dim cửa tới tường, tag cửa mặt bằng, tag room, tag phòng còn thiếu, tag cao độ sàn, tag tường, wall tag, ký hiệu độ dốc, spot slope, floor plan dims."
 ---
 
 # Floor plan dimensions (khai triển mặt bằng kích thước)

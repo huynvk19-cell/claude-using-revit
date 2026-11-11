@@ -16,7 +16,7 @@
       },
       "includeRoomTags": {
         "type": "boolean",
-        "description": "default false: room tag bounding boxes span the family's whole label frame, far…"
+        "description": "include room tags (default false: their boxes span the whole label frame)"
       },
       "debugIds": {
         "type": "array",

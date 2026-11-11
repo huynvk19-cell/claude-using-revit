@@ -18,11 +18,14 @@ This repo holds drafting **workflows** (`workflows/`, English: skills in a set o
 - Plan and section of the same element are separate topics (e.g. `drafting-stair-plan` vs `drafting-stair-section-parallel`).
 - No client names, model names, sheet numbers or machine paths in the repo (README, "Keeping it alive").
 - Commands take project values as arguments (from `drafting-profile.md`), never hard-coded.
-- Command headers stay short (they are sent to the model on every request): `description` in 1–2 lines, parameter descriptions ≤ 80 characters. Long explanations go in the `// ---- Details` comment below the header.
+- Command headers stay short (they are sent to the model on every request): `description` in 1–2 lines (≤ 250 characters), parameter descriptions ≤ 80 characters, whole phrases (never cut with `…`). Long explanations go in the `// ---- Details` comment below the header.
 - Command results stay short by default: counts + only the problems / changed ids (aim ≤ 1.5k characters). Full lists go behind a `verbose` (or `detail`) flag or into the `logPath` file.
 - Each skill has a `**Tools**` line listing the commands it uses (loaded in one ToolSearch call). When a skill starts or stops using a command, update that line.
 - **Shared tasks** (one job, written once, used by the user and by Claude): a job the user also wants as a ribbon button is a task in `addin/extension/lib/tasks.py` (`@task(help)`, `def name(doc, uidoc, args) -> dict`, no windows, short result, `dryRun` when it writes). The button script calls `tasks.run(...)` or the same lib functions; Claude calls it through the one built-in MCP tool `cur_task`. Never write the same logic again as a C# command; skills name the task instead of describing its steps. Add the task to the table in `domain/drafting-tools.md`.
-- Skill `description`s are sent on every request: what it does + trigger words, ≤ ~500 characters. Rules go in the body.
+- Skill `description`s are sent on every request: what it does + trigger words, ≤ 500 characters. Rules go in the body.
+- A skill never tells Claude to read a long standard whole: cards name the rule (`SB1`, `G3`…), and a standard over ~120 lines is read by section (`drafting-session`, "Standards by section"). Keep one heading per rule in the standard so a section can be read alone.
+- What `drafting-work-rules.md` or another always-loaded file already says is not repeated in skills and cards: point to its § instead (e.g. a card's **Score** keeps only its own deductions).
+- After a change to `skills/`, `agents/`, `workflows/` or a command header: `python addin/tests/budget_check.py` (description lengths, cut-short header text, **Tools** names) and `python addin/tests/workflow_lib_check.py`. CI runs both.
 
 ## The claude using revit add-in (`addin/`)
 

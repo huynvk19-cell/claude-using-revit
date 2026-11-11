@@ -20,7 +20,7 @@
       },
       "titledType": {
         "type": "string",
-        "description": "viewport type name to give untitled (non-legend) viewports, e.g"
+        "description": "viewport type name for untitled (non-legend) viewports"
       },
       "gapMm": {
         "type": "number",

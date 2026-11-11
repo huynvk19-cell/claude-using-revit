@@ -17,7 +17,7 @@
       "bubbleMm": { "type": "number", "description": "grid bubble diameter on paper mm kept clear, default 10 (0 = ignore)" },
       "rebalance": { "type": "boolean", "description": "move good tags aside so tags <= keepAbove score better, default true" },
       "keepAbove": { "type": "number", "description": "rebalance: low = score <= this; a moved good tag stays above it, default 7" },
-      "outPath": { "type": "string", "description": "write Items + Problems to this JSON file (one view per call); result = counts only" }
+      "outPath": { "type": "string", "description": "write Items + Problems to this JSON file (one view per call); result = counts" }
     },
     "required": ["viewIds"]
   },

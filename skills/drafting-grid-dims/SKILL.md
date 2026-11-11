@@ -1,13 +1,13 @@
 ---
 name: drafting-grid-dims
-description: "Grid dimensions on architectural drawings via Revit MCP, rules G1–G5: parallel grids form a group; each group gets exactly ONE grid-to-grid chain and ONE overall dim per drawing, on one side, in the band OUTSIDE the crop and INSIDE the grid bubbles; the annotation crop is pulled out to the bubbles so no grid dim is clipped; no grid bubble is covered (bubbles of a side in one row; only overlapping ones get an elbow to the roomier side). Audit, fix one view at a time, verify. Use for dim trục, dim cách trục, dim tổng trục, thiếu dim trục, dim trục trùng, dim trục bị mất, kéo crop annotate, annotation crop, bubble trục bị che, bubble chồng nhau, elbow bubble, bubble cùng hàng, grid dimensions."
+description: "Grid dimensions on architectural drawings via Revit MCP, rules G1–G5: one grid-to-grid chain + one overall dim per grid group, in the band outside the crop and inside the bubbles; annotation crop pulled to the bubbles; no covered bubbles (elbows). Use for dim trục, dim cách trục, dim tổng trục, thiếu dim trục, dim trục trùng, dim trục bị mất, kéo crop annotate, annotation crop, bubble trục bị che, bubble chồng nhau, elbow bubble, bubble cùng hàng, grid dimensions."
 ---
 
 # Grid dims (G1–G5)
 
 **Tools** (load all in one ToolSearch call): `align_grid_ends`, `annotation_overlaps`, `export_sheet_images`, `grid_bubble_elbow`, `grid_dims_band`, `move_element`, `ui_view_focus`, `view_elem_boxes`, `viewport_titles_place`.
 
-Standard: `~/.claude/drafting-domain/drafting-grid-dims.md` (Vietnamese). Rules G1–G5 decide every case. Read it first.
+Standard: `~/.claude/drafting-domain/drafting-grid-dims.md` (Vietnamese). Rules G1–G5 decide every case. Read it by section (`drafting-session`, Standards by section): the G1–G5 summary first, then the rule the card names.
 
 Load `drafting-session` first. Take these values from the project `drafting-profile.md`:
 - the check dim type → `dimType`;

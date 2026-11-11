@@ -37,7 +37,7 @@
       },
       "overlapMin": {
         "type": "number",
-        "description": "Min length (paper mm) of the element's visible linework inside the tag head to count…"
+        "description": "Paper mm of the element's own linework under a tag head that counts as overlap"
       },
       "untaggedOnlyInTaggedViews": {
         "type": "boolean",

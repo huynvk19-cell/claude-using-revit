@@ -55,7 +55,7 @@
         "items": {
           "type": "string"
         },
-        "description": "side order when a group has no dims yet: 'bottom','top','left','right' (profile, e.g"
+        "description": "side order when a group has no dims yet: 'bottom','top','left','right' (profile)"
       },
       "overallMm": {
         "type": "number",
@@ -71,7 +71,7 @@
       },
       "annoMarginMm": {
         "type": "number",
-        "description": "paper mm the annotation crop keeps beyond the bubble ends of the grids and the grid…"
+        "description": "paper mm the annotation crop keeps beyond the grid bubbles and grid dims"
       },
       "move": {
         "type": "boolean",
@@ -83,7 +83,7 @@
       },
       "extendGrids": {
         "type": "boolean",
-        "description": "extend the 2D grid ends on the chosen side when the band between crop and bubble is…"
+        "description": "extend 2D grid ends on the chosen side when the crop-bubble band is too narrow"
       },
       "fitAnnoCrop": {
         "type": "boolean",
@@ -110,7 +110,7 @@
       },
       "forceSides": {
         "type": "object",
-        "description": "preview / apply: side per group kind, e.g"
+        "description": "side per group kind, e.g. {horizontal:'right', vertical:'bottom'}"
       },
       "logPath": {
         "type": "string"

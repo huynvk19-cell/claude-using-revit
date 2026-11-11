@@ -11,7 +11,7 @@ description: "Detail a stair core PLAN view (plan only, NOT a stair section) via
 
 **Plan views only.** Stair sections are a different job: along the flights → `drafting-stair-section-parallel`; across the flights → `drafting-stair-section-cross`. If the view is a section or elevation, stop and say so.
 
-Standard: `~/.claude/drafting-domain/drafting-stair-plan.md` (Vietnamese). Its rules decide every case. Read it first. Its section "Mẫu tham chiếu" describes the user's sample sheet: match that layout.
+Standard: `~/.claude/drafting-domain/drafting-stair-plan.md` (Vietnamese). Its rules decide every case. Read it by section (`drafting-session`, Standards by section): §0 and "Mẫu tham chiếu" (the user's sample sheet: match that layout) once per job, then the rule the card names.
 
 Load `drafting-session` first. From the project `drafting-profile.md` take:
 - the **check** dim type → new dims;
