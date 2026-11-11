@@ -66,7 +66,8 @@ Bộ hồ sơ được xếp theo thứ tự đọc: từ cái chung đến cái
 
 | Nhóm | Bản vẽ | Tỷ lệ | GĐ | Loại |
 |---|---|---|---|---|
-| 0 | Bìa + danh mục bản vẽ | — | CS | `cover`, `sheet-list` |
+| 0 | Bìa (sheet riêng) | — | CS | `cover` |
+| 0 | Danh mục bản vẽ (sheet riêng, §8) | — | CS | `sheet-list` |
 | 0 | Ghi chú chung, ký hiệu, chữ viết tắt | — | KT | `notes` |
 | 0 | Bảng vật liệu / hoàn thiện chung | — | KT | `schedule` |
 | 1 | Tổng mặt bằng: chỉ giới, lộ giới, khoảng lùi, cao độ nền, hướng Bắc | 1:500–1:200 | CS | `site` |
@@ -152,6 +153,14 @@ File bộ hồ sơ của từng loại công trình **cộng thêm hoặc sửa*
 - Cả bộ dùng cùng ngôn ngữ, cùng kiểu chữ (in hoa), cùng cách gọi tầng. Song ngữ chỉ khi profile yêu cầu.
 - Tầng điển hình (một view dùng cho nhiều tầng) ghi dải tầng: `MẶT BẰNG TẦNG 5–20 (ĐIỂN HÌNH)`.
 - **Danh mục bản vẽ** liệt kê mọi sheet phát hành, theo thứ tự nhóm (§3). Print set phải khớp với danh mục (`drafting-views-sheets.md` §5).
+- **Bìa và danh mục là hai sheet riêng** (user, 2026-11-11): bìa chỉ có thông tin công trình; danh mục ở sheet kế tiếp.
+- **Cột danh mục, đúng thứ tự** (user, 2026-11-11): `STT | MÃ BẢN VẼ | TÊN BẢN VẼ | TỈ LỆ BẢN VẼ | PHIÊN BẢN | NGÀY PHIÊN BẢN`.
+  - STT = tham số sheet `No.` (biến mới do nút **Chuẩn cột danh mục** / task `sheet_list_columns` tạo); `print_set_sync` đánh lại theo thứ tự bảng, không sửa tay.
+  - MÃ / TÊN = Sheet Number / Sheet Name. PHIÊN BẢN / NGÀY PHIÊN BẢN = Current Revision / Current Revision Date.
+  - TỈ LỆ = tham số sheet `SCALE` (text): các tỷ lệ của view trên sheet, lớn trước nhỏ sau, vd. `1:25, 1:10`; sheet chỉ có bảng / ghi chú ghi `-`. Cập nhật lại sau mỗi lần đổi view trên sheet.
+  - Tiêu đề cột ghi bằng chữ in hoa như trên; tiêu đề bảng `DANH MỤC BẢN VẼ`. Cột ký (Checked / Approved / Designed / Drawn By) ẩn.
+- **Nhóm theo bộ bản vẽ** (user, 2026-11-11): bảng nhóm theo Sheet Collection (Revit 2025 trở lên); Revit 2023–2024 dùng tham số sheet `NHÓM BẢN VẼ` (text), giá trị = số nhóm §3 + tên, vd. `2 - MẶT BẰNG`. Mỗi nhóm có dòng tiêu đề, trong nhóm sắp theo số sheet.
+- **Danh mục dài hơn vùng vẽ**: chia bảng thành cột trên cùng sheet, chỗ cắt nằm giữa hai nhóm (không cắt đôi một nhóm), các cột cùng mép trên.
 
 ## 9. Xong khi (layout của bộ hồ sơ)
 
