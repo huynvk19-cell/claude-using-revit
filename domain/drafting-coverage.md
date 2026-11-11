@@ -59,18 +59,18 @@ Mức là của **nội dung trong view**. Các khâu quanh nó (tạo sheet, t�
 |---|---|---|---|---|
 | 1 | Lập sổ bộ hồ sơ theo loại công trình | `drafting-sheet-layout` | — (Claude lập file sổ) | tự động |
 | 2 | Tạo sheet | `drafting-sheet-create` | `cur_task` | tự động |
-| 3 | Tạo view | `drafting-view-create` | `view_create` (chưa có) | **làm tay**: Claude đưa bảng tạo view, user tạo, Claude kiểm |
+| 3 | Tạo view | `drafting-view-create` | `view_create` | tự động; trừ legend đầu tiên của mỗi loại (Revit không cho tạo legend mới, chỉ copy) |
 | 4 | Chỉnh view: crop, template, đầu trục | `drafting-views-sheets` | `crop_side_to_grids`, `align_grid_ends` | tự động |
 | 5 | Triển khai nội dung | theo cột Loại (§2) | theo cột Loại (§2) | theo mức |
-| 6 | Đặt view lên sheet | `drafting-sheet-place` | `viewport_place` (chưa có) | **làm tay**: Claude đưa bảng bố trí mm, user đặt, Claude kiểm |
+| 6 | Đặt view lên sheet | `drafting-sheet-place` | `viewport_place` | tự động; trừ mũi tên Bắc và ký hiệu khác (không phải view) |
 | 7 | Title, danh mục, print set, PDF | `drafting-tags-titles`, `drafting-views-sheets` | `viewport_titles_place`, `viewport_title_audit`, `cur_task` | tự động |
 | 8 | Kiểm bằng ảnh, kết thúc | `drafting-visual-check`, `drafting-end` | `export_sheet_images` | tự động |
 
-Khâu 3 và 6 chặn mọi sheet của mọi loại công trình: viết hai lệnh này trước mọi loại bản vẽ mới.
+Một lệnh của bảng này chưa viết thì ghi `(chưa có)` sau tên lệnh và ghi **làm tay** ở cột Trạng thái.
 
 ## 4. Cập nhật
 
 - Thêm dòng vào một file bộ hồ sơ → điền cột `Loại` bằng khoá có ở §2. Loại bản vẽ chưa có khoá → thêm một dòng mức 1 vào §2.
-- Thêm skill, lệnh hay workflow cho một loại → sửa dòng của nó ở §2 (và §3 khi `view_create` / `viewport_place` có).
+- Thêm skill, lệnh hay workflow cho một loại → sửa dòng của nó ở §2 (và §3 nếu là lệnh của một khâu chung).
 - Nâng mức chỉ khi đủ điều kiện: mức 2 có skill; mức 3 có lệnh làm; mức 4 có thêm lệnh kiểm và workflow.
 - Kiểm: `python addin/tests/coverage_check.py` (tên skill / workflow / lệnh có thật, mức đủ điều kiện, mọi dòng bộ hồ sơ có `Loại`); nó in ma trận theo từng loại công trình. CI chạy ở mỗi lần push.

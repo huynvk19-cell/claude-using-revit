@@ -1,6 +1,6 @@
 # 04 · Align plan series and elevation rows (căn chuỗi mặt bằng, căn hàng)
 
-**Skill** `drafting-sheet-place` · **Standard** `drafting-sheet-place.md` VP5, VP6; `drafting-sheet-layout.md` LO4, LO5 · **Tools** `sheet_views_ids`, `export_sheet_images` · **Planned** `viewport_place`
+**Skill** `drafting-sheet-place` · **Standard** `drafting-sheet-place.md` VP5, VP6; `drafting-sheet-layout.md` LO4, LO5 · **Tools** `viewport_place`, `sheet_views_ids`, `export_sheet_images`
 **Applies to** the sheets of the job that hold a plan series, or several elevations / sections.
 
 ## Do
@@ -11,9 +11,7 @@
 2. **Elevations / sections on one sheet**:
    - ±0.000 on one line (side by side);
    - grids of the same name in one column (one above the other).
-3. Moving:
-   - with `viewport_place` (`move:true`): `preview` → `apply` with `logPath`;
-   - without it: give the user the move in mm per viewport (right / up), then read back.
+3. Moving: `viewport_place` with `move:true` and the same `gridPoint` as card 03, `preview` → `apply` with `logPath`. `MovedMm` of the rows (`verbose`) is the offset. `Ask` = a viewport last changed by someone else: tell the user which one and by how many mm, do not move it (VP9).
 4. Report the offsets: before / after, per sheet.
 
 ## Done when

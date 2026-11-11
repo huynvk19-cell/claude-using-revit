@@ -99,8 +99,8 @@ Thêm quy trình mới: một file `workflows/<tên>.md` (dòng 0 = `drafting-st
 | `drafting-views-sheets.md` | Viewport, crop, dependent view, template |
 | `drafting-sheet-layout.md` | Layout bộ hồ sơ: loại công trình → file bộ hồ sơ, giai đoạn (YT / CS / KT / TC / HC), nhóm và đánh số bản vẽ, bộ hồ sơ lõi, khổ giấy, tỷ lệ, bố cục trên sheet (LO1–LO12), chia vùng + key plan + matchline (Z1–Z5), tên sheet, **sổ bộ hồ sơ** (§11) |
 | `drafting-sheet-create.md` | Khởi tạo sheet từ sổ (SC1–SC10): gom sheet, số, tên, khung tên, tạo qua danh mục, tham số sheet |
-| `drafting-view-create.md` | Tạo view cho sheet (VC1–VC12): bảng bản vẽ → loại view Revit, tạo từ đâu, template, tỷ lệ, crop, tên; hợp đồng lệnh `view_create` (chưa có) |
-| `drafting-sheet-place.md` | Đặt view lên sheet (VP1–VP10): bảng bố trí mm, thứ tự đặt, căn theo điểm trục, legend / schedule; hợp đồng lệnh `viewport_place` (chưa có) |
+| `drafting-view-create.md` | Tạo view cho sheet (VC1–VC12): bảng bản vẽ → loại view Revit, tạo từ đâu, template, tỷ lệ, crop, tên; lệnh `view_create` |
+| `drafting-sheet-place.md` | Đặt view lên sheet (VP1–VP10): bảng bố trí mm, thứ tự đặt, căn theo điểm trục, legend / schedule; lệnh `viewport_place` |
 | `drafting-sheet-set-<loại>.md` | Bộ bản vẽ riêng của từng loại công trình (cộng vào bộ lõi): `townhouse` nhà liên kế, `villa` biệt thự, `highrise` nhà cao tầng, `airport` sân bay, `public` trường học / bệnh viện / TTTM, `industrial` nhà xưởng / kho. Mỗi job chỉ mở một file |
 | `drafting-coverage.md` | Ma trận độ phủ: loại bản vẽ (cột `Loại` của các file bộ hồ sơ) → skill, workflow, lệnh làm, lệnh kiểm, mức Claude làm được (1–4); chuỗi khâu chung từ sổ tới PDF |
 | `drafting-tools.md` | Danh mục lệnh MCP theo chủ đề |

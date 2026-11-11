@@ -1,6 +1,6 @@
 # 05 · Dependent views per zone (view theo vùng)
 
-**Skill** `drafting-view-create` · **Standard** `drafting-view-create.md` VC9, `drafting-sheet-layout.md` §7 · **Tools** `view_crop_info` · **Planned** `view_create`
+**Skill** `drafting-view-create` · **Standard** `drafting-view-create.md` VC9, `drafting-sheet-layout.md` §7 · **Tools** `view_create`, `view_crop_info`
 **Applies to** the register rows with a `Vùng` (zoned plans).
 
 ## Do
@@ -10,9 +10,7 @@
 3. Check every dependent:
    - its scope box is the zone of its register row;
    - the zone scheme is the same on every level and every plan kind (Z1).
-4. With `view_create` (`kind:"dependent"`): `preview` → `apply`.
-
-   Without it: hand the user the parent → zone list. Read back with `view_crop_info` (scope box per view).
+4. `view_create {items:[{kind:"dependent", sourceViewId:<parent>, scopeBox, name}]}`: `preview` → `apply` with `logPath`. Read back with `view_crop_info` (scope box per view).
 
 ## Done when
 

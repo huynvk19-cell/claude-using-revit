@@ -1,6 +1,6 @@
 # 02 · Notes, legends, key plan, north arrow, schedules (phần cố định)
 
-**Skill** `drafting-sheet-place` · **Standard** `drafting-sheet-place.md` VP4, VP8; `drafting-sheet-layout.md` LO8, Z3 · **Tools** `sheet_views_ids` · **Planned** `viewport_place`
+**Skill** `drafting-sheet-place` · **Standard** `drafting-sheet-place.md` VP4, VP8; `drafting-sheet-layout.md` LO8, Z3 · **Tools** `viewport_place`, `sheet_views_ids`
 **Applies to** the sheets of the job.
 
 ## Do
@@ -11,9 +11,9 @@
    - the north arrow on every plan sheet, same corner;
    - the schedules on their sheets.
 2. Legends may go on many sheets; a schedule goes on one sheet.
-3. With `viewport_place`: one call per batch of sheets, `preview` → `apply` with `logPath`.
-
-   Without it: hand the user the list (sheet → item → point mm). Read back with `sheet_views_ids {sheetPrefix, includeAll:true}`.
+3. `viewport_place`, one call per batch of sheets, `preview` → `apply` with `logPath`: legends, key plan and schedules as `{sheet, viewId, centerMm}`.
+4. The north arrow is a symbol, not a view: the command does not place it. List the plan sheets that lack it for the user (sheet → corner).
+5. Read back with `sheet_views_ids {sheetPrefix, includeAll:true}`.
 
 ## Done when
 
