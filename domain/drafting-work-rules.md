@@ -96,6 +96,22 @@ Một bản vẽ chỉ được báo "xong" khi đạt cả ba. Kiểm tra trư�
 - Không đánh dấu được (ghi vào báo cáo): detail line (chỉ có line style), sửa phần tử có sẵn (dời tag, đầu trục 2D, crop) → chỉ có trong log `apply`.
 - Trả về chính thức chỉ khi user duyệt: `mark_types {action:"restore", suffix, mode:"preview"}` → `apply` (logPath; `viewIds` để giới hạn; `deleteEmpty` xoá type đánh dấu không còn dùng). Kiểm tra còn lại: `mark_types {action:"list", suffix}`.
 
+## 2d. Tên family theo chuẩn riêng (user, 2026-11-11)
+
+- Mọi family loadable trong model mang tên `<MÃ> - <MÔ TẢ IN HOA>`: mã 3 chữ theo category, một dấu ` - `, mô tả tiếng Anh in hoa, các ý cách nhau bằng ` - ` (vd. `ASY - TAG DOOR`, `DOR - DOUBLE FLUSH`, `ASY - TITLE BLOCKS - A2`). Không giữ tiền tố thư viện (`M_`, `RPC`, tên hãng ở đầu); tên hãng, mã sản phẩm đưa xuống cuối mô tả.
+- Family hệ thống (curtain panel, mullion hệ thống, mass) giữ tên Revit. Family annotation không dùng nữa (bị thay bằng bộ ASY) thì xoá khỏi model, không để hai bộ song song.
+- Bảng mã (theo model ES; dòng *đề xuất* là mã mới, user chưa duyệt):
+
+| Mã | Category |
+|---|---|
+| ASY | Mọi category annotation: tag, đầu trục, level, mặt cắt, mặt đứng, callout, view title, spot, generic annotation, khung tên |
+| DIT | Detail Items |
+| DOR | Doors · WIN Windows · FUR Furniture · FUS Furniture Systems · PLF Plumbing Fixtures · SEQ Specialty Equipment |
+| RAI | Balusters, Railings, Supports · PRO Profiles · CWM Curtain Wall Mullions · CWP Curtain Panels |
+| SCL | Structural Columns · SIG Signage · ROA Roads · BCO Boundary Conditions |
+| DFI · PFI · CFI · CTF | Duct / Pipe / Conduit / Cable Tray Fittings |
+| CAS · LIF · GEN · ENT · PLA · SIT · SFD · EEQ | *đề xuất*: Casework · Lighting Fixtures · Generic Models · Entourage · Planting · Site · Structural Foundations · Electrical Equipment |
+
 ## 3. Báo cáo (Report)
 
 - Viết bằng ngôn ngữ của user.
