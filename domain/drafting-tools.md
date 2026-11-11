@@ -159,6 +159,7 @@ Việc mà user làm bằng nút trên tab **claude using revit** thì Claude g�
 |---|---|
 | `view_create` | Tạo view từ danh sách: mặt bằng, duplicate, dependent, mặt đứng (marker), mặt cắt (line), callout / detail (box), drafting, copy legend / schedule; đặt tên, template, tỷ lệ, scope box, bật crop. View cùng tên cùng loại → dùng lại (preview / apply / undo). |
 | `viewport_place` | Đặt view, legend, schedule lên sheet theo mm từ góc dưới trái khung tên: theo tâm hộp, hoặc cho giao 2 trục (trục + level) rơi đúng điểm giấy; `move` dời viewport đã có; báo `Outside`, `Overlaps` (preview / apply / undo). |
+| `sheet_zone_lines` | Chia vùng vẽ của sheet bằng nét mảnh giữa các view (cắt kiểu miếng bánh, LO13): đường từ mép tới mép vùng ở giữa khe hở rộng nhất, chia tiếp tới khi mỗi ô một view; `replace` xoá đường cũ của log; báo `Tight` khi view sát nhau (preview / apply / undo). |
 | `set_viewport_type` | Đổi viewport type (preview / apply / undo). |
 | `print_set_info` | (RO) Các sheet trong một print set (View/Sheet Set), so với schedule danh mục bản vẽ: `MissingInSet`, `OnlyInSet`. |
 | `print_set_rename` | Đổi tên print set (id giữ nguyên). preview / apply. |

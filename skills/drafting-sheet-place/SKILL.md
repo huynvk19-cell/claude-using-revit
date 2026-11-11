@@ -5,7 +5,7 @@ description: "Put the views on their sheets from the sheet register (bỏ view v
 
 # Place views on sheets (bỏ view vào sheet)
 
-**Tools** (load all in one ToolSearch call): `viewport_place`, `export_sheet_images`, `set_viewport_type`, `sheet_views_ids`, `view_crop_info`.
+**Tools** (load all in one ToolSearch call): `viewport_place`, `sheet_zone_lines`, `export_sheet_images`, `set_viewport_type`, `sheet_views_ids`, `view_crop_info`.
 
 The placing cards use `viewport_place {items, mode}` (contract: the standard §3): `preview` first (its boxes and collisions are the real ones), then `apply` with `logPath`. Pass the profile's drawing area as `areaMm` and the Revit user as `me`. `Outside` / `Overlaps` in the result = the layout plan is wrong for that sheet: fix the plan (card 01), do not nudge by eye.
 
