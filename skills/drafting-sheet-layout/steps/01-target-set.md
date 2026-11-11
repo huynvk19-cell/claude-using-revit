@@ -1,6 +1,6 @@
 # 01 · Target drawing set (bộ hồ sơ cần có)
 
-**Skill** `drafting-sheet-layout` · **Standard** `drafting-sheet-layout.md` §2, §3, §4 + the sheet-set file of card 00 · **Tools** `query_elements_with_filter`
+**Skill** `drafting-sheet-layout` · **Standard** `drafting-sheet-layout.md` §2, §3, §4 + the sheet-set file of card 00 + `drafting-coverage.md` §1, §2 · **Tools** `query_elements_with_filter`
 **Applies to** once per job (the whole set).
 
 ## Do
@@ -14,14 +14,15 @@
    - keep the rows whose GĐ is not later than the job's stage, and whose condition holds ("nếu có tầng hầm"…);
    - expand "mỗi tầng" to one row per level, typical floors as one row with their level range;
    - expand per zone (if card 03 already split) and per house type / block.
-3. Fill the columns of this card: `ID`, `Nhóm`, `Bản vẽ`, `Tầng / vùng / mẫu`, `Tỷ lệ`, `GĐ`, `Nguồn`. Every row starts in state `planned`.
+3. Fill the columns of this card: `ID`, `Nhóm`, `Bản vẽ`, `Tầng / vùng / mẫu`, `Tỷ lệ`, `GĐ`, `Nguồn`, `Loại`, `Mức`. Every row starts in state `planned`.
+   - `Loại` = the kind key of the standard row; `Mức` = that kind's level in `drafting-coverage.md` §2. A row with several kinds gets one sub-row per kind.
    - `Nguồn` names the standard row the drawing comes from, so the user can see why it is needed.
    - A drawing made of several views (stair: plans + sections) gets sub-rows `ID.a`, `ID.b`.
-4. Write it to `sheet-register-<date>.md` (round folder or `log/`). Show the user the counts per group and the drawings that come from a condition. Then ask once: add / remove?
+4. Write it to `sheet-register-<date>.md` (round folder or `log/`). Show the user the counts per group, the drawings that come from a condition, and the counts per level in the words of `drafting-coverage.md` §1: **trọn** / **một phần** (with what is missing) / **làm tay**. Then ask once: add / remove?
 
 ## Done when
 
-- The register file exists, every row `planned`.
+- The register file exists, every row `planned`, with its `Loại` and `Mức`.
 - Every mandatory row of §4 and of the sheet-set file is either expanded or written as "n/a + reason".
 - The user confirmed the list, or added / removed rows (their changes noted with the date).
 
@@ -33,6 +34,7 @@ A register of this job, already confirmed by the user, exists and the type / sta
 
 - Add drawings from another building type's file.
 - Drop a mandatory row silently: n/a needs a reason (e.g. "không có tầng hầm").
+- Promise more than the level: a level 1 row is the user's to draw; say so before the work starts.
 
 ## Score (0–10)
 

@@ -29,27 +29,27 @@ File này cộng thêm vào bộ hồ sơ lõi (`drafting-sheet-layout.md` §4).
 
 ## 2. Bộ bản vẽ (cộng vào bộ lõi)
 
-| Nhóm | Bản vẽ | Tỷ lệ | GĐ | Nội dung bắt buộc |
-|---|---|---|---|---|
-| 0 | Bảng chỉ tiêu: diện tích từng hạng mục, mật độ, cây xanh, đường bãi | — | CS | — |
-| 1 | Tổng mặt bằng nhà máy: hạng mục, đường nội bộ, bán kính quay xe container, bãi xe, cổng, cây xanh, khoảng cách PCCC | 1:1000–1:500 | CS | Đường cho xe chữa cháy |
-| 1 | Mặt bằng định vị các hạng mục + cao độ san nền | 1:500 | KT | — |
-| 1 | Hạng mục phụ (nhà bảo vệ, nhà xe, trạm bơm, nhà rác): bộ nhỏ | 1:100–1:50 | KT | Mặt bằng, mặt đứng, mặt cắt |
-| 2 | Mặt bằng xưởng / kho | 1:200 (chia vùng nếu cần) | CS | Lưới trục, cửa cuốn, dock, đường xe nâng, khu chức năng |
-| 2 | Mặt bằng mezzanine / văn phòng trong xưởng | 1:100–1:50 | KT | — |
-| 2 | Mặt bằng sàn công nghiệp: khe co giãn / khe cắt, rãnh thu, cao độ, độ dốc | 1:200 | TC | — |
-| 2 | Mặt bằng mái: độ dốc, tấm lấy sáng, quạt / cửa thông gió mái, máng xối, ống đứng | 1:200 | CS | — |
-| 3 | Mặt đứng 4 hướng | 1:200–1:100 | CS | Cao độ chân tường, đỉnh tôn, đỉnh mái, cửa cuốn |
-| 4 | Mặt cắt ngang qua khung | 1:100 | CS | Khẩu độ, cao độ đỉnh cột, đáy kèo, độ dốc mái |
-| 4 | Mặt cắt dọc | 1:200 | KT | — |
-| 4 | Mặt cắt qua dock | 1:50 | KT | Cao độ sàn dock so với sân xe |
-| 6 | Nhà văn phòng / nhà ăn (nếu tách khối): bộ con theo bộ lõi | 1:100 | KT | — |
-| 6 | Vệ sinh, thay đồ công nhân | 1:50 | TC | — |
-| 7 | Thống kê cửa cuốn, cửa thoát nạn, cửa chống cháy | 1:50 | KT | — |
-| 8 | Chi tiết vách bao che: chân tường, diềm tôn, góc, cửa sổ trên vách tôn | 1:20–1:5 | TC | — |
-| 8 | Chi tiết mái: máng xối, tấm lấy sáng, sống mái, quạt thông gió | 1:20–1:5 | TC | — |
-| 8 | Chi tiết dock: dock leveler, mái che, ụ chắn, gờ bảo vệ | 1:20–1:10 | TC | — |
-| 8 | Chi tiết khe co giãn sàn, gờ chống va chân cột / cửa | 1:10–1:5 | TC | — |
+| Nhóm | Bản vẽ | Tỷ lệ | GĐ | Nội dung bắt buộc | Loại |
+|---|---|---|---|---|---|
+| 0 | Bảng chỉ tiêu: diện tích từng hạng mục, mật độ, cây xanh, đường bãi | — | CS | — | `schedule` |
+| 1 | Tổng mặt bằng nhà máy: hạng mục, đường nội bộ, bán kính quay xe container, bãi xe, cổng, cây xanh, khoảng cách PCCC | 1:1000–1:500 | CS | Đường cho xe chữa cháy | `site` |
+| 1 | Mặt bằng định vị các hạng mục + cao độ san nền | 1:500 | KT | — | `site` |
+| 1 | Hạng mục phụ (nhà bảo vệ, nhà xe, trạm bơm, nhà rác): bộ nhỏ | 1:100–1:50 | KT | Mặt bằng, mặt đứng, mặt cắt | `subset` |
+| 2 | Mặt bằng xưởng / kho | 1:200 (chia vùng nếu cần) | CS | Lưới trục, cửa cuốn, dock, đường xe nâng, khu chức năng | `plan` |
+| 2 | Mặt bằng mezzanine / văn phòng trong xưởng | 1:100–1:50 | KT | — | `plan` |
+| 2 | Mặt bằng sàn công nghiệp: khe co giãn / khe cắt, rãnh thu, cao độ, độ dốc | 1:200 | TC | — | `plan-finish` |
+| 2 | Mặt bằng mái: độ dốc, tấm lấy sáng, quạt / cửa thông gió mái, máng xối, ống đứng | 1:200 | CS | — | `roof` |
+| 3 | Mặt đứng 4 hướng | 1:200–1:100 | CS | Cao độ chân tường, đỉnh tôn, đỉnh mái, cửa cuốn | `elevation` |
+| 4 | Mặt cắt ngang qua khung | 1:100 | CS | Khẩu độ, cao độ đỉnh cột, đáy kèo, độ dốc mái | `section` |
+| 4 | Mặt cắt dọc | 1:200 | KT | — | `section` |
+| 4 | Mặt cắt qua dock | 1:50 | KT | Cao độ sàn dock so với sân xe | `section` |
+| 6 | Nhà văn phòng / nhà ăn (nếu tách khối): bộ con theo bộ lõi | 1:100 | KT | — | `subset` |
+| 6 | Vệ sinh, thay đồ công nhân | 1:50 | TC | — | `enlarged` |
+| 7 | Thống kê cửa cuốn, cửa thoát nạn, cửa chống cháy | 1:50 | KT | — | `door` |
+| 8 | Chi tiết vách bao che: chân tường, diềm tôn, góc, cửa sổ trên vách tôn | 1:20–1:5 | TC | — | `detail` |
+| 8 | Chi tiết mái: máng xối, tấm lấy sáng, sống mái, quạt thông gió | 1:20–1:5 | TC | — | `detail` |
+| 8 | Chi tiết dock: dock leveler, mái che, ụ chắn, gờ bảo vệ | 1:20–1:10 | TC | — | `detail` |
+| 8 | Chi tiết khe co giãn sàn, gờ chống va chân cột / cửa | 1:10–1:5 | TC | — | `detail` |
 
 ## 3. Layout đặc thù
 

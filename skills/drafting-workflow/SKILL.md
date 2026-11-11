@@ -23,6 +23,7 @@ Load `drafting-session` first if it is not loaded yet (hard rules, batches, mark
 | A round of reviewer comments (PDF, TASKS.md) | `workflows/review-round.md` |
 
 - Read **only** the chosen file. Unclear which one, or the job fits none → ask; do not mix two workflows in one checklist.
+- From a **sheet register** ("triển khai bộ hồ sơ"): each row's `Loại` → its workflow and skills in `~/.claude/drafting-domain/drafting-coverage.md` §2; group the rows by workflow and run the workflows one after another. A level 1 row has no skill: never improvise its content, list it under Việc tồn.
 - A single-topic task ("dim trục view này") needs no workflow: use the topic's skill from the `drafting-session` table.
 
 ## Step 0 — gather the views and sheets once

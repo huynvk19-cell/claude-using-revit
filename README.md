@@ -102,6 +102,7 @@ Thêm quy trình mới: một file `workflows/<tên>.md` (dòng 0 = `drafting-st
 | `drafting-view-create.md` | Tạo view cho sheet (VC1–VC12): bảng bản vẽ → loại view Revit, tạo từ đâu, template, tỷ lệ, crop, tên; hợp đồng lệnh `view_create` (chưa có) |
 | `drafting-sheet-place.md` | Đặt view lên sheet (VP1–VP10): bảng bố trí mm, thứ tự đặt, căn theo điểm trục, legend / schedule; hợp đồng lệnh `viewport_place` (chưa có) |
 | `drafting-sheet-set-<loại>.md` | Bộ bản vẽ riêng của từng loại công trình (cộng vào bộ lõi): `townhouse` nhà liên kế, `villa` biệt thự, `highrise` nhà cao tầng, `airport` sân bay, `public` trường học / bệnh viện / TTTM, `industrial` nhà xưởng / kho. Mỗi job chỉ mở một file |
+| `drafting-coverage.md` | Ma trận độ phủ: loại bản vẽ (cột `Loại` của các file bộ hồ sơ) → skill, workflow, lệnh làm, lệnh kiểm, mức Claude làm được (1–4); chuỗi khâu chung từ sổ tới PDF |
 | `drafting-tools.md` | Danh mục lệnh MCP theo chủ đề |
 | `drafting-api-pitfalls.md` | Bẫy Revit API và cách tránh |
 
@@ -156,6 +157,15 @@ Mỗi dự án cần một file `drafting-profile.md`: copy từ `templates/` v�
 - **Type đánh dấu**: mọi phần tử Claude tạo mới (dim, spot, tag, room tag, stair path, filled region, text…) mang type `<type chính thức><hậu tố>`, hậu tố đặt trong `drafting-profile.md` (vd. ` - check`). Lệnh `mark_types`: `snapshot` đầu đợt → `mark` cuối đợt → `list` → `restore`.
 - **Trả về chính thức** (khi đã duyệt): chọn một phần tử → Select All Instances → In Entire Project → đổi sang type chính thức; hoặc `mark_types {action:"restore"}` làm cho mọi type đánh dấu một lần.
 - Không đánh dấu được: detail line (chỉ có line style) và chỉnh sửa trên phần tử có sẵn (dời tag, đầu trục 2D, crop): xem log `apply`.
+
+## Ma trận độ phủ (Coverage)
+
+`domain/drafting-coverage.md` cho biết với mỗi loại bản vẽ Claude làm được tới đâu: mức 4 = trọn vòng (lệnh làm + lệnh kiểm + workflow), mức 1 = mới có tên trong bộ hồ sơ, nội dung phải làm tay.
+
+- Mỗi dòng bản vẽ trong bộ hồ sơ lõi và trong file của từng loại công trình có cột `Loại` trỏ tới một dòng của ma trận.
+- Khi lập sổ bộ hồ sơ, Claude ghi `Loại` và `Mức` cho từng sheet và báo ngay: bao nhiêu sheet làm trọn, làm một phần, làm tay.
+- Khi triển khai từ sổ, Claude tra `Loại` để lấy đúng workflow và skill; dòng mức 1 đi vào Việc tồn, không tự nghĩ cách làm.
+- Ô trống của ma trận là danh sách việc cần xây tiếp. `python addin/tests/coverage_check.py` in ma trận theo từng loại công trình và kiểm rằng tên skill / lệnh có thật, mức đủ điều kiện, dòng nào cũng có `Loại` (CI chạy ở mỗi lần push).
 
 ## Tiết kiệm token (Token use)
 

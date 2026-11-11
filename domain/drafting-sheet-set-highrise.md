@@ -38,30 +38,30 @@ File này cộng thêm vào bộ hồ sơ lõi (`drafting-sheet-layout.md` §4).
 
 ## 2. Bộ bản vẽ (cộng vào bộ lõi)
 
-| Nhóm | Bản vẽ | Tỷ lệ | GĐ | Nội dung bắt buộc |
-|---|---|---|---|---|
-| 0 | Bảng chỉ tiêu: diện tích sàn từng tầng, mật độ, hệ số sử dụng đất, số căn / phòng, chỗ đỗ xe | — | CS | — |
-| 1 | Tổng mặt bằng + giao thông, lối vào xe, xe chữa cháy tiếp cận, bãi đỗ | 1:500 | CS | Đường cho xe chữa cháy, khoảng lùi, cao độ |
-| 2 | Mặt bằng các tầng hầm | 1:200 tổng + 1:100 theo vùng | CS | Ô đỗ xe đánh số, luồng xe, ram dốc, cao độ sàn, độ dốc thoát nước, phòng kỹ thuật |
-| 2 | Mặt bằng khối đế mỗi tầng | 1:200 tổng + 1:100 theo vùng | CS | — |
-| 2 | Mặt bằng tầng điển hình (một view cho cả dải tầng) | 1:100 | CS | Title ghi dải tầng (`drafting-sheet-layout.md` §8) |
-| 2 | Mặt bằng tầng chuyển, tầng kỹ thuật, tầng lánh nạn | 1:100 | CS | — |
-| 2 | Mặt bằng mái, tum, phòng máy | 1:100 | CS | — |
-| 2 | Mặt bằng thoát nạn / PCCC mỗi tầng khác nhau | 1:200–1:100 | CS | Khoang cháy, lối thoát, khoảng cách tới thang, cửa chống cháy, buồng đệm |
-| 3 | Mặt đứng tổng mọi hướng | 1:200 | CS | Cao độ mọi tầng, chiều cao công trình |
-| 3 | Mặt đứng khối đế | 1:100 | KT | — |
-| 3 | Triển khai mặt dựng (module kính, lam): mặt đứng + mặt bằng + mặt cắt đoạn điển hình | 1:50–1:20 | TC | — |
-| 4 | Mặt cắt tổng ≥ 2, qua lõi và ram dốc | 1:200 | CS | — |
-| 4 | Mặt cắt khối đế + tầng hầm | 1:100 | KT | — |
-| 5 | Lõi thang: mặt bằng các tầng khác nhau + mặt cắt thang bộ, thang máy (hố pit, OH) | 1:50 | KT | — |
-| 5 | Ram dốc: mặt bằng + mặt cắt dọc, độ dốc, cao độ đầu / cuối | 1:100–1:50 | KT | — |
-| 6 | Căn hộ / phòng khách sạn / văn phòng điển hình: mặt bằng phóng to theo loại (A, B, C…) | 1:50 | KT | Diện tích căn, bố trí nội thất |
-| 6 | Vệ sinh điển hình, bếp căn hộ, khu vệ sinh công cộng | 1:25 | TC | — |
-| 6 | Sảnh chính, sảnh thang máy tầng: mặt bằng lát, trần, triển khai tường | 1:50 | TC | — |
-| 7 | Thống kê cửa (cả cửa chống cháy, ghi giới hạn chịu lửa EI) | 1:50 | KT | — |
-| 8 | Chi tiết mặt dựng: neo, chân, đỉnh, góc, chống cháy lan giữa tầng | 1:10–1:5 | TC | — |
-| 8 | Chi tiết ban công, lan can (chiều cao, khe hở), lô gia, giàn phơi | 1:20–1:5 | TC | — |
-| 8 | Chi tiết hộp kỹ thuật, chống cháy lan, khe lún, chống thấm hầm và mái | 1:20–1:5 | TC | — |
+| Nhóm | Bản vẽ | Tỷ lệ | GĐ | Nội dung bắt buộc | Loại |
+|---|---|---|---|---|---|
+| 0 | Bảng chỉ tiêu: diện tích sàn từng tầng, mật độ, hệ số sử dụng đất, số căn / phòng, chỗ đỗ xe | — | CS | — | `schedule` |
+| 1 | Tổng mặt bằng + giao thông, lối vào xe, xe chữa cháy tiếp cận, bãi đỗ | 1:500 | CS | Đường cho xe chữa cháy, khoảng lùi, cao độ | `site` |
+| 2 | Mặt bằng các tầng hầm | 1:200 tổng + 1:100 theo vùng | CS | Ô đỗ xe đánh số, luồng xe, ram dốc, cao độ sàn, độ dốc thoát nước, phòng kỹ thuật | `plan` |
+| 2 | Mặt bằng khối đế mỗi tầng | 1:200 tổng + 1:100 theo vùng | CS | — | `plan` |
+| 2 | Mặt bằng tầng điển hình (một view cho cả dải tầng) | 1:100 | CS | Title ghi dải tầng (`drafting-sheet-layout.md` §8) | `plan` |
+| 2 | Mặt bằng tầng chuyển, tầng kỹ thuật, tầng lánh nạn | 1:100 | CS | — | `plan` |
+| 2 | Mặt bằng mái, tum, phòng máy | 1:100 | CS | — | `roof` |
+| 2 | Mặt bằng thoát nạn / PCCC mỗi tầng khác nhau | 1:200–1:100 | CS | Khoang cháy, lối thoát, khoảng cách tới thang, cửa chống cháy, buồng đệm | `thematic` |
+| 3 | Mặt đứng tổng mọi hướng | 1:200 | CS | Cao độ mọi tầng, chiều cao công trình | `elevation` |
+| 3 | Mặt đứng khối đế | 1:100 | KT | — | `elevation` |
+| 3 | Triển khai mặt dựng (module kính, lam): mặt đứng + mặt bằng + mặt cắt đoạn điển hình | 1:50–1:20 | TC | — | `facade` |
+| 4 | Mặt cắt tổng ≥ 2, qua lõi và ram dốc | 1:200 | CS | — | `section` |
+| 4 | Mặt cắt khối đế + tầng hầm | 1:100 | KT | — | `section` |
+| 5 | Lõi thang: mặt bằng các tầng khác nhau + mặt cắt thang bộ, thang máy (hố pit, OH) | 1:50 | KT | — | `stair`, `vertical` |
+| 5 | Ram dốc: mặt bằng + mặt cắt dọc, độ dốc, cao độ đầu / cuối | 1:100–1:50 | KT | — | `vertical` |
+| 6 | Căn hộ / phòng khách sạn / văn phòng điển hình: mặt bằng phóng to theo loại (A, B, C…) | 1:50 | KT | Diện tích căn, bố trí nội thất | `enlarged` |
+| 6 | Vệ sinh điển hình, bếp căn hộ, khu vệ sinh công cộng | 1:25 | TC | — | `enlarged` |
+| 6 | Sảnh chính, sảnh thang máy tầng: mặt bằng lát, trần, triển khai tường | 1:50 | TC | — | `enlarged` |
+| 7 | Thống kê cửa (cả cửa chống cháy, ghi giới hạn chịu lửa EI) | 1:50 | KT | — | `door` |
+| 8 | Chi tiết mặt dựng: neo, chân, đỉnh, góc, chống cháy lan giữa tầng | 1:10–1:5 | TC | — | `detail` |
+| 8 | Chi tiết ban công, lan can (chiều cao, khe hở), lô gia, giàn phơi | 1:20–1:5 | TC | — | `detail` |
+| 8 | Chi tiết hộp kỹ thuật, chống cháy lan, khe lún, chống thấm hầm và mái | 1:20–1:5 | TC | — | `detail` |
 
 ## 3. Layout đặc thù
 

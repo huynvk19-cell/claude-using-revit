@@ -46,6 +46,7 @@ Do **not** read the whole `drafting-domain/` folder or every skill. Pick the tas
 | Create sheets from the register (khởi tạo sheet) | `drafting-sheet-create` | `drafting-sheet-create.md` |
 | Create the views the sheets need (tạo view cho sheet) | `drafting-view-create` | `drafting-view-create.md` |
 | Put views on sheets (bỏ view vào sheet, đặt viewport) | `drafting-sheet-place` | `drafting-sheet-place.md` |
+| Which skill a drawing kind needs, how far Claude can take it (độ phủ, mức 1–4) | — | `drafting-coverage.md` |
 | Checking by image | `drafting-visual-check` | — |
 
 - **Shared tasks first**: a job the ribbon tab "claude using revit" already does (print set = drawing list, sheet-list columns / No. / one value for all sheets, untagged scan / highlight, highlight / clear) is one `cur_task {task, args}` call: same code as the user's button, short result. `cur_task {task:"list_tasks"}` lists them. Never re-derive such a job step by step.

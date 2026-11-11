@@ -14,14 +14,14 @@ Bảng chung (§1) áp dụng cho mọi công trình công cộng. Sau đó ch�
 
 ## 1. Chung cho công trình công cộng
 
-| Nhóm | Bản vẽ | Tỷ lệ | GĐ | Nội dung bắt buộc |
-|---|---|---|---|---|
-| 0 | Bảng chỉ tiêu: quy mô (học sinh / giường / diện tích cho thuê), diện tích từng khu | — | CS | — |
-| 2 | Mặt bằng phân khu chức năng mỗi tầng (màu + legend) | 1:500–1:200 | CS | — |
-| 2 | Mặt bằng thoát nạn / PCCC mỗi tầng | 1:200 | CS | Khoang cháy, lối thoát, khoảng cách, cửa chống cháy |
-| 2 | Mặt bằng tiếp cận người khuyết tật | 1:200 | KT | Lối vào, ram dốc, thang máy, vệ sinh người khuyết tật; theo QCVN 10 |
-| 6 | Vệ sinh công cộng điển hình + phòng người khuyết tật | 1:50–1:25 | TC | — |
-| 7 | Thống kê cửa (cửa thoát nạn, cửa chống cháy, chiều mở) | 1:50 | KT | — |
+| Nhóm | Bản vẽ | Tỷ lệ | GĐ | Nội dung bắt buộc | Loại |
+|---|---|---|---|---|---|
+| 0 | Bảng chỉ tiêu: quy mô (học sinh / giường / diện tích cho thuê), diện tích từng khu | — | CS | — | `schedule` |
+| 2 | Mặt bằng phân khu chức năng mỗi tầng (màu + legend) | 1:500–1:200 | CS | — | `thematic` |
+| 2 | Mặt bằng thoát nạn / PCCC mỗi tầng | 1:200 | CS | Khoang cháy, lối thoát, khoảng cách, cửa chống cháy | `thematic` |
+| 2 | Mặt bằng tiếp cận người khuyết tật | 1:200 | KT | Lối vào, ram dốc, thang máy, vệ sinh người khuyết tật; theo QCVN 10 | `thematic` |
+| 6 | Vệ sinh công cộng điển hình + phòng người khuyết tật | 1:50–1:25 | TC | — | `enlarged` |
+| 7 | Thống kê cửa (cửa thoát nạn, cửa chống cháy, chiều mở) | 1:50 | KT | — | `door` |
 
 ## 2. Trường học
 
@@ -31,14 +31,14 @@ Bảng chung (§1) áp dụng cho mọi công trình công cộng. Sau đó ch�
 - An toàn trẻ em: lan can cao, khe hở nhỏ, không có bậc hụt, cửa không kẹp tay.
 - Tiêu chuẩn theo cấp học (mầm non, tiểu học, THCS, THPT).
 
-| Nhóm | Bản vẽ | Tỷ lệ | GĐ | Nội dung bắt buộc |
-|---|---|---|---|---|
-| 1 | Tổng mặt bằng: sân chơi, sân thể thao, cổng, nhà xe, cây xanh | 1:500–1:200 | CS | — |
-| 6 | Phòng học điển hình: mặt bằng bố trí bàn ghế, bảng, cửa sổ, hướng chiếu sáng; triển khai tường | 1:50 | KT | — |
-| 6 | Phòng bộ môn, thư viện, phòng đa năng | 1:50–1:100 | KT | — |
-| 6 | Vệ sinh học sinh theo cấp (chiều cao thiết bị) | 1:25 | TC | — |
-| 6 | Bếp ăn (mầm non, bán trú): luồng sơ chế → nấu → chia | 1:50 | KT | — |
-| 8 | Chi tiết lan can hành lang, cầu thang (chiều cao, khe hở), tay vịn hai cao độ | 1:20–1:5 | TC | — |
+| Nhóm | Bản vẽ | Tỷ lệ | GĐ | Nội dung bắt buộc | Loại |
+|---|---|---|---|---|---|
+| 1 | Tổng mặt bằng: sân chơi, sân thể thao, cổng, nhà xe, cây xanh | 1:500–1:200 | CS | — | `site` |
+| 6 | Phòng học điển hình: mặt bằng bố trí bàn ghế, bảng, cửa sổ, hướng chiếu sáng; triển khai tường | 1:50 | KT | — | `enlarged` |
+| 6 | Phòng bộ môn, thư viện, phòng đa năng | 1:50–1:100 | KT | — | `enlarged` |
+| 6 | Vệ sinh học sinh theo cấp (chiều cao thiết bị) | 1:25 | TC | — | `enlarged` |
+| 6 | Bếp ăn (mầm non, bán trú): luồng sơ chế → nấu → chia | 1:50 | KT | — | `enlarged` |
+| 8 | Chi tiết lan can hành lang, cầu thang (chiều cao, khe hở), tay vịn hai cao độ | 1:20–1:5 | TC | — | `detail` |
 
 ## 3. Bệnh viện
 
@@ -52,16 +52,16 @@ Bảng chung (§1) áp dụng cho mọi công trình công cộng. Sau đó ch�
 - Thang máy chở giường bệnh, ram dốc cho băng ca.
 - Phối hợp khí y tế, thiết bị y tế.
 
-| Nhóm | Bản vẽ | Tỷ lệ | GĐ | Nội dung bắt buộc |
-|---|---|---|---|---|
-| 2 | Mặt bằng phân luồng: sạch / bẩn, bệnh nhân / nhân viên / khách, cấp cứu (màu + legend) | 1:500–1:200 | CS | — |
-| 6 | Phòng bệnh điển hình (theo loại): bố trí giường, đầu giường (khí y tế), vệ sinh | 1:50 | KT | — |
-| 6 | Khối phẫu thuật: phòng mổ, chuẩn bị, hồi tỉnh, luồng vô khuẩn | 1:50 | KT | — |
-| 6 | Chẩn đoán hình ảnh: mặt bằng + mặt cắt lớp che chắn bức xạ | 1:50–1:20 | TC | — |
-| 6 | ICU, phòng sạch, xét nghiệm: mặt bằng thiết bị | 1:50 | TC | — |
-| 6 | Mặt bằng bố trí thiết bị y tế (nền phối hợp) | 1:100–1:50 | TC | — |
-| 5 | Thang máy giường bệnh, ram dốc băng ca (độ dốc) | 1:50 | KT | — |
-| 8 | Chi tiết hoàn thiện kháng khuẩn: góc lượn chân tường, tay vịn hành lang, chống va đập | 1:10–1:5 | TC | — |
+| Nhóm | Bản vẽ | Tỷ lệ | GĐ | Nội dung bắt buộc | Loại |
+|---|---|---|---|---|---|
+| 2 | Mặt bằng phân luồng: sạch / bẩn, bệnh nhân / nhân viên / khách, cấp cứu (màu + legend) | 1:500–1:200 | CS | — | `thematic` |
+| 6 | Phòng bệnh điển hình (theo loại): bố trí giường, đầu giường (khí y tế), vệ sinh | 1:50 | KT | — | `enlarged` |
+| 6 | Khối phẫu thuật: phòng mổ, chuẩn bị, hồi tỉnh, luồng vô khuẩn | 1:50 | KT | — | `enlarged` |
+| 6 | Chẩn đoán hình ảnh: mặt bằng + mặt cắt lớp che chắn bức xạ | 1:50–1:20 | TC | — | `enlarged` |
+| 6 | ICU, phòng sạch, xét nghiệm: mặt bằng thiết bị | 1:50 | TC | — | `enlarged` |
+| 6 | Mặt bằng bố trí thiết bị y tế (nền phối hợp) | 1:100–1:50 | TC | — | `thematic` |
+| 5 | Thang máy giường bệnh, ram dốc băng ca (độ dốc) | 1:50 | KT | — | `vertical` |
+| 8 | Chi tiết hoàn thiện kháng khuẩn: góc lượn chân tường, tay vịn hành lang, chống va đập | 1:10–1:5 | TC | — | `detail` |
 
 ## 4. Trung tâm thương mại
 
@@ -71,15 +71,15 @@ Bảng chung (§1) áp dụng cho mọi công trình công cộng. Sau đó ch�
 - Thường có tầng hầm đỗ xe (lấy mục hầm từ `drafting-sheet-set-highrise.md` khi có).
 - Khoang cháy lớn, thoát nạn qua mall; mặt tiền có biển quảng cáo.
 
-| Nhóm | Bản vẽ | Tỷ lệ | GĐ | Nội dung bắt buộc |
-|---|---|---|---|---|
-| 2 | Mặt bằng phân lô gian hàng mỗi tầng: mã gian, diện tích cho thuê (bảng), mặt tiền gian | 1:200 | CS | — |
-| 2 | Mặt bằng giếng trời + thang cuốn (lỗ sàn, lan can) | 1:100 | KT | — |
-| 2 | Mặt bằng luồng hàng hoá: bến xuất nhập, hành lang dịch vụ, kho, rác | 1:200 | KT | — |
-| 3 | Mặt đứng + vị trí biển quảng cáo | 1:200–1:100 | KT | — |
-| 6 | Gian hàng điển hình (nền giao cho người thuê): ranh giới, mặt tiền, đấu nối | 1:50 | TC | — |
-| 6 | Khu ăn uống, rạp chiếu (mặt cắt độ dốc khán phòng, tầm nhìn) | 1:100–1:50 | KT | — |
-| 8 | Chi tiết lan can giếng trời, mái kính giếng trời, khe co giãn | 1:20–1:5 | TC | — |
+| Nhóm | Bản vẽ | Tỷ lệ | GĐ | Nội dung bắt buộc | Loại |
+|---|---|---|---|---|---|
+| 2 | Mặt bằng phân lô gian hàng mỗi tầng: mã gian, diện tích cho thuê (bảng), mặt tiền gian | 1:200 | CS | — | `thematic` |
+| 2 | Mặt bằng giếng trời + thang cuốn (lỗ sàn, lan can) | 1:100 | KT | — | `enlarged` |
+| 2 | Mặt bằng luồng hàng hoá: bến xuất nhập, hành lang dịch vụ, kho, rác | 1:200 | KT | — | `thematic` |
+| 3 | Mặt đứng + vị trí biển quảng cáo | 1:200–1:100 | KT | — | `elevation` |
+| 6 | Gian hàng điển hình (nền giao cho người thuê): ranh giới, mặt tiền, đấu nối | 1:50 | TC | — | `enlarged` |
+| 6 | Khu ăn uống, rạp chiếu (mặt cắt độ dốc khán phòng, tầm nhìn) | 1:100–1:50 | KT | — | `enlarged` |
+| 8 | Chi tiết lan can giếng trời, mái kính giếng trời, khe co giãn | 1:20–1:5 | TC | — | `detail` |
 
 ## 5. Layout đặc thù
 

@@ -7,7 +7,7 @@ description: "Plan the sheet set (layout bản vẽ, dàn trang, bộ hồ sơ) 
 
 **Tools** (load all in one ToolSearch call): `cur_task`, `export_sheet_images`, `query_elements_with_filter`, `sheet_browser_names`, `sheet_views_ids`, `view_crop_info`, `viewport_title_audit`.
 
-Standard: `~/.claude/drafting-domain/drafting-sheet-layout.md` (Vietnamese), plus **one** sheet-set file for the building type, chosen in card 00 (`drafting-sheet-set-<type>.md`, table §1 of the standard). Never open the sheet-set files of other types.
+Standard: `~/.claude/drafting-domain/drafting-sheet-layout.md` (Vietnamese), plus **one** sheet-set file for the building type, chosen in card 00 (`drafting-sheet-set-<type>.md`, table §1 of the standard). Never open the sheet-set files of other types. Card 01 also reads `~/.claude/drafting-domain/drafting-coverage.md` (kind → skill, level).
 
 **Source of truth**: the **sheet register** (`drafting-sheet-layout.md` §11), one row per drawing.
 - This skill creates the register (card 01) and closes it (card 04).

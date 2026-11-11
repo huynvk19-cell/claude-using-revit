@@ -25,6 +25,7 @@ This repo holds drafting **workflows** (`workflows/`, English: skills in a set o
 - Skill `description`s are sent on every request: what it does + trigger words, ≤ 500 characters. Rules go in the body.
 - A skill never tells Claude to read a long standard whole: cards name the rule (`SB1`, `G3`…), and a standard over ~120 lines is read by section (`drafting-session`, "Standards by section"). Keep one heading per rule in the standard so a section can be read alone.
 - What `drafting-work-rules.md` or another always-loaded file already says is not repeated in skills and cards: point to its § instead (e.g. a card's **Score** keeps only its own deductions).
+- **Coverage matrix** (`domain/drafting-coverage.md`): every drawing row of `drafting-sheet-layout.md` §4 and of a `drafting-sheet-set-<type>.md` file has a `Loại` (kind key). A new skill, workflow or command for a kind → update that kind's row and level; a new kind → a new row. `python addin/tests/coverage_check.py` checks it (CI too) and prints the matrix per building type.
 - After a change to `skills/`, `agents/`, `workflows/` or a command header: `python addin/tests/budget_check.py` (description lengths, cut-short header text, **Tools** names) and `python addin/tests/workflow_lib_check.py`. CI runs both.
 
 ## The claude using revit add-in (`addin/`)
