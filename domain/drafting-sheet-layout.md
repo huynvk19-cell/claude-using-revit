@@ -94,7 +94,8 @@ File bộ hồ sơ của từng loại công trình **cộng thêm hoặc sửa*
 - Khổ ISO: A0 841×1189, A1 594×841, A2 420×594, A3 297×420 (mm).
 - Tham khảo khi chọn khổ:
   - nhà ở nhỏ: A3, hoặc A2;
-  - nhà ở dự án, biệt thự, công trình vừa: A1;
+  - nhà liên kế, biệt thự (nhà ở thấp tầng): A2 (user, 2026-11-11);
+  - nhà ở dự án nhiều tầng, công trình vừa: A1;
   - công trình lớn (nhà cao tầng, sân bay, TTTM): A1 hoặc A0.
 
 **Tỷ lệ**

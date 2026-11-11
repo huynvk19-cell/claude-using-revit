@@ -47,7 +47,7 @@ File này cộng thêm vào bộ hồ sơ lõi (`drafting-sheet-layout.md` §4).
 
 ## 3. Layout đặc thù
 
-- **Khổ giấy**: A1 là phổ biến. Biệt thự nhỏ có thể dùng A2 / A3.
+- **Khổ giấy**: **A2** cho cả bộ, như nhà liên kế (user, 2026-11-11: cùng loại hình nhà ở thấp tầng). Profile chưa ghi khổ thì dùng A2; khổ khác chỉ khi user duyệt. View không vừa A2 → tỷ lệ nhỏ hơn kế tiếp trong khoảng cho phép (HS5), rồi tách sheet.
 - **Mặt đứng 4 hướng**: thường 2 mặt đứng một sheet, xếp trên dưới. Trục thẳng hàng, cao độ đọc được ở cả hai (LO5). Mặt đứng đối diện nhau (trước / sau, trái / phải) để chung sheet.
 - **Mặt bằng mái** đặt cùng sheet với mặt bằng tầng trên cùng, hoặc trên sheet riêng nhưng ở cùng vị trí (LO4).
 - **Phào chỉ**: sheet chi tiết dạng lưới (LO9), mỗi ô một profile phào. Đặt mặt đứng thu nhỏ có đánh dấu vị trí phào ở ô đầu.
