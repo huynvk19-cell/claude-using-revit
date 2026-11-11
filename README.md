@@ -4,6 +4,8 @@ Bộ **skill** và **domain** để Claude Code triển khai bản vẽ Revit nh
 
 Skills and domain standards that let Claude Code do drawing production like a drafting architect (dims, tags, titles, viewports, crops and templates), and the Revit add-in claude using revit: the user's ribbon tools and the MCP server Claude works through, in one add-in.
 
+**Tính cách của bộ này: ngay hàng thẳng lối.** Mọi thành phần của bản vẽ kiến trúc (dòng dim, tag, cao độ, ký hiệu, leader, bubble trục, viewport, title) nằm theo hàng và lối: cùng loại thì chung một đường gióng, các hàng cách đều, không so le. Quy tắc: `domain/drafting-work-rules.md` §2a.
+
 ## Cấu trúc (Layout)
 
 | Thư mục | Nội dung | Ngôn ngữ |

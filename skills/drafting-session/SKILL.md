@@ -82,9 +82,9 @@ Follow `drafting-start`: re-anchor (`hello_revit`; never reuse ids from an earli
 - Spend few tokens: prefer a topic's one-shot command (`*_annotate`, `*_band`) over many small calls; ask for `verbose`/`detail` output only when the short result does not answer; search long files (logs, catalogs) with `grep`, never read them whole.
 - Images: hand the image reading to the `drafting-visual-checker` subagent (see `drafting-visual-check`); keep only its text findings.
 
-## Done = ĐỦ – ĐÚNG – ĐẸP (`drafting-work-rules.md` §2b, §2b2)
+## Done = ĐỦ – ĐÚNG – ĐẸP (`drafting-work-rules.md` §2a, §2b, §2b2)
 
-Before calling a batch finished, check each view: **Đủ** (the topic audit shows no `missing`; never skip an item silently), **Đúng** (numbers from the model, refs on real geometry, every new dim / tag drawn: `view_elem_boxes` Box ≠ null), **Đẹp** (`annotation_overlaps` = 0, dim lines even and aligned, short leaders). Each card's score must be > 7.
+Before calling a batch finished, check each view: **Đủ** (the topic audit shows no `missing`; never skip an item silently), **Đúng** (numbers from the model, refs on real geometry, every new dim / tag drawn: `view_elem_boxes` Box ≠ null), **Đẹp** (`annotation_overlaps` = 0, everything in rows and columns (ngay hàng thẳng lối, §2a): dim lines even and aligned, like tags and symbols on one line, short leaders). Each card's score must be > 7.
 
 ## End of turn
 

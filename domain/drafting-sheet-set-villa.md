@@ -35,7 +35,7 @@ File này có **danh mục điển hình** (§2) thay cho bộ hồ sơ lõi (`d
 |---|---|---|---|---|---|---|---|
 | 1 | 0 | Bìa (sheet riêng) | — | CS | — | Tên công trình, địa điểm, chủ đầu tư, đơn vị thiết kế, giai đoạn, ngày; không đặt danh mục trên bìa (user, 2026-11-11) | `cover` |
 | 2 | 0 | Danh mục bản vẽ (sheet riêng) | — | CS | — | Theo `drafting-sheet-layout.md` §8 (cột, nhóm, STT); khớp print set (`drafting-views-sheets.md` §5) | `sheet-list` |
-| 3 | 0 | Ghi chú chung, ký hiệu, chữ viết tắt | — | KT | — | — | `notes` |
+| 3 | 0 | Ghi chú chung, ký hiệu, chữ viết tắt | — | KT | — | Một bảng ký hiệu 5 nhóm theo `drafting-sheet-layout.md` §8b (KH1–KH7) | `notes` |
 | 4 | 0 | Bảng vật liệu / hoàn thiện chung | — | KT | — | — | `schedule` |
 | 5 | 1 | Tổng mặt bằng lô + sân vườn | 1:200–1:100 | CS | — | Chỉ giới, lộ giới, khoảng lùi; nhà, sân, lối vào xe, cổng, hồ bơi, cây xanh, cao độ sân, hướng Bắc | `site` |
 | 6 | 1 | Mặt bằng định vị | 1:200–1:100 | KT | — | Toạ độ mốc, kích thước tới ranh | `site` |

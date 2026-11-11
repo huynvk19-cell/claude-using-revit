@@ -13,7 +13,7 @@ Input from the caller: the PNG path(s), the topic standard's checklist (or the l
 2. Crop each area of interest and read the crop:
    `powershell -ExecutionPolicy Bypass -File ~/.claude/drafting-domain/tools/crop.ps1 -In <png> -Out <png> -Cx 0.5 -Cy 0.5 -W 0.3 -H 0.15`
    (Cx/Cy centre, W/H size, fractions of the image; output 1600 px.)
-3. Look for: text on text; dims crossing tags; chains outside the building or above the roof; long bridging segments; dims/tags on openings not visible; duplicate dims; titles off-centre or overlapping; grid bubbles overlapping; items clipped by the crop; anything the caller's checklist names.
+3. Look for: text on text; dims crossing tags; chains outside the building or above the roof; long bridging segments; dims/tags on openings not visible; duplicate dims; titles off-centre or overlapping; grid bubbles overlapping; items of one kind a little off their row or column (dim lines, tags, spot elevations, bubbles, viewports, titles) or rows unevenly spaced; items clipped by the crop; anything the caller's checklist names.
 
 Reply in at most 15 lines (25 for a batch of views), text only, no images:
 - `OK` if nothing is wrong, else one line per fault: `<image> | <where: fraction x,y or grid/level> | <fault> | <element text if readable>`.
