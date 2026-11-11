@@ -99,7 +99,7 @@ Một bản vẽ chỉ được báo "xong" khi đạt cả ba. Kiểm tra trư�
 ## 2d. Tên family theo chuẩn riêng (user, 2026-11-11)
 
 - Mọi family loadable trong model mang tên `<MÃ> - <MÔ TẢ IN HOA>`: mã 3 chữ theo category, một dấu ` - `, mô tả tiếng Anh in hoa, các ý cách nhau bằng ` - ` (vd. `ASY - TAG DOOR`, `DOR - DOUBLE FLUSH`, `ASY - TITLE BLOCKS - A2`). Không giữ tiền tố thư viện (`M_`, `RPC`, tên hãng ở đầu); tên hãng, mã sản phẩm đưa xuống cuối mô tả.
-- Family hệ thống (curtain panel, mullion hệ thống, mass) giữ tên Revit. Family annotation không dùng nữa (bị thay bằng bộ ASY) thì xoá khỏi model, không để hai bộ song song.
+- Family hệ thống (curtain panel, mullion hệ thống, mass) giữ tên Revit. **Ký hiệu mặt đứng (Elevation Marks) giữ family mặc định của Revit** (vd. `M_Elevation Mark Body_Circle-12mm`), không đổi sang bộ riêng, không đổi tên (user, 2026-11-11). Family annotation không dùng nữa (bị thay bằng bộ ASY) thì xoá khỏi model, không để hai bộ song song.
 - Bảng mã (theo model ES; dòng *đề xuất* là mã mới, user chưa duyệt):
 
 | Mã | Category |
