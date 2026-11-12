@@ -167,8 +167,8 @@ def _cards(folder):
         steps = os.path.join(folder, skill, u'steps')
         if os.path.isdir(steps):
             for f in os.listdir(steps):
-                with io.open(os.path.join(steps, f), 'rb') as h:
-                    out[skill + u'/' + f] = h.read()
+                with io.open(os.path.join(steps, f), encoding='utf-8', errors='replace') as h:
+                    out[skill + u'/' + f] = h.read().replace(u'\r\n', u'\n')     # a checkout's line ends are no change
     return out
 
 
