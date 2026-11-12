@@ -2,8 +2,8 @@
 name: drafting-coverage
 description: "Ma trận độ phủ: mỗi loại bản vẽ của bộ hồ sơ (khoá ở cột Loại) → skill, workflow, lệnh làm, lệnh kiểm và mức Claude làm được (1–4); chuỗi khâu chung từ sổ bộ hồ sơ tới PDF. Coverage matrix: drawing kind → skill, commands, level."
 metadata:
-  updated: "2026-11-11"
-  related: ["drafting-sheet-layout", "drafting-view-create", "drafting-sheet-place"]
+  updated: "2026-11-12"
+  related: ["drafting-sheet-layout", "drafting-view-create", "drafting-view-template", "drafting-sheet-place"]
 ---
 
 # Ma trận độ phủ (Coverage matrix)
@@ -60,11 +60,12 @@ Mức là của **nội dung trong view**. Các khâu quanh nó (tạo sheet, t�
 | 1 | Lập sổ bộ hồ sơ theo loại công trình | `drafting-sheet-layout` | — (Claude lập file sổ) | tự động |
 | 2 | Tạo sheet | `drafting-sheet-create` | `cur_task` | tự động |
 | 3 | Tạo view | `drafting-view-create` | `view_create` | tự động; trừ legend đầu tiên của mỗi loại (Revit không cho tạo legend mới, chỉ copy) |
-| 4 | Chỉnh view: crop, template, đầu trục | `drafting-views-sheets` | `crop_side_to_grids`, `align_grid_ends` | tự động |
-| 5 | Triển khai nội dung | theo cột Loại (§2) | theo cột Loại (§2) | theo mức |
-| 6 | Đặt view lên sheet | `drafting-sheet-place` | `viewport_place` | tự động; trừ mũi tên Bắc và ký hiệu khác (không phải view) |
-| 7 | Title, danh mục, print set, PDF | `drafting-tags-titles`, `drafting-views-sheets` | `viewport_titles_place`, `viewport_title_audit`, `cur_task` | tự động |
-| 8 | Kiểm bằng ảnh, kết thúc | `drafting-visual-check`, `drafting-end` | `export_sheet_images` | tự động |
+| 4 | Gán view template theo loại bản vẽ | `drafting-view-template` | `view_templates_apply` | tự động; template thiếu trong model thì user tạo (Claude không tạo, không sửa template) |
+| 5 | Chỉnh view: crop, nội dung template, đầu trục | `drafting-views-sheets` | `crop_side_to_grids`, `align_grid_ends` | tự động |
+| 6 | Triển khai nội dung | theo cột Loại (§2) | theo cột Loại (§2) | theo mức |
+| 7 | Đặt view lên sheet | `drafting-sheet-place` | `viewport_place` | tự động; trừ mũi tên Bắc và ký hiệu khác (không phải view) |
+| 8 | Title, danh mục, print set, PDF | `drafting-tags-titles`, `drafting-views-sheets` | `viewport_titles_place`, `viewport_title_audit`, `cur_task` | tự động |
+| 9 | Kiểm bằng ảnh, kết thúc | `drafting-visual-check`, `drafting-end` | `export_sheet_images` | tự động |
 
 Một lệnh của bảng này chưa viết thì ghi `(chưa có)` sau tên lệnh và ghi **làm tay** ở cột Trạng thái.
 

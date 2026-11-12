@@ -19,7 +19,7 @@ Load `drafting-session` first if it is not loaded yet (hard rules, batches, mark
 | Floor plans | `workflows/floor-plan.md` |
 | Reflected ceiling plans (mặt bằng trần) | `workflows/ceiling-plan.md` |
 | Stair core: plans + sections along + sections across | `workflows/stair-core.md` |
-| Sheet set layout for the building type (layout bộ hồ sơ, dàn sheet) | `workflows/sheet-layout.md` |
+| Sheet set layout for the building type (layout bộ hồ sơ, khởi tạo hồ sơ, dàn sheet) | `workflows/sheet-layout.md` |
 | A round of reviewer comments (PDF, TASKS.md) | `workflows/review-round.md` |
 
 - Read **only** the chosen file. Unclear which one, or the job fits none → ask; do not mix two workflows in one checklist.

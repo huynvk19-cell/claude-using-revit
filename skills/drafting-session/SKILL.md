@@ -45,6 +45,7 @@ Do **not** read the whole `drafting-domain/` folder or every skill. Pick the tas
 | Sheet set planning (layout bộ hồ sơ): drawings the building type needs (sheet register), scale / paper / zones, layout check | `drafting-sheet-layout` | `drafting-sheet-layout.md` + one `drafting-sheet-set-<type>.md` (card 00) |
 | Create sheets from the register (khởi tạo sheet) | `drafting-sheet-create` | `drafting-sheet-create.md` |
 | Create the views the sheets need (tạo view cho sheet) | `drafting-view-create` | `drafting-view-create.md` |
+| View template per drawing kind (gán view template theo loại bản vẽ) | `drafting-view-template` | `drafting-view-template.md` |
 | Put views on sheets (bỏ view vào sheet, đặt viewport) | `drafting-sheet-place` | `drafting-sheet-place.md` |
 | Which skill a drawing kind needs, how far Claude can take it (độ phủ, mức 1–4) | — | `drafting-coverage.md` |
 | Checking by image | `drafting-visual-check` | — |
