@@ -209,6 +209,7 @@ Sổ bộ hồ sơ là **một file** cho mỗi job: `sheet-register-<YYYY-MM-DD
 | `Khổ giấy`, `Vừa khổ`, `Vùng` | `drafting-sheet-layout` 03 |
 | `Số sheet`, `Tên sheet`, `Sheet id` | `drafting-sheet-create` |
 | `Loại view`, `Tên view`, `View id`, `Template`, `Crop` | `drafting-view-create` |
+| `Template` (tên template thật, cho cả view có sẵn) | `drafting-view-template` |
 | `Vị trí (mm)`, `Viewport id`, `Viewport type` | `drafting-sheet-place` |
 | `Kiểm` (LO / Z đạt, hoặc mã lỗi) | `drafting-sheet-layout` 04 |
 | `Trạng thái`, `Ghi chú` | mọi skill, khi đổi trạng thái |

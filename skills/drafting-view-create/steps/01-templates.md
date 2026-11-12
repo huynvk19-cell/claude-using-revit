@@ -6,7 +6,7 @@
 ## Do
 
 1. List the template keys the creation table of card 00 uses.
-2. For each key, take the template name from the profile.
+2. For each key, take the template name from the profile. A section or interior elevation of a stair / toilet row has its own key: `drafting-view-template.md` §1, VT2.
 3. Check it exists: it appears in the `View Template` field of the views read in card 00, or in `query_elements_with_filter {category:"Views"}` (templates are views). Not found → it counts as missing.
 4. Check its scale against the register's `Tỷ lệ` when the template locks the scale (VC4).
 5. Missing key, missing template or wrong scale → ask the user once, for all of them together. Write their answers into the profile.

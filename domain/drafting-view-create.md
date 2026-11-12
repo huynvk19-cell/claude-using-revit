@@ -2,8 +2,8 @@
 name: drafting-view-create
 description: "Chuẩn tạo view cho sheet từ sổ bộ hồ sơ: mỗi loại bản vẽ → loại view Revit (floor plan, ceiling plan, duplicate, dependent, elevation, section, callout, detail, drafting, legend, schedule), tạo từ đâu, level, template, tỷ lệ, crop, tên view; quy tắc VC1–VC12; lệnh có / chưa có. View creation standard."
 metadata:
-  updated: "2026-11-11"
-  related: ["drafting-sheet-layout", "drafting-sheet-create", "drafting-views-sheets", "drafting-tools"]
+  updated: "2026-11-12"
+  related: ["drafting-sheet-layout", "drafting-sheet-create", "drafting-view-template", "drafting-views-sheets", "drafting-tools"]
 ---
 
 # Tạo view cho sheet (View creation)
@@ -15,7 +15,7 @@ Skill: `drafting-view-create`.
 
 ## 1. Loại bản vẽ → view Revit
 
-Tên template là **khoá trong profile**: profile ghi tên template thật của dự án cho mỗi khoá. Khoá chưa có tên trong profile → hỏi user.
+Tên template là **khoá trong profile**: profile ghi tên template thật của dự án cho mỗi khoá. Khoá chưa có tên trong profile → hỏi user. Bảng khoá đầy đủ theo `Loại` và loại view (mặt cắt thang, interior elevation, khoá theo tỷ lệ…): `drafting-view-template.md` §1, VT2.
 
 | Bản vẽ | Loại view Revit | Tạo từ | Level / vị trí | Template (khoá profile) | Crop |
 |---|---|---|---|---|---|
