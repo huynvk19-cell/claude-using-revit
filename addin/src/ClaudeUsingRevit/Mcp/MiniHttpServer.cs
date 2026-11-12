@@ -39,6 +39,10 @@ namespace ClaudeUsingRevit.Mcp
 
         public int Port { get; private set; }
 
+        const uint HANDLE_FLAG_INHERIT = 1;
+        [System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true)]
+        static extern bool SetHandleInformation(IntPtr handle, uint mask, uint flags);
+
         public MiniHttpServer(Action<HttpRequest, HttpConnection> handler) { _handler = handler; }
 
         public bool Start(int port, out string error)
@@ -49,6 +53,9 @@ namespace ClaudeUsingRevit.Mcp
                 var l = new TcpListener(IPAddress.Loopback, port);
                 try { l.ExclusiveAddressUse = true; } catch { /* not on every OS; Windows has it */ }
                 l.Start();
+                // .NET Framework makes the socket inheritable: a program this Revit starts later (the web app's node)
+                // would keep the port open after Revit lets go of it, and no other window could take it.
+                try { SetHandleInformation(l.Server.Handle, HANDLE_FLAG_INHERIT, 0); } catch { }
                 _listener = l;
                 Port = port;
             }
