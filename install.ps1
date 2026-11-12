@@ -3,7 +3,8 @@
 #   -AddIn          : build (addin\build.ps1, needs the .NET SDK) and install claude using revit for the Revit versions on this PC:
 #                     %APPDATA%\claude-using-revit\bin\<version>\ (the add-in), \extension\ (the ribbon tools, Python),
 #                     \commands\ (revit-commands\*.cs = the MCP tools), %APPDATA%\Autodesk\Revit\Addins\<version>\ClaudeUsingRevit.addin.
-#                     Close Revit first (it locks the DLL). Removes the old pyRevit extension ClaudeUsingRevit.extension.
+#                     Revit may stay open: a locked DLL is renamed and replaced, open windows load it at their next start.
+#                     Removes the old pyRevit extension ClaudeUsingRevit.extension.
 #   -Revit 2024,2025: the Revit versions for -AddIn (default: the ones installed)
 #   -Dist <folder>  : with -AddIn, install a ready build (<folder>\<version>\ClaudeUsingRevit.dll) instead of building.
 #                     Most people need none of this file: ClaudeUsingRevit-Setup.exe (release setup-latest) does it all.
@@ -45,8 +46,32 @@ function Mirror($from, $to) {
     if ($code -ge 8) { "   some files were in use and not replaced (robocopy $code): close Revit and run again" }
 }
 
+# The add-in's own folder while Revit may run: Revit locks the DLLs it loaded, but Windows lets a loaded DLL be renamed.
+# A changed file that is locked is renamed to <name>.old-<time> and the new one takes its place: open Revit windows keep
+# the old code, the next start loads the new. Leftover .old-* files go on a later run, once nothing holds them.
+function PlaceAddIn($from, $to) {
+    New-Item -ItemType Directory -Force $to | Out-Null
+    Get-ChildItem $to -Recurse -File -Filter '*.old-*' | ForEach-Object { Remove-Item $_.FullName -Force -ErrorAction SilentlyContinue }
+    $stamp = Get-Date -Format 'yyyyMMddHHmmss'
+    $moved = 0
+    foreach ($file in Get-ChildItem $from -Recurse -File) {
+        $src = $file.FullName       # not $_: inside catch it is the error
+        $target = Join-Path $to $src.Substring($from.Length).TrimStart('\')
+        if ((Test-Path $target) -and (Get-FileHash $target).Hash -eq (Get-FileHash $src).Hash) { continue }
+        New-Item -ItemType Directory -Force (Split-Path $target) | Out-Null
+        try { Copy-Item $src $target -Force -ErrorAction Stop }
+        catch {
+            $old = $target + ".old-$stamp"
+            Rename-Item $target (Split-Path $old -Leaf) -ErrorAction Stop
+            try { Copy-Item $src $target -Force -ErrorAction Stop }
+            catch { Rename-Item $old (Split-Path $target -Leaf); throw }     # never leave the add-in without its file
+            $moved++
+        }
+    }
+    if ($moved) { "   $moved file(s) in use by Revit were renamed and replaced: open Revit windows load the new add-in at their next start" }
+}
+
 if ($AddIn) {
-    if (Get-Process Revit -ErrorAction SilentlyContinue) { throw 'Close every Revit window first (Revit locks ClaudeUsingRevit.dll).' }
     if ($Dist) { if (-not (Test-Path (Join-Path $Dist '*\ClaudeUsingRevit.dll'))) { throw "no <version>\ClaudeUsingRevit.dll in $Dist" } }
     else { & (Join-Path $root 'addin\build.ps1') -Revit $Revit; $Dist = Join-Path $root 'addin\dist' }
     $built = Get-ChildItem $Dist -Directory | Where-Object { $_.Name -match '^20\d\d$' }
@@ -59,7 +84,7 @@ if ($AddIn) {
     foreach ($b in $built) {
         $v = $b.Name
         $bin = Join-Path $data "bin\$v"
-        Mirror $b.FullName $bin
+        PlaceAddIn $b.FullName $bin
         $addins = Join-Path $env:APPDATA "Autodesk\Revit\Addins\$v"
         New-Item -ItemType Directory -Force $addins | Out-Null
         $manifest = @"
