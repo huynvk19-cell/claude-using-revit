@@ -42,7 +42,7 @@ Danh mục ở §2 **thay cho** bộ hồ sơ lõi (`drafting-sheet-layout.md` �
 |---|---|---|---|---|---|---|---|
 | 1 | 0 | Tờ bìa | — | CS | — | Tên công trình, địa điểm, chủ đầu tư, đơn vị thiết kế, giai đoạn, ngày | `cover` |
 | 2 | 0 | Danh mục bản vẽ | — | CS | — | Khớp print set (`drafting-views-sheets.md` §5) | `sheet-list` |
-| 3 | 0 | Ghi chú, ký hiệu chung | — | KT | — | Một bảng ký hiệu 5 nhóm theo `drafting-sheet-layout.md` §8b (KH1–KH7); chữ viết tắt, cao độ chuẩn ±0.000; bảng diện tích các tầng nếu không đặt trên mặt bằng tổng thể | `notes` |
+| 3 | 0 | Ghi chú, ký hiệu, vật liệu chung | — | KT | — | Một bảng theo `drafting-sheet-layout.md` §8b (KH1–KH8): ký hiệu 5 nhóm, bảng vật liệu gộp vào; chữ viết tắt, cao độ chuẩn ±0.000; bảng diện tích các tầng nếu không đặt trên mặt bằng tổng thể | `notes` |
 | 4 | 0 | Chi tiết cấu tạo sàn, trần, tường | 1:10–1:5 | TC | — | Một mã cho mỗi lớp cấu tạo; dùng lại mã đó trên mặt bằng và mặt cắt; có chống thấm sàn vệ sinh, sân thượng, tường hầm | `detail` |
 | 5 | 1 | Mặt bằng vị trí khu đất | 1:2000–1:500 | CS | — | Vị trí trong khu, đường xung quanh, hướng Bắc | `site` |
 | 6 | 1 | Mặt bằng định vị khu đất | 1:200–1:100 | CS | — | Mốc toạ độ, kích thước tới ranh, chỉ giới xây dựng, lộ giới | `site` |
