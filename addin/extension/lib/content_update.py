@@ -112,13 +112,29 @@ def _download(url, path):
         resp.Close()
 
 
+CONTENT = (u'skills/', u'domain/', u'workflows/', u'agents/', u'templates/', u'tools/', u'revit-commands/')
+
+
 def _unzip(zip_path, folder):
+    """Only the content folders, under a short root: the whole repo has paths past Windows' 260 characters."""
     try:
         clr.AddReference('System.IO.Compression.FileSystem')
     except Exception:
         clr.AddReference('System.IO.Compression.ZipFile')
-    from System.IO.Compression import ZipFile
-    ZipFile.ExtractToDirectory(zip_path, folder)
+    clr.AddReference('System.IO.Compression')
+    from System.IO.Compression import ZipFile, ZipFileExtensions
+    archive = ZipFile.OpenRead(zip_path)
+    try:
+        for entry in archive.Entries:
+            name = entry.FullName.split(u'/', 1)[-1]          # drop the <repo>-<sha>/ folder of the zip
+            if not name.startswith(CONTENT) or name.endswith(u'/'):
+                continue
+            target = os.path.join(folder, *name.split(u'/'))
+            if not os.path.isdir(os.path.dirname(target)):
+                os.makedirs(os.path.dirname(target))
+            ZipFileExtensions.ExtractToFile(entry, target, True)
+    finally:
+        archive.Dispose()
 
 
 def _copy_tree(src, dst, mirror=False):
@@ -199,16 +215,15 @@ def _check():
         state['checked'] = 0
         _save(state)
         return
-    temp = Path.Combine(Path.GetTempPath(), u'claude-using-revit-update-' + sha[:12])
+    temp = Path.Combine(Path.GetTempPath(), u'cur-' + sha[:8])
     try:
         if os.path.isdir(temp):
             shutil.rmtree(temp)
         os.makedirs(temp)
         zip_path = os.path.join(temp, u'repo.zip')
         _download(u'https://codeload.github.com/{0}/zip/{1}'.format(REPO, sha), zip_path)
-        out = os.path.join(temp, u'repo')
-        _unzip(zip_path, out)
-        root = os.path.join(out, os.listdir(out)[0])
+        root = os.path.join(temp, u'r')
+        _unzip(zip_path, root)
         changed = install(root)
     finally:
         shutil.rmtree(temp, ignore_errors=True)
