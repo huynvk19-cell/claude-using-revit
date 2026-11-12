@@ -151,7 +151,7 @@ File bộ hồ sơ của từng loại công trình **cộng thêm hoặc sửa*
 ## 8. Tên sheet và danh mục (HS6)
 
 - **Tên sheet** = loại bản vẽ + tầng / vùng / mẫu nhà, vd. `MẶT BẰNG KÍCH THƯỚC TẦNG 2 - VÙNG A`. Không ghi tỷ lệ trong tên.
-- Cả bộ dùng cùng ngôn ngữ, cùng kiểu chữ (in hoa), cùng cách gọi tầng. Song ngữ chỉ khi profile yêu cầu.
+- Cả bộ dùng cùng ngôn ngữ, cùng kiểu chữ (in hoa cho mọi chữ của hồ sơ, `drafting-annotation.md` §0), cùng cách gọi tầng. Song ngữ chỉ khi profile yêu cầu.
 - Tầng điển hình (một view dùng cho nhiều tầng) ghi dải tầng: `MẶT BẰNG TẦNG 5–20 (ĐIỂN HÌNH)`.
 - **Danh mục bản vẽ** liệt kê mọi sheet phát hành, theo thứ tự nhóm (§3). Print set phải khớp với danh mục (`drafting-views-sheets.md` §5).
 - **Bìa và danh mục là hai sheet riêng** (user, 2026-11-11): bìa chỉ có thông tin công trình; danh mục ở sheet kế tiếp.
@@ -163,9 +163,9 @@ File bộ hồ sơ của từng loại công trình **cộng thêm hoặc sửa*
 - **Nhóm theo bộ bản vẽ** (user, 2026-11-11): bảng nhóm theo Sheet Collection (Revit 2025 trở lên); Revit 2023–2024 dùng tham số sheet `NHÓM BẢN VẼ` (text), giá trị = số nhóm §3 + tên, vd. `2 - MẶT BẰNG`. Mỗi nhóm có dòng tiêu đề, trong nhóm sắp theo số sheet.
 - **Danh mục dài hơn vùng vẽ**: chia bảng thành cột trên cùng sheet, chỗ cắt nằm giữa hai nhóm (không cắt đôi một nhóm), các cột cùng mép trên.
 
-## 8b. Bảng ghi chú, ký hiệu chung của công trình nhỏ (KH1–KH7, user 2026-11-11)
+## 8b. Bảng ghi chú, ký hiệu, vật liệu chung của công trình nhỏ (KH1–KH8, user 2026-11-11, 2026-11-12)
 
-Áp dụng cho hồ sơ quy mô nhỏ: **nhà liên kế, biệt thự**. Ghi chú và mọi ký hiệu gom về **một bảng** trên sheet "Ghi chú, ký hiệu chung" (loại `notes`), không tách mỗi nhóm một sheet. Bảng gồm 5 nhóm, đúng thứ tự:
+Áp dụng cho hồ sơ quy mô nhỏ: **nhà liên kế, biệt thự**. Ghi chú, mọi ký hiệu và **bảng vật liệu / hoàn thiện chung** gom về **một bảng** trên sheet "Ghi chú, ký hiệu, vật liệu chung" (loại `notes`), không tách mỗi nhóm một sheet và không lập sheet bảng vật liệu riêng (KH8). Bảng gồm 5 nhóm, đúng thứ tự:
 
 | # | Nhóm | Mỗi dòng gồm |
 |---|---|---|
@@ -177,6 +177,7 @@ File bộ hồ sơ của từng loại công trình **cộng thêm hoặc sửa*
 
 - **KH6 — Chỉ ghi cái có thật**: mỗi dòng ứng với một ký hiệu, vật liệu hoặc thiết bị **đang được dùng** trong model / trên các sheet của bộ hồ sơ; tên lấy từ model (R8). Không chép cả thư viện; thứ có trên bản vẽ mà thiếu trong bảng là lỗi ĐỦ.
 - **KH7 — Trình bày** (`drafting-work-rules.md` §2a): mỗi nhóm có tiêu đề; hai cột `KÝ HIỆU | DIỄN GIẢI`, ký hiệu chung một trục giữa, chữ chung mép trái, các dòng cách đều. Bảng dài hơn vùng vẽ → chia cột trên cùng sheet, chỗ cắt nằm giữa hai nhóm, các cột cùng mép trên.
+- **KH8 — Gộp bảng vật liệu** (user, 2026-11-12): dòng "Bảng vật liệu / hoàn thiện chung" của bộ lõi (§4) không thành sheet riêng. KH2–KH4 chính là bảng vật liệu sàn, trần, tường (thêm mã vật liệu vào dòng khi hồ sơ dùng mã); vật liệu hoàn thiện khác đang dùng (mái, ốp mặt đứng, sân vườn…) thành nhóm `VẬT LIỆU KHÁC` ngay sau KH4, cùng hai cột, cùng đường gióng (KH7). Mỗi vật liệu chỉ ghi một lần.
 - Ghi chú chung và chữ viết tắt đứng cùng sheet, trước bảng ký hiệu.
 
 ## 9. Xong khi (layout của bộ hồ sơ)

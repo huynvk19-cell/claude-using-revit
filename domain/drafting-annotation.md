@@ -2,7 +2,7 @@
 name: drafting-annotation
 description: "Chuẩn đặt tag cửa đi/cửa sổ trên mặt đứng-mặt cắt, room tag, cao độ sàn và ký hiệu độ dốc trên mặt bằng, view title trên sheet. Tag, room tag, floor spot, slope mark and viewport title standards."
 metadata:
-  updated: "2026-10-22"
+  updated: "2026-11-12"
   related: ["drafting-work-rules", "drafting-views-sheets", "drafting-tools"]
 ---
 
@@ -10,6 +10,10 @@ metadata:
 
 ## 0. Chữ trong hồ sơ (user, 2026-11-11)
 
+- **Toàn bộ chữ của hồ sơ viết IN HOA** (user, 2026-11-12, mọi loại hồ sơ): text note, ghi chú chung, nội dung và tiêu đề bảng / schedule, legend, giá trị tag, tên view, tên sheet, tên phòng, vật liệu, chữ thêm vào dim (Prefix / Suffix / Above / Below), khung tên.
+  - Giữ nguyên dạng viết của **ký hiệu đơn vị** (`mm`, `m`, `m²`, `kg`) và ký hiệu toán (`x`, `Ø`, `±`, `%`).
+  - Chữ Claude viết ra luôn in hoa. Chữ thường có sẵn trong model: text note, tham số annotation, tên view / sheet thì sửa; giá trị thuộc model (tên phòng, tên vật liệu, type mark… — R1) thì ghi vào việc tồn cho user sửa.
+  - Chữ thường còn trên sheet là lỗi ĐẸP (không cùng kiểu trình bày cả bộ).
 - **Chữ thông thường cao 2.5 mm giấy** (user, 2026-11-11, mọi loại hồ sơ kiến trúc): ghi chú, dim, spot, tag, nội dung bảng. Chữ lớn hơn chỉ cho tiêu đề (tên view, tên bảng, tiêu đề nhóm), nhỏ hơn chỉ khi ký hiệu không đủ chỗ.
 - Mọi chữ của hồ sơ dùng font **Arial**, **width factor 0.8**: text note, dim, spot, schedule (tiêu đề, đầu cột, nội dung), tag, view title, khung tên.
 - Type chữ / dim mới tạo (kể cả type đánh dấu, `drafting-work-rules.md` §2c) cũng theo quy tắc này; chiều cao chữ giữ theo type gốc.
