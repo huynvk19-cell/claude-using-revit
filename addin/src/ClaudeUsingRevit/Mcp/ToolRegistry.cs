@@ -71,10 +71,10 @@ namespace ClaudeUsingRevit.Mcp
             new ToolDef
             {
                 Name = "run_dynamic_command", BuiltIn = true, TimeoutSeconds = 300,
-                Description = "Run a command of the commands folder by name (same as calling the tool <name>). source: run this C# text instead of the file.",
+                Description = "Run a command of the commands folder by name (same as calling the tool <name>). New C# goes in a new command file, never in source.",
                 InputSchema = Require(Schema(("name", "string", "Command (file name without .cs)"),
                                              ("args", "object", "Arguments of the command"),
-                                             ("source", "string", "Optional C# source to run instead of the file")), "name"),
+                                             ("source", "string", "Web app only: file text it sends. Claude never uses it")), "name"),
                 OnApi = (app, a) => DynamicCommands.Run(app, (string)a["name"], (string)a["source"], a["args"] as JObject),
             },
             new ToolDef

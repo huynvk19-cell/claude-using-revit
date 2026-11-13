@@ -18,7 +18,7 @@ Read first (only these two):
 - Confirm the sheet or view with the user once if the request is ambiguous or the window title changes, before reading anything.
 - Every drawing kind (stair plans and sections, elevations, building sections, floor plans, ceiling plans): run `view_develop {viewId, mode, imagePath, profile}` first (one view, one call, one Undo step; the profile's `view_develop` row). `preview` rolls everything back and still writes the image, so look at that before `apply`. Revit does the filtering; read only its result. The skill's cards and standard are for what its `Left` still lists.
 - Never export images while the user works in the same Revit window: each export brings a view to the front.
-- A one-off command used more than once goes in the commands folder: do not re-send its source.
+- Any C#, even one-off or a quick test: write or edit `revit-commands/<name>.cs` and call it by name. Never send C# text in `run_dynamic_command`'s `source` (work rules R11).
 
 ## Load only what the task needs
 

@@ -16,7 +16,7 @@ metadata:
 **Mã nguồn**: thư mục `revit-commands/` của repo (cài vào `%APPDATA%\claude-using-revit\commands`; `install.ps1 -AddIn -Dev` thì add-in đọc thẳng thư mục của repo). Tool không có giá trị mặc định của dự án nào: tên dim type, family cửa cuốn… truyền vào lúc gọi, lấy từ `drafting-profile.md`.
 
 **Cách gọi**
-- Gọi trực tiếp tool `<tên>`, hoặc qua `run_dynamic_command {name, args}`.
+- Gọi trực tiếp tool `<tên>`, hoặc qua `run_dynamic_command {name, args}`. Không gửi mã C# qua `source` (chỉ web app dùng): C# mới luôn là một file lệnh (`drafting-work-rules.md` R11).
 - Tool có sẵn trong add-in: `cur_task` (task dùng chung, dưới đây), `cur_status` (cửa sổ Revit nào đang phục vụ, document đang mở, client, lệnh gần đây; trả lời cả khi Revit bận), `run_dynamic_command`.
 - Lệnh chạy lần lượt trên luồng API của Revit. Lệnh chưa bắt đầu sau `timeoutSeconds` (Revit đang mở hộp thoại / đang bận) thì bị bỏ, không chạy gì.
 - Claude Code hoãn nạp tool MCP (tool search): đầu việc nạp mọi lệnh ở dòng **Tools** của skill trong **một** lần ToolSearch (`select:` + tên đầy đủ `mcp__<server>__<tên>`).
