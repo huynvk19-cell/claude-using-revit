@@ -484,7 +484,7 @@ def untagged_scan(doc, uidoc, args):
     return {"total": um.unique_counts(views, found, kinds), "views": rows}
 
 
-@task(u"Orange 50% region around everything untagged (replaces your earlier ones). "
+@task(u"One orange 50% region per view over everything untagged (replaces your earlier ones). "
       u"args: views or sheets, kinds.")
 def untagged_highlight(doc, uidoc, args):
     views, kinds = _views(doc, uidoc, args), _kinds(args)
@@ -502,7 +502,7 @@ def untagged_remove(doc, uidoc, args):
 
 # ---- highlight (Highlight / Clear Highlight) ------------------------------------
 
-@task(u"Red 50% region around elements (annotations: in their own view; model elements: "
+@task(u"One red 50% region per view over elements (annotations: in their own view; model elements: "
       u"in view). args: ids (default: selection, also elements selected inside links), view (id; "
       u"default: active view).")
 def highlight(doc, uidoc, args):

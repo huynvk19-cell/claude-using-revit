@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-"""Orange see-through filled regions over elements that miss their tag, and their removal.
+"""Orange see-through filled region over elements that miss their tag, and its removal.
+One region per view holds them all, merged like water drops (highlight_regions.create_merged).
 
 Checked per view (only what the view shows, host model only):
   Room    - no room tag of the room in the view;
@@ -13,13 +14,13 @@ A dependent view also counts the tags of its primary view.
 Every region is marked like highlight_regions does it, with its own type and
 schema, so Remove never touches the plain Highlight regions or anything else:
   - type TYPE_NAME (solid orange fill, created on first use);
-  - extensible-storage entity (SCHEMA_GUID): Revit user name + element kind.
+  - extensible-storage entity (SCHEMA_GUID): Revit user name + the kinds it covers.
 """
 from System import Guid, String
 from System.Collections.Generic import List
 
 from Autodesk.Revit.DB import (
-    BuiltInCategory, BuiltInParameter, Color, CurveLoop, Element, ElementId,
+    BuiltInCategory, BuiltInParameter, Color, Element, ElementId,
     FamilyInstance, FilledRegion, FilledRegionType, FilteredElementCollector,
     HostObjectUtils, IndependentTag, Line, OverrideGraphicSettings,
     SpatialElementBoundaryOptions, Transaction, TransactionGroup, View,
@@ -79,11 +80,6 @@ def _marked_by(region, schema):
     if ent is None or not ent.IsValid():
         return None
     return ent.Get[String](FIELD_USER)
-
-
-def marked_kind(region):
-    ent = region.GetEntity(get_schema())
-    return ent.Get[String](FIELD_KIND) if ent is not None and ent.IsValid() else None
 
 
 def find_marked(doc, view=None, user=None):
@@ -312,15 +308,6 @@ def _flat(view, pts):
     return [(p.Subtract(o).DotProduct(r), p.Subtract(o).DotProduct(u)) for p in pts]
 
 
-def _area(poly):
-    a = 0.0
-    for i in range(len(poly)):
-        x1, y1 = poly[i]
-        x2, y2 = poly[(i + 1) % len(poly)]
-        a += x1 * y2 - x2 * y1
-    return abs(a) / 2
-
-
 def _curves_poly(view, curves):
     pts = []
     for c in curves:
@@ -353,45 +340,26 @@ def _floor_face_polys(floor, view):
     return faces
 
 
-def _outline_sets(doc, view, elem, kind, offset):
-    """Candidate polygon sets for the region, best first."""
-    sets = []
+def _shapes(view, host, elem, kind):
+    """[[outer, hole, ...]] of what the element draws in `view`, in the 2D
+    coordinates of `host` (the view that gets the region)."""
     if _is_plan(view):
         try:
             if kind == "Room":
-                polys = _room_polys(elem, view)
+                polys = _room_polys(elem, host)
                 if polys:
-                    sets.append([polys])
+                    return [polys]
             elif kind == "Floor":
-                faces = _floor_face_polys(elem, view)
+                faces = _floor_face_polys(elem, host)
                 if faces:
-                    sets.append(faces)
+                    return faces
         except Exception:
             pass
     pts = hr.element_points(elem, view)
-    if pts:
-        sets.append([[hr.outline_2d(pts, view, offset)]])
-    return sets
-
-
-def _make_region(doc, view, rtype_id, polys, min_len):
-    """One filled region from polygons (outer + holes); falls back to the largest alone."""
-    tries = [polys]
-    if len(polys) > 1:
-        tries.append([max(polys, key=_area)])
-    for ps in tries:
-        loops = List[CurveLoop]()
-        for p in ps:
-            loop = hr.loop_from_2d(p, view, min_len)
-            if loop is not None:
-                loops.Add(loop)
-        if loops.Count == 0:
-            continue
-        try:
-            return FilledRegion.Create(doc, rtype_id, view.Id, loops)
-        except Exception:
-            continue
-    return None
+    if not pts:
+        return []
+    poly = hr.outline_2d(pts, host, hr.SEED_PAPER_MM / 304.8 * max(host.Scale, 1))
+    return [[poly]] if len(poly) >= 3 else []
 
 
 # ---- commands -----------------------------------------------------------
@@ -438,7 +406,9 @@ def marked_count(doc, views):
 
 
 def highlight_views(doc, views, kinds, found=None):
-    """Replace the current user's untagged regions in each view with fresh ones.
+    """Replace the current user's untagged regions in each view with ONE fresh region
+    holding everything untagged there, merged like water drops (hr.create_merged).
+    Dependent views of one primary share that region.
 
     One transaction per view (a view that fails is rolled back alone).
     `found` = scan() result to reuse. Returns ([(view, {kind: count})], [problems]).
@@ -448,7 +418,14 @@ def highlight_views(doc, views, kinds, found=None):
     ogs = OverrideGraphicSettings()
     ogs.SetSurfaceTransparency(TRANSPARENCY)
     ogs.SetProjectionLineColor(ORANGE)
-    report, problems, done = [], [], set()
+    report, problems = [], []
+    groups, order = {}, []
+    for view in views:
+        key = view_key(view)
+        if key not in groups:
+            groups[key] = []
+            order.append(key)
+        groups[key].append(view)
     tg = TransactionGroup(doc, "Highlight untagged")
     tg.Start()
     try:
@@ -457,51 +434,53 @@ def highlight_views(doc, views, kinds, found=None):
         rtype = get_region_type(doc)
         schema = get_schema(create=True)
         t.Commit()
-        for view in views:
-            key = view_key(view)
-            offset = hr.OFFSET_PAPER_MM / 304.8 * max(view.Scale, 1)
-            counts = dict((k, 0) for k in kinds)
+        for key in order:
+            group = groups[key]
+            host = group[0]
             t = Transaction(doc, "Highlight untagged")
             t.Start()
             try:
-                old = [r.Id for r in find_marked(doc, view, user)
-                       if marked_kind(r) in kinds]
+                old = set(r.Id.IntegerValue for v in group for r in find_marked(doc, v, user))
                 if old:
-                    doc.Delete(List[ElementId](old))
-                fv = (found or {}).get(view.Id.IntegerValue)
-                if fv is None:
-                    fv = untagged_in_view(doc, view, kinds)
-                for kind in kinds:
-                    for e in fv[kind]:
-                        if (key, e.Id.IntegerValue) in done:
-                            continue
-                        made = 0
-                        for polyset in _outline_sets(doc, view, e, kind, offset):
-                            regions = [_make_region(doc, view, rtype.Id, ps, min_len)
-                                       for ps in polyset]
-                            regions = [r for r in regions if r is not None]
-                            for r in regions:
-                                _mark(r, schema, user, kind)
-                                view.SetElementOverrides(r.Id, ogs)
-                            made = len(regions)
-                            if made:
-                                break
-                        if made:
-                            done.add((key, e.Id.IntegerValue))
-                            counts[kind] += 1
-                        else:
-                            problems.append(u"{0}: {1} {2} không vẽ được vùng tô".format(
-                                view.Name, LABELS[kind], e.Id))
+                    doc.Delete(List[ElementId]([ElementId(i) for i in old]))
+                shapes, seen, rows, notes = [], set(), [], []
+                for view in group:
+                    counts = dict((k, 0) for k in kinds)
+                    fv = (found or {}).get(view.Id.IntegerValue)
+                    if fv is None:
+                        fv = untagged_in_view(doc, view, kinds)
+                    for kind in kinds:
+                        for e in fv[kind]:
+                            if e.Id.IntegerValue in seen:
+                                continue
+                            own = _shapes(view, host, e, kind)
+                            if own:
+                                shapes.extend(own)
+                                seen.add(e.Id.IntegerValue)
+                                counts[kind] += 1
+                            else:
+                                notes.append(u"{0}: {1} {2} không vẽ được vùng tô".format(
+                                    view.Name, LABELS[kind], e.Id))
+                    rows.append((view, counts))
+                if shapes:
+                    regions = hr.create_merged(doc, host, rtype.Id, shapes, min_len)
+                    if not regions:
+                        raise Exception(u"không vẽ được vùng tô")
+                    for r in regions:
+                        _mark(r, schema, user, u",".join(kinds))
+                        for view in group:
+                            view.SetElementOverrides(r.Id, ogs)
                 t.Commit()
-                report.append((view, counts))
-                if any(counts.values()) and view.GetCategoryHidden(
+                report.extend(rows)
+                problems.extend(notes)
+                if shapes and host.GetCategoryHidden(
                         ElementId(BuiltInCategory.OST_DetailComponents)):
                     problems.append(u"{0}: Detail Items đang tắt trong view, vùng tô "
-                                    u"không hiện".format(view.Name))
+                                    u"không hiện".format(host.Name))
             except Exception as ex:
                 if t.HasStarted() and not t.HasEnded():
                     t.RollBack()
-                problems.append(u"{0}: {1}".format(view.Name, ex))
+                problems.append(u"{0}: {1}".format(host.Name, ex))
         tg.Assimilate()
     except Exception:
         if tg.HasStarted() and not tg.HasEnded():
