@@ -5,10 +5,14 @@ Plain Python 3, no packages. The text files are the source; the database is rebu
     domain/drafting-coverage.md §2                                           kind -> skill, commands, level
     data/condition-keys.csv, data/condition-map.csv                          condition text -> keys
     data/corrections.csv                                                     the corrections log
+    workflows/*.md, skills/*/SKILL.md, skills/*/steps/*.md, revit-commands/*.cs  the index of the library
 
     python standards_db.py types
     python standards_db.py sheets --type villa --stage KT --has elevator,pool
     python standards_db.py corrections --scope villa --status open
+    python standards_db.py workflows floor-plan          its steps: skill, cards
+    python standards_db.py cards --tool grid_dims_band   (or --skill grid-dims, --rule G3)
+    python standards_db.py commands --unused
     python standards_db.py correction-add --date 2026-11-13 --slug no-zone-lines --scope all --topic layout --rule "..."
     python standards_db.py correction-set 2026-11-13-no-zone-lines --status in-repo --ref "domain/x.md LO13"
     python standards_db.py sql "SELECT type, count(*) FROM catalog_row GROUP BY type"
@@ -30,6 +34,11 @@ UP = os.path.dirname(os.path.dirname(HERE))
 IN_REPO = os.path.isdir(os.path.join(UP, 'domain'))          # repo checkout; else the installed copy (drafting-domain/)
 DOMAIN = os.path.join(UP, 'domain') if IN_REPO else UP
 DATA = os.path.join(HERE, 'data')
+SKILLS = os.path.join(UP, 'skills') if IN_REPO else os.path.join(os.path.dirname(UP), 'skills')
+WORKFLOWS = os.path.join(UP, 'workflows')
+COMMANDS = os.path.join(UP, 'revit-commands') if IN_REPO else os.path.join(
+    os.environ.get('APPDATA') or os.path.join(os.path.expanduser('~'), 'AppData', 'Roaming'), 'claude-using-revit', 'commands')
+BUILT_IN = ('cur_task', 'cur_status', 'run_dynamic_command')
 CORRECTIONS = os.path.join(DATA, 'corrections.csv')
 CORRECTION_FIELDS = ['id', 'date', 'scope', 'kind', 'topic', 'rule', 'why', 'status', 'repo_ref', 'superseded_by']
 STATUSES = ('open', 'in-repo', 'superseded')
@@ -37,6 +46,31 @@ STAGES = ('YT', 'CS', 'KT', 'TC', 'HC')
 TICK = re.compile(r'`([^`]+)`')
 SCALE = re.compile(r'1:(\d+)')
 DASH = (u'—', u'-', u'')
+CODE = re.compile(r'\b([A-Z]{1,3})(\d+)([a-z]?)\b')
+CODE_RANGE = re.compile(u'\\b([A-Z]{1,3})(\\d+)\\s*[–-]\\s*(?:\\1)?(\\d+)\\b')
+HEADER = re.compile(r'/\*\s*mcp-tool\s*([\s\S]*?)\*/')
+FRONT = re.compile(r'^description:\s*"?(.*?)"?\s*$', re.M)
+
+
+def rule_codes(text):
+    """The rule codes a text names, in order: G1–G4 is G1, G2, G3, G4."""
+    out = []
+    for m in CODE_RANGE.finditer(text):
+        for i in range(int(m.group(2)), int(m.group(3)) + 1):
+            out.append(m.group(1) + str(i))
+    for m in CODE.finditer(text):
+        out.append(m.group(1) + m.group(2) + m.group(3))
+    seen = []
+    for c in out:
+        if c not in seen and not re.match(r'^A[0-4]$', c):
+            seen.append(c)
+    return seen
+
+
+def field(line, name):
+    """'**Skill** x · **Standard** y · **Tools** z' -> the text after **name**."""
+    m = re.search(r'\*\*%s\*\*:?\s*(.*?)(?=\s+·\s+\*\*|$)' % re.escape(name), line)
+    return m.group(1).strip() if m else ''
 
 
 def read(path):
@@ -223,7 +257,76 @@ def load():
             if not found:
                 problems.append('%s: repo_ref file %s does not exist' % (where, path))
     d['corrections'] = rows
+    load_library(d, problems)
     return d, problems
+
+
+def load_library(d, problems):
+    """The index of workflows, skills, step cards and commands: who calls whom. The text stays in the files."""
+    d.update({'commands': [], 'skills': [], 'skill_tools': [], 'cards': [], 'card_tools': [], 'card_rules': [],
+              'workflows': [], 'workflow_steps': []})
+    for f in sorted(glob.glob(os.path.join(COMMANDS, '*.cs'))):
+        m = HEADER.search(read(f))
+        try:
+            desc = json.loads(m.group(1)).get('description', '') if m else ''
+        except ValueError:
+            desc = ''
+        d['commands'].append({'key': os.path.basename(f)[:-3], 'description': desc, 'built_in': 0})
+    have_commands = bool(d['commands'])
+    d['commands'] += [{'key': k, 'description': 'built into the add-in', 'built_in': 1} for k in BUILT_IN]
+    commands = {c['key'] for c in d['commands']}
+
+    def tools(owner, text, where, rows, key):
+        for t in TICK.findall(text):
+            if have_commands and t not in commands:
+                problems.append('%s: tool %s does not exist' % (where, t))
+            elif (owner, t) not in [(r[key], r['command']) for r in rows]:
+                rows.append({key: owner, 'command': t})
+
+    for f in sorted(glob.glob(os.path.join(SKILLS, '*', 'SKILL.md'))):
+        key = os.path.basename(os.path.dirname(f))
+        text = read(f)
+        m = FRONT.search(text)
+        std = re.search(r'Standard[^\n]*?`[^`\n]*?(drafting-[a-z0-9-]+\.md)`', text)
+        d['skills'].append({'key': key, 'description': m.group(1) if m else '', 'standard': std.group(1) if std else '',
+                            'source': 'skills/%s/SKILL.md' % key})
+        for line in text.split('\n'):
+            if line.startswith('**Tools**'):
+                tools(key, line, 'skills/%s/SKILL.md' % key, d['skill_tools'], 'skill')
+        for c in sorted(glob.glob(os.path.join(os.path.dirname(f), 'steps', '[0-9]*.md'))):
+            name = os.path.basename(c)
+            ctext = read(c)
+            title = re.search(u'^# (?:\\S+ · )?(.+)$', ctext, re.M)
+            head = [l for l in ctext.split('\n') if l.startswith('**Skill**')]
+            applies = [l for l in ctext.split('\n') if l.startswith('**Applies to**')]
+            cid = '%s/%s' % (key, name[:-3])
+            std_text = field(head[0], 'Standard') if head else ''
+            d['cards'].append({'id': cid, 'skill': key, 'no': name.split('-')[0], 'title': title.group(1).strip() if title else name,
+                               'standard': std_text, 'applies_to': field(applies[0], 'Applies to') if applies else '',
+                               'source': 'skills/%s/steps/%s' % (key, name)})
+            if head:
+                tools(cid, field(head[0], 'Tools'), d['cards'][-1]['source'], d['card_tools'], 'card')
+                d['card_rules'] += [{'card': cid, 'rule': r} for r in rule_codes(re.sub(r'`[^`]*`', '', std_text))]
+    skills = {s['key'] for s in d['skills']}
+    for f in sorted(glob.glob(os.path.join(WORKFLOWS, '*.md'))):
+        key = os.path.basename(f)[:-3]
+        text = read(f)
+        title = re.search(r'^# (.+)$', text, re.M)
+        d['workflows'].append({'key': key, 'title': title.group(1).strip() if title else key, 'source': 'workflows/%s.md' % key})
+        seq = 0
+        for _, head, rows in tables(text):
+            if head[:2] != ['#', 'Skill']:
+                continue
+            for n, c in rows:
+                r = dict(zip(head, c))
+                for sk in TICK.findall(r['Skill'])[:1] if r['Skill'].startswith('`') else []:
+                    seq += 1
+                    if sk not in skills:
+                        problems.append('workflows/%s.md:%d skill %s does not exist' % (key, n, sk))
+                        continue
+                    d['workflow_steps'].append({'workflow': key, 'seq': seq, 'step': r['#'], 'skill': sk,
+                                                'cards': '' if r.get('Cards', '') in DASH else r.get('Cards', ''),
+                                                'applies_to': r.get('Applies to', '')})
 
 
 def connect(d, path=':memory:'):
@@ -240,6 +343,14 @@ def connect(d, path=':memory:'):
         con.executemany('INSERT OR IGNORE INTO catalog_row_condition VALUES (?, ?)', [(i, k) for k in keys_of(r['condition_expr'])])
     con.executemany('INSERT OR IGNORE INTO correction VALUES (:id, :date, :scope, :kind, :topic, :rule, :why, :status, '
                     ':repo_ref, :superseded_by)', [r for r in d['corrections'] if set(r) == set(CORRECTION_FIELDS) and None not in r.values()])
+    con.executemany('INSERT INTO command VALUES (:key, :description, :built_in)', d['commands'])
+    con.executemany('INSERT INTO skill VALUES (:key, :description, :standard, :source)', d['skills'])
+    con.executemany('INSERT INTO skill_tool VALUES (:skill, :command)', d['skill_tools'])
+    con.executemany('INSERT INTO card VALUES (:id, :skill, :no, :title, :standard, :applies_to, :source)', d['cards'])
+    con.executemany('INSERT INTO card_tool VALUES (:card, :command)', d['card_tools'])
+    con.executemany('INSERT OR IGNORE INTO card_rule VALUES (:card, :rule)', d['card_rules'])
+    con.executemany('INSERT INTO workflow VALUES (:key, :title, :source)', d['workflows'])
+    con.executemany('INSERT INTO workflow_step VALUES (:workflow, :seq, :step, :skill, :cards, :applies_to)', d['workflow_steps'])
     con.commit()
     return con
 
@@ -340,6 +451,59 @@ def cmd_corrections(con, a):
         print('%d rows; %d open in the whole log (said by the user, not yet in a standard)' % (len(rows), n))
 
 
+def cmd_workflows(con, a):
+    if a.name:
+        show(con.execute('SELECT w.step, w.skill, w.cards, (SELECT count(*) FROM card c WHERE c.skill = w.skill) AS skill_cards, '
+                         'w.applies_to FROM workflow_step w WHERE w.workflow = ? ORDER BY w.seq', (a.name,)).fetchall(),
+             ['step', 'skill', 'cards', 'skill_cards', 'applies_to'], a.json)
+    else:
+        show(con.execute('SELECT w.key, w.title, (SELECT count(*) FROM workflow_step s WHERE s.workflow = w.key) AS steps, '
+                         'w.source FROM workflow w ORDER BY w.key').fetchall(), ['key', 'title', 'steps', 'source'], a.json)
+
+
+def cmd_skills(con, a):
+    sql = ("SELECT s.key, s.standard, (SELECT count(*) FROM card c WHERE c.skill = s.key) AS cards, "
+           "(SELECT count(*) FROM skill_tool t WHERE t.skill = s.key) AS tools, "
+           "(SELECT group_concat(DISTINCT w.workflow) FROM workflow_step w WHERE w.skill = s.key) AS workflows FROM skill s")
+    rows = con.execute(sql + ' ORDER BY s.key').fetchall()
+    if a.no_workflow:
+        rows = [r for r in rows if not r['workflows']]
+    show(rows, ['key', 'standard', 'cards', 'tools', 'workflows'], a.json)
+
+
+def cmd_cards(con, a):
+    sql, args = ("SELECT c.id, c.title, (SELECT group_concat(rule, ', ') FROM card_rule r WHERE r.card = c.id) AS rules, "
+                 "(SELECT group_concat(command, ', ') FROM card_tool t WHERE t.card = c.id) AS tools, c.applies_to, c.source "
+                 "FROM card c WHERE 1"), []
+    if a.skill:
+        sql += ' AND c.skill IN (?, ?)'
+        args += [a.skill, 'drafting-' + a.skill]
+    if a.tool:
+        sql += ' AND c.id IN (SELECT card FROM card_tool WHERE command = ?)'
+        args.append(a.tool)
+    if a.rule:
+        sql += ' AND c.id IN (SELECT card FROM card_rule WHERE rule = ?)'
+        args.append(a.rule)
+    rows = con.execute(sql + ' ORDER BY c.id', args).fetchall()
+    show(rows, ['id', 'title', 'rules', 'tools'] + (['applies_to', 'source'] if a.detail else []), a.json)
+    if not a.json:
+        print('%d cards' % len(rows))
+
+
+def cmd_commands(con, a):
+    sql, args = ("SELECT c.key, (SELECT count(*) FROM skill_tool t WHERE t.command = c.key) AS skills, "
+                 "(SELECT count(*) FROM card_tool t WHERE t.command = c.key) AS cards, c.description FROM command c WHERE 1"), []
+    if a.name:
+        sql += ' AND c.key LIKE ?'
+        args.append('%' + a.name + '%')
+    rows = con.execute(sql + ' ORDER BY c.key', args).fetchall()
+    if a.unused:
+        rows = [r for r in rows if not r['skills'] and not r['cards']]
+    show(rows, ['key', 'skills', 'cards'] + (['description'] if a.detail else []), a.json)
+    if not a.json:
+        print('%d commands' % len(rows))
+
+
 def need_repo():
     if not IN_REPO:
         sys.exit('this is the installed copy: the next install overwrites it. Add the correction in the repo checkout '
@@ -429,6 +593,19 @@ def main():
     s.add_argument('--since', help='YYYY-MM-DD')
     s.add_argument('--all', action='store_true', help='superseded rows too')
     s.add_argument('--detail', action='store_true', help='add the reason')
+    s = add('workflows', 'the workflows; with a name: its steps (skill, cards) in order')
+    s.add_argument('name', nargs='?')
+    s = add('skills', 'the skills: standard, card and tool counts, workflows that call them')
+    s.add_argument('--no-workflow', action='store_true', help='only the skills no workflow calls')
+    s = add('cards', 'step cards: rules and tools of each')
+    s.add_argument('--skill')
+    s.add_argument('--tool', help='cards that use this command')
+    s.add_argument('--rule', help='cards that name this rule code (G3, SB5...)')
+    s.add_argument('--detail', action='store_true', help='add applies-to and the file')
+    s = add('commands', 'MCP commands: how many skills and cards use each')
+    s.add_argument('name', nargs='?', help='text in the name')
+    s.add_argument('--unused', action='store_true', help='only the commands no skill or card names')
+    s.add_argument('--detail', action='store_true', help='add the description')
     s = sub.add_parser('correction-add', help='log one correction (repo checkout only)')
     s.add_argument('--date', required=True, help='the day the user said it, YYYY-MM-DD')
     s.add_argument('--slug', required=True, help='short name, a-z 0-9 -: the id is <date>-<slug>')
@@ -457,9 +634,11 @@ def main():
         for x in problems:
             print('FAIL ' + x)
         con = connect(d)
-        print('standards db: %d building types, %d drawing rows, %d kinds, %d conditions, %d corrections (%d open); %d problem(s)'
+        print('standards db: %d building types, %d drawing rows, %d kinds, %d conditions, %d corrections (%d open); '
+              '%d workflows, %d skills, %d cards, %d commands; %d problem(s)'
               % (len(d['types']), len(d['rows']), len(d['kinds']), len(d['conditions']), len(d['corrections']),
-                 con.execute("SELECT count(*) FROM correction WHERE status = 'open'").fetchone()[0], len(problems)))
+                 con.execute("SELECT count(*) FROM correction WHERE status = 'open'").fetchone()[0],
+                 len(d['workflows']), len(d['skills']), len(d['cards']), len(d['commands']), len(problems)))
         sys.exit(1 if problems else 0)
     if problems:
         sys.stderr.write('warning: %d problem(s) in the text files, run "check"\n' % len(problems))
@@ -468,10 +647,11 @@ def main():
         if os.path.exists(path):
             os.remove(path)
         connect(d, path).close()
-        print('standards.db: %d drawing rows, %d corrections' % (len(d['rows']), len(d['corrections'])))
+        print('standards.db: %d drawing rows, %d corrections, %d workflows, %d skills, %d cards, %d commands'
+              % (len(d['rows']), len(d['corrections']), len(d['workflows']), len(d['skills']), len(d['cards']), len(d['commands'])))
         return
     {'types': cmd_types, 'conditions': cmd_conditions, 'sheets': cmd_sheets, 'corrections': cmd_corrections,
-     'sql': cmd_sql}[a.cmd](connect(d), a)
+     'workflows': cmd_workflows, 'skills': cmd_skills, 'cards': cmd_cards, 'commands': cmd_commands, 'sql': cmd_sql}[a.cmd](connect(d), a)
 
 
 if __name__ == '__main__':

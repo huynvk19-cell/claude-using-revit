@@ -10,9 +10,10 @@ metadata:
 
 Skill: `drafting-standards-db`. Công cụ: `tools/standards-db/standards_db.py` (Python 3, không cần cài gì thêm); trên máy đã cài: `~/.claude/drafting-domain/tools/standards-db/`.
 
-Database trả lời hai loại câu hỏi mà file `.md` trả lời chậm:
+Database trả lời ba loại câu hỏi mà file `.md` trả lời chậm:
 - **Tra chéo danh mục**: "biệt thự giai đoạn KT, có thang máy, không hồ bơi cần những bản vẽ nào", "loại công trình nào có bản vẽ `facade`", "những dòng nào còn ở mức 1".
 - **Nhật ký sửa**: user đã sửa gì, ngày nào, cho loại công trình nào, quy tắc đó đã vào chuẩn nào chưa.
+- **Mục lục thư viện**: quy trình nào gọi skill nào theo thứ tự nào, skill có những thẻ bước nào, thẻ nào dùng lệnh nào và quy tắc nào, lệnh nào chưa skill hay thẻ nào nêu tên.
 
 ## DB1. File văn bản là nguồn, database là bản dựng
 
@@ -26,6 +27,12 @@ Database trả lời hai loại câu hỏi mà file `.md` trả lời chậm:
 | `stage` | `schema.sql` (YT / CS / KT / TC / HC) | — |
 | `condition`, `catalog_row_condition` | `data/condition-keys.csv`, `data/condition-map.csv` | hai file CSV (DB3) |
 | `correction` | `data/corrections.csv` | lệnh `correction-add`, `correction-set` (DB2) |
+| `workflow`, `workflow_step` | bảng `# · Skill · Cards · Applies to` của `workflows/*.md` | file quy trình |
+| `skill`, `skill_tool` | `skills/*/SKILL.md`: mô tả, dòng **Tools**, file chuẩn | file skill |
+| `card`, `card_tool`, `card_rule` | dòng đầu của `skills/*/steps/NN-*.md`: tên, **Standard** (mã quy tắc), **Tools**, **Applies to** | file thẻ |
+| `command` | đầu file `revit-commands/*.cs` | file lệnh |
+
+**Mục lục, không phải bản sao**: các bảng quy trình, skill, thẻ chỉ giữ tên và quan hệ. Phần Do / Done when / Never của thẻ và nội dung quy tắc vẫn chỉ nằm trong file; cột `source` trỏ tới file đó. Claude làm một bước thì đọc thẻ của bước đó, không đọc database thay thẻ.
 
 Hai view gộp sẵn: `v_catalog` (mỗi dòng bản vẽ + các `Loại` + mức thấp nhất của chúng) và `v_set` (bộ hồ sơ của một loại công trình: dòng của loại đó, cộng bộ lõi khi loại đó không có danh mục điển hình). Cột của từng bảng: `schema.sql`.
 
@@ -71,6 +78,10 @@ python tools/standards-db/standards_db.py <lệnh>
 | `conditions` | Các khoá điều kiện dùng cho `--has` |
 | `sheets --type <loại> [--stage KT] [--has elevator,pool] [--kind stair] [--group 5] [--section <chữ>] [--max-level 1] [--detail]` | Bản vẽ bộ hồ sơ cần có, theo thứ tự sheet; dòng cuối: số dòng, khổ giấy, số dòng theo mức |
 | `corrections [--scope villa] [--kind stair] [--topic paper] [--status open] [--text <chữ>] [--since <ngày>] [--detail]` | Nhật ký sửa; `--scope` lấy cả dòng `all` |
+| `workflows [<tên>]` | Các quy trình; có tên thì các bước của nó: skill, thẻ chạy, số thẻ của skill |
+| `skills [--no-workflow]` | Skill: file chuẩn, số thẻ, số lệnh, quy trình gọi nó |
+| `cards [--skill …] [--tool <lệnh>] [--rule <mã>] [--detail]` | Thẻ bước kèm mã quy tắc và lệnh của từng thẻ |
+| `commands [<chữ>] [--unused] [--detail]` | Lệnh MCP: số skill và số thẻ nêu tên nó; `--unused` = chưa nơi nào nêu |
 | `correction-add --date … --slug … --scope … --topic … --rule … [--kind …] [--why …] [--ref …]` | Thêm một dòng; có `--ref` thì `in-repo`, không thì `open` |
 | `correction-set <id> [--ref …] [--status …] [--superseded-by <id>]` | Đổi trạng thái: `--ref` → `in-repo`, `--superseded-by` → `superseded` |
 | `sql "SELECT …"` | Câu hỏi bất kỳ, chỉ đọc |
@@ -83,4 +94,5 @@ Mọi lệnh đọc nhận `--json`. Kết quả mặc định ngắn; `--detail
 
 - Sửa bảng trong file bộ hồ sơ hay ma trận độ phủ: không phải làm gì thêm cho database, chỉ chạy `check` (báo câu điều kiện chưa có khoá, `Nhóm` / `GĐ` sai, số ô của dòng lệch với đầu bảng).
 - Thêm loại công trình: thêm file `drafting-sheet-set-<loại>.md`; database tự nhận.
+- Thêm quy trình, skill, thẻ, lệnh: database tự nhận. `check` báo lệnh trên dòng **Tools** không có thật và skill trong quy trình không có thật.
 - Dữ liệu mới chỉ vào database khi nó cần tra theo nhiều thuộc tính và có một file văn bản làm nguồn. Số liệu của dự án thật (số sheet, tên model) không vào repo.

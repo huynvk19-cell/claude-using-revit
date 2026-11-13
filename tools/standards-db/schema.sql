@@ -4,6 +4,7 @@
 --   kind              <- domain/drafting-coverage.md §2
 --   condition         <- data/condition-keys.csv, data/condition-map.csv
 --   correction        <- data/corrections.csv (the log of what the user corrected; this file is its source)
+--   workflow, skill, card, command and their links  <- workflows/*.md, skills/*/SKILL.md, skills/*/steps/*.md, revit-commands/*.cs
 
 CREATE TABLE stage (
     key   TEXT PRIMARY KEY,          -- YT / CS / KT / TC / HC
@@ -77,6 +78,64 @@ CREATE TABLE correction (            -- one thing the user corrected or decided
     status         TEXT NOT NULL CHECK (status IN ('open', 'in-repo', 'superseded')),
     repo_ref       TEXT NOT NULL,    -- where the rule lives now: file + § or rule code
     superseded_by  TEXT NOT NULL     -- id of the correction that replaced it
+);
+
+-- ---- Index of the library: who calls whom. The text of a card, skill or workflow stays in its file (`source`).
+CREATE TABLE command (               -- MCP command = revit-commands/<key>.cs
+    key          TEXT PRIMARY KEY,
+    description  TEXT NOT NULL,
+    built_in     INTEGER NOT NULL    -- 1 = built into the add-in (cur_task...)
+);
+
+CREATE TABLE skill (
+    key          TEXT PRIMARY KEY,
+    description  TEXT NOT NULL,
+    standard     TEXT NOT NULL,      -- its file in domain/, '' = none
+    source       TEXT NOT NULL
+);
+
+CREATE TABLE skill_tool (            -- the **Tools** line of the skill
+    skill    TEXT NOT NULL REFERENCES skill(key),
+    command  TEXT NOT NULL,
+    PRIMARY KEY (skill, command)
+);
+
+CREATE TABLE card (                  -- step card = skills/<skill>/steps/NN-<item>.md
+    id          TEXT PRIMARY KEY,    -- <skill>/<NN-item>
+    skill       TEXT NOT NULL REFERENCES skill(key),
+    no          TEXT NOT NULL,       -- NN: the order inside the skill
+    title       TEXT NOT NULL,
+    standard    TEXT NOT NULL,       -- the card's Standard field, as written
+    applies_to  TEXT NOT NULL,
+    source      TEXT NOT NULL
+);
+
+CREATE TABLE card_tool (
+    card     TEXT NOT NULL REFERENCES card(id),
+    command  TEXT NOT NULL,
+    PRIMARY KEY (card, command)
+);
+
+CREATE TABLE card_rule (             -- rule codes the card's Standard field names: G3, SB5, TR1...
+    card  TEXT NOT NULL REFERENCES card(id),
+    rule  TEXT NOT NULL,
+    PRIMARY KEY (card, rule)
+);
+
+CREATE TABLE workflow (
+    key     TEXT PRIMARY KEY,
+    title   TEXT NOT NULL,
+    source  TEXT NOT NULL
+);
+
+CREATE TABLE workflow_step (
+    workflow    TEXT NOT NULL REFERENCES workflow(key),
+    seq         INTEGER NOT NULL,
+    step        TEXT NOT NULL,       -- the # of the row: 0, 1, 3b...
+    skill       TEXT NOT NULL REFERENCES skill(key),
+    cards       TEXT NOT NULL,       -- all, 00-04, '' = the skill has no cards
+    applies_to  TEXT NOT NULL,
+    PRIMARY KEY (workflow, seq)
 );
 
 -- A set as one list: rows of the type + the core rows when the type adds to the core set.
