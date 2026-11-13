@@ -235,6 +235,20 @@ if closed:
                 options=[u"Dừng", u"Vẫn xuất (cố ý đóng)"]) != u"Vẫn xuất (cố ý đóng)":
         script.exit()
     incomplete = True
+missing = [(sh, ls) for sh, ls in ((sh, pe.unloaded_links(doc, sh)) for sh in win.result) if ls]
+if missing:
+    # warned before anything is written: the user decides, the export is never refused
+    names = sorted(set(n for _, ls in missing for n in ls))
+    if lg.alert(u"{0} link chưa load, {1} sheet sẽ in THIẾU phần của link:\n  {2}{3}\n\n"
+                u"Sheet: {4}{5}\n\nLoad lại link (Manage › Manage Links) rồi xuất, hoặc vẫn "
+                u"xuất nếu không cần link.".format(
+                    len(names), len(missing), u"\n  ".join(names[:8]),
+                    u"\n  và {0} link khác".format(len(names) - 8) if len(names) > 8 else u"",
+                    u", ".join(sh.SheetNumber for sh, _ in missing[:20]),
+                    u" và {0} sheet khác".format(len(missing) - 20) if len(missing) > 20 else u""),
+                title=u"Xuất PDF / CAD", icon=lg.ICON_PDF,
+                options=[u"Dừng", u"Vẫn xuất"]) != u"Vẫn xuất":
+        script.exit()
 lines = []
 for fmt in win.formats():
     out = de.DwgOut(doc, win.setup) if fmt == "dwg" else pe.PdfOut()
@@ -261,15 +275,10 @@ for fmt in win.formats():
         lines += [u"  {0}: {1}".format(sh.SheetNumber, u", ".join(
             u"{0} ({1}x{1})".format(v, n) for v, n in rows)) for sh, rows in res["tiled"]]
     if res["warnings"]:
-        names = sorted(set(n for _, ls in res["warnings"] for n in ls))
-        lines.append(u"CẢNH BÁO: {0} link chưa load, {1} sheet vẫn xuất nhưng in THIẾU phần "
-                     u"của link:".format(len(names), len(res["warnings"])))
-        lines += [u"  " + n for n in names[:8]]
-        if len(names) > 8:
-            lines.append(u"  và {0} link khác".format(len(names) - 8))
-        lines.append(u"  Sheet: " + u", ".join(sh.SheetNumber for sh, _ in res["warnings"][:20]) +
-                     (u" và {0} sheet khác".format(len(res["warnings"]) - 20)
-                      if len(res["warnings"]) > 20 else u""))
+        lines.append(u"Lưu ý: {0} sheet đã xuất thiếu phần của link chưa load ({1}).".format(
+            len(res["warnings"]), u", ".join(sh.SheetNumber for sh, _ in res["warnings"][:20]) +
+            (u" và {0} sheet khác".format(len(res["warnings"]) - 20)
+             if len(res["warnings"]) > 20 else u"")))
     if res["failed"]:
         lines.append(u"Chưa xuất được {0} sheet (không có file thiếu view), bấm lại để thử lại:".format(
             len(res["failed"])))
