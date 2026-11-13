@@ -1,0 +1,18 @@
+key,label
+basement,Có tầng hầm
+basement-ceiling,Tầng hầm có trần
+tum,Có tum
+tum-ceiling,Tum có trần
+corner-lot,Lô góc
+taller-than-neighbour,Nhà cao hơn nhà bên
+elevator,Có thang máy
+planter,Có bồn hoa
+driveway,Có lối xe vào nhà
+facade-features,Mặt tiền có lam / phào / mái đón / biển hiệu
+skylight,Có giếng trời
+multi-unit,Dự án nhiều căn
+neighbour,Có nhà bên
+outbuilding,Hạng mục phụ tách khối khỏi nhà chính
+pool,Có hồ bơi
+style-neoclassical,Phong cách tân cổ điển
+style-modern,Phong cách hiện đại

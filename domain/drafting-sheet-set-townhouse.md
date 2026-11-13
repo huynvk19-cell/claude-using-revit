@@ -87,11 +87,11 @@ Danh mục ở §2 **thay cho** bộ hồ sơ lõi (`drafting-sheet-layout.md` �
 
 ### Bổ sung cho nhà liền kề dự án (nhiều căn, nhiều mẫu)
 
-| Nhóm | Bản vẽ | Tỷ lệ | GĐ | Nội dung bắt buộc | Loại |
-|---|---|---|---|---|---|
-| 37 | Mặt bằng tổ hợp dãy nhà | 1:200 | KT | Các căn ghép thành dãy, tường chung, khe lún giữa các căn | `site` |
-| 38 | Bảng phân loại căn theo mẫu | — | CS | Mã lô → mẫu nhà, diện tích, số tầng, đối xứng / không | `schedule` |
-| 39 | Mặt đứng dãy phố | 1:200 | CS | Nhiều căn liền nhau, cao độ chuẩn của dãy | `elevation` |
+| # | Nhóm | Bản vẽ | Tỷ lệ | GĐ | Nội dung bắt buộc | Loại |
+|---|---|---|---|---|---|---|
+| 37 | 1 | Mặt bằng tổ hợp dãy nhà | 1:200 | KT | Các căn ghép thành dãy, tường chung, khe lún giữa các căn | `site` |
+| 38 | 0 | Bảng phân loại căn theo mẫu | — | CS | Mã lô → mẫu nhà, diện tích, số tầng, đối xứng / không | `schedule` |
+| 39 | 3 | Mặt đứng dãy phố | 1:200 | CS | Nhiều căn liền nhau, cao độ chuẩn của dãy | `elevation` |
 
 ## 3. Layout đặc thù
 
