@@ -100,7 +100,7 @@ Thêm quy trình mới: một file `workflows/<tên>.md` (dòng 0 = `drafting-st
 | `drafting-ceiling-plan.md` | Mặt bằng trần: các thẻ bước (hiện có tag room) |
 | `drafting-plan-floor-finish.md` | Mặt bằng hoàn thiện sàn: các thẻ bước (hiện có cao độ sàn) |
 | `drafting-views-sheets.md` | Viewport, crop, dependent view, template |
-| `drafting-sheet-layout.md` | Layout bộ hồ sơ: loại công trình → file bộ hồ sơ, giai đoạn (YT / CS / KT / TC / HC), nhóm và đánh số bản vẽ, bộ hồ sơ lõi, khổ giấy, tỷ lệ, bố cục trên sheet (LO1–LO12), chia vùng + key plan + matchline (Z1–Z5), tên sheet, **sổ bộ hồ sơ** (§11) |
+| `drafting-sheet-layout.md` | Layout bộ hồ sơ: loại công trình → file bộ hồ sơ, giai đoạn (YT / CS / KT / TC / HC), nhóm và đánh số bản vẽ, bộ hồ sơ lõi, thành phần bắt buộc của chi tiết vệ sinh / thang bộ / thang máy (CT1–CT3), khổ giấy, tỷ lệ, bố cục trên sheet (LO1–LO12), chia vùng + key plan + matchline (Z1–Z5), tên gọi đầy đủ của sheet và view (TG1–TG5), **sổ bộ hồ sơ** (§11) |
 | `drafting-sheet-create.md` | Khởi tạo sheet từ sổ (SC1–SC10): gom sheet, số, tên, khung tên, tạo qua danh mục, tham số sheet |
 | `drafting-view-create.md` | Tạo view cho sheet (VC1–VC12): bảng bản vẽ → loại view Revit, tạo từ đâu, template, tỷ lệ, crop, tên; lệnh `view_create` |
 | `drafting-view-template.md` | Gán view template theo loại bản vẽ (VT1–VT10): bảng `Loại` + loại view → khoá template, lưu ý theo loại công trình, thứ tự tra khoá, view đã có template khác, tỷ lệ; lệnh `view_templates_apply` |

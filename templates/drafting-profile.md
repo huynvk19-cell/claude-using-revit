@@ -37,9 +37,10 @@ description: "Giá trị riêng của dự án cho bộ skill drafting. Copy fil
 | Layout: định dạng số sheet theo nhóm · mã mẫu nhà / hạng mục / khối | `<vd. tiền tố + nhóm + 2 chữ số>` · `<vd. mẫu A, B, góc>` |
 | Layout: vùng (scope box) · thứ tự sheet vùng · ngôn ngữ tên sheet | `<tên scope box>` · `<theo tầng rồi vùng / theo vùng rồi tầng>` · `<Việt / Anh / song ngữ>` |
 | Sheet (`drafting-sheet-create`): tham số chung + giá trị (giai đoạn, ngày phát hành, người vẽ / kiểm / duyệt) · tham số nhóm Project Browser + giá trị theo nhóm | `<tên tham số = giá trị>` · `<tên tham số>` |
-| View (`drafting-view-create`): template theo khoá `plan`, `plan-finish`, `ceiling`, `roof`, `site`, `site-setout`, `elevation`, `section`, `stair`, `toilet`, `detail`, `legend` · mẫu tên view · tham số nhóm view | `<khoá = tên template>` · `<vd. = tên bản vẽ, in hoa>` · `<tên tham số>` |
-| View template theo loại bản vẽ (`drafting-view-template` §1): thêm các khoá `plan-dims`, `stair-section`, `vertical`, `vertical-section`, `enlarged`, `enlarged-elevation`, `facade`, `detail-drafting`, `cover`, `thematic-<chuyên đề>` · khoá theo tỷ lệ `<khoá>@<tỷ lệ>` | `<khoá = tên template>` · `<vd. plan@200 = tên template>` |
+| View (`drafting-view-create`): template theo khoá `plan`, `plan-finish`, `ceiling`, `roof`, `site`, `site-setout`, `elevation`, `section`, `stair`, `toilet`, `detail`, `legend` · mẫu tên view (luôn đầy đủ, TG1–TG5) · tham số nhóm view | `<khoá = tên template>` · `<vd. = tên bản vẽ, in hoa, không viết tắt>` · `<tên tham số>` |
+| View template theo loại bản vẽ (`drafting-view-template` §1): thêm các khoá `plan-dims`, `stair-section`, `vertical`, `vertical-section`, `stair-detail`, `enlarged`, `enlarged-finish`, `enlarged-elevation`, `facade`, `detail-drafting`, `cover`, `thematic-<chuyên đề>` · khoá theo tỷ lệ `<khoá>@<tỷ lệ>` | `<khoá = tên template>` · `<vd. plan@200 = tên template>` |
 | Đặt view (`drafting-sheet-place`): viewport type theo loại view · trục gốc căn chuỗi mặt bằng · vị trí ghi chú / key plan / mũi tên Bắc | `<loại = type>` · `<vd. 1 + A>` · `<vd. cột phải, góc dưới phải>` |
+| Chi tiết (CT1–CT3, `drafting-sheet-layout.md` §4b): cách đánh số vệ sinh / thang (số thứ tự, số phòng, tầng) · phần tên nhận biết thang máy trong model | `<vd. số thứ tự 1…n>` · `THANG MÁY, LIFT, ELEVATOR` |
 | Sổ tay dự án (nếu có) | `<link>` |
 
 ## Ghi chú riêng của dự án

@@ -2,7 +2,7 @@
 name: drafting-coverage
 description: "Ma trận độ phủ: mỗi loại bản vẽ của bộ hồ sơ (khoá ở cột Loại) → skill, workflow, lệnh làm, lệnh kiểm và mức Claude làm được (1–4); chuỗi khâu chung từ sổ bộ hồ sơ tới PDF. Coverage matrix: drawing kind → skill, commands, level."
 metadata:
-  updated: "2026-11-12"
+  updated: "2026-11-13"
   related: ["drafting-sheet-layout", "drafting-view-create", "drafting-view-template", "drafting-sheet-place"]
 ---
 
@@ -41,9 +41,9 @@ Mức là của **nội dung trong view**. Các khâu quanh nó (tạo sheet, t�
 | `roof` | Mặt bằng mái, sân thượng | `drafting-grid-dims`, `drafting-plan-dims` | — | `slope_spots_place` | — | 2 | skill riêng: thoát nước, sê nô, ống đứng, phễu thu (mới có dim trục + ký hiệu độ dốc) |
 | `elevation` | Mặt đứng | `drafting-grid-dims`, `drafting-dims`, `drafting-opening-dims`, `drafting-opening-tags` | `elevation-section` | `view_develop`, `elevation_opening_dims`, `elevation_opening_tags` | `grid_dims_audit`, `door_window_tag_check` | 4 | — |
 | `section` | Mặt cắt | `drafting-section-general`, `drafting-grid-dims`, `drafting-dims`, `drafting-opening-dims`, `drafting-opening-tags` | `elevation-section` | `view_develop`, `structural_cut_fill` | `grid_dims_audit`, `door_window_tag_check` | 4 | — |
-| `stair` | Thang bộ: mặt bằng lõi + mặt cắt dọc / ngang vế | `drafting-stair-plan`, `drafting-stair-section-parallel`, `drafting-stair-section-cross` | `stair-core` | `view_develop`, `stair_plan_annotate`, `stair_section_annotate`, `stair_xsection_annotate` | `stair_plan_audit` | 4 | thang xoắn, thang cong |
-| `vertical` | Thang máy, ram dốc, thang cuốn, băng chuyền người | — | — | — | — | 1 | chuẩn: hố pit, OH, độ dốc ram, cao độ đầu / cuối |
-| `enlarged` | Phòng / khu phóng to + triển khai tường: vệ sinh, bếp, căn hộ, phòng điển hình, sảnh | — | — | — | — | 1 | chuẩn + lệnh cho callout và interior elevation; họ này phủ nhiều loại công trình nhất |
+| `stair` | Chi tiết thang bộ: mặt bằng lõi + mặt cắt dọc / ngang vế + chi tiết phóng lớn mặt cắt + chi tiết mũi bậc | `drafting-stair-plan`, `drafting-stair-section-parallel`, `drafting-stair-section-cross` | `stair-core` | `view_develop`, `stair_plan_annotate`, `stair_section_annotate`, `stair_xsection_annotate` | `stair_plan_audit` | 4 | thang xoắn, thang cong; nội dung chi tiết phóng lớn mặt cắt và mũi bậc (CT2: mới lập view + sheet, hình cấu tạo làm tay) |
+| `vertical` | Chi tiết thang máy, ram dốc, thang cuốn, băng chuyền người | — | — | — | — | 1 | skill + lệnh ghi kích thước hố, pit, OH (bộ view thang máy đã có chuẩn: `drafting-sheet-layout.md` CT3); chuẩn: độ dốc ram, cao độ đầu / cuối |
+| `enlarged` | Phòng / khu phóng to + triển khai tường: chi tiết vệ sinh (mặt bằng kích thước + mặt bằng lát sàn), bếp, căn hộ, phòng điển hình, sảnh | — | — | — | — | 1 | skill + lệnh triển khai nội dung mặt bằng kích thước, mặt bằng lát sàn, interior elevation (bộ view của chi tiết vệ sinh đã có chuẩn: `drafting-sheet-layout.md` CT1); họ này phủ nhiều loại công trình nhất |
 | `door` | Thống kê cửa, chi tiết / mặt đứng cửa, vách kính | — | — | — | — | 1 | skill (schedule cửa + legend từng mã cửa) |
 | `facade` | Triển khai mặt dựng (module kính, lam) | — | — | — | — | 1 | chuẩn module, chia đố |
 | `detail` | Chi tiết cấu tạo: mái, ban công, mặt tiền, khe lún, chống thấm… | — | — | — | — | 1 | thư viện chi tiết của văn phòng + chuẩn ghi chú; Claude không tự vẽ cấu tạo |

@@ -2,7 +2,7 @@
 name: drafting-sheet-set-villa
 description: "Bộ hồ sơ kiến trúc biệt thự (đơn lập, song lập, nhà vườn, nghỉ dưỡng): bản vẽ cần có theo giai đoạn, tỷ lệ, mặt đứng 4 hướng, mái dốc, sân vườn, hồ bơi, cổng tường rào, phào chỉ, cách xếp sheet, hay sót. Villa sheet set."
 metadata:
-  updated: "2026-11-12"
+  updated: "2026-11-13"
   related: ["drafting-sheet-layout"]
 ---
 
@@ -49,20 +49,22 @@ File này có **danh mục điển hình** (§2) thay cho bộ hồ sơ lõi (`d
 | 14 | 3 | Mặt đứng 4 hướng (song lập: 3) | 1:100–1:50 | CS | — | Cao độ đỉnh mái, vật liệu, ngói, phào | `elevation` |
 | 15 | 4 | Mặt cắt ≥ 2 (dọc + ngang), qua thang và thông tầng | 1:50 | CS | — | Cao độ, độ dốc mái, chiều cao thông thuỷ | `section` |
 | 16 | 4 | Mặt cắt qua mái phức tạp, qua lệch tầng | 1:50 | KT | — | — | `section` |
-| 17 | 5 | Thang (thường là thang trang trí, thang xoắn): mặt bằng + mặt cắt | 1:25–1:20 | KT | — | Lan can, tay vịn, ốp bậc | `stair` |
-| 18 | 6 | Vệ sinh, bếp, phòng thay đồ: mặt bằng phóng to + triển khai tường | 1:25–1:20 | TC | — | — | `enlarged` |
-| 19 | 6 | Hồ bơi: mặt bằng, mặt cắt, chi tiết tràn và máng thu | 1:50–1:10 | KT | có hồ bơi | Cao độ nước, lối xuống, phòng máy | `subset` |
-| 20 | 7 | Thống kê cửa + mặt đứng cửa | 1:50 | KT | — | — | `door` |
-| 21 | 7 | Cửa, vách kính lớn, cửa trượt ra sân vườn | 1:50–1:20 | KT | — | — | `door` |
-| 22 | 8 | Chi tiết cấu tạo: tường, sàn, mái, chống thấm, lan can | 1:20–1:5 | TC | — | — | `detail` |
-| 23 | 8 | Chi tiết mái: diềm, sê nô, máng xối, ngói, khe mái, chống thấm | 1:20–1:5 | TC | — | — | `detail` |
-| 24 | 8 | Chi tiết phào chỉ, cột, lan can, ban công | 1:10–1:2 | TC | phong cách tân cổ điển | Profile phào ở 1:2 hoặc 1:1 | `detail` |
-| 25 | 8 | Chi tiết lam, mái đua, ô văng | 1:20–1:5 | TC | phong cách hiện đại | — | `detail` |
+| 17 | 5 | Chi tiết thang bộ 1…n (thường là thang trang trí, thang xoắn; mỗi thang một sheet) | 1:25–1:20; chi tiết 1:20–1:2 | KT | — | Mặt bằng các tầng + mặt cắt + chi tiết phóng lớn mặt cắt thang + chi tiết mũi bậc (CT2); lan can, tay vịn, ốp bậc | `stair` |
+| 18 | 5 | Chi tiết thang máy 1…n | 1:50–1:25 | KT | có thang máy | Mặt bằng hố thang các tầng khác nhau + mặt cắt hố: pit, OH, cửa tầng, cao độ dừng tầng (CT3) | `vertical` |
+| 19 | 6 | Chi tiết vệ sinh 1…n (mỗi loại vệ sinh một sheet) | 1:25–1:20 | TC | — | Mặt bằng kích thước + mặt bằng lát sàn + triển khai tường (CT1); thiết bị, độ dốc thoát sàn, chống thấm | `enlarged` |
+| 20 | 6 | Chi tiết bếp, chi tiết phòng thay đồ: mặt bằng phóng to + triển khai tường | 1:25–1:20 | TC | — | — | `enlarged` |
+| 21 | 6 | Hồ bơi: mặt bằng, mặt cắt, chi tiết tràn và máng thu | 1:50–1:10 | KT | có hồ bơi | Cao độ nước, lối xuống, phòng máy | `subset` |
+| 22 | 7 | Thống kê cửa + mặt đứng cửa | 1:50 | KT | — | — | `door` |
+| 23 | 7 | Cửa, vách kính lớn, cửa trượt ra sân vườn | 1:50–1:20 | KT | — | — | `door` |
+| 24 | 8 | Chi tiết cấu tạo: tường, sàn, mái, chống thấm, lan can | 1:20–1:5 | TC | — | — | `detail` |
+| 25 | 8 | Chi tiết mái: diềm, sê nô, máng xối, ngói, khe mái, chống thấm | 1:20–1:5 | TC | — | — | `detail` |
+| 26 | 8 | Chi tiết phào chỉ, cột, lan can, ban công | 1:10–1:2 | TC | phong cách tân cổ điển | Profile phào ở 1:2 hoặc 1:1 | `detail` |
+| 27 | 8 | Chi tiết lam, mái đua, ô văng | 1:20–1:5 | TC | phong cách hiện đại | — | `detail` |
 
 ## 3. Layout đặc thù
 
 - **Khổ giấy**: **A2** cho cả bộ, như nhà liên kế (user, 2026-11-11: cùng loại hình nhà ở thấp tầng). Profile chưa ghi khổ thì dùng A2; khổ khác chỉ khi user duyệt. View không vừa A2 → tỷ lệ nhỏ hơn kế tiếp trong khoảng cho phép (HS5), rồi tách sheet.
-- **Vừa A2** (user, 2026-11-11, bộ mẫu biệt thự 2 tầng): mặt bằng, mái, mặt đứng 1:100 (2 mặt đứng / sheet); mặt cắt 1:50, một mặt cắt / sheet, crop ngang theo khối nhà ±1 m (không theo đầu trục), annotation crop 12 mm, đầu level / trục 2D kéo về sát crop; trần 1:50 chia vùng (Z1–Z5) khi một tầng không vừa; thang, vệ sinh, bếp 1:25, crop sát phòng / thang; mỗi WC một sheet khi 4 mặt triển khai không vừa cùng mặt bằng; tổng mặt bằng, định vị 1:200, hoàn thiện sân vườn 1:100 (crop theo khối nhà, không theo cả khu đất).
+- **Vừa A2** (user, 2026-11-11, bộ mẫu biệt thự 2 tầng): mặt bằng, mái, mặt đứng 1:100 (2 mặt đứng / sheet); mặt cắt 1:50, một mặt cắt / sheet, crop ngang theo khối nhà ±1 m (không theo đầu trục), annotation crop 12 mm, đầu level / trục 2D kéo về sát crop; trần 1:50 chia vùng (Z1–Z5) khi một tầng không vừa; thang, vệ sinh, bếp 1:25, crop sát phòng / thang; mỗi vệ sinh một sheet, hai mặt bằng (kích thước, lát sàn) cùng hàng; 4 mặt triển khai không vừa cùng hai mặt bằng thì tách sheet triển khai tường (CT1); tổng mặt bằng, định vị 1:200, hoàn thiện sân vườn 1:100 (crop theo khối nhà, không theo cả khu đất).
 - **Mặt đứng 4 hướng**: thường 2 mặt đứng một sheet, xếp trên dưới. Trục thẳng hàng, cao độ đọc được ở cả hai (LO5). Mặt đứng đối diện nhau (trước / sau, trái / phải) để chung sheet.
 - **Mặt bằng mái** đặt cùng sheet với mặt bằng tầng trên cùng, hoặc trên sheet riêng nhưng ở cùng vị trí (LO4).
 - **Phào chỉ**: sheet chi tiết dạng lưới (LO9), mỗi ô một profile phào. Đặt mặt đứng thu nhỏ có đánh dấu vị trí phào ở ô đầu.
@@ -74,5 +76,8 @@ File này có **danh mục điển hình** (§2) thay cho bộ hồ sơ lõi (`d
 - Mặt bằng mái thiếu độ dốc, thiếu vị trí ống đứng / máng xối.
 - Thiếu mặt cắt qua mái phức tạp, qua lệch tầng.
 - Thiếu cổng, tường rào, nhà bảo vệ, hồ bơi.
+- Có thang máy gia đình mà thiếu chi tiết thang máy (CT3).
+- Chi tiết vệ sinh chỉ có một mặt bằng (thiếu mặt bằng lát sàn hoặc mặt bằng kích thước, CT1); chi tiết thang bộ thiếu chi tiết phóng lớn mặt cắt và mũi bậc (CT2).
+- Tên sheet, tên view viết tắt (`MB`, `WC`…) hoặc trống đối tượng (TG1–TG4).
 - Thiếu chi tiết phào và mặt đứng chỉ vị trí phào.
 - Song lập: thiếu chi tiết tường chung, khe lún giữa hai căn.
