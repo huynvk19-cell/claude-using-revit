@@ -36,9 +36,10 @@ narrowing runs at once, in the same run.
 
 A model opened with some of its worksets closed prints its views without the elements
 of those worksets (walls, grids, levels... gone, titles and tags still there), and a
-link that is not loaded prints nothing: the run stops before any sheet when a workset
-of the model is closed, and a sheet showing a link that is not loaded fails, unless the
-caller says it is on purpose (allow_incomplete).
+link that is not loaded prints nothing. A closed workset of the model stops the run
+before any sheet, unless the caller says it is on purpose (allow_incomplete). A link
+that is not loaded never stops anything: the sheet is exported and the run names it
+with its links (`warnings`), for the caller to show.
 """
 import io
 import json
@@ -1031,8 +1032,9 @@ def run(doc, sheets, folder, group=None, progress=None, cancelled=None, limit=No
     in folder or in its sub-folders by `group`. Never joined into one file.
 
     progress(i, n, text) and cancelled() are optional callbacks. allow_incomplete:
-    export even with worksets of the model closed / links not loaded (on purpose).
-    Returns a summary dict (files, counts, stopped reason, crash notes).
+    export even with worksets of the model closed (on purpose). Sheets showing a link
+    that is not loaded are exported and listed in `warnings` as (sheet, link names).
+    Returns a summary dict (files, counts, stopped reason, crash notes, warnings).
     """
     out = out or PdfOut()
     out.root = folder
@@ -1044,7 +1046,7 @@ def run(doc, sheets, folder, group=None, progress=None, cancelled=None, limit=No
     learnt = recover(doc, out.kind)    # the pass Revit died on last time, if any
     crash = crash_memory(doc, out.kind)
     wg = Weigher(doc)
-    done, skipped, failed, split, tiled = [], [], [], [], []
+    done, skipped, failed, split, tiled, warnings = [], [], [], [], [], []
     subfolders = set()
     stopped = None
     closed = [] if allow_incomplete else closed_worksets(doc)
@@ -1067,12 +1069,9 @@ def run(doc, sheets, folder, group=None, progress=None, cancelled=None, limit=No
             if free < min_free:
                 stopped = u"RAM còn {0:,} MB".format(free)
                 break
-            links = [] if allow_incomplete else unloaded_links(doc, s)
+            links = unloaded_links(doc, s)
             if links:
-                err = u"link chưa load, view sẽ in thiếu: " + u", ".join(links)
-                jr.set(sid, state="failed", error=err)
-                failed.append((s, err))
-                continue
+                warnings.append((s, links))    # warned, never stopped: the user's choice
             clear_cache(app)
             lim = limit or limit_now()
             plan = assess(doc, s, wg, lim, crash, out)
@@ -1136,7 +1135,7 @@ def run(doc, sheets, folder, group=None, progress=None, cancelled=None, limit=No
         jr.save()
     return {"folder": folder, "done": done, "skipped": skipped, "failed": failed,
             "split": split, "stopped": stopped, "resumed": resumed, "learnt": learnt,
-            "tiled": tiled, "subfolders": sorted(subfolders),
+            "tiled": tiled, "warnings": warnings, "subfolders": sorted(subfolders),
             "total": len(sheets)}
 
 
