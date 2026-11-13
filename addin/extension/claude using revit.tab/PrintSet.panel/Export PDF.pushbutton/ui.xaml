@@ -59,77 +59,8 @@
                         Content="Mở nhóm" ToolTip="Mở / thu gọn mọi nhóm"/>
         </Grid>
         <Border Style="{StaticResource Well}">
-          <!-- thin rows, only those on screen exist: a list of 1000 sheets stays light -->
-          <ListBox x:Name="scroller" MaxHeight="420" Background="Transparent" BorderThickness="0" FontSize="12"
-                   HorizontalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                   ScrollViewer.CanContentScroll="True" VirtualizingPanel.IsVirtualizing="True"
-                   VirtualizingPanel.VirtualizationMode="Recycling">
-            <ListBox.ItemContainerStyle>
-              <Style TargetType="ListBoxItem">
-                <Setter Property="Focusable" Value="False"/>
-                <Setter Property="Cursor" Value="Hand"/>
-                <Setter Property="Template">
-                  <Setter.Value>
-                    <ControlTemplate TargetType="ListBoxItem">
-                      <Border x:Name="b" CornerRadius="5" Background="Transparent">
-                        <ContentPresenter/>
-                      </Border>
-                      <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                          <Setter TargetName="b" Property="Background" Value="{StaticResource TileHover}"/>
-                        </Trigger>
-                      </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                  </Setter.Value>
-                </Setter>
-              </Style>
-            </ListBox.ItemContainerStyle>
-            <ListBox.ItemTemplate>
-              <DataTemplate>
-                <Grid x:Name="row" Height="22" Background="Transparent">
-                  <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="{Binding [indent]}"/>
-                    <ColumnDefinition Width="22"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                  </Grid.ColumnDefinitions>
-                  <TextBlock x:Name="arrow" Tag="arrow" Text="{Binding [arrow]}" FontFamily="{StaticResource Icons}" FontSize="9"
-                             Foreground="{StaticResource Ink2}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                  <Grid Grid.Column="1" Tag="box" Background="Transparent">
-                    <Border x:Name="box" Tag="box" Width="14" Height="14" CornerRadius="4" BorderThickness="1.2"
-                            BorderBrush="#50000000" Background="#80FFFFFF" VerticalAlignment="Center">
-                      <TextBlock x:Name="tick" Tag="box" FontFamily="{StaticResource Icons}" FontSize="9" FontWeight="Bold"
-                                 Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Border>
-                  </Grid>
-                  <TextBlock x:Name="no" Grid.Column="2" Text="{Binding [no]}" FontWeight="SemiBold" VerticalAlignment="Center"
-                             MinWidth="{DynamicResource NoWidth}"/>
-                  <TextBlock x:Name="name" Grid.Column="3" Text="{Binding [name]}" Margin="10,0,6,0" VerticalAlignment="Center"
-                             Foreground="{StaticResource Ink2}" TextTrimming="CharacterEllipsis"/>
-                  <TextBlock Grid.Column="4" Text="{Binding [count]}" Margin="0,0,8,0" VerticalAlignment="Center"
-                             Foreground="{StaticResource Ink2}"/>
-                </Grid>
-                <DataTemplate.Triggers>
-                  <DataTrigger Binding="{Binding [state]}" Value="2">
-                    <Setter TargetName="box" Property="Background" Value="{DynamicResource Accent}"/>
-                    <Setter TargetName="box" Property="BorderBrush" Value="#30FFFFFF"/>
-                    <Setter TargetName="tick" Property="Text" Value="&#xE73E;"/>
-                  </DataTrigger>
-                  <DataTrigger Binding="{Binding [state]}" Value="1">
-                    <Setter TargetName="box" Property="Background" Value="{DynamicResource Accent}"/>
-                    <Setter TargetName="box" Property="BorderBrush" Value="#30FFFFFF"/>
-                    <Setter TargetName="tick" Property="Text" Value="&#xE738;"/>
-                  </DataTrigger>
-                  <DataTrigger Binding="{Binding [kind]}" Value="g">
-                    <Setter TargetName="no" Property="MinWidth" Value="0"/>
-                    <Setter TargetName="no" Property="Foreground" Value="{DynamicResource AccentText}"/>
-                    <Setter TargetName="row" Property="Height" Value="24"/>
-                  </DataTrigger>
-                </DataTemplate.Triggers>
-              </DataTemplate>
-            </ListBox.ItemTemplate>
-          </ListBox>
+          <!-- the shared pick list (lib/pick_list.py, style in lib/liquid_glass.xaml) -->
+          <ListBox x:Name="scroller" Style="{StaticResource PickList}" MaxHeight="420"/>
         </Border>
         <TextBlock Text="Bấm ô vuông của nhóm: chọn cả nhóm · bấm tên nhóm: mở / thu · kéo lướt: chọn nhiều · Shift+click: cả một dải · Ctrl+A: tất cả"
                    Foreground="{StaticResource Ink3}" FontSize="11.5" Margin="6,8,0,0" TextWrapping="Wrap"/>

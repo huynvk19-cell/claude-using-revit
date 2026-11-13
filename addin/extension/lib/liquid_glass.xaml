@@ -687,6 +687,94 @@
     </Setter>
   </Style>
 
+  <!-- ===== pick list (lib/pick_list.py): thin rows under folding groups, only those on screen exist =====
+       <ListBox x:Name="scroller" Style="{StaticResource PickList}" MaxHeight="420"/>; rows are dictionaries
+       (kind, no, name, count, arrow, indent, state); the window's NoWidth resource is the number column's width -->
+  <Style x:Key="PickList" TargetType="ListBox">
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="BorderThickness" Value="0"/>
+    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+    <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
+    <Setter Property="ScrollViewer.CanContentScroll" Value="True"/>
+    <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True"/>
+    <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling"/>
+    <Setter Property="ItemContainerStyle">
+      <Setter.Value>
+        <Style TargetType="ListBoxItem">
+          <Setter Property="Focusable" Value="False"/>
+          <Setter Property="Cursor" Value="Hand"/>
+          <Setter Property="Template">
+            <Setter.Value>
+              <ControlTemplate TargetType="ListBoxItem">
+                <Border x:Name="b" CornerRadius="5" Background="Transparent">
+                  <ContentPresenter/>
+                </Border>
+                <ControlTemplate.Triggers>
+                  <Trigger Property="IsMouseOver" Value="True">
+                    <Setter TargetName="b" Property="Background" Value="{StaticResource TileHover}"/>
+                  </Trigger>
+                </ControlTemplate.Triggers>
+              </ControlTemplate>
+            </Setter.Value>
+          </Setter>
+        </Style>
+      </Setter.Value>
+    </Setter>
+    <Setter Property="ItemTemplate">
+      <Setter.Value>
+        <DataTemplate>
+          <Grid x:Name="row" Height="22" Background="Transparent">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="{Binding [indent]}"/>
+              <ColumnDefinition Width="22"/>
+              <ColumnDefinition Width="Auto"/>
+              <ColumnDefinition Width="*"/>
+              <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Name="arrow" Tag="arrow" Text="{Binding [arrow]}" FontFamily="{StaticResource Icons}" FontSize="9"
+                       Foreground="{StaticResource Ink2}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            <Grid Grid.Column="1" Tag="box" Background="Transparent">
+              <Border x:Name="box" Tag="box" Width="14" Height="14" CornerRadius="4" BorderThickness="1.2"
+                      BorderBrush="#50000000" Background="#80FFFFFF" VerticalAlignment="Center">
+                <TextBlock x:Name="tick" Tag="box" FontFamily="{StaticResource Icons}" FontSize="9" FontWeight="Bold"
+                           Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+              </Border>
+            </Grid>
+            <TextBlock x:Name="no" Grid.Column="2" Text="{Binding [no]}" FontWeight="SemiBold" VerticalAlignment="Center"
+                       MinWidth="{DynamicResource NoWidth}"/>
+            <TextBlock x:Name="name" Grid.Column="3" Text="{Binding [name]}" Margin="10,0,6,0" VerticalAlignment="Center"
+                       Foreground="{StaticResource Ink2}" TextTrimming="CharacterEllipsis"/>
+            <TextBlock Grid.Column="4" Text="{Binding [count]}" Margin="0,0,8,0" VerticalAlignment="Center"
+                       Foreground="{StaticResource Ink2}"/>
+          </Grid>
+          <DataTemplate.Triggers>
+            <!-- no number column (views): the name is the main text -->
+            <DataTrigger Binding="{Binding [no]}" Value="">
+              <Setter TargetName="name" Property="Foreground" Value="{StaticResource Ink}"/>
+              <Setter TargetName="name" Property="Margin" Value="4,0,6,0"/>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding [state]}" Value="2">
+              <Setter TargetName="box" Property="Background" Value="{DynamicResource Accent}"/>
+              <Setter TargetName="box" Property="BorderBrush" Value="#30FFFFFF"/>
+              <Setter TargetName="tick" Property="Text" Value="&#xE73E;"/>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding [state]}" Value="1">
+              <Setter TargetName="box" Property="Background" Value="{DynamicResource Accent}"/>
+              <Setter TargetName="box" Property="BorderBrush" Value="#30FFFFFF"/>
+              <Setter TargetName="tick" Property="Text" Value="&#xE738;"/>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding [kind]}" Value="g">
+              <Setter TargetName="no" Property="MinWidth" Value="0"/>
+              <Setter TargetName="no" Property="Foreground" Value="{DynamicResource AccentText}"/>
+              <Setter TargetName="row" Property="Height" Value="24"/>
+            </DataTrigger>
+          </DataTemplate.Triggers>
+        </DataTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
   <!-- ===== progress pill (liquid_glass.Progress) ===== -->
   <Style x:Key="Bar" TargetType="ProgressBar">
     <Setter Property="Height" Value="6"/>

@@ -4,7 +4,8 @@
 Which list: the sheet-list schedule open now, else the one picked. Then one glass
 window lists its sheets in schedule order, in thin rows under folding groups: all ticked
 (or only the ones selected in Revit). Pick by group, by print set, by several numbers /
-names (a column pasted from Excel), by dragging or Shift+click. Optionally sort the files
+names (a column pasted from Excel), by dragging or Shift+click: the shared pick list,
+lib/pick_list.py. Optionally sort the files
 into sub-folders by a sheet parameter (Project Browser grouping suggested), Xuất.
 Files are never joined into one file. CAD: pick the model's DWG export setup. Shift+click:
 retry the views / sheets left out after a crash (once the model is fixed). All the export
@@ -12,20 +13,15 @@ logic is in lib/pdf_export.py + lib/dwg_export.py (shared with Claude's cur_task
 and "dwg_export").
 """
 import os
-import re
 
 from cur import forms, revit, script
 
-from System import Double, Object, String
-from System.Collections.Generic import Dictionary, List
-from System.Windows import FontWeights, FrameworkElement, GridLength, Size, Visibility
-from System.Windows.Controls import ListBoxItem, TextBlock
-from System.Windows.Input import Key, Keyboard, ModifierKeys, Mouse, MouseButtonState
-from System.Windows.Media import VisualTreeHelper
+from System.Windows import Visibility
 
 import dwg_export as de
 import liquid_glass as lg
 import pdf_export as pe
+import pick_list as pl
 import print_set_sync as ps
 
 doc = revit.doc
@@ -50,14 +46,11 @@ def pick_schedule():
 
 NO_SETUP = u"Mặc định của Revit (model chưa có template)"
 PICK_SET = u"Chọn theo print set…"
-OPEN_UP_TO = 60                     # more sheets than this: the groups start folded
-ARROW_OPEN, ARROW_SHUT = u"\uE70D", u"\uE76C"
 
 
 class SheetPicker(lg.GlassWindow):
     """Pick the sheets of the drawing list to export (all, or the ones selected in Revit),
-    pick the folder, export. self.on holds what is picked; rows are built for what is
-    shown and only those on screen get drawn (ListBox virtualizing), so 1000 sheets are fine."""
+    pick the folder, export. self.list (lib/pick_list.py) is the list and holds what is picked."""
 
     def __init__(self, schedule, sheets, picked_ids):
         lg.GlassWindow.__init__(self, script.get_bundle_file("ui.xaml"))
@@ -71,16 +64,9 @@ class SheetPicker(lg.GlassWindow):
         self.close_btn.Click += lambda s, e: self.Close()
         want = set(picked_ids or [])
         self.sheets = sheets
-        self.on = [not want or sh.Id.IntegerValue in want for sh in sheets]
-        self.keys = [(sh.SheetNumber + u" " + sh.Name).lower() for sh in sheets]
-        self.terms, self.match, self.shown, self.where = [], set(range(len(sheets))), [], {}
-        self.closed = set()
-        self.anchor, self.dragging, self.paint, self.before, self.last = None, False, True, [], None
-        self.Resources["NoWidth"] = self._no_width(sheets)
-        self.scroller.PreviewMouseLeftButtonDown += self._press
-        self.scroller.PreviewMouseMove += self._move
-        self.PreviewMouseLeftButtonUp += self._release
-        self.PreviewKeyDown += self._key
+        self.list = pl.PickList(self, sheets, lambda sh: sh.SheetNumber, lambda sh: sh.Name,
+                                on=[not want or sh.Id.IntegerValue in want for sh in sheets],
+                                changed=self.refresh)
         # sub-folders: no / Project Browser / one sheet parameter (browser ones suggested)
         self.groups = pe.group_options(doc, sheets)
         self.levels = pe.browser_levels(doc)
@@ -93,15 +79,10 @@ class SheetPicker(lg.GlassWindow):
                 pick = k
         self.group_box.SelectedIndex = pick
         self.group_box.SelectionChanged += self.on_group
-        self.browser_paths, self.group_rows, self.members = {}, [], {}
-        self.rows = [self._sheet_row(k, sh) for k, sh in enumerate(sheets)]
-        self.psets = ps.print_sets(doc)
-        for n in [PICK_SET] + sorted(self.psets, key=lambda x: x.lower()):
-            self.pset_box.Items.Add(n)
-        self.pset_box.SelectedIndex = 0
-        self.pset_box.SelectionChanged += self.on_pset
-        self.only_on.Click += self.show
-        self.open_all.Click += self.on_open_all
+        self.browser_paths = {}
+        psets = ps.print_sets(doc)
+        self.list.bind_sets(self.pset_box, PICK_SET,
+                            [(n, lambda n=n: ps.set_sheet_ids(psets[n])) for n in sorted(psets, key=lambda x: x.lower())])
         # what to export: PDF and / or CAD, and the DWG export setup
         self.setups = de.setups(doc)
         for n in self.setups or [NO_SETUP]:
@@ -118,17 +99,12 @@ class SheetPicker(lg.GlassWindow):
             self.fmt_pdf.IsChecked = True
         self.fmt_pdf.Click += self.refresh
         self.fmt_dwg.Click += self.refresh
-        self.search.TextChanged += self.on_search
-        self.pick_all.Click += self.on_all
         self.folder_btn.Click += self.on_folder
         self.export_btn.Click += self.on_export
         self.retry_btn.Click += self.on_retry
         self.show_left_out()
-        self.make_groups()
-        if len(sheets) > OPEN_UP_TO:
-            self.closed = set(g["no"] for g in self.group_rows)
-        self.open_all.IsChecked = not self.closed
-        self.show()
+        self.make_groups(fold_if_many=True)
+        self.list.show()
 
     @property
     def group(self):
@@ -137,7 +113,7 @@ class SheetPicker(lg.GlassWindow):
     def on_group(self, sender, args):
         self.paths = {}
         self.make_groups()
-        self.show()
+        self.list.show()
 
     def _preview(self, picked):
         """One line: the sub-folders the ticked sheets go to."""
@@ -153,45 +129,21 @@ class SheetPicker(lg.GlassWindow):
         shown = u", ".join(names[:6]) + (u", …" if len(names) > 6 else u"")
         return u"{0} thư mục con: {1}".format(len(names), shown) if names else u""
 
-    def _no_width(self, sheets):
-        """Width of the number column: names line up in thin rows."""
-        tb = TextBlock()
-        tb.Text = max((sh.SheetNumber for sh in sheets), key=len) if sheets else u""
-        tb.FontSize = 12
-        tb.FontWeight = FontWeights.SemiBold
-        tb.Measure(Size(Double.PositiveInfinity, Double.PositiveInfinity))
-        return tb.DesiredSize.Width + 8
-
-    @staticmethod
-    def _dict(**kw):
-        d = Dictionary[String, Object]()
-        for k, v in kw.items():
-            d[k] = v
-        return d
-
-    def _sheet_row(self, k, sh):
-        return self._dict(kind="s", k=k, no=sh.SheetNumber, name=sh.Name, count=u"", arrow=u"",
-                          indent=GridLength(6), state="2" if self.on[k] else "0")
-
-    def make_groups(self):
+    def make_groups(self, fold_if_many=False):
         """The list's groups: the chosen sub-folders, else the Project Browser's folders; one
         group or none: a flat list."""
         spec = self.group or ({"browser": True} if self.levels else None)
-        self.members, self.group_rows = {}, []
+        paths = None
         if spec:
             levels = self.levels
             key = str(sorted(spec.items()))
+            paths = []
             for k, sh in enumerate(self.sheets):
                 ck = (key, k)
                 if ck not in self.browser_paths:
                     self.browser_paths[ck] = u" › ".join(pe.group_path(doc, sh, spec, levels))
-                self.members.setdefault(self.browser_paths[ck], []).append(k)
-        if len(self.members) < 2:
-            self.members = {}
-        seen = sorted(self.members, key=lambda g: self.members[g][0])
-        self.group_rows = [self._dict(kind="g", k=-1, no=g, name=u"", count=u"", arrow=ARROW_OPEN,
-                                      indent=GridLength(18), state="0") for g in seen]
-        self.open_all.Visibility = Visibility.Visible if self.group_rows else Visibility.Collapsed
+                paths.append(self.browser_paths[ck])
+        self.list.set_groups(paths, fold_if_many)
 
     def formats(self):
         return [f for f, b in (("pdf", self.fmt_pdf), ("dwg", self.fmt_dwg)) if b.IsChecked]
@@ -201,56 +153,7 @@ class SheetPicker(lg.GlassWindow):
         return self.setups[self.setup_box.SelectedIndex] if self.setups else None
 
     def picked(self):
-        return [sh for k, sh in enumerate(self.sheets) if self.on[k]]
-
-    def _matches(self, k):
-        if self.only_on.IsChecked and not self.on[k]:
-            return False
-        if not self.terms:
-            return True
-        text = self.keys[k]
-        return any(all(w in text for w in term) for term in self.terms)
-
-    def show(self, sender=None, args=None):
-        """Rebuild what the list shows, from the filter and the folded groups."""
-        self.match = set(k for k in range(len(self.sheets)) if self._matches(k))
-        shown = []
-        filtering = bool(self.terms or self.only_on.IsChecked)
-        if self.group_rows:
-            for g in self.group_rows:
-                hits = [k for k in self.members[g["no"]] if k in self.match]
-                if not hits:
-                    continue
-                shown.append(g)
-                if filtering or g["no"] not in self.closed:
-                    shown += [self.rows[k] for k in hits]
-        else:
-            shown = [self.rows[k] for k in sorted(self.match)]
-        self.shown = shown
-        self.where = dict((r["k"], i) for i, r in enumerate(shown) if r["kind"] == "s")
-        self._paint()
-        self.scroller.ItemsSource = List[Object](shown)
-        self.refresh()
-
-    def _paint(self):
-        for k, r in enumerate(self.rows):
-            r["state"] = "2" if self.on[k] else "0"
-        filtering = bool(self.terms or self.only_on.IsChecked)
-        for g in self.group_rows:
-            m = self.members[g["no"]]
-            n = len([k for k in m if self.on[k]])
-            g["state"] = "2" if n == len(m) else "1" if n else "0"
-            g["count"] = u"{0} / {1}".format(n, len(m))
-            g["arrow"] = ARROW_OPEN if filtering or g["no"] not in self.closed else ARROW_SHUT
-
-    def changed(self):
-        """What is picked changed: redraw the rows on screen, recount."""
-        if self.only_on.IsChecked and not self.dragging:
-            self.show()
-            return
-        self._paint()
-        self.scroller.Items.Refresh()
-        self.refresh()
+        return self.list.picked()
 
     def show_left_out(self):
         """Tell before export which views Revit died on (they go out alone or in tiles)."""
@@ -270,120 +173,6 @@ class SheetPicker(lg.GlassWindow):
         pe.forget(doc)
         self.show_left_out()
 
-    # ---- Photos-style picking: press = toggle and start a drag; dragging over rows sets
-    # them all like the first one (moving back gives rows back their state); Shift+click
-    # = the whole range from the last clicked row; Ctrl+A = every sheet the filter lets
-    # through. A group's box picks the whole group, the rest of its row folds it.
-
-    @staticmethod
-    def _mod(m):
-        return (Keyboard.Modifiers & m) == m
-
-    @staticmethod
-    def _held():
-        return Mouse.LeftButton == MouseButtonState.Pressed
-
-    def _hit(self, source):
-        """(row under this element, its tag "box" / "arrow" / None); no row on the scroll bar."""
-        tag = None
-        el = source
-        while el is not None and not isinstance(el, ListBoxItem):
-            if tag is None and isinstance(el, FrameworkElement) and el.Tag in ("box", "arrow"):
-                tag = el.Tag
-            try:
-                el = VisualTreeHelper.GetParent(el)
-            except Exception:
-                el = None
-        # a recycled row waiting for use holds no row
-        row = el.Content if el is not None else None
-        return (row, tag) if isinstance(row, Dictionary[String, Object]) else (None, None)
-
-    def _press(self, sender, e):
-        row, tag = self._hit(e.OriginalSource)
-        if row is None:
-            return
-        e.Handled = True
-        if row["kind"] == "g":
-            m = self.members[row["no"]]
-            if tag == "box":
-                v = not all(self.on[k] for k in m)
-                for k in m:
-                    self.on[k] = v
-                self.changed()
-            else:
-                self.closed.symmetric_difference_update([row["no"]])
-                self.open_all.IsChecked = not self.closed
-                self.show()
-            return
-        k = row["k"]
-        if self._mod(ModifierKeys.Shift) and self.anchor in self.where:
-            self.before = list(self.on)
-            self.paint = self.on[self.anchor]
-            self._range(k)
-            return
-        self.anchor = k
-        self.paint = not self.on[k]
-        self.before = list(self.on)
-        self.dragging = True
-        self.last = None
-        self._range(k)
-
-    def _range(self, k):
-        """Rows shown from the anchor to k take the first row's state, others go back."""
-        if k == self.last:
-            return
-        self.last = k
-        lo, hi = sorted((self.where[self.anchor], self.where[k]))
-        self.on = list(self.before)
-        for r in self.shown[lo:hi + 1]:
-            if r["kind"] == "s":
-                self.on[r["k"]] = self.paint
-        self.changed()
-
-    def _move(self, sender, e):
-        if not self.dragging:
-            return
-        if not self._held():
-            self.dragging = False
-            return
-        row, _ = self._hit(e.OriginalSource)
-        if row is not None and row["kind"] == "s" and row["k"] in self.where:
-            self._range(row["k"])
-            i = self.where[row["k"]]
-            y = e.GetPosition(self.scroller).Y        # near the edges the list scrolls on
-            if y < 24 and i > 0:
-                self.scroller.ScrollIntoView(self.shown[i - 1])
-            elif y > self.scroller.ActualHeight - 24 and i + 1 < len(self.shown):
-                self.scroller.ScrollIntoView(self.shown[i + 1])
-
-    def _release(self, sender, e):
-        was = self.dragging
-        self.dragging = False
-        if was and self.only_on.IsChecked:
-            self.show()
-
-    def _key(self, sender, e):
-        if e.Key == Key.Return and self.search.IsKeyboardFocusWithin:
-            e.Handled = True        # the box takes pasted lines, Enter adds none
-        if e.Key == Key.A and self._mod(ModifierKeys.Control) \
-                and not self.search.IsKeyboardFocusWithin:
-            for k in self.match:
-                self.on[k] = True
-            self.changed()
-            e.Handled = True
-
-    def on_pset(self, sender, args):
-        name = self.pset_box.SelectedItem
-        if name == PICK_SET or name not in self.psets:
-            return
-        ids = ps.set_sheet_ids(self.psets[name])
-        self.on = [sh.Id.IntegerValue in ids for sh in self.sheets]
-        self.show()
-
-    def on_open_all(self, sender, args):
-        self.closed = set() if self.open_all.IsChecked else set(g["no"] for g in self.group_rows)
-        self.show()
-
     def refresh(self, sender=None, args=None):
         picked = self.picked()
         n = len(picked)
@@ -396,19 +185,6 @@ class SheetPicker(lg.GlassWindow):
         self.group_preview.Text = self._preview(picked)
         self.export_text.Text = u"Xuất {0} sheet".format(n) if n else u"Chưa chọn sheet"
         self.export_btn.IsEnabled = n > 0 and bool(fmts)
-        self.pick_all.IsChecked = bool(self.match) and all(self.on[k] for k in self.match)
-
-    def on_search(self, sender, args):
-        text = (self.search.Text or u"").lower()
-        self.search_hint.Visibility = Visibility.Collapsed if text.strip() else Visibility.Visible
-        # commas / lines: any of them; spaces in one: all of its words
-        self.terms = [t.split() for t in re.split(u"[,;\\r\\n\\t]+", text) if t.strip()]
-        self.show()
-
-    def on_all(self, sender, args):
-        for k in self.match:
-            self.on[k] = bool(self.pick_all.IsChecked)
-        self.changed()
 
     def on_folder(self, sender=None, args=None):
         f = forms.pick_folder(title=u"Thư mục lưu file")
