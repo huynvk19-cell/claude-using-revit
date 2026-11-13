@@ -1,6 +1,6 @@
 ---
 name: drafting-views-sheets
-description: "Viewports, viewport types, crops/scope boxes, dependent views, 2D grid/level ends, view templates, link display, and keeping the print set in step with the drawing list via Revit MCP. Use for viewport, đổi type viewport, crop view, scope box, đầu trục, kéo trục, bubble chồng, view template, ẩn link, V/G, drawing list, danh mục bản vẽ, print set, sheet mới."
+description: "Viewports and their types, crops / scope boxes, dependent views, 2D grid / level ends, link display, print set vs drawing list via Revit MCP. Use for viewport, đổi type viewport, crop view, scope box, đầu trục, kéo trục, ẩn link, V/G, danh mục bản vẽ, print set, sheet mới."
 ---
 
 # Views and sheets

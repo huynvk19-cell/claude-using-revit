@@ -1,6 +1,6 @@
 ---
 name: drafting-view-template
-description: "Put every view of the sheet set under the view template of its drawing kind (gán view template theo loại bản vẽ), for any building type: register kind → profile key → template name, preview against what each view has now, apply with a log, verify. Never creates or edits a template. Use for áp dụng view template, gán template, template theo loại bản vẽ, view chưa có template, sai template, khởi tạo hồ sơ."
+description: "Put every view of the sheet set under the view template of its drawing kind (gán view template theo loại bản vẽ): preview, apply with a log, verify. Use for áp dụng / gán view template, view chưa có template, sai template, khởi tạo hồ sơ."
 ---
 
 # View template per drawing kind (gán view template theo loại bản vẽ)

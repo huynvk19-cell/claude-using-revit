@@ -1,6 +1,6 @@
 ---
 name: drafting-start
-description: "Start a Revit drafting work session: re-anchor on the open model, open the views being worked on (zoomed to their crop) so the user can watch. Use when the user says bắt đầu việc, bắt đầu làm việc, vào việc, mở view đang làm, start work."
+description: "Start a Revit drafting session: re-anchor on the open model, open the views being worked on so the user can watch. Use for bắt đầu việc, vào việc, mở view đang làm, start work."
 ---
 
 # Start work (bắt đầu việc)

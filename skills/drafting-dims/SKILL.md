@@ -1,6 +1,6 @@
 ---
 name: drafting-dims
-description: "Add or fix dimensions on Revit drawings via Revit MCP: level dims on sections/elevations, dim type swap; routes grid dims to drafting-grid-dims and door/window dims to drafting-opening-dims. Use for dim cao độ, dim lỗi, đổi màu dim, level dimensions."
+description: "Level dims on sections/elevations and dim type swap via Revit MCP; routes grid dims to drafting-grid-dims, door/window dims to drafting-opening-dims. Use for dim cao độ, dim lỗi, đổi màu dim, level dimensions."
 ---
 
 # Dimensions

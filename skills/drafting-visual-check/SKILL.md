@@ -1,6 +1,6 @@
 ---
 name: drafting-visual-check
-description: "Verify Revit drawing changes visually: export sheets to PNG, crop regions, inspect for overlaps, missing or duplicate dims/tags, titles off-centre. Use after any drafting change, before reporting, or when the user asks kiểm tra bản vẽ, xuất ảnh, xem lại sheet."
+description: "Verify drawing changes visually: export sheets to PNG, crop regions, look for overlaps, missing / duplicate dims and tags, off-centre titles. Use after any drafting change, before reporting, or for kiểm tra bản vẽ, xuất ảnh, xem lại sheet."
 ---
 
 # Visual check

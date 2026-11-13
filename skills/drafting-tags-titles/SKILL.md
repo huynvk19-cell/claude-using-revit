@@ -1,6 +1,6 @@
 ---
 name: drafting-tags-titles
-description: "Room tags (outside room, showing ?), and viewport titles on sheets via Revit MCP. Use for room tag, tên phòng hiện dấu hỏi, title view, căn giữa title, viewport title."
+description: "Room tags (outside the room, showing ?) and viewport titles on sheets via Revit MCP. Use for room tag, tên phòng hiện dấu hỏi, title view, căn giữa title, viewport title."
 ---
 
 # Tags and titles

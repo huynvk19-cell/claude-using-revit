@@ -1,6 +1,6 @@
 ---
 name: drafting-grid-dims
-description: "Grid dimensions on architectural drawings via Revit MCP, rules G1–G5: one grid-to-grid chain + one overall dim per grid group, in the band outside the crop and inside the bubbles; annotation crop pulled to the bubbles; no covered bubbles (elbows). Use for dim trục, dim cách trục, dim tổng trục, thiếu dim trục, dim trục trùng, dim trục bị mất, kéo crop annotate, annotation crop, bubble trục bị che, bubble chồng nhau, elbow bubble, bubble cùng hàng, grid dimensions."
+description: "Grid dimensions via Revit MCP (G1–G5): one chain + one overall dim per grid group between crop and bubbles, annotation crop to the bubbles, no covered bubbles (elbows). Use for dim trục, dim tổng trục, thiếu / trùng / mất dim trục, annotation crop, bubble trục bị che / chồng, elbow, grid dimensions."
 ---
 
 # Grid dims (G1–G5)

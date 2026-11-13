@@ -1,6 +1,6 @@
 ---
 name: drafting-stair-section-parallel
-description: "Detail a stair SECTION cut parallel to the stair path (longitudinal, along the flights; NOT a plan, NOT a cross-section) via Revit MCP, rules LA–LC: flight heights (EQUAL RISERS), levels, flight goings, clear height under landings, handrail height; run, railing, F../C.. tags, spot elevations; riser numbers. Use for mặt cắt thang, mặt cắt dọc thang, mặt cắt cầu thang, dim chiều cao vế, cổ bậc, tag vế trên mặt cắt, stair section."
+description: "Detail a stair SECTION cut ALONG the flights (longitudinal; not a plan, not a cross-section) via Revit MCP (LA–LC): flight heights, levels, goings, clear heights, handrail height, tags, spots, riser numbers. Use for mặt cắt thang, mặt cắt dọc thang, dim chiều cao vế, cổ bậc, stair section."
 ---
 
 # Stair section parallel to the stair path (LA–LC)
