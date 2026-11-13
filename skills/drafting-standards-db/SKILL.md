@@ -1,6 +1,6 @@
 ---
 name: drafting-standards-db
-description: "Standards database (SQLite): look up the sheet catalogue across building types by stage, conditions (elevator, basement, pool), kind, level; index of workflows, skills, step cards, commands; log and search what the user corrected. Use when the user corrects a result or decides a rule (sửa lại, góp ý, từ nay, ghi nhớ), asks what was corrected before, or asks which drawings a set needs. Tra danh mục bản vẽ, nhật ký sửa, database chuẩn."
+description: "Standards database (SQLite): sheet catalogue by building type, stage, conditions (elevator, basement, pool); index of skills, cards, commands; log of user corrections. Use when the user corrects or decides a rule (sửa lại, góp ý, từ nay, ghi nhớ), asks what was corrected, or which drawings a set needs."
 ---
 
 # Standards database
