@@ -114,5 +114,5 @@ Danh mục ở §2 **thay cho** bộ hồ sơ lõi (`drafting-sheet-layout.md` �
 - Thiếu chi tiết tiếp giáp với nhà bên: chống thấm tường chung, khe lún, diềm mái.
 - Có thang máy mà thiếu chi tiết thang máy (CT3).
 - Chi tiết vệ sinh chỉ có một mặt bằng (CT1); chi tiết thang bộ thiếu chi tiết phóng lớn mặt cắt và mũi bậc (CT2).
-- Tên sheet, tên view viết tắt (`MB`, `WC`…) hoặc trống đối tượng (TG1–TG4); thang bộ, vệ sinh, thang máy thiếu mã `ST` / `WC` / `LF` (TG6).
+- Tên sheet, tên view viết tắt (`MB`, `WC`…) hoặc trống đối tượng (TG1–TG4); có từ hai thang bộ / vệ sinh / thang máy mà thiếu mã `ST` / `WC` / `LF`, hoặc chỉ có một mà vẫn ghi mã (TG6).
 - Shophouse thiếu triển khai mặt tiền tầng 1 (cửa xếp / cửa cuốn, biển hiệu, mái đón).

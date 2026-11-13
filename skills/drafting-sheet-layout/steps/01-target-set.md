@@ -19,7 +19,7 @@
    - `Loại` = the kind key of the standard row; `Mức` = that kind's level in `drafting-coverage.md` §2. A row with several kinds gets one sub-row per kind.
    - `Nguồn` names the standard row the drawing comes from, so the user can see why it is needed.
    - A drawing made of several views gets sub-rows `ID.a`, `ID.b`, with every mandatory part of §4b: toilet = dimension plan + floor finish plan + wall elevations (CT1); stair = plans + sections + enlarged section details + nosing detail (CT2); lift, when the model has one = shaft plans + shaft section (CT3).
-   - `Bản vẽ` holds the full name (TG1–TG4), with the component code of a repeated component (`ST1`, `WC1`…, TG6: one code per detail drawing, numbered lowest level first, then by grid): the sheet and view names are copied from it.
+   - `Bản vẽ` holds the full name (TG1–TG4), with the component code of a repeated component (`ST1`, `WC1`…, TG6: only for a kind with two or more detail drawings, one code per drawing, numbered lowest level first, then by grid): the sheet and view names are copied from it.
 4. Write it to `sheet-register-<date>.md` (round folder or `log/`). Show the user the counts per group, the drawings that come from a condition, and the counts per level in the words of `drafting-coverage.md` §1: **trọn** / **một phần** (with what is missing) / **làm tay**. Then ask once: add / remove?
 
 ## Done when

@@ -50,7 +50,7 @@ Tên template là **khoá trong profile**: profile ghi tên template thật củ
 | Mã | Quy tắc |
 |---|---|
 | VC1 | **Chỉ tạo view có trong sổ.** Trước khi tạo, tìm view trùng (cùng loại, cùng level, cùng vùng, chưa đặt lên sheet). Có view trùng thì dùng lại view đó và ghi id vào sổ, không tạo bản thứ hai. |
-| VC2 | **Tên view đầy đủ** theo TG1–TG6 (`drafting-sheet-layout.md` §8), mẫu của profile chỉ thêm vào chứ không rút gọn. Mặc định = tên bản vẽ trong sổ, in hoa, kèm vùng (`MẶT BẰNG SÀN LẦU 1 - VÙNG A`). View con của cùng một bản vẽ thêm ` - <nội dung view>` viết đủ chữ (`CHI TIẾT THANG BỘ ST1 - MẶT BẰNG TẦNG TRỆT`, `CHI TIẾT VỆ SINH WC1 - MẶT BẰNG LÁT SÀN`); không viết tắt (`MB`, `MC`, `WC`). Thành phần cùng loại giữ mã TG6 (`ST1`, `WC1`…) trong mọi view con. Tên phải duy nhất trong model. Không đưa số sheet vào tên view. |
+| VC2 | **Tên view đầy đủ** theo TG1–TG6 (`drafting-sheet-layout.md` §8), mẫu của profile chỉ thêm vào chứ không rút gọn. Mặc định = tên bản vẽ trong sổ, in hoa, kèm vùng (`MẶT BẰNG SÀN LẦU 1 - VÙNG A`). View con của cùng một bản vẽ thêm ` - <nội dung view>` viết đủ chữ (`CHI TIẾT THANG BỘ ST1 - MẶT BẰNG TẦNG TRỆT`, `CHI TIẾT VỆ SINH WC1 - MẶT BẰNG LÁT SÀN`); không viết tắt (`MB`, `MC`, `WC`). Thành phần cùng loại (từ hai trở lên) giữ mã TG6 (`ST1`, `WC1`…) trong mọi view con; chỉ có một thì không ghi mã. Tên phải duy nhất trong model. Không đưa số sheet vào tên view. |
 | VC3 | **Mỗi view có một view template** theo bảng §1. Template thiếu → hỏi user. Không tự tạo template, không để view không có template. |
 | VC4 | **Tỷ lệ** = cột `Tỷ lệ` của sổ. Template nào khoá tỷ lệ thì tỷ lệ đó phải trùng với sổ; lệch → báo user, không sửa template. |
 | VC5 | **Crop bật**, annotation crop bật. Crop ôm phần cần thể hiện cộng dải chú thích. Mặt bằng các tầng cùng loại dùng **cùng một crop** (cùng scope box nếu profile có), để đặt cùng vị trí trên sheet (LO4). |
@@ -60,7 +60,7 @@ Tên template là **khoá trong profile**: profile ghi tên template thật củ
 | VC9 | **Chia vùng**: mỗi scope box một dependent view (Z1), tên kèm vùng. View cha không đặt lên sheet. Bản tổng mỗi tầng (Z4) là một view riêng ở tỷ lệ nhỏ. |
 | VC10 | **Phân loại view** (phase, discipline, tham số nhóm Project Browser) theo profile. View mới phải nằm đúng nhóm trong Project Browser. |
 | VC11 | **Không sửa model để có view** (R1). Không xoá view của người khác. View tạo thử phải xoá ngay trong cùng lượt và ghi log. |
-| VC12 | **Kiểm sau khi tạo**: mọi dòng của sổ có `View id`, tên theo VC2 (không còn tên viết tắt; thành phần cùng loại có mã TG6 trùng với tên sheet), chi tiết vệ sinh / thang bộ / thang máy đủ view con theo CT1–CT3 (`drafting-sheet-layout.md` §4b), đúng template, đúng tỷ lệ, crop bật; view chưa nằm trên sheet nào (đặt view là việc của `drafting-sheet-place`). |
+| VC12 | **Kiểm sau khi tạo**: mọi dòng của sổ có `View id`, tên theo VC2 (không còn tên viết tắt; thành phần có từ hai cái cùng loại mang mã TG6 trùng với tên sheet, chỉ có một thì không mã), chi tiết vệ sinh / thang bộ / thang máy đủ view con theo CT1–CT3 (`drafting-sheet-layout.md` §4b), đúng template, đúng tỷ lệ, crop bật; view chưa nằm trên sheet nào (đặt view là việc của `drafting-sheet-place`). |
 
 ## 3. Lệnh
 

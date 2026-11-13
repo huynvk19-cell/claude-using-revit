@@ -78,6 +78,6 @@ File này có **danh mục điển hình** (§2) thay cho bộ hồ sơ lõi (`d
 - Thiếu cổng, tường rào, nhà bảo vệ, hồ bơi.
 - Có thang máy gia đình mà thiếu chi tiết thang máy (CT3).
 - Chi tiết vệ sinh chỉ có một mặt bằng (thiếu mặt bằng lát sàn hoặc mặt bằng kích thước, CT1); chi tiết thang bộ thiếu chi tiết phóng lớn mặt cắt và mũi bậc (CT2).
-- Tên sheet, tên view viết tắt (`MB`, `WC`…) hoặc trống đối tượng (TG1–TG4); thang bộ, vệ sinh, thang máy thiếu mã `ST` / `WC` / `LF` (TG6).
+- Tên sheet, tên view viết tắt (`MB`, `WC`…) hoặc trống đối tượng (TG1–TG4); có từ hai thang bộ / vệ sinh / thang máy mà thiếu mã `ST` / `WC` / `LF`, hoặc chỉ có một mà vẫn ghi mã (TG6).
 - Thiếu chi tiết phào và mặt đứng chỉ vị trí phào.
 - Song lập: thiếu chi tiết tường chung, khe lún giữa hai căn.

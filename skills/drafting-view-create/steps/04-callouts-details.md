@@ -41,7 +41,7 @@
 - Every toilet type has its two plans (dimension, floor finish) + its interior elevations (CT1).
 - Every lift of the model has its shaft plans + its shaft section (CT3).
 - No view name holds an abbreviation (`MB`, `MC`, `WC`…) or lacks its object (TG1–TG4).
-- Every view of a stair, lift or toilet carries the same component code as its sheet (`ST1`, `LF1`, `WC1`…, TG6).
+- Every view of a stair, lift or toilet carries the same component code as its sheet (`ST1`, `LF1`, `WC1`…); a kind the building has only one of carries no code (TG6).
 
 ## Skip only if
 
