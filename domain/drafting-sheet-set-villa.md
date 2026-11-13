@@ -49,9 +49,9 @@ File này có **danh mục điển hình** (§2) thay cho bộ hồ sơ lõi (`d
 | 14 | 3 | Mặt đứng 4 hướng (song lập: 3) | 1:100–1:50 | CS | — | Cao độ đỉnh mái, vật liệu, ngói, phào | `elevation` |
 | 15 | 4 | Mặt cắt ≥ 2 (dọc + ngang), qua thang và thông tầng | 1:50 | CS | — | Cao độ, độ dốc mái, chiều cao thông thuỷ | `section` |
 | 16 | 4 | Mặt cắt qua mái phức tạp, qua lệch tầng | 1:50 | KT | — | — | `section` |
-| 17 | 5 | Chi tiết thang bộ 1…n (thường là thang trang trí, thang xoắn; mỗi thang một sheet) | 1:25–1:20; chi tiết 1:20–1:2 | KT | — | Mặt bằng các tầng + mặt cắt + chi tiết phóng lớn mặt cắt thang + chi tiết mũi bậc (CT2); lan can, tay vịn, ốp bậc | `stair` |
-| 18 | 5 | Chi tiết thang máy 1…n | 1:50–1:25 | KT | có thang máy | Mặt bằng hố thang các tầng khác nhau + mặt cắt hố: pit, OH, cửa tầng, cao độ dừng tầng (CT3) | `vertical` |
-| 19 | 6 | Chi tiết vệ sinh 1…n (mỗi loại vệ sinh một sheet) | 1:25–1:20 | TC | — | Mặt bằng kích thước + mặt bằng lát sàn + triển khai tường (CT1); thiết bị, độ dốc thoát sàn, chống thấm | `enlarged` |
+| 17 | 5 | Chi tiết thang bộ ST1…STn (thường là thang trang trí, thang xoắn; mỗi thang một sheet) | 1:25–1:20; chi tiết 1:20–1:2 | KT | — | Mặt bằng các tầng + mặt cắt + chi tiết phóng lớn mặt cắt thang + chi tiết mũi bậc (CT2); lan can, tay vịn, ốp bậc | `stair` |
+| 18 | 5 | Chi tiết thang máy LF1…LFn | 1:50–1:25 | KT | có thang máy | Mặt bằng hố thang các tầng khác nhau + mặt cắt hố: pit, OH, cửa tầng, cao độ dừng tầng (CT3) | `vertical` |
+| 19 | 6 | Chi tiết vệ sinh WC1…WCn (mỗi loại vệ sinh một sheet) | 1:25–1:20 | TC | — | Mặt bằng kích thước + mặt bằng lát sàn + triển khai tường (CT1); thiết bị, độ dốc thoát sàn, chống thấm | `enlarged` |
 | 20 | 6 | Chi tiết bếp, chi tiết phòng thay đồ: mặt bằng phóng to + triển khai tường | 1:25–1:20 | TC | — | — | `enlarged` |
 | 21 | 6 | Hồ bơi: mặt bằng, mặt cắt, chi tiết tràn và máng thu | 1:50–1:10 | KT | có hồ bơi | Cao độ nước, lối xuống, phòng máy | `subset` |
 | 22 | 7 | Thống kê cửa + mặt đứng cửa | 1:50 | KT | — | — | `door` |
@@ -78,6 +78,6 @@ File này có **danh mục điển hình** (§2) thay cho bộ hồ sơ lõi (`d
 - Thiếu cổng, tường rào, nhà bảo vệ, hồ bơi.
 - Có thang máy gia đình mà thiếu chi tiết thang máy (CT3).
 - Chi tiết vệ sinh chỉ có một mặt bằng (thiếu mặt bằng lát sàn hoặc mặt bằng kích thước, CT1); chi tiết thang bộ thiếu chi tiết phóng lớn mặt cắt và mũi bậc (CT2).
-- Tên sheet, tên view viết tắt (`MB`, `WC`…) hoặc trống đối tượng (TG1–TG4).
+- Tên sheet, tên view viết tắt (`MB`, `WC`…) hoặc trống đối tượng (TG1–TG4); có từ hai thang bộ / vệ sinh / thang máy mà thiếu mã `ST` / `WC` / `LF`, hoặc chỉ có một mà vẫn ghi mã (TG6).
 - Thiếu chi tiết phào và mặt đứng chỉ vị trí phào.
 - Song lập: thiếu chi tiết tường chung, khe lún giữa hai căn.

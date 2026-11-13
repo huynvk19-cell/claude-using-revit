@@ -1,6 +1,6 @@
 ---
 name: drafting-sheet-layout
-description: "Chuẩn layout bộ hồ sơ kiến trúc trên sheet: loại công trình → bộ hồ sơ, giai đoạn hồ sơ, nhóm và đánh số bản vẽ, bộ hồ sơ lõi, thành phần bắt buộc của bản vẽ chi tiết vệ sinh / thang bộ / thang máy (CT1–CT3), khổ giấy, tỷ lệ, bố cục viewport trên sheet (LO1–LO12), chia vùng + key plan + matchline (Z1–Z5), tên gọi đầy đủ của sheet và view (TG1–TG5), danh mục. Sheet set and sheet layout standard."
+description: "Chuẩn layout bộ hồ sơ kiến trúc trên sheet: loại công trình → bộ hồ sơ, giai đoạn hồ sơ, nhóm và đánh số bản vẽ, bộ hồ sơ lõi, thành phần bắt buộc của bản vẽ chi tiết vệ sinh / thang bộ / thang máy (CT1–CT3), khổ giấy, tỷ lệ, bố cục viewport trên sheet (LO1–LO12), chia vùng + key plan + matchline (Z1–Z5), tên gọi đầy đủ của sheet và view + mã thành phần cùng loại (TG1–TG6), danh mục. Sheet set and sheet layout standard."
 metadata:
   updated: "2026-11-13"
   related: ["drafting-sheet-create", "drafting-view-create", "drafting-sheet-place", "drafting-views-sheets", "drafting-annotation", "drafting-work-rules", "drafting-sheet-set-townhouse", "drafting-sheet-set-villa", "drafting-sheet-set-highrise", "drafting-sheet-set-airport", "drafting-sheet-set-public", "drafting-sheet-set-industrial"]
@@ -125,7 +125,7 @@ Mỗi thang bộ có đủ bốn phần:
 
 ### CT3. Chi tiết thang máy: có thang máy thì có bản vẽ
 
-Công trình **có thang máy** (kể cả thang máy gia đình của nhà liên kế, biệt thự) thì bộ hồ sơ có `CHI TIẾT THANG MÁY <n>`:
+Công trình **có thang máy** (kể cả thang máy gia đình của nhà liên kế, biệt thự) thì bộ hồ sơ có `CHI TIẾT THANG MÁY` (nhiều thang máy: thêm mã `LF1`, `LF2`…, TG6):
 
 | View con | Nội dung |
 |---|---|
@@ -198,15 +198,41 @@ Công trình **có thang máy** (kể cả thang máy gia đình của nhà liê
 ## 8. Tên sheet và danh mục (HS6)
 
 - **Tên sheet** = loại bản vẽ + tầng / vùng / mẫu nhà, vd. `MẶT BẰNG KÍCH THƯỚC TẦNG 2 - VÙNG A`. Không ghi tỷ lệ trong tên.
-- **Tên gọi đầy đủ cho sheet và view** (TG1–TG5, user 2026-11-13), mọi loại công trình:
+- **Tên gọi đầy đủ cho sheet và view** (TG1–TG6, user 2026-11-13), mọi loại công trình:
 
 | Mã | Quy tắc |
 |---|---|
-| TG1 | **Viết đủ chữ**: không viết tắt loại bản vẽ và đối tượng (`MB`, `MĐ`, `MC`, `CT`, `TK`, `WC`, `VS`…). Chỉ giữ mã có trong model: số / mã phòng, mã cửa, tên trục, tên tầng theo profile. |
-| TG2 | **Tên sheet** = loại bản vẽ + đối tượng + vị trí (tầng / số / vùng / mẫu), thêm ` - <nội dung>` khi một đối tượng tách nhiều sheet. Sheet chi tiết bắt đầu bằng `CHI TIẾT`: `CHI TIẾT VỆ SINH 1`, `CHI TIẾT THANG BỘ 1 - MẶT CẮT`, `CHI TIẾT THANG MÁY 1`, `CHI TIẾT BẾP`. |
-| TG3 | **Tên view** = tên bản vẽ của sổ; sheet có nhiều view thì thêm ` - <nội dung view>`: `CHI TIẾT VỆ SINH 1 - MẶT BẰNG KÍCH THƯỚC`, `CHI TIẾT VỆ SINH 1 - MẶT BẰNG LÁT SÀN`, `CHI TIẾT VỆ SINH 1 - TRIỂN KHAI TƯỜNG A`, `CHI TIẾT THANG BỘ 1 - MẶT BẰNG TẦNG 2`, `CHI TIẾT THANG BỘ 1 - CHI TIẾT MŨI BẬC`. Sheet một view: tên view = tên sheet. |
+| TG1 | **Viết đủ chữ**: không viết tắt loại bản vẽ và đối tượng (`MB`, `MĐ`, `MC`, `CT`, `TK`, `WC`, `VS`…). Chỉ giữ mã có trong model: số / mã phòng, mã cửa, tên trục, tên tầng theo profile; và mã thành phần của TG6 (`ST1`, `WC1`…), đứng sau tên viết đủ chữ. |
+| TG2 | **Tên sheet** = loại bản vẽ + đối tượng + vị trí (tầng / mã thành phần TG6 / vùng / mẫu), thêm ` - <nội dung>` khi một đối tượng tách nhiều sheet. Sheet chi tiết bắt đầu bằng `CHI TIẾT`: `CHI TIẾT VỆ SINH WC1`, `CHI TIẾT THANG BỘ ST1 - MẶT CẮT`, `CHI TIẾT THANG MÁY LF1`, `CHI TIẾT BẾP`. |
+| TG3 | **Tên view** = tên bản vẽ của sổ; sheet có nhiều view thì thêm ` - <nội dung view>`: `CHI TIẾT VỆ SINH WC1 - MẶT BẰNG KÍCH THƯỚC`, `CHI TIẾT VỆ SINH WC1 - MẶT BẰNG LÁT SÀN`, `CHI TIẾT VỆ SINH WC1 - TRIỂN KHAI TƯỜNG A`, `CHI TIẾT THANG BỘ ST1 - MẶT BẰNG TẦNG 2`, `CHI TIẾT THANG BỘ ST1 - CHI TIẾT MŨI BẬC`. Sheet một view: tên view = tên sheet. |
 | TG4 | **Đọc riêng tên vẫn đủ nghĩa**: bản vẽ gì, của đối tượng nào, ở đâu. Không đặt tên trống đối tượng (`MẶT BẰNG`, `MẶT CẮT 1`, `TRIỂN KHAI BẮC`). |
 | TG5 | **Tên dài không phải lý do viết tắt**: ô tên của khung tên cho xuống dòng hoặc thu chữ theo khung tên. Sheet đã phát hành chỉ đổi tên khi user đồng ý (HS3). |
+| TG6 | **Mã thành phần cùng loại**: thành phần có từ hai cái / hai loại trở lên trong công trình (thang bộ, vệ sinh, thang máy…) mang mã `<2 chữ><số>` trong tên sheet và mọi tên view của nó, ngay sau tên đối tượng: `CHI TIẾT THANG BỘ ST1`, `CHI TIẾT THANG BỘ ST2 - MẶT CẮT A-A`, `CHI TIẾT VỆ SINH WC3 - MẶT BẰNG LÁT SÀN`. Bảng mã và cách đánh số: ngay dưới bảng này. |
+
+**Mã thành phần cùng loại (TG6, user 2026-11-13)**: để phân biệt bản vẽ đang khai triển thành phần nào trong số các thành phần cùng loại.
+
+| Thành phần | Mã | Một mã cho |
+|---|---|---|
+| Thang bộ | `ST1`, `ST2`… | mỗi thang |
+| Vệ sinh | `WC1`, `WC2`… | mỗi loại vệ sinh (CT1) |
+| Thang máy | `LF1`, `LF2`… | mỗi thang máy (CT3) |
+| Thang cuốn, băng chuyền người | `ES1`, `ES2`… | mỗi thang / băng chuyền |
+| Ram dốc | `RP1`, `RP2`… | mỗi ram |
+| Bếp | `KC1`, `KC2`… | mỗi loại bếp |
+| Ban công, lô gia | `BL1`, `BL2`… | mỗi loại |
+| Sảnh | `LB1`, `LB2`… | mỗi sảnh |
+| Lõi thang (nhà cao tầng) | `CR1`, `CR2`… | mỗi lõi |
+| Căn hộ, phòng điển hình, mẫu nhà | mã mẫu của profile | mỗi mẫu |
+| Thành phần lặp lại khác | 2 chữ cái in hoa + số, ghi vào profile | mỗi cái / mỗi loại |
+
+- **Chỉ đánh mã khi có từ hai trở lên** (user 2026-11-13): loại nào công trình chỉ có một bản vẽ chi tiết thì không ghi mã, tránh hiểu lầm là còn cái khác: `CHI TIẾT THANG BỘ - MẶT CẮT A-A`, không `ST1`. Đếm theo từng loại: một thang bộ + ba loại vệ sinh → thang không mã, vệ sinh `WC1`–`WC3`.
+- **Thêm cái thứ hai về sau**: cả hai nhận mã, cái có trước là số 1 nếu thứ tự cho phép; sheet đã phát hành chỉ đổi tên khi user đồng ý (HS3).
+- **Một mã = một bản vẽ chi tiết**. Các thành phần giống hệt nhau (cùng kích thước, cùng bố trí, cùng hoàn thiện) dùng chung một mã và một bản vẽ; khác nhau, kể cả đối xứng gương, thì mỗi cái một mã.
+- **Thứ tự đánh số** theo từng loại, cho cả công trình: tầng thấp → tầng cao; trong một tầng theo trục số nhỏ → lớn, rồi trục chữ `A` → …. Số liên tục, không nhảy cóc.
+- **Một mã ở mọi nơi**: tên sheet, mọi tên view của thành phần đó và cột `Tầng / vùng / mẫu` của sổ (§11) ghi cùng một mã; `Ghi chú` của dòng ghi vị trí (tầng, trục) và các phòng / vị trí dùng chung mã. Thứ tự sheet trong nhóm theo thứ tự mã.
+- **Không đổi mã đã phát hành** (HS3): thành phần thêm sau lấy số kế tiếp; thành phần bị bỏ thì mã đó bỏ trống, không cấp lại.
+- Mã mới ngoài bảng: 2 chữ cái, không trùng mã trong bảng, mã giai đoạn (§2) và prefix số sheet (§3); ghi vào profile trước khi dùng.
+
 - Cả bộ dùng cùng ngôn ngữ, cùng kiểu chữ (in hoa cho mọi chữ của hồ sơ, `drafting-annotation.md` §0), cùng cách gọi tầng. Song ngữ chỉ khi profile yêu cầu.
 - Tầng điển hình (một view dùng cho nhiều tầng) ghi dải tầng: `MẶT BẰNG TẦNG 5–20 (ĐIỂN HÌNH)`.
 - **Danh mục bản vẽ** liệt kê mọi sheet phát hành, theo thứ tự nhóm (§3). Print set phải khớp với danh mục (`drafting-views-sheets.md` §5).
@@ -240,7 +266,7 @@ Công trình **có thang máy** (kể cả thang máy gia đình của nhà liê
 
 Bộ hồ sơ chỉ xong khi đủ tất cả các điều sau:
 - Mọi bản vẽ bắt buộc (§1, §2, §4 và file bộ hồ sơ của loại) đều có view và đã nằm trên sheet; bản vẽ chi tiết vệ sinh, thang bộ, thang máy đủ view con theo CT1–CT3 (§4b). Bản vẽ nào còn thiếu thì đã ghi vào việc tồn kèm lý do.
-- Số và tên sheet, tên view theo §3, §8 (TG1–TG5); danh mục bản vẽ và print set khớp nhau.
+- Số và tên sheet, tên view theo §3, §8 (TG1–TG6); danh mục bản vẽ và print set khớp nhau.
 - Mọi sheet đạt LO1–LO12. Nếu có chia vùng thì đạt Z1–Z5.
 - `viewport_title_audit` sạch; ảnh sheet đã soát (`drafting-visual-check`), không còn đè chữ hay tràn khung.
 
