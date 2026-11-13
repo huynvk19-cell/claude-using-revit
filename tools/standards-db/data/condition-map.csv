@@ -1,0 +1,16 @@
+text,expr
+có hầm,basement
+có hầm và hầm có trần,basement&basement-ceiling
+có tum,tum
+tum có trần,tum&tum-ceiling
+"lô góc, hoặc nhà cao hơn nhà bên",corner-lot|taller-than-neighbour
+có thang máy,elevator
+có bồn hoa,planter
+có hầm / lối xe,basement|driveway
+mặt tiền có lam / phào / mái đón / biển hiệu,facade-features
+có giếng trời,skylight
+dự án nhiều căn / có nhà bên,multi-unit|neighbour
+tách khối khỏi nhà chính,outbuilding
+có hồ bơi,pool
+phong cách tân cổ điển,style-neoclassical
+phong cách hiện đại,style-modern

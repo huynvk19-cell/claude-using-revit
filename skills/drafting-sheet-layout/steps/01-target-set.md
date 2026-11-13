@@ -12,7 +12,7 @@
    - house types / blocks / zones from the profile.
 2. Build the **sheet register** (`drafting-sheet-layout.md` §11), one row per drawing:
    - start from the core set (§4) + the sheet-set file's table; a sheet-set file with a **Danh mục điển hình** replaces the core set, and its row order is the sheet order;
-   - keep the rows whose GĐ is not later than the job's stage, and whose condition holds ("nếu có tầng hầm"…);
+   - keep the rows whose GĐ is not later than the job's stage, and whose condition holds ("nếu có tầng hầm"…); with Python 3 on the machine one call does both and lists the rows left out with the reason: `standards_db.py sheets --type … --stage … --has …` (`drafting-standards-db`);
    - expand "mỗi tầng" to one row per level, typical floors as one row with their level range;
    - expand per zone (if card 03 already split) and per house type / block.
 3. Fill the columns of this card: `ID`, `Nhóm`, `Bản vẽ`, `Tầng / vùng / mẫu`, `Tỷ lệ`, `GĐ`, `Nguồn`, `Loại`, `Mức`. Every row starts in state `planned`.

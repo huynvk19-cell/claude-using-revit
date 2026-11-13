@@ -29,6 +29,7 @@ jobs:
         run: |
           python3 addin/tests/budget_check.py
           python3 addin/tests/coverage_check.py
+          python3 tools/standards-db/standards_db.py check
           python3 addin/tests/workflow_lib_check.py
           python3 addin/tests/pick_model_check.py
           python3 addin/tests/region_merge_check.py

@@ -48,6 +48,7 @@ Do **not** read the whole `drafting-domain/` folder or every skill. Pick the tas
 | View template per drawing kind (gán view template theo loại bản vẽ) | `drafting-view-template` | `drafting-view-template.md` |
 | Put views on sheets (bỏ view vào sheet, đặt viewport) | `drafting-sheet-place` | `drafting-sheet-place.md` |
 | Which skill a drawing kind needs, how far Claude can take it (độ phủ, mức 1–4) | — | `drafting-coverage.md` |
+| Something the user corrected or decided (nhật ký sửa); catalogue look-ups across building types | `drafting-standards-db` | `drafting-standards-db.md` |
 | Checking by image | `drafting-visual-check` | — |
 
 - **Shared tasks first**: a job the ribbon tab "claude using revit" already does (print set = drawing list, sheet-list columns / No. / one value for all sheets, untagged scan / highlight, highlight / clear) is one `cur_task {task, args}` call: same code as the user's button, short result. `cur_task {task:"list_tasks"}` lists them. Never re-derive such a job step by step.
@@ -92,7 +93,8 @@ Before calling a batch finished, check each view: **Đủ** (the topic audit sho
 1. Last `mark_types {action:"mark", …, mode:"apply"}` of the batch; write a log entry to `log/YYYY-MM.md` (batch views, snapshot and log files).
 2. Add new lessons:
    - general → the matching domain file;
-   - project-only → the profile.
+   - project-only → the profile;
+   - something the user corrected or decided → also one row in the corrections log (`drafting-standards-db`).
 3. When the user ends the work session (kết thúc làm việc), follow `drafting-end`.
 4. Report:
    - exact Revit names (sheet no. – name, view, View Template);
