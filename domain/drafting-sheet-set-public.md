@@ -20,7 +20,7 @@ Bảng chung (§1) áp dụng cho mọi công trình công cộng. Sau đó ch�
 | 2 | Mặt bằng phân khu chức năng mỗi tầng (màu + legend) | 1:500–1:200 | CS | — | `thematic` |
 | 2 | Mặt bằng thoát nạn / PCCC mỗi tầng | 1:200 | CS | Khoang cháy, lối thoát, khoảng cách, cửa chống cháy | `thematic` |
 | 2 | Mặt bằng tiếp cận người khuyết tật | 1:200 | KT | Lối vào, ram dốc, thang máy, vệ sinh người khuyết tật; theo QCVN 10 | `thematic` |
-| 6 | Vệ sinh công cộng điển hình + phòng người khuyết tật | 1:50–1:25 | TC | — | `enlarged` |
+| 6 | Chi tiết vệ sinh công cộng điển hình + phòng người khuyết tật | 1:50–1:25 | TC | Hai mặt bằng: kích thước, lát sàn (CT1) | `enlarged` |
 | 7 | Thống kê cửa (cửa thoát nạn, cửa chống cháy, chiều mở) | 1:50 | KT | — | `door` |
 
 ## 2. Trường học
@@ -36,7 +36,7 @@ Bảng chung (§1) áp dụng cho mọi công trình công cộng. Sau đó ch�
 | 1 | Tổng mặt bằng: sân chơi, sân thể thao, cổng, nhà xe, cây xanh | 1:500–1:200 | CS | — | `site` |
 | 6 | Phòng học điển hình: mặt bằng bố trí bàn ghế, bảng, cửa sổ, hướng chiếu sáng; triển khai tường | 1:50 | KT | — | `enlarged` |
 | 6 | Phòng bộ môn, thư viện, phòng đa năng | 1:50–1:100 | KT | — | `enlarged` |
-| 6 | Vệ sinh học sinh theo cấp (chiều cao thiết bị) | 1:25 | TC | — | `enlarged` |
+| 6 | Chi tiết vệ sinh học sinh theo cấp (chiều cao thiết bị) | 1:25 | TC | Hai mặt bằng: kích thước, lát sàn (CT1) | `enlarged` |
 | 6 | Bếp ăn (mầm non, bán trú): luồng sơ chế → nấu → chia | 1:50 | KT | — | `enlarged` |
 | 8 | Chi tiết lan can hành lang, cầu thang (chiều cao, khe hở), tay vịn hai cao độ | 1:20–1:5 | TC | — | `detail` |
 

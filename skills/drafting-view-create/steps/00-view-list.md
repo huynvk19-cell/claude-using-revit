@@ -5,7 +5,7 @@
 
 ## Do
 
-1. For each row, read its Revit view kind from table §1. A drawing made of several views (stair = callout per level + sections; WC = callout + interior elevations) gets its sub-rows `ID.a`, `ID.b`… now, one per view.
+1. For each row, read its Revit view kind from table §1. A drawing made of several views gets its sub-rows `ID.a`, `ID.b`… now, one per view, with the mandatory parts of `drafting-sheet-layout.md` §4b: stair = callout per level + sections + enlarged section details + nosing detail (CT2); toilet = dimension plan + floor finish plan + interior elevations (CT1); lift = shaft plans + shaft section (CT3).
 2. Read the existing views once:
    `query_elements_with_filter {category:"Views", returnFields:["View Name","Sheet Number","View Template","View Scale","Associated Level"]}`
 3. Sort each row:
@@ -19,6 +19,7 @@
 
 ## Done when
 
+- Every toilet, stair and lift row has all its sub-rows of CT1–CT3.
 - Every row `sheet` has a `Loại view` and is reuse (with id), create (in the table) or conflict (answered by the user).
 
 ## Skip only if

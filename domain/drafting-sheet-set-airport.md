@@ -64,7 +64,7 @@ File này cộng thêm vào bộ hồ sơ lõi (`drafting-sheet-layout.md` §4).
 | 6 | Phòng chờ cửa ra + cầu ống lồng / cửa ra xe buýt sân đỗ | 1:100–1:50 | KT | — | `enlarged` |
 | 6 | Khu nhận hành lý | 1:100 | KT | — | `enlarged` |
 | 6 | Phòng chờ hạng thương gia / VIP | 1:50 | TC | — | `enlarged` |
-| 6 | Khu vệ sinh công cộng điển hình (cả phòng người khuyết tật, phòng mẹ và bé) | 1:50–1:25 | TC | — | `enlarged` |
+| 6 | Chi tiết khu vệ sinh công cộng điển hình (cả phòng người khuyết tật, phòng mẹ và bé) | 1:50–1:25 | TC | Hai mặt bằng: kích thước, lát sàn (CT1) | `enlarged` |
 | 6 | Khu thương mại / ăn uống: mặt bằng phân lô gian hàng | 1:200–1:100 | KT | — | `thematic` |
 | 7 | Cửa, vách kính, cửa an ninh / kiểm soát (thống kê kèm cấp an ninh, chống cháy) | 1:50 | KT | — | `door` |
 | 8 | Chi tiết mái lớn: máng thu, cửa lấy sáng, diềm, chống thấm, khe co giãn | 1:20–1:5 | TC | — | `detail` |

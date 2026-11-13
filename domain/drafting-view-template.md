@@ -2,7 +2,7 @@
 name: drafting-view-template
 description: "Chuẩn gán view template theo loại bản vẽ khi khởi tạo bộ hồ sơ, cho mọi loại công trình: mỗi `Loại` của sổ + loại view Revit → khoá template trong profile, thứ tự tra khoá (theo tỷ lệ, khoá thay thế), view đã có template khác, tỷ lệ bị template khoá, dependent view; quy tắc VT1–VT10; lệnh `view_templates_apply`. View template per drawing kind."
 metadata:
-  updated: "2026-11-12"
+  updated: "2026-11-13"
   related: ["drafting-view-create", "drafting-coverage", "drafting-sheet-layout", "drafting-views-sheets"]
 ---
 
@@ -33,9 +33,9 @@ Skill: `drafting-view-template`.
 | `roof` | Floor plan | `roof` | `plan` |
 | `elevation` | Elevation | `elevation` | hỏi |
 | `section` | Section | `section` | hỏi |
-| `stair` | Callout plan · Section | `stair` · `stair-section` | hỏi · `section` |
+| `stair` | Callout plan · Section · Detail (phóng lớn mặt cắt, mũi bậc) | `stair` · `stair-section` · `stair-detail` | hỏi · `section` · `detail` |
 | `vertical` | Callout plan · Section | `vertical` · `vertical-section` | `stair` · `stair-section` |
-| `enlarged` | Callout plan · Interior elevation | `enlarged` · `enlarged-elevation` | `toilet` · hỏi |
+| `enlarged` | Callout plan (mặt bằng kích thước) · mặt bằng lát sàn · Interior elevation | `enlarged` · `enlarged-finish` · `enlarged-elevation` | `toilet` · `enlarged` · hỏi |
 | `door` | Schedule · Legend | — | — |
 | `facade` | Elevation · Section / detail | `facade` · `detail` | `elevation` · hỏi |
 | `detail` | Detail view · Drafting view | `detail` · `detail-drafting` | hỏi · `detail` |
