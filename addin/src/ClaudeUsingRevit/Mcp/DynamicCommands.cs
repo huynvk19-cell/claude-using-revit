@@ -83,16 +83,13 @@ namespace ClaudeUsingRevit.Mcp
         static readonly Dictionary<string, Compiled> Cache = new Dictionary<string, Compiled>();
         static readonly object Gate = new object();
 
-        /// <summary>Run a command on the API thread. source: run this text instead of the file (web app).</summary>
-        public static object Run(UIApplication app, string name, string source, JObject args)
+        /// <summary>Run a command file of the commands folder on the API thread (never C# text sent by a client).</summary>
+        public static object Run(UIApplication app, string name, JObject args)
         {
             if (!NameRule.IsMatch(name ?? "")) throw new ArgumentException("bad command name: " + name);
             string file = Path.Combine(Paths.Commands, name + ".cs");
-            if (source == null)
-            {
-                if (!File.Exists(file)) throw new FileNotFoundException($"command not found: {name} (in {Paths.Commands})");
-                source = File.ReadAllText(file, Encoding.UTF8);
-            }
+            if (!File.Exists(file)) throw new FileNotFoundException($"command not found: {name} (in {Paths.Commands})");
+            string source = File.ReadAllText(file, Encoding.UTF8);
             var method = Get(name, file, source);
             string argsJson = (args ?? new JObject()).ToString(Newtonsoft.Json.Formatting.None);
             // the JObject type the command was compiled against (normally the same Newtonsoft as ours)

@@ -53,7 +53,7 @@ namespace ClaudeUsingRevit.Mcp
                 var l = new TcpListener(IPAddress.Loopback, port);
                 try { l.ExclusiveAddressUse = true; } catch { /* not on every OS; Windows has it */ }
                 l.Start();
-                // .NET Framework makes the socket inheritable: a program this Revit starts later (the web app's node)
+                // .NET Framework makes the socket inheritable: a program this Revit starts later (e.g. a node server)
                 // would keep the port open after Revit lets go of it, and no other window could take it.
                 try { SetHandleInformation(l.Server.Handle, HANDLE_FLAG_INHERIT, 0); } catch { }
                 _listener = l;

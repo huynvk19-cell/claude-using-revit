@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Any schedule as a plain table for the web app grid (Bảng): read it, write cells back.
+"""Any schedule as a plain table for the Bảng panel: read it, write cells back.
 
 read(): one row per element the schedule shows (itemized, even when the schedule groups), in
   the schedule's row order: the body rows are read and matched on the texts of all shown

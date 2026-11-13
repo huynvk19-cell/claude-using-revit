@@ -72,7 +72,7 @@ public static class ViewDevelop
 
     static JObject Call(UIApplication app, string name, JObject args)
     {
-        var r = DynamicCommands.Run(app, name, null, args);
+        var r = DynamicCommands.Run(app, name, args);
         return r == null ? new JObject() : JObject.FromObject(r);
     }
 

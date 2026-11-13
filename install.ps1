@@ -12,9 +12,7 @@
 #                     (config.json extensionDir / commandsDir): an edit applies on the next click / tool call.
 #   -RegisterClaude : add the MCP server to Claude Code (claude mcp add --transport http --scope user claude-using-revit ...)
 #   -DwgBindXref    : also install the DWG bind-xref tool + its Explorer right-click menu (HKCU, no admin)
-#   -WebApp         : optional, a web server for the tools in a browser or on an iPad in the LAN, to
-#                     %APPDATA%\claude-using-revit\webapp; the add-in needs none of it
-param([switch]$AddIn, [string[]]$Revit, [string]$Dist, [switch]$Dev, [switch]$RegisterClaude, [switch]$DwgBindXref, [switch]$WebApp)
+param([switch]$AddIn, [string[]]$Revit, [string]$Dist, [switch]$Dev, [switch]$RegisterClaude, [switch]$DwgBindXref)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $claude = Join-Path $env:USERPROFILE '.claude'
@@ -140,26 +138,12 @@ if ($RegisterClaude) {
     else { "claude CLI not found: claude mcp add --transport http --scope user claude-using-revit http://127.0.0.1:$port/mcp" }
 }
 
-# the status window of older versions is gone: its scripts, its copy in the domain folder, its MCP command
-foreach ($old in (Join-Path $env:USERPROFILE 'Tools\WorkStatus'), (Join-Path $domain 'tools\work-status'), (Join-Path $data 'commands\work_status.cs')) {
+# the status window and the web app of older versions are gone: their scripts, copies, state files, its MCP command
+Get-CimInstance Win32_Process -Filter "Name = 'node.exe'" -ErrorAction SilentlyContinue |
+    Where-Object { $_.CommandLine -like '*claude-using-revit\webapp\server.mjs*' } |
+    ForEach-Object { Stop-Process -Id $_.ProcessId -Force; "web app: stopped old server (PID $($_.ProcessId))" }
+foreach ($old in (Join-Path $env:USERPROFILE 'Tools\WorkStatus'), (Join-Path $domain 'tools\work-status'), (Join-Path $data 'commands\work_status.cs'),
+                 (Join-Path $data 'webapp'), (Join-Path $data 'webapp.json'), (Join-Path $data 'web-bridge')) {
     if (Test-Path $old) { Remove-Item $old -Recurse -Force; "removed $old" }
 }
 if ($DwgBindXref) { & (Join-Path $root 'tools\dwg-bind-xref\install-menu.ps1') }
-if ($WebApp) {
-    # optional web server (webapp\server.mjs) for a page of the tools in a browser or on an iPad in the LAN. The add-in
-    # does not need it. Run this from a normal terminal: run by the Claude desktop app (an MSIX package),
-    # new folders under %APPDATA% land in the app's private store, where Revit and Explorer never see them.
-    $wa = Join-Path $data 'webapp'
-    Get-CimInstance Win32_Process -Filter "Name = 'node.exe'" |
-        Where-Object { $_.CommandLine -like '*claude-using-revit\webapp\server.mjs*' } |
-        ForEach-Object { Stop-Process -Id $_.ProcessId -Force; "web app: stopped old server (PID $($_.ProcessId))" }
-    Mirror (Join-Path $root 'webapp') $wa
-    Get-ChildItem (Join-Path $root 'revit-commands\*.cs') | ForEach-Object { $_.BaseName } |
-        Set-Content (Join-Path $wa 'revit-commands.txt') -Encoding ascii
-    $node = (Get-Command node -ErrorAction SilentlyContinue).Source
-    if ($node) {
-        Start-Process $node -ArgumentList "`"$wa\server.mjs`"" -WorkingDirectory $wa -WindowStyle Hidden
-        "web app -> $wa (started; address + access code: $data\webapp.json)"
-    }
-    else { "web app -> $wa (node not found; Revit starts it once node is installed)" }
-}
