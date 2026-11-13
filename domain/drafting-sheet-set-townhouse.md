@@ -62,9 +62,9 @@ Danh mục ở §2 **thay cho** bộ hồ sơ lõi (`drafting-sheet-layout.md` �
 | 20 | 3 | Mặt đứng bên | 1:100–1:50 | CS | lô góc, hoặc nhà cao hơn nhà bên | — | `elevation` |
 | 21 | 4 | Mặt cắt dọc (qua thang và giếng trời) | 1:100–1:50 | CS | — | Cao độ tầng, chiều cao thông thuỷ, cao độ vỉa hè / nền / hầm | `section` |
 | 22 | 4 | Mặt cắt ngang | 1:100–1:50 | KT | — | Tường chung với nhà bên, ban công | `section` |
-| 23 | 5 | Chi tiết thang bộ 1…n (mỗi thang một sheet) | 1:50–1:20; chi tiết 1:20–1:2 | KT | — | Mặt bằng các tầng + mặt cắt của thang + chi tiết phóng lớn mặt cắt thang + chi tiết mũi bậc (CT2); lan can, tay vịn (`drafting-stair-plan`, `drafting-stair-section-*`) | `stair` |
-| 24 | 5 | Chi tiết thang máy 1…n | 1:50–1:25 | KT | có thang máy | Mặt bằng hố thang các tầng khác nhau + mặt cắt hố: pit, OH, cửa tầng, cao độ dừng tầng (CT3) | `vertical` |
-| 25 | 6 | Chi tiết vệ sinh 1…n (mỗi loại vệ sinh một sheet) | 1:25–1:20 | TC | — | Mặt bằng kích thước + mặt bằng lát sàn + triển khai tường (CT1); thiết bị, độ dốc thoát sàn, chống thấm | `enlarged` |
+| 23 | 5 | Chi tiết thang bộ ST1…STn (mỗi thang một sheet) | 1:50–1:20; chi tiết 1:20–1:2 | KT | — | Mặt bằng các tầng + mặt cắt của thang + chi tiết phóng lớn mặt cắt thang + chi tiết mũi bậc (CT2); lan can, tay vịn (`drafting-stair-plan`, `drafting-stair-section-*`) | `stair` |
+| 24 | 5 | Chi tiết thang máy LF1…LFn | 1:50–1:25 | KT | có thang máy | Mặt bằng hố thang các tầng khác nhau + mặt cắt hố: pit, OH, cửa tầng, cao độ dừng tầng (CT3) | `vertical` |
+| 25 | 6 | Chi tiết vệ sinh WC1…WCn (mỗi loại vệ sinh một sheet) | 1:25–1:20 | TC | — | Mặt bằng kích thước + mặt bằng lát sàn + triển khai tường (CT1); thiết bị, độ dốc thoát sàn, chống thấm | `enlarged` |
 | 26 | 8 | Chi tiết bậc tam cấp | 1:20–1:10 | TC | — | — | `detail` |
 | 27 | 8 | Chi tiết bồn hoa | 1:20–1:10 | TC | có bồn hoa | Lớp chống thấm, lỗ thoát nước | `detail` |
 | 28 | 8 | Chi tiết ramp dốc | 1:50–1:20 | TC | có hầm / lối xe | Độ dốc, rãnh thu đầu / chân ram, chống trượt | `vertical` |
@@ -114,5 +114,5 @@ Danh mục ở §2 **thay cho** bộ hồ sơ lõi (`drafting-sheet-layout.md` �
 - Thiếu chi tiết tiếp giáp với nhà bên: chống thấm tường chung, khe lún, diềm mái.
 - Có thang máy mà thiếu chi tiết thang máy (CT3).
 - Chi tiết vệ sinh chỉ có một mặt bằng (CT1); chi tiết thang bộ thiếu chi tiết phóng lớn mặt cắt và mũi bậc (CT2).
-- Tên sheet, tên view viết tắt (`MB`, `WC`…) hoặc trống đối tượng (TG1–TG4).
+- Tên sheet, tên view viết tắt (`MB`, `WC`…) hoặc trống đối tượng (TG1–TG4); thang bộ, vệ sinh, thang máy thiếu mã `ST` / `WC` / `LF` (TG6).
 - Shophouse thiếu triển khai mặt tiền tầng 1 (cửa xếp / cửa cuốn, biển hiệu, mái đón).

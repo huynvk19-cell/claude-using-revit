@@ -1,6 +1,6 @@
 # 01 · Group into sheets, number, name (gom sheet, đánh số, đặt tên)
 
-**Skill** `drafting-sheet-create` · **Standard** `drafting-sheet-create.md` SC2–SC4, §2; `drafting-sheet-layout.md` §8 (TG1–TG5) · **Tools** none (works on the register)
+**Skill** `drafting-sheet-create` · **Standard** `drafting-sheet-create.md` SC2–SC4, §2; `drafting-sheet-layout.md` §8 (TG1–TG6) · **Tools** none (works on the register)
 **Applies to** the rows `in` of card 00.
 
 ## Do
@@ -10,7 +10,7 @@
    - prefix + group + order (HS3), in the order of the register rows;
    - leave gaps between groups;
    - never reuse a number of the drawing list (card 00).
-3. **Name** each sheet with the drawing name of the register, in capitals, + level / zone / type (HS6). Names follow the typical list of the building type word for word, and are full names (TG1–TG5): no abbreviation (`MB`, `MC`, `WC`…), a detail sheet starts with `CHI TIẾT` + its object (`CHI TIẾT VỆ SINH 1`, `CHI TIẾT THANG BỘ 1 - MẶT CẮT`).
+3. **Name** each sheet with the drawing name of the register, in capitals, + level / zone / type (HS6). Names follow the typical list of the building type word for word, and are full names (TG1–TG6): no abbreviation (`MB`, `MC`, `WC`…), a detail sheet starts with `CHI TIẾT` + its object + the component code of TG6 (stairs `ST1`…, toilets `WC1`…, lifts `LF1`…; always, even when there is only one; numbered lowest level first, then by grid) (`CHI TIẾT VỆ SINH WC1`, `CHI TIẾT THANG BỘ ST1 - MẶT CẮT`).
 4. Show the sheet table to the user and ask once:
 
    | Số sheet | Tên sheet | Dòng sổ (ID) | Mới / có sẵn |
@@ -20,7 +20,7 @@
 
 ## Done when
 
-- Every row `in` has a sheet number and a full sheet name (TG1–TG4); no number used twice; the order of the numbers = the order of the register.
+- Every row `in` has a sheet number and a full sheet name (TG1–TG4); every repeated component (stair, toilet, lift…) has its code, one code per detail drawing, no code used twice (TG6); no number used twice; the order of the numbers = the order of the register.
 - The user confirmed the table (or their changes are written with the date).
 
 ## Skip only if

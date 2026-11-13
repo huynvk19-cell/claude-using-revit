@@ -32,13 +32,13 @@ Tên template là **khoá trong profile**: profile ghi tên template thật củ
 | Mặt bằng trần `<tầng>` | Ceiling plan | mới | level của tầng | `ceiling` | = MB sàn |
 | Mặt đứng `<hướng>` | Elevation (building elevation) | marker đặt trên MB trệt, ngoài nhà, nhìn vào mặt nhà | — | `elevation` | cos nền − 1 m → đỉnh mái + dải chú thích; far clip vừa qua mặt nhà |
 | Mặt cắt `<tên>` | Section | đường cắt trên MB trệt: dọc qua thang + giếng trời, ngang qua phòng chính | — | `section` | đáy hầm / móng → đỉnh mái |
-| Chi tiết thang bộ `<n>`: mặt bằng, mặt cắt | Callout plan mỗi tầng + Section qua vế (dọc; ngang nếu cần) | callout từ MB sàn từng tầng; section trên callout tầng trệt | level từng tầng | `stair` · `stair-section` | lõi thang + tường + trục gần nhất |
-| Chi tiết thang bộ `<n>`: chi tiết phóng lớn mặt cắt (CT2) | Detail callout 1:20–1:10 | từ mặt cắt thang: chân thang, vế gặp chiếu nghỉ, bậc cuối gặp sàn | — | `stair-detail` | 3–5 bậc + chiếu nghỉ / sàn + lan can |
-| Chi tiết thang bộ `<n>`: chi tiết mũi bậc (CT2) | Detail callout 1:5–1:2; Drafting view khi là chi tiết chuẩn | từ chi tiết phóng lớn (hoặc mặt cắt thang) | — | `stair-detail` | 1–2 bậc |
-| Chi tiết thang máy `<n>` (CT3) | Callout plan mỗi tầng khác nhau + Section qua hố | callout từ MB sàn | level từng tầng | `vertical` · `vertical-section` | hố thang + cửa tầng; section từ đáy pit → nóc OH |
-| Chi tiết vệ sinh `<n>`: mặt bằng kích thước (CT1) | Callout plan 1:25 | callout từ MB sàn | level của phòng vệ sinh | `enlarged` | phòng vệ sinh + tường bao |
-| Chi tiết vệ sinh `<n>`: mặt bằng lát sàn (CT1) | Floor plan | **Duplicate** (không detailing) từ mặt bằng kích thước của cùng vệ sinh | như trên | `enlarged-finish` | = mặt bằng kích thước |
-| Chi tiết vệ sinh `<n>`: triển khai tường | Interior elevation từng tường có thiết bị / ốp lát | marker nội thất trong phòng vệ sinh, đặt trên mặt bằng kích thước | như trên | `enlarged-elevation` | tường + sàn + trần |
+| Chi tiết thang bộ `<mã ST>`: mặt bằng, mặt cắt | Callout plan mỗi tầng + Section qua vế (dọc; ngang nếu cần) | callout từ MB sàn từng tầng; section trên callout tầng trệt | level từng tầng | `stair` · `stair-section` | lõi thang + tường + trục gần nhất |
+| Chi tiết thang bộ `<mã ST>`: chi tiết phóng lớn mặt cắt (CT2) | Detail callout 1:20–1:10 | từ mặt cắt thang: chân thang, vế gặp chiếu nghỉ, bậc cuối gặp sàn | — | `stair-detail` | 3–5 bậc + chiếu nghỉ / sàn + lan can |
+| Chi tiết thang bộ `<mã ST>`: chi tiết mũi bậc (CT2) | Detail callout 1:5–1:2; Drafting view khi là chi tiết chuẩn | từ chi tiết phóng lớn (hoặc mặt cắt thang) | — | `stair-detail` | 1–2 bậc |
+| Chi tiết thang máy `<mã LF>` (CT3) | Callout plan mỗi tầng khác nhau + Section qua hố | callout từ MB sàn | level từng tầng | `vertical` · `vertical-section` | hố thang + cửa tầng; section từ đáy pit → nóc OH |
+| Chi tiết vệ sinh `<mã WC>`: mặt bằng kích thước (CT1) | Callout plan 1:25 | callout từ MB sàn | level của phòng vệ sinh | `enlarged` | phòng vệ sinh + tường bao |
+| Chi tiết vệ sinh `<mã WC>`: mặt bằng lát sàn (CT1) | Floor plan | **Duplicate** (không detailing) từ mặt bằng kích thước của cùng vệ sinh | như trên | `enlarged-finish` | = mặt bằng kích thước |
+| Chi tiết vệ sinh `<mã WC>`: triển khai tường | Interior elevation từng tường có thiết bị / ốp lát | marker nội thất trong phòng vệ sinh, đặt trên mặt bằng kích thước | như trên | `enlarged-elevation` | tường + sàn + trần |
 | Chi tiết tam cấp, bồn hoa, ramp, ban công, mái, mặt tiền, giếng trời, tiếp giáp, thu nước mưa | Detail view (detail section / callout) cắt qua model; Drafting view khi là chi tiết chuẩn không lấy từ model | từ MB / mặt cắt / mặt đứng có liên quan | — | `detail` | vùng chi tiết |
 | Bảng thống kê cửa đi, cửa sổ | Schedule (Doors, Windows) | Duplicate schedule mẫu của dự án | — | (schedule mẫu) | — |
 | Chi tiết cửa đi, cửa sổ | Legend có Legend Component từng type cửa (Elevation) | — | — | `legend` | — |
@@ -50,7 +50,7 @@ Tên template là **khoá trong profile**: profile ghi tên template thật củ
 | Mã | Quy tắc |
 |---|---|
 | VC1 | **Chỉ tạo view có trong sổ.** Trước khi tạo, tìm view trùng (cùng loại, cùng level, cùng vùng, chưa đặt lên sheet). Có view trùng thì dùng lại view đó và ghi id vào sổ, không tạo bản thứ hai. |
-| VC2 | **Tên view đầy đủ** theo TG1–TG5 (`drafting-sheet-layout.md` §8), mẫu của profile chỉ thêm vào chứ không rút gọn. Mặc định = tên bản vẽ trong sổ, in hoa, kèm vùng (`MẶT BẰNG SÀN LẦU 1 - VÙNG A`). View con của cùng một bản vẽ thêm ` - <nội dung view>` viết đủ chữ (`CHI TIẾT THANG BỘ 1 - MẶT BẰNG TẦNG TRỆT`, `CHI TIẾT VỆ SINH 1 - MẶT BẰNG LÁT SÀN`); không viết tắt (`MB`, `MC`, `WC`). Tên phải duy nhất trong model. Không đưa số sheet vào tên view. |
+| VC2 | **Tên view đầy đủ** theo TG1–TG6 (`drafting-sheet-layout.md` §8), mẫu của profile chỉ thêm vào chứ không rút gọn. Mặc định = tên bản vẽ trong sổ, in hoa, kèm vùng (`MẶT BẰNG SÀN LẦU 1 - VÙNG A`). View con của cùng một bản vẽ thêm ` - <nội dung view>` viết đủ chữ (`CHI TIẾT THANG BỘ ST1 - MẶT BẰNG TẦNG TRỆT`, `CHI TIẾT VỆ SINH WC1 - MẶT BẰNG LÁT SÀN`); không viết tắt (`MB`, `MC`, `WC`). Thành phần cùng loại giữ mã TG6 (`ST1`, `WC1`…) trong mọi view con. Tên phải duy nhất trong model. Không đưa số sheet vào tên view. |
 | VC3 | **Mỗi view có một view template** theo bảng §1. Template thiếu → hỏi user. Không tự tạo template, không để view không có template. |
 | VC4 | **Tỷ lệ** = cột `Tỷ lệ` của sổ. Template nào khoá tỷ lệ thì tỷ lệ đó phải trùng với sổ; lệch → báo user, không sửa template. |
 | VC5 | **Crop bật**, annotation crop bật. Crop ôm phần cần thể hiện cộng dải chú thích. Mặt bằng các tầng cùng loại dùng **cùng một crop** (cùng scope box nếu profile có), để đặt cùng vị trí trên sheet (LO4). |
@@ -60,7 +60,7 @@ Tên template là **khoá trong profile**: profile ghi tên template thật củ
 | VC9 | **Chia vùng**: mỗi scope box một dependent view (Z1), tên kèm vùng. View cha không đặt lên sheet. Bản tổng mỗi tầng (Z4) là một view riêng ở tỷ lệ nhỏ. |
 | VC10 | **Phân loại view** (phase, discipline, tham số nhóm Project Browser) theo profile. View mới phải nằm đúng nhóm trong Project Browser. |
 | VC11 | **Không sửa model để có view** (R1). Không xoá view của người khác. View tạo thử phải xoá ngay trong cùng lượt và ghi log. |
-| VC12 | **Kiểm sau khi tạo**: mọi dòng của sổ có `View id`, tên theo VC2 (không còn tên viết tắt), chi tiết vệ sinh / thang bộ / thang máy đủ view con theo CT1–CT3 (`drafting-sheet-layout.md` §4b), đúng template, đúng tỷ lệ, crop bật; view chưa nằm trên sheet nào (đặt view là việc của `drafting-sheet-place`). |
+| VC12 | **Kiểm sau khi tạo**: mọi dòng của sổ có `View id`, tên theo VC2 (không còn tên viết tắt; thành phần cùng loại có mã TG6 trùng với tên sheet), chi tiết vệ sinh / thang bộ / thang máy đủ view con theo CT1–CT3 (`drafting-sheet-layout.md` §4b), đúng template, đúng tỷ lệ, crop bật; view chưa nằm trên sheet nào (đặt view là việc của `drafting-sheet-place`). |
 
 ## 3. Lệnh
 

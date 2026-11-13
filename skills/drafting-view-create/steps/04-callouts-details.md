@@ -1,6 +1,6 @@
 # 04 · Callouts, interior elevations, details (thang bộ, thang máy, vệ sinh, chi tiết)
 
-**Skill** `drafting-view-create` · **Standard** `drafting-view-create.md` §1, VC2, VC8; `drafting-sheet-layout.md` §4b (CT1–CT3), §8 (TG1–TG5) · **Tools** `view_create`, `view_crop_info`, `query_elements_with_filter`
+**Skill** `drafting-view-create` · **Standard** `drafting-view-create.md` §1, VC2, VC8; `drafting-sheet-layout.md` §4b (CT1–CT3), §8 (TG1–TG6) · **Tools** `view_create`, `view_crop_info`, `query_elements_with_filter`
 **Applies to** the creation table rows of kind callout, interior elevation, detail, drafting (thang bộ, thang máy, vệ sinh, chi tiết).
 
 ## Do
@@ -10,12 +10,12 @@
    - one section along the flights;
    - enlarged details of that section (detail callouts at 1:20–1:10): at least the foot of the stair, a flight meeting a landing, the last riser meeting the upper floor;
    - one nosing detail per tread finish (detail callout at 1:5–1:2 from an enlarged detail; a drafting view when the office has a standard one);
-   - template keys `stair` · `stair-section` · `stair-detail`; full names by VC2 / TG3 (`CHI TIẾT THANG BỘ 1 - MẶT BẰNG TẦNG TRỆT`, `… - MẶT CẮT A-A`, `… - CHI TIẾT PHÓNG LỚN MẶT CẮT 1`, `… - CHI TIẾT MŨI BẬC`);
+   - template keys `stair` · `stair-section` · `stair-detail`; full names by VC2 / TG3 (`CHI TIẾT THANG BỘ ST1 - MẶT BẰNG TẦNG TRỆT`, `… - MẶT CẮT A-A`, `… - CHI TIẾT PHÓNG LỚN MẶT CẮT 1`, `… - CHI TIẾT MŨI BẬC`);
    - the view names must also match the profile's stair view names, so that `drafting-stair-plan` / `drafting-stair-section-*` find them.
 2. **Lift** (one row per lift, only when the model has one, CT3):
    - a callout plan of the shaft on each level that differs (pit, typical, top);
    - one section through the shaft, pit floor → top of the overrun;
-   - template keys `vertical` · `vertical-section`; names `CHI TIẾT THANG MÁY 1 - MẶT BẰNG HỐ THANG <tầng>`, `… - MẶT CẮT HỐ THANG`.
+   - template keys `vertical` · `vertical-section`; names `CHI TIẾT THANG MÁY LF1 - MẶT BẰNG HỐ THANG <tầng>`, `… - MẶT CẮT HỐ THANG`.
 3. **Toilets** (one row per toilet type, CT1), always two plans:
    - the dimension plan: callout plan at 1:25 on the floor plan of its level (`… - MẶT BẰNG KÍCH THƯỚC`, key `enlarged`);
    - the floor finish plan: `kind:"duplicate"` of the dimension plan, same crop and scale (`… - MẶT BẰNG LÁT SÀN`, key `enlarged-finish`);
@@ -41,6 +41,7 @@
 - Every toilet type has its two plans (dimension, floor finish) + its interior elevations (CT1).
 - Every lift of the model has its shaft plans + its shaft section (CT3).
 - No view name holds an abbreviation (`MB`, `MC`, `WC`…) or lacks its object (TG1–TG4).
+- Every view of a stair, lift or toilet carries the same component code as its sheet (`ST1`, `LF1`, `WC1`…, TG6).
 
 ## Skip only if
 
