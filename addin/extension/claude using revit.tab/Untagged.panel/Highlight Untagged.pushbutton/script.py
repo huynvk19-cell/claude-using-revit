@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Orange 50% regions over untagged rooms, doors, windows, walls and floors without a spot elevation.
+"""One orange 50% region per view over untagged rooms, doors, windows, walls and floors without a spot elevation.
 
 One window: pick the scope and the kinds, see the counts before anything is drawn,
 draw, then click a view in the result to open it with its untagged elements selected.

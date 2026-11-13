@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
-"""Red see-through filled regions around elements, and their removal.
+"""Red see-through filled region around elements, and its removal.
+
+One region per view holds every highlighted element: outlines close to each
+other flow together like water drops (region_merge), so thousands of elements
+cost one sketch and one regeneration, not one each.
 
 Every region this module creates is marked twice, so the clear command can
 never remove anything else:
@@ -22,6 +26,8 @@ from Autodesk.Revit.DB import (
 from Autodesk.Revit.DB.ExtensibleStorage import (
     AccessLevel, Entity, Schema, SchemaBuilder)
 
+import region_merge as rm
+
 TYPE_NAME = "Highlight - Red 50%"
 SCHEMA_GUID = Guid("9b7be38d-ea96-4e61-b8df-dc0843a30083")
 SCHEMA_NAME = "HighlightRegionMark"
@@ -29,6 +35,8 @@ FIELD_USER = "CreatedBy"
 RED = Color(255, 0, 0)
 TRANSPARENCY = 50          # percent
 OFFSET_PAPER_MM = 2.5      # gap between the object and the region, on paper
+BLEND_PAPER_MM = 2.5       # regions closer than twice this flow into each other
+SEED_PAPER_MM = 0.2        # an element's own outline is never thinner than this
 MAX_POINTS = 20000
 
 NO_REGION_VIEWS = (ViewType.ThreeD, ViewType.Schedule, ViewType.ColumnSchedule,
@@ -225,11 +233,66 @@ def owner_view(doc, elem, active_view):
     return active_view
 
 
-def highlight(doc, elems, active_view, linked=()):
-    """Create one region per element in its owner view; linked = [(element of a linked model, link transform)]
-    in the active view. Call inside a transaction.
+def region_polys(region, view):
+    """The loops of a filled region as 2D polygons in the view's coordinates."""
+    o, r, u = view.Origin, view.RightDirection, view.UpDirection
+    polys = []
+    for loop in region.GetBoundaries():
+        poly = []
+        for c in loop:
+            for p in list(c.Tessellate())[:-1]:
+                d = p.Subtract(o)
+                poly.append((d.DotProduct(r), d.DotProduct(u)))
+        if len(poly) >= 3:
+            polys.append(poly)
+    return polys
 
-    Returns (created_count, {view name: count}, [skip messages]).
+
+def create_merged(doc, view, rtype_id, shapes, min_len, keep=None):
+    """ONE filled region for all the shapes of a view, merged like water drops
+    (region_merge). shapes = [[outer, hole, ...]] per element, 2D view feet;
+    keep = loops of a region to fold in unchanged.
+
+    Returns [region]; several only when Revit refuses the loops as one sketch
+    (then one region per separate patch), [] when nothing could be drawn.
+    """
+    polys = rm.merge(shapes, OFFSET_PAPER_MM, BLEND_PAPER_MM, max(view.Scale, 1) / 304.8, keep)
+
+    def make(ps):
+        loops = List[CurveLoop]()
+        for p in ps:
+            loop = loop_from_2d(p, view, min_len)
+            if loop is not None:
+                loops.Add(loop)
+        if loops.Count == 0:
+            return None
+        return FilledRegion.Create(doc, rtype_id, view.Id, loops)
+
+    try:
+        region = make(polys)
+        return [region] if region is not None else []
+    except Exception:
+        pass
+    out = []
+    for group in rm.groups(polys):
+        region = None
+        for ps in (group, group[:1]):
+            try:
+                region = make(ps)
+                break
+            except Exception:
+                continue
+        if region is not None:
+            out.append(region)
+    return out
+
+
+def highlight(doc, elems, active_view, linked=()):
+    """One region per view over all the elements (each in its owner view), merged
+    with the highlight you already have there; linked = [(element of a linked model,
+    link transform)] in the active view. Call inside a transaction.
+
+    Returns (highlighted element count, {view name: count}, [skip messages]).
     """
     user = doc.Application.Username
     rtype = get_region_type(doc)
@@ -238,7 +301,8 @@ def highlight(doc, elems, active_view, linked=()):
     ogs = OverrideGraphicSettings()
     ogs.SetSurfaceTransparency(TRANSPARENCY)
     ogs.SetProjectionLineColor(RED)
-    created, per_view, skipped = 0, {}, []
+    per_view, skipped = {}, []
+    jobs, order = {}, []      # view id -> (view, shapes)
     for e, link in [(x, None) for x in elems] + list(linked):
         if isinstance(e, FilledRegion) and marked_by(e, schema):
             continue  # already a highlight
@@ -246,27 +310,38 @@ def highlight(doc, elems, active_view, linked=()):
         if view is None or view.ViewType in NO_REGION_VIEWS or view.IsTemplate:
             skipped.append(u"{0}: view does not take filled regions".format(e.Id))
             continue
-        offset = OFFSET_PAPER_MM / 304.8 * max(view.Scale, 1)
         pts = linked_points(e, link) if link is not None else element_points(e, view)
         if not pts:
             skipped.append(u"{0}: no geometry in the view".format(e.Id))
             continue
-        loop = loop_from_2d(outline_2d(pts, view, offset), view, min_len)
-        if loop is None:
+        poly = outline_2d(pts, view, SEED_PAPER_MM / 304.8 * max(view.Scale, 1))
+        if len(poly) < 3:
             skipped.append(u"{0}: outline too small".format(e.Id))
             continue
+        vid = view.Id.IntegerValue
+        if vid not in jobs:
+            jobs[vid] = (view, [])
+            order.append(vid)
+        jobs[vid][1].append([poly])
+    for vid in order:
+        view, shapes = jobs[vid]
         try:
-            loops = List[CurveLoop]()
-            loops.Add(loop)
-            region = FilledRegion.Create(doc, rtype.Id, view.Id, loops)
+            old = [r for r in find_marked(doc, view, user) if r.OwnerViewId == view.Id]
+            keep = [p for r in old for p in region_polys(r, view)]
+            regions = create_merged(doc, view, rtype.Id, shapes, min_len, keep)
         except Exception as ex:
-            skipped.append(u"{0}: {1}".format(e.Id, ex))
+            skipped.append(u"{0}: {1}".format(view.Name, ex))
             continue
-        mark(region, user)
-        view.SetElementOverrides(region.Id, ogs)
-        created += 1
-        per_view[view.Name] = per_view.get(view.Name, 0) + 1
-    return created, per_view, skipped
+        if not regions:
+            skipped.append(u"{0}: no region could be drawn".format(view.Name))
+            continue
+        if old:
+            doc.Delete(List[ElementId]([r.Id for r in old]))
+        for region in regions:
+            mark(region, user)
+            view.SetElementOverrides(region.Id, ogs)
+        per_view[view.Name] = per_view.get(view.Name, 0) + len(shapes)
+    return sum(per_view.values()), per_view, skipped
 
 
 def find_marked(doc, view=None, user=None):
