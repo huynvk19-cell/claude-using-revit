@@ -1,8 +1,8 @@
 ---
 name: drafting-sheet-layout
-description: "Chuẩn layout bộ hồ sơ kiến trúc trên sheet: loại công trình → bộ hồ sơ, giai đoạn hồ sơ, nhóm và đánh số bản vẽ, bộ hồ sơ lõi, khổ giấy, tỷ lệ, bố cục viewport trên sheet (LO1–LO12), chia vùng + key plan + matchline (Z1–Z5), tên sheet, danh mục. Sheet set and sheet layout standard."
+description: "Chuẩn layout bộ hồ sơ kiến trúc trên sheet: loại công trình → bộ hồ sơ, giai đoạn hồ sơ, nhóm và đánh số bản vẽ, bộ hồ sơ lõi, thành phần bắt buộc của bản vẽ chi tiết vệ sinh / thang bộ / thang máy (CT1–CT3), khổ giấy, tỷ lệ, bố cục viewport trên sheet (LO1–LO12), chia vùng + key plan + matchline (Z1–Z5), tên gọi đầy đủ của sheet và view (TG1–TG5), danh mục. Sheet set and sheet layout standard."
 metadata:
-  updated: "2026-11-11"
+  updated: "2026-11-13"
   related: ["drafting-sheet-create", "drafting-view-create", "drafting-sheet-place", "drafting-views-sheets", "drafting-annotation", "drafting-work-rules", "drafting-sheet-set-townhouse", "drafting-sheet-set-villa", "drafting-sheet-set-highrise", "drafting-sheet-set-airport", "drafting-sheet-set-public", "drafting-sheet-set-industrial"]
 ---
 
@@ -52,7 +52,7 @@ Bộ hồ sơ được xếp theo thứ tự đọc: từ cái chung đến cái
 | 3 Mặt đứng | Mặt đứng tổng, rồi mặt đứng chi tiết / triển khai mặt dựng |
 | 4 Mặt cắt | Mặt cắt tổng, rồi mặt cắt chi tiết theo trục |
 | 5 Thang và lõi | Thang bộ, thang máy, thang cuốn, ram dốc |
-| 6 Khu đặc thù | Vệ sinh, bếp, phòng điển hình (căn hộ, phòng học, phòng bệnh…), mặt bằng phóng to và triển khai tường |
+| 6 Khu đặc thù | Chi tiết vệ sinh, bếp, phòng điển hình (căn hộ, phòng học, phòng bệnh…), mặt bằng phóng to và triển khai tường |
 | 7 Cửa và vách | Thống kê cửa, chi tiết cửa, vách kính, mặt dựng |
 | 8 Chi tiết cấu tạo | Tường, sàn, mái, chống thấm, lan can, ban công, ô văng, phào chỉ, khe lún |
 | 9 Bảng thống kê | Hoàn thiện, cửa, thiết bị vệ sinh (khi tách khỏi các nhóm trên) |
@@ -79,14 +79,61 @@ Bộ hồ sơ được xếp theo thứ tự đọc: từ cái chung đến cái
 | 2 | Mặt bằng trần mỗi tầng | 1:100–1:50 | TC | `ceiling` |
 | 3 | Mặt đứng: mọi hướng nhìn thấy được (hướng nào giáp nhà bên thì xem file của loại) | 1:100 | CS | `elevation` |
 | 4 | Mặt cắt: ít nhất 1 dọc + 1 ngang, có ít nhất một mặt cắt qua thang | 1:100 | CS | `section` |
-| 5 | Thang bộ: mặt bằng + mặt cắt | 1:50 | KT | `stair` |
-| 6 | Vệ sinh: mặt bằng phóng to + triển khai tường | 1:50–1:25 | TC | `enlarged` |
+| 5 | Chi tiết thang bộ (mỗi thang): mặt bằng các tầng + mặt cắt + chi tiết phóng lớn mặt cắt thang + chi tiết mũi bậc (CT2) | 1:50–1:25; chi tiết 1:20–1:2 | KT | `stair` |
+| 5 | Chi tiết thang máy, khi công trình có thang máy: mặt bằng hố thang + mặt cắt hố (CT3) | 1:50–1:25 | KT | `vertical` |
+| 6 | Chi tiết vệ sinh (mỗi loại): mặt bằng kích thước + mặt bằng lát sàn + triển khai tường (CT1) | 1:50–1:25 | TC | `enlarged` |
 | 7 | Thống kê cửa + mặt đứng cửa | 1:50 | KT | `door` |
 | 8 | Chi tiết cấu tạo: tường, sàn, mái, chống thấm, lan can | 1:20–1:5 | TC | `detail` |
 
 Cột `Loại` (ở bảng này và ở mọi file bộ hồ sơ) là khoá loại bản vẽ trong `drafting-coverage.md` §2: skill, lệnh và mức Claude làm được. Dòng mới luôn có `Loại`.
 
 File bộ hồ sơ của từng loại công trình **cộng thêm hoặc sửa** bảng này; không chép lại các dòng của bảng lõi. Ngoại lệ: file có mục **Danh mục điển hình** (danh mục user đã duyệt) thì danh mục đó **thay hẳn** bảng lõi, và thứ tự các dòng của nó là thứ tự sheet.
+
+## 4b. Thành phần bắt buộc của bản vẽ chi tiết (CT1–CT3, user 2026-11-13)
+
+Áp dụng cho **mọi loại công trình**. Một dòng chi tiết của sổ chỉ đủ khi có mọi view con dưới đây; mỗi view con là một dòng con `ID.a`, `ID.b`… (§11). Tên view con theo TG3 (§8).
+
+### CT1. Chi tiết vệ sinh: hai mặt bằng
+
+Mỗi loại vệ sinh có **hai mặt bằng riêng**, không gộp nội dung vào một view:
+
+| View con | Nội dung |
+|---|---|
+| `… - MẶT BẰNG KÍCH THƯỚC` | Kích thước thông thuỷ phòng, định vị tường / vách ngăn, cửa, tim thiết bị tới mặt tường hoàn thiện, ký hiệu triển khai tường |
+| `… - MẶT BẰNG LÁT SÀN` | Vật liệu / mã lát, kích thước viên, điểm bắt đầu và hướng lát, cao độ hoàn thiện, độ dốc và hướng dốc về phễu thu, vị trí phễu thu, chênh cốt tại cửa |
+| `… - TRIỂN KHAI TƯỜNG <tên>` | Mỗi tường có thiết bị hoặc ốp lát một view |
+
+- Hai mặt bằng cùng ranh callout, cùng crop, cùng tỷ lệ.
+- Trên sheet: hai mặt bằng **cùng hàng ngang**, kích thước bên trái, lát sàn bên phải, chung mép trên, cùng một trục gốc thẳng hàng (LO5); triển khai tường ở hàng dưới, đáy tường chung một đường ngang.
+- Không vừa một sheet → tách `… - MẶT BẰNG` (hai mặt bằng) và `… - TRIỂN KHAI TƯỜNG`; hai mặt bằng luôn ở cùng sheet.
+
+### CT2. Chi tiết thang bộ: chi tiết phóng lớn mặt cắt và mũi bậc
+
+Mỗi thang bộ có đủ bốn phần:
+
+| View con | Tỷ lệ | Nội dung |
+|---|---|---|
+| `… - MẶT BẰNG <tầng>` | 1:50–1:25 | Mỗi tầng thang phục vụ một view (`drafting-stair-plan`) |
+| `… - MẶT CẮT <tên>` | 1:50–1:25 | Dọc vế; ngang vế khi cần (`drafting-stair-section-*`) |
+| `… - CHI TIẾT PHÓNG LỚN MẶT CẮT <n>` | 1:20–1:10 | Phóng lớn từ mặt cắt thang, ít nhất tại: chân thang (bậc đầu gặp sàn), vế gặp chiếu nghỉ, bậc cuối gặp sàn tầng trên. Cấu tạo bậc (bản thang, bậc, lớp ốp), lan can và liên kết chân trụ, tay vịn |
+| `… - CHI TIẾT MŨI BẬC` | 1:5–1:2 | Mũi bậc, mặt bậc, cổ bậc: vật liệu và chiều dày ốp, nẹp / rãnh chống trượt, len chân tường. Mỗi loại hoàn thiện bậc một chi tiết |
+
+- Ký hiệu callout của chi tiết phóng lớn nằm trên mặt cắt thang; ký hiệu của mũi bậc nằm trên chi tiết phóng lớn (hoặc trên mặt cắt thang).
+- Các thang cùng cấu tạo dùng chung một chi tiết mũi bậc: view chỉ đặt một lần (LO11), thang còn lại ghi tham chiếu.
+- Trên sheet: mặt bằng xếp theo tầng thấp → cao; các chi tiết phóng lớn và mũi bậc xếp lưới ô (LO9), căn đỉnh theo hàng.
+- Nội dung cấu tạo trong chi tiết phóng lớn và mũi bậc là mức 1 (`drafting-coverage.md`): Claude lập view, sheet, title; hình cấu tạo lấy từ thư viện chi tiết của văn phòng.
+
+### CT3. Chi tiết thang máy: có thang máy thì có bản vẽ
+
+Công trình **có thang máy** (kể cả thang máy gia đình của nhà liên kế, biệt thự) thì bộ hồ sơ có `CHI TIẾT THANG MÁY <n>`:
+
+| View con | Nội dung |
+|---|---|
+| `… - MẶT BẰNG HỐ THANG <tầng>` | Mỗi tầng khác nhau một view (đáy pit, tầng điển hình, tầng trên cùng / phòng máy nếu có): kích thước thông thuỷ hố, cửa tầng (rộng thông thuỷ), định vị tới trục |
+| `… - MẶT CẮT HỐ THANG` | Từ đáy pit tới nóc OH: chiều sâu pit, cao độ dừng tầng, chiều cao cửa tầng, chiều cao OH, móc treo / dầm đỡ nếu có |
+
+- Nhận biết từ model khi lập sổ: family thang máy, shaft opening hoặc room tên theo profile (mặc định chứa `THANG MÁY`, `LIFT`, `ELEVATOR`). Không có → dòng `n/a`, lý do "không có thang máy".
+- Thang máy nằm trong lõi thang bộ vẫn có dòng riêng; được đặt chung sheet với thang bộ khi vừa (nhà cao tầng: theo file của loại).
 
 ## 5. Khổ giấy và tỷ lệ (HS5)
 
@@ -151,6 +198,15 @@ File bộ hồ sơ của từng loại công trình **cộng thêm hoặc sửa*
 ## 8. Tên sheet và danh mục (HS6)
 
 - **Tên sheet** = loại bản vẽ + tầng / vùng / mẫu nhà, vd. `MẶT BẰNG KÍCH THƯỚC TẦNG 2 - VÙNG A`. Không ghi tỷ lệ trong tên.
+- **Tên gọi đầy đủ cho sheet và view** (TG1–TG5, user 2026-11-13), mọi loại công trình:
+
+| Mã | Quy tắc |
+|---|---|
+| TG1 | **Viết đủ chữ**: không viết tắt loại bản vẽ và đối tượng (`MB`, `MĐ`, `MC`, `CT`, `TK`, `WC`, `VS`…). Chỉ giữ mã có trong model: số / mã phòng, mã cửa, tên trục, tên tầng theo profile. |
+| TG2 | **Tên sheet** = loại bản vẽ + đối tượng + vị trí (tầng / số / vùng / mẫu), thêm ` - <nội dung>` khi một đối tượng tách nhiều sheet. Sheet chi tiết bắt đầu bằng `CHI TIẾT`: `CHI TIẾT VỆ SINH 1`, `CHI TIẾT THANG BỘ 1 - MẶT CẮT`, `CHI TIẾT THANG MÁY 1`, `CHI TIẾT BẾP`. |
+| TG3 | **Tên view** = tên bản vẽ của sổ; sheet có nhiều view thì thêm ` - <nội dung view>`: `CHI TIẾT VỆ SINH 1 - MẶT BẰNG KÍCH THƯỚC`, `CHI TIẾT VỆ SINH 1 - MẶT BẰNG LÁT SÀN`, `CHI TIẾT VỆ SINH 1 - TRIỂN KHAI TƯỜNG A`, `CHI TIẾT THANG BỘ 1 - MẶT BẰNG TẦNG 2`, `CHI TIẾT THANG BỘ 1 - CHI TIẾT MŨI BẬC`. Sheet một view: tên view = tên sheet. |
+| TG4 | **Đọc riêng tên vẫn đủ nghĩa**: bản vẽ gì, của đối tượng nào, ở đâu. Không đặt tên trống đối tượng (`MẶT BẰNG`, `MẶT CẮT 1`, `TRIỂN KHAI BẮC`). |
+| TG5 | **Tên dài không phải lý do viết tắt**: ô tên của khung tên cho xuống dòng hoặc thu chữ theo khung tên. Sheet đã phát hành chỉ đổi tên khi user đồng ý (HS3). |
 - Cả bộ dùng cùng ngôn ngữ, cùng kiểu chữ (in hoa cho mọi chữ của hồ sơ, `drafting-annotation.md` §0), cùng cách gọi tầng. Song ngữ chỉ khi profile yêu cầu.
 - Tầng điển hình (một view dùng cho nhiều tầng) ghi dải tầng: `MẶT BẰNG TẦNG 5–20 (ĐIỂN HÌNH)`.
 - **Danh mục bản vẽ** liệt kê mọi sheet phát hành, theo thứ tự nhóm (§3). Print set phải khớp với danh mục (`drafting-views-sheets.md` §5).
@@ -183,8 +239,8 @@ File bộ hồ sơ của từng loại công trình **cộng thêm hoặc sửa*
 ## 9. Xong khi (layout của bộ hồ sơ)
 
 Bộ hồ sơ chỉ xong khi đủ tất cả các điều sau:
-- Mọi bản vẽ bắt buộc (§1, §2, §4 và file bộ hồ sơ của loại) đều có view và đã nằm trên sheet. Bản vẽ nào còn thiếu thì đã ghi vào việc tồn kèm lý do.
-- Số và tên sheet theo §3, §8; danh mục bản vẽ và print set khớp nhau.
+- Mọi bản vẽ bắt buộc (§1, §2, §4 và file bộ hồ sơ của loại) đều có view và đã nằm trên sheet; bản vẽ chi tiết vệ sinh, thang bộ, thang máy đủ view con theo CT1–CT3 (§4b). Bản vẽ nào còn thiếu thì đã ghi vào việc tồn kèm lý do.
+- Số và tên sheet, tên view theo §3, §8 (TG1–TG5); danh mục bản vẽ và print set khớp nhau.
 - Mọi sheet đạt LO1–LO12. Nếu có chia vùng thì đạt Z1–Z5.
 - `viewport_title_audit` sạch; ảnh sheet đã soát (`drafting-visual-check`), không còn đè chữ hay tràn khung.
 

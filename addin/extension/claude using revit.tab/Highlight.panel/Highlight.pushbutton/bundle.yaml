@@ -1,5 +1,6 @@
 title: "Tô\nđối tượng"
 tooltip: >-
-  Tạo Filled Region đỏ, trong suốt 50%, bao quanh từng đối tượng đang chọn, trong đúng view
-  chứa nó. Chưa chọn gì thì bấm chọn rồi Finish. Nhiều view: chọn và bấm lần lượt ở từng view.
+  Tạo một Filled Region đỏ, trong suốt 50%, cho mỗi view, bao quanh mọi đối tượng đang chọn
+  trong view đó; đối tượng gần nhau hoà vào nhau như giọt nước. Chưa chọn gì thì bấm chọn rồi
+  Finish. Nhiều view: chọn và bấm lần lượt ở từng view.
 author: claude using revit

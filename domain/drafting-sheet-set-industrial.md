@@ -44,7 +44,7 @@ File này cộng thêm vào bộ hồ sơ lõi (`drafting-sheet-layout.md` §4).
 | 4 | Mặt cắt dọc | 1:200 | KT | — | `section` |
 | 4 | Mặt cắt qua dock | 1:50 | KT | Cao độ sàn dock so với sân xe | `section` |
 | 6 | Nhà văn phòng / nhà ăn (nếu tách khối): bộ con theo bộ lõi | 1:100 | KT | — | `subset` |
-| 6 | Vệ sinh, thay đồ công nhân | 1:50 | TC | — | `enlarged` |
+| 6 | Chi tiết vệ sinh, thay đồ công nhân | 1:50 | TC | Hai mặt bằng: kích thước, lát sàn (CT1) | `enlarged` |
 | 7 | Thống kê cửa cuốn, cửa thoát nạn, cửa chống cháy | 1:50 | KT | — | `door` |
 | 8 | Chi tiết vách bao che: chân tường, diềm tôn, góc, cửa sổ trên vách tôn | 1:20–1:5 | TC | — | `detail` |
 | 8 | Chi tiết mái: máng xối, tấm lấy sáng, sống mái, quạt thông gió | 1:20–1:5 | TC | — | `detail` |

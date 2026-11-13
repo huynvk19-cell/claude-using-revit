@@ -31,6 +31,7 @@ jobs:
           python3 addin/tests/coverage_check.py
           python3 addin/tests/workflow_lib_check.py
           python3 addin/tests/pick_model_check.py
+          python3 addin/tests/region_merge_check.py
 
       - name: Build the add-in (Revit 2023-2027)
         run: |

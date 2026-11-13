@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Red 50% see-through filled region around each selected object, in its own view."""
+"""One red 50% see-through filled region per view around the selected objects (near ones flow together)."""
 from Autodesk.Revit.Exceptions import OperationCanceledException
 from Autodesk.Revit.UI.Selection import ObjectType
 from cur import revit

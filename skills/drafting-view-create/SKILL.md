@@ -29,7 +29,7 @@ Each step is one file in `steps/` (next to this file). Open **only the card of t
 | 01 | `steps/01-templates.md` | Templates per view kind (template theo loại view) |
 | 02 | `steps/02-plans.md` | Plans: floor, finish, roof, ceiling, site (mặt bằng) |
 | 03 | `steps/03-elevations-sections.md` | Elevations and sections (mặt đứng, mặt cắt) |
-| 04 | `steps/04-callouts-details.md` | Callouts, interior elevations, details (thang, WC, chi tiết) |
+| 04 | `steps/04-callouts-details.md` | Callouts, interior elevations, details (thang bộ, thang máy, vệ sinh, chi tiết) |
 | 05 | `steps/05-zones.md` | Dependent views per zone (view theo vùng) |
 | 06 | `steps/06-legends-schedules.md` | Legends, drafting views, schedules (legend, bảng thống kê) |
 | 07 | `steps/07-verify.md` | Verify and update the register (kiểm, cập nhật sổ) |
