@@ -1,0 +1,85 @@
+<!-- The pick window of pick_list.pick / pick_sheets / pick_views (forms.select_sheets / select_views).
+     Liquid Glass: styles come from lib/liquid_glass.xaml (loaded by liquid_glass.GlassWindow) -->
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="claude using revit" Width="516" SizeToContent="Height"
+        WindowStyle="None" Background="Transparent"
+        ResizeMode="NoResize" WindowStartupLocation="CenterScreen" ShowInTaskbar="False"
+        FontFamily="{StaticResource Ui}" FontSize="13" Foreground="{StaticResource Ink}"
+        TextOptions.TextFormattingMode="Display">
+  <ContentControl x:Name="glass" Style="{StaticResource GlassPanel}">
+    <Grid>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="*"/>
+        <RowDefinition Height="Auto"/>
+      </Grid.RowDefinitions>
+      <Grid x:Name="header" Grid.Row="0" Margin="24,22,18,0" Background="Transparent">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="Auto"/>
+          <ColumnDefinition Width="*"/>
+          <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+        <ContentControl x:Name="icon" Style="{StaticResource AppIcon}"/>
+        <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
+          <TextBlock x:Name="head_title" Style="{StaticResource Title}" TextTrimming="CharacterEllipsis"/>
+          <TextBlock x:Name="subtitle" Style="{StaticResource Subtitle}" TextTrimming="CharacterEllipsis"/>
+        </StackPanel>
+        <Button x:Name="close_btn" Grid.Column="2" Style="{StaticResource CloseBtn}" VerticalAlignment="Top"
+                ToolTip="Đóng (Esc)"/>
+      </Grid>
+
+      <!-- the middle gives way on a low screen (lib/screen_fit.py); the buttons are outside it, always there -->
+      <ScrollViewer x:Name="body" Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="24,4,0,0" Padding="0,0,24,0">
+      <StackPanel>
+        <Grid Margin="0,18,0,8">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+          </Grid.ColumnDefinitions>
+          <Grid>
+            <TextBox x:Name="search" Height="34" Padding="12,0" VerticalContentAlignment="Center" AcceptsReturn="True"
+                     ToolTip="Nhiều mục cách nhau bằng dấu phẩy hoặc xuống dòng: dán được cả một cột từ Excel"/>
+            <TextBlock x:Name="search_hint" IsHitTestVisible="False"
+                       Foreground="{StaticResource Ink3}" Margin="15,0,0,0" VerticalAlignment="Center"/>
+          </Grid>
+          <ToggleButton x:Name="pick_all" Grid.Column="1" Style="{StaticResource Chip}" Margin="8,0,0,0"
+                        Content="Chọn hết" ToolTip="Chọn / bỏ chọn mọi dòng khớp bộ lọc, kể cả trong nhóm đang thu gọn"/>
+        </Grid>
+        <Grid Margin="0,0,0,8">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto"/>
+          </Grid.ColumnDefinitions>
+          <ComboBox x:Name="set_box" Height="30" VerticalContentAlignment="Center"
+                    ToolTip="Chọn đúng các dòng của một danh mục bản vẽ hoặc một print set trong model"/>
+          <ToggleButton x:Name="only_on" Grid.Column="1" Style="{StaticResource Chip}" Margin="8,0,0,0"
+                        Content="Đã chọn" ToolTip="Chỉ hiện các dòng đang được chọn"/>
+          <ToggleButton x:Name="open_all" Grid.Column="2" Style="{StaticResource Chip}" Margin="8,0,0,0"
+                        Content="Mở nhóm" ToolTip="Mở / thu gọn mọi nhóm"/>
+        </Grid>
+        <Border Style="{StaticResource Well}">
+          <ListBox x:Name="scroller" Style="{StaticResource PickList}" MaxHeight="420"/>
+        </Border>
+        <TextBlock x:Name="tips" Text="Bấm ô vuông của nhóm: chọn cả nhóm · bấm tên nhóm: mở / thu · kéo lướt: chọn nhiều · Shift+click: cả một dải · Ctrl+A: tất cả"
+                   Foreground="{StaticResource Ink3}" FontSize="11.5" Margin="6,8,0,0" TextWrapping="Wrap"/>
+      </StackPanel>
+      </ScrollViewer>
+
+      <Grid Grid.Row="2" Margin="24,14,24,22">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*"/>
+          <ColumnDefinition Width="Auto"/>
+          <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+        <TextBlock x:Name="count" Foreground="{StaticResource Ink2}" FontSize="12" Margin="6,0,0,0"
+                   VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+        <Button x:Name="cancel_btn" Grid.Column="1" Style="{StaticResource Secondary}" Content="Huỷ" Margin="8,0,0,0"/>
+        <Button x:Name="ok_btn" Grid.Column="2" Style="{StaticResource Primary}" Margin="8,0,0,0">
+          <TextBlock x:Name="ok_text" Text="Chọn" VerticalAlignment="Center"/>
+        </Button>
+      </Grid>
+    </Grid>
+  </ContentControl>
+</Window>

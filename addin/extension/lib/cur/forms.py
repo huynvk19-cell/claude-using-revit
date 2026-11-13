@@ -5,8 +5,9 @@ WPFWindow(xaml, literal_string=False, handle_esc=True)  a Window loaded from XAM
                                                         attributes, Click="handler" calls self.handler
 alert(msg, title)                                       a message box (Revit TaskDialog)
 toast(msg, title)                                       a short note at the lower right of Revit, closes itself
-select_views(title, button_name, filterfunc, multiple)  pick views (checkbox list with a filter box)
-select_sheets(title, button_name, multiple)             pick sheets
+select_views(title, button_name, filterfunc, multiple)  pick views: the shared pick list (lib/pick_list.py)
+select_sheets(title, button_name, multiple)             pick sheets: the same list as Xuất PDF / CAD
+select_from_list(items, title, name_attr)               pick any other items (checkbox list with a filter box)
 pick_folder(title)                                      a folder path or None
 """
 import os
@@ -223,44 +224,25 @@ def select_from_list(items, title=u"Chọn", button_name=u"Chọn", multiple=Tru
 
 
 def select_views(title=u"Chọn view", button_name=u"Chọn", width=None, multiple=True, filterfunc=None,
-                 doc=None, use_selection=False):
-    from Autodesk.Revit.DB import FilteredElementCollector, View, ViewSheet, ViewType
+                 doc=None, use_selection=False, checked=None):
+    """Pick views in the shared pick list (lib/pick_list.py): folding groups, pick by set, several
+    names at once, drag / Shift+click. Returns the views (one view when multiple=False), None when closed."""
+    import pick_list
     from cur import revit
-    doc = doc or revit.doc
-    views = []
-    for v in FilteredElementCollector(doc).OfClass(View):
-        try:
-            if v.IsTemplate or isinstance(v, ViewSheet) or v.ViewType in (ViewType.ProjectBrowser, ViewType.SystemBrowser,
-                                                                            ViewType.Internal, ViewType.Undefined):
-                continue
-        except Exception:
-            continue
-        if filterfunc is not None and not filterfunc(v):
-            continue
-        views.append(v)
-    views.sort(key=lambda v: (u"{0}".format(v.ViewType), v.Name))
-    checked = None
-    if use_selection:
-        sel = set(i.IntegerValue for i in revit.uidoc.Selection.GetElementIds())
-        checked = [v for v in views if v.Id.IntegerValue in sel]
-    return select_from_list(views, title, button_name, multiple,
-                            name_attr=lambda v: u"{0}: {1}".format(v.ViewType, v.Name), checked=checked)
+    if use_selection and checked is None:
+        checked = list(revit.uidoc.Selection.GetElementIds())
+    return pick_list.pick_views(doc, title, button_name, multiple, filterfunc, checked)
 
 
 def select_sheets(title=u"Chọn sheet", button_name=u"Chọn", width=None, multiple=True, filterfunc=None,
-                  doc=None, include_placeholder=True, use_selection=False):
-    from Autodesk.Revit.DB import FilteredElementCollector, ViewSheet
+                  doc=None, include_placeholder=True, use_selection=False, checked=None):
+    """Pick sheets in the shared pick list (lib/pick_list.py), as in Xuất PDF / CAD. Returns the sheets
+    (one sheet when multiple=False), None when closed."""
+    import pick_list
     from cur import revit
-    doc = doc or revit.doc
-    sheets = [s for s in FilteredElementCollector(doc).OfClass(ViewSheet)
-              if (include_placeholder or not s.IsPlaceholder) and (filterfunc is None or filterfunc(s))]
-    sheets.sort(key=lambda s: s.SheetNumber)
-    checked = None
-    if use_selection:
-        sel = set(i.IntegerValue for i in revit.uidoc.Selection.GetElementIds())
-        checked = [s for s in sheets if s.Id.IntegerValue in sel]
-    return select_from_list(sheets, title, button_name, multiple,
-                            name_attr=lambda s: u"{0} - {1}".format(s.SheetNumber, s.Name), checked=checked)
+    if use_selection and checked is None:
+        checked = list(revit.uidoc.Selection.GetElementIds())
+    return pick_list.pick_sheets(doc, title, button_name, multiple, filterfunc, include_placeholder, checked)
 
 
 def pick_folder(title=None, owner=None):

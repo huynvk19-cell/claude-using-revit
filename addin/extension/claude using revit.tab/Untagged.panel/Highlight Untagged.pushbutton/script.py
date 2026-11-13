@@ -57,6 +57,7 @@ class UntaggedWindow(lg.GlassWindow):
         self.views, self.scope_text, self.prev_scope = [], u"", None
         self.found = {}
         self.open_target = None
+        self.last_sheets, self.last_views = [], []      # ticked again when the pick list reopens
         self.count_tb, self.chip = {}, {}
         for k in um.KINDS:
             self._add_chip(k)
@@ -134,18 +135,21 @@ class UntaggedWindow(lg.GlassWindow):
             self.sc_sheets.IsChecked = self.sc_views.IsChecked = False
 
     def on_pick_sheets(self, sender, args):
-        sheets = forms.select_sheets(title=u"Chọn sheet", button_name=u"Chọn") or []
+        sheets = forms.select_sheets(title=u"Đối tượng chưa tag: chọn sheet", button_name=u"Chọn",
+                                     include_placeholder=False, checked=self.last_sheets) or []
         views = um.views_from_ids(doc, [s.Id for s in sheets])
         if not views:
             return self._restore_scope()
+        self.last_sheets = [s.Id for s in sheets]
         self.set_scope(self.sc_sheets, views, u"{0} view trên {1} sheet".format(len(views), len(sheets)))
 
     def on_pick_views(self, sender, args):
-        sel = forms.select_views(title=u"Chọn view", button_name=u"Chọn",
-                                 filterfunc=um.is_checkable) or []
+        sel = forms.select_views(title=u"Đối tượng chưa tag: chọn view", button_name=u"Chọn",
+                                 filterfunc=um.is_checkable, checked=self.last_views) or []
         views = um.views_from_ids(doc, [v.Id for v in sel])
         if not views:
             return self._restore_scope()
+        self.last_views = [v.Id for v in views]
         label = views[0].Name if len(views) == 1 else u"{0} view".format(len(views))
         self.set_scope(self.sc_views, views, label)
 
