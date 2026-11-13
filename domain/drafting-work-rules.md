@@ -24,7 +24,7 @@ Các giá trị riêng của từng dự án (dim type, model cấm chạm, ti�
 | R8 | **Không bịa số liệu** | Mọi id, số đo, tên trong báo cáo phải lấy từ kết quả tool của lượt hiện tại. |
 | R9 | **Không dùng "Replace with text" trên dim** | Giá trị dim luôn sống; chữ thêm vào Prefix / Suffix / Above / Below (`dims_text`). User, 2026-10-08. Chi tiết: `drafting-dimensions.md` §1b. |
 | R10 | **Mọi phần tử tạo mới dùng type đánh dấu** | Type đánh dấu = `<tên type chính thức><hậu tố>` (hậu tố trong profile). Trả về chính thức chỉ khi user duyệt: Select All Instances → In Entire Project → chọn type chính thức, hoặc `mark_types restore`. Chi tiết §2c. User, 2026-10-14. |
-| R11 | **C# luôn chạy từ file lệnh trong repo** | Mọi đoạn C# (kể cả dùng một lần, thử nghiệm, sửa nhanh) = viết hoặc sửa file `revit-commands/<tên>.cs` rồi gọi tool `<tên>` (hoặc `run_dynamic_command {name, args}`). **Không bao giờ** gửi mã C# qua tham số `source` của `run_dynamic_command`: tốn token mỗi lần gọi và không để lại gì trong repo. Lệnh dùng một lần vẫn theo header `/* mcp-tool */` ngắn như mọi lệnh. User, 2026-11-13. |
+| R11 | **C# luôn chạy từ file lệnh trong repo** | Mọi đoạn C# (kể cả dùng một lần, thử nghiệm, sửa nhanh) = viết hoặc sửa file `revit-commands/<tên>.cs` rồi gọi tool `<tên>` (hoặc `run_dynamic_command {name, args}`). **Không bao giờ** gửi mã C# trực tiếp trong lời gọi (tham số `source` cũ đã bị gỡ cùng web app): tốn token mỗi lần gọi và không để lại gì trong repo. Lệnh dùng một lần vẫn theo header `/* mcp-tool */` ngắn như mọi lệnh. User, 2026-11-13. |
 
 Việc cần sửa model (vd. room không có tên → tag "?") → ghi vào **việc tồn** để user tự làm.
 

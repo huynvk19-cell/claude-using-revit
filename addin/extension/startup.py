@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Run by the claude using revit add-in when Revit has started, and again by the button Tải lại (panel Claude):
-# keep %APPDATA%\claude-using-revit\open-docs\<pid>.json current (lib/open_docs.py), (re)start this window's web bridge and
-# start the web app server if it is installed and not running (lib/web_bridge.py), register the Bảng window (lib/pane.py) and
+# keep %APPDATA%\claude-using-revit\open-docs\<pid>.json current (lib/open_docs.py),
+# start this window's job queue (lib/web_bridge.py), register the Bảng window (lib/pane.py) and
 # the Workflow windows (lib/workflow_window.py), check GitHub for new content (lib/content_update.py).
 # It runs in the startup engine, which lives as long as Revit: what it starts keeps running after it ends.
 import os
@@ -25,7 +25,6 @@ except Exception:
 try:
     import web_bridge
     web_bridge.start(HOST_APP.uiapp)
-    web_bridge.ensure_webapp()
     import pane
     pane.setup(HOST_APP.uiapp)
 except Exception as ex:

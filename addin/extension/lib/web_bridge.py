@@ -1,42 +1,24 @@
 # -*- coding: utf-8 -*-
-"""Thin bridge for the web app (webapp/ in the repo): a small HTTP server inside THIS Revit window.
+"""Job queue of THIS Revit window: runs a job on Revit's API thread through one ExternalEvent and hands
+back JSON. Used by the Bảng panel (lib/pane.py). The web app it once served is gone; the module keeps
+its name so pane.py and startup.py need no other change.
 
-The web app (Node, LAN) is the user interface; this bridge only runs what it is asked on Revit's
-API thread and hands back JSON. It never listens on the network: 127.0.0.1 only, and every call
-must carry the key from %APPDATA%\\claude-using-revit\\web-bridge\\<pid>.json (a browser page cannot
-read that file, so a web page cannot drive Revit through it). One bridge per Revit window, port
-48990 and up, so it never competes with the claude using revit MCP port (8970) or with Claude sessions.
-
-Jobs (POST /run, JSON {kind, name, args, source}), run one at a time through one ExternalEvent:
+Jobs (_Job(kind, name, {args, label})), run one at a time:
   info    : active document / view / selection of this window + its sheet-list schedules
   task    : a shared task of lib/tasks.py (the same code as the ribbon buttons)
-  mcp     : an claude using revit MCP tool run in-process (ClaudeUsingRevit.Mcp.ToolRegistry, the same tools Claude sees), e.g.
-            run_dynamic_command {name, source, args} for the commands in revit-commands/
-GET /ping answers at once (no API context): pid, the job running now, queue length.
-GET /tools answers at once: the MCP tools of the add-in (name, description, inputSchema, builtIn).
-startup.py starts it when claude using revit starts and on Tải lại (the new server replaces the old one on the same port)
-and starts the web app server when it is not running yet.
+  mcp     : a claude using revit MCP tool run in-process (ClaudeUsingRevit.Mcp.ToolRegistry, the same tools Claude sees)
+startup.py starts it when claude using revit starts and on Tải lại (the new queue replaces the old one).
 """
 import json
 import os
-import random
-import socket
 import threading
 import time
 import traceback
 
-from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
-from SocketServer import ThreadingMixIn
-
 from System import AppDomain
 from Autodesk.Revit.UI import ExternalEvent, IExternalEventHandler
 
-FOLDER = os.path.join(os.environ.get('APPDATA', ''), 'claude-using-revit', 'web-bridge')
-WEBAPP_DIR = os.path.join(os.environ.get('APPDATA', ''), 'claude-using-revit', 'webapp')
-WEBAPP_PORT = 8780
-PORTS = range(48990, 49010)
-SLOT = 'ClaudeUsingRevit.WebBridge'                # AppDomain slot: the live server survives Tải lại
-MAX_BODY = 8 * 1024 * 1024
+SLOT = 'ClaudeUsingRevit.WebBridge'      # AppDomain slot of the HTTP server of older versions (closed on start)
 BRIDGE = None                            # this window's job queue
 
 
@@ -98,10 +80,6 @@ def _registry():
 def _run_mcp(uiapp, name, args):
     """An MCP tool of the add-in, on this (API) thread: JSON text back ({"error": ...} on failure)."""
     return _registry().CallJson(uiapp, name, json.dumps(args or {}))
-
-
-def _tool_list():
-    return _registry().ListJson()
 
 
 _lib = {'mtime': 0}
@@ -203,153 +181,16 @@ class Bridge(object):
         return False
 
 
-# ---- HTTP -----------------------------------------------------------------------------
-
-class _Server(ThreadingMixIn, HTTPServer):
-    daemon_threads = True
-    allow_reuse_address = False       # Windows SO_REUSEADDR would let two windows share a port
-
-
-def _make_handler(bridge, key):
-    class H(BaseHTTPRequestHandler):
-        def log_message(self, *a):
-            pass
-
-        def _send(self, code, text):
-            body = text.encode('utf-8') if isinstance(text, unicode) else text   # noqa: F821
-            self.send_response(code)
-            self.send_header('Content-Type', 'application/json; charset=utf-8')
-            self.send_header('Content-Length', str(len(body)))
-            self.end_headers()
-            self.wfile.write(body)
-
-        def _authorised(self):
-            if self.headers.getheader('x-bridge-key') != key or self.headers.getheader('origin'):
-                self._send(403, _error(u'forbidden'))
-                return False
-            return True
-
-        def do_GET(self):
-            if not self._authorised():
-                return
-            if self.path.startswith('/ping'):
-                return self._send(200, _dumps(bridge.ping()))
-            if self.path.startswith('/tools'):
-                try:
-                    return self._send(200, _tool_list())
-                except Exception as ex:
-                    return self._send(500, _error(ex))
-            self._send(404, _error(u'not found'))
-
-        def do_POST(self):
-            if not self._authorised():
-                return
-            if not self.path.startswith('/run'):
-                return self._send(404, _error(u'not found'))
-            n = int(self.headers.getheader('content-length') or 0)
-            if n > MAX_BODY:
-                return self._send(413, _error(u'request too large'))
-            try:
-                data = json.loads(self.rfile.read(n).decode('utf-8')) if n else {}
-            except Exception as ex:
-                return self._send(400, _error(u'bad JSON: {0}'.format(ex)))
-            kind = data.get('kind')
-            if kind not in ('info', 'task', 'mcp'):
-                return self._send(400, _error(u'kind must be info, task or mcp'))
-            job = _Job(kind, data.get('name') or kind, data)
-            bridge.submit(job)
-            # waitSeconds: give up when the job has not STARTED by then (Revit busy / modal
-            # dialog open); a job that started always runs to the end and is answered.
-            wait = data.get('waitSeconds')
-            job.done.wait(float(wait) if wait else None)
-            if not job.done.is_set():
-                if bridge.cancel_queued(job):
-                    return self._send(503, _error(u'Revit is busy (job not started)'))
-                job.done.wait()
-            self._send(200, job.result or _error(u'no result'))
-    return H
-
-
-def _state_file(pid):
-    return os.path.join(FOLDER, '{0}.json'.format(pid))
-
-
-def _write_state(pid, port, key, version):
-    if not os.path.isdir(FOLDER):
-        os.makedirs(FOLDER)
-    target = _state_file(pid)
-    with open(target + '.tmp', 'w') as f:
-        json.dump({'pid': pid, 'port': port, 'key': key, 'revit': version,
-                   'startedUtc': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())}, f)
-    if os.path.exists(target):
-        os.remove(target)
-    os.rename(target + '.tmp', target)
-
-
 def start(uiapp):
-    """(Re)start this window's bridge. Returns its port."""
-    from System.Diagnostics import Process
-    pid = Process.GetCurrentProcess().Id
+    """(Re)create this window's job queue; close the HTTP server an older version left running."""
     old = AppDomain.CurrentDomain.GetData(SLOT)
-    prefer = None
     if old is not None:
         try:
-            prefer = old.server_address[1]
             old.shutdown()
             old.server_close()
         except Exception:
             pass
         AppDomain.CurrentDomain.SetData(SLOT, None)
-    key = '%032x' % random.SystemRandom().getrandbits(128)
     global BRIDGE
-    bridge = BRIDGE = Bridge()
-    server = None
-    for port in ([prefer] if prefer else []) + [p for p in PORTS if p != prefer]:
-        try:
-            server = _Server(('127.0.0.1', port), _make_handler(bridge, key))
-            break
-        except socket.error:
-            continue
-    if server is None:
-        raise Exception(u'no free port in {0}-{1}'.format(PORTS[0], PORTS[-1]))
-    t = threading.Thread(target=server.serve_forever)
-    t.daemon = True
-    t.start()
-    AppDomain.CurrentDomain.SetData(SLOT, server)
-    _write_state(pid, server.server_address[1], key, uiapp.Application.VersionNumber)
-    return server.server_address[1]
-
-
-def ensure_webapp():
-    """Start the web app server (node webapp/server.mjs) unless something answers on its port."""
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.settimeout(0.3)
-    try:
-        s.connect(('127.0.0.1', WEBAPP_PORT))
-        return False
-    except Exception:
-        pass
-    finally:
-        s.close()
-    script = os.path.join(WEBAPP_DIR, 'server.mjs')
-    node = _node()
-    if not os.path.isfile(script) or node is None:
-        return False
-    from System.Diagnostics import Process, ProcessStartInfo, ProcessWindowStyle
-    psi = ProcessStartInfo(node, u'"{0}"'.format(script))
-    psi.WorkingDirectory = WEBAPP_DIR
-    psi.UseShellExecute = False
-    psi.CreateNoWindow = True
-    psi.WindowStyle = ProcessWindowStyle.Hidden
-    Process.Start(psi)
-    return True
-
-
-def _node():
-    cands = [os.path.join(os.environ.get(v, ''), 'nodejs', 'node.exe') for v in ('ProgramFiles', 'ProgramW6432')]
-    cands.append(os.path.join(os.environ.get('LOCALAPPDATA', ''), 'Programs', 'nodejs', 'node.exe'))
-    cands += [os.path.join(p, 'node.exe') for p in os.environ.get('PATH', '').split(os.pathsep) if p]
-    for c in cands:
-        if os.path.isfile(c):
-            return c
-    return None
+    BRIDGE = Bridge()
+    return BRIDGE
