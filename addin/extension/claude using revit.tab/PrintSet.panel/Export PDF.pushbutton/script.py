@@ -260,6 +260,16 @@ for fmt in win.formats():
         lines.append(u"View từng làm Revit văng, đã xuất từng ô vùng crop rồi ghép (đủ view):")
         lines += [u"  {0}: {1}".format(sh.SheetNumber, u", ".join(
             u"{0} ({1}x{1})".format(v, n) for v, n in rows)) for sh, rows in res["tiled"]]
+    if res["warnings"]:
+        names = sorted(set(n for _, ls in res["warnings"] for n in ls))
+        lines.append(u"CẢNH BÁO: {0} link chưa load, {1} sheet vẫn xuất nhưng in THIẾU phần "
+                     u"của link:".format(len(names), len(res["warnings"])))
+        lines += [u"  " + n for n in names[:8]]
+        if len(names) > 8:
+            lines.append(u"  và {0} link khác".format(len(names) - 8))
+        lines.append(u"  Sheet: " + u", ".join(sh.SheetNumber for sh, _ in res["warnings"][:20]) +
+                     (u" và {0} sheet khác".format(len(res["warnings"]) - 20)
+                      if len(res["warnings"]) > 20 else u""))
     if res["failed"]:
         lines.append(u"Chưa xuất được {0} sheet (không có file thiếu view), bấm lại để thử lại:".format(
             len(res["failed"])))

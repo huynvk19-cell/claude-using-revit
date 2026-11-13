@@ -208,7 +208,8 @@ def print_set_sync(doc, uidoc, args):
 @task(u"Sheets of a sheet-list schedule to PDF: paper from title block, 100%, centred, "
       u"heavy sheets in parts, one PDF per sheet (never joined). args: schedule, sheets, folder, "
       u"groupBy (browser | sheet param name: sub-folders), dryRun, limit, forget (crash memory), "
-      u"allowIncomplete (export with closed worksets / unloaded links on purpose).")
+      u"allowIncomplete (export with closed worksets on purpose). Unloaded links only warn "
+      u"(unloadedLinks).")
 def pdf_export(doc, uidoc, args):
     return _sheet_export(doc, uidoc, args, pe.PdfOut())
 
@@ -269,6 +270,8 @@ def _sheet_export(doc, uidoc, args, out):
             "viewsTiled": [u"{0}: {1}".format(s.SheetNumber, u", ".join(
                 u"{0} ({1}x{1})".format(v, n) for v, n in rows)) for s, rows in r["tiled"]],
             "split": _cut([u"{0}: {1} parts".format(s.SheetNumber, n) for s, n in r["split"]], args),
+            "unloadedLinks": _cut([u"{0}: {1}".format(s.SheetNumber, u", ".join(l))
+                                   for s, l in r["warnings"]], args),
             "failed": _cut([u"{0}: {1}".format(s.SheetNumber, e) for s, e in r["failed"]], args)}
 
 
