@@ -65,6 +65,14 @@ jobs:
           name: ClaudeUsingRevit-Setup
           path: addin/dist/ClaudeUsingRevit-Setup.exe
 
+      - name: Build the standards database (standards.db, to open in a SQLite viewer)
+        run: python3 tools/standards-db/standards_db.py build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: standards-db
+          path: tools/standards-db/standards.db
+
       - name: Publish to the release "setup-latest" (a fixed download link)
         if: github.event_name != 'pull_request'
         uses: softprops/action-gh-release@v2
@@ -75,5 +83,8 @@ jobs:
           make_latest: false
           body: |
             Tải **ClaudeUsingRevit-Setup.exe**, bấm đúp, chọn bản Revit, bấm **Cài đặt**. Đóng Revit và Claude trước khi cài.
+            **standards.db**: database chuẩn hồ sơ (danh mục bản vẽ + nhật ký sửa), mở bằng DB Browser for SQLite.
             Build từ ${{ github.ref_name }} @ ${{ github.sha }}.
-          files: addin/dist/ClaudeUsingRevit-Setup.exe
+          files: |
+            addin/dist/ClaudeUsingRevit-Setup.exe
+            tools/standards-db/standards.db

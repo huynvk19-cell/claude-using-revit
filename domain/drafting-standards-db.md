@@ -17,7 +17,7 @@ Database trả lời hai loại câu hỏi mà file `.md` trả lời chậm:
 ## DB1. File văn bản là nguồn, database là bản dựng
 
 - Chuẩn `.md` vẫn là nguồn. Database **không thay** chúng và không có gì được sửa thẳng trong file `.db`.
-- Mỗi lần gọi, công cụ dựng lại database trong bộ nhớ từ các file văn bản, nên kết quả không bao giờ cũ hơn chuẩn. `build` chỉ để ghi ra file `standards.db` khi cần mở bằng phần mềm xem SQLite; file đó không đưa lên repo.
+- Mỗi lần gọi, công cụ dựng lại database trong bộ nhớ từ các file văn bản, nên kết quả không bao giờ cũ hơn chuẩn. `build` ghi ra file `standards.db` để mở bằng phần mềm xem SQLite (vd. DB Browser for SQLite). File đó không commit vào repo; CI dựng nó ở mỗi lần push và đăng cạnh bản cài, ở release `setup-latest`: `https://github.com/<owner>/<repo>/releases/download/setup-latest/standards.db`.
 
 | Bảng | Dựng từ | Sửa ở đâu |
 |---|---|---|
