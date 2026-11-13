@@ -1,6 +1,6 @@
 ---
 name: drafting-session
-description: "Ground rules + start/end routine for any Revit drafting work through Revit MCP (dims, tags, titles, viewports, crops, templates): batches of up to 10 views of one kind, mark types on everything new. Use at the start of every Revit drafting task, when resuming after a break or context summary, or when the user says tiếp tục, làm tiếp, bắt đầu, triển khai bản vẽ, sửa bản vẽ, trả về type chính thức."
+description: "Ground rules + start/end routine for any Revit drafting work through Revit MCP: batches of up to 10 views, mark types on everything new. Use at the start of every Revit drafting task, on resuming after a break or summary, or for tiếp tục, làm tiếp, bắt đầu, triển khai bản vẽ, sửa bản vẽ, trả về type chính thức."
 ---
 
 # Drafting session

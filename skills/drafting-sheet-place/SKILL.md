@@ -1,6 +1,6 @@
 ---
 name: drafting-sheet-place
-description: "Put the views on their sheets from the sheet register (bỏ view vào sheet, đặt viewport): check views are ready, plan each sheet in paper mm, place notes / legends / key plan / schedules first, then views, align plan series on a grid point and elevations / sections on ±0.000, set the viewport type, check by readback and image. Use for đặt view lên sheet, bỏ view vào sheet, căn viewport, dàn view trên sheet."
+description: "Put views on their sheets from the sheet register (đặt viewport): plan each sheet in paper mm, notes / legends / schedules first, plans aligned on a grid point, elevations / sections on ±0.000, check. Use for đặt view lên sheet, bỏ view vào sheet, căn viewport, dàn view trên sheet."
 ---
 
 # Place views on sheets (bỏ view vào sheet)

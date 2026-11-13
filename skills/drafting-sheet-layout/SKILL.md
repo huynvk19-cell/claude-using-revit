@@ -1,6 +1,6 @@
 ---
 name: drafting-sheet-layout
-description: "Plan the sheet set (layout bản vẽ, dàn trang, bộ hồ sơ) for the building type: nhà liên kế, biệt thự, nhà cao tầng, sân bay, trường học, bệnh viện, TTTM, nhà xưởng. Set type + stage, build the sheet register (bản vẽ cần có), compare with the model, plan scale / paper / zones, check the finished layout (LO / Z). Sheets, views, placing: drafting-sheet-create, drafting-view-create, drafting-sheet-place. Use for bộ hồ sơ cần có, thiếu bản vẽ, chia vùng, kiểm layout."
+description: "Plan the sheet set (layout bản vẽ, bộ hồ sơ) per building type (nhà liên kế, biệt thự, cao tầng, trường học, bệnh viện, TTTM, nhà xưởng…): sheet register, compare with the model, scale / paper / zones, check the layout. Use for bộ hồ sơ cần có, thiếu bản vẽ, dàn trang, chia vùng, kiểm layout."
 ---
 
 # Sheet layout (layout bộ hồ sơ)

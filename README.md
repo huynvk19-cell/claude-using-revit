@@ -181,7 +181,7 @@ Mỗi bước Claude gọi tool, toàn bộ phần đầu phiên (danh sách too
 | Lệnh của repo (header `mcp-tool`) | ~11.8k token nếu nạp sẵn; chỉ tên (~0.8k) khi tool search bật; mỗi lệnh đã nạp ~140 token | **B**: header ngắn, giải thích ở `// ---- Details` | đã làm |
 | Tool search của Claude Code | — | **C**: giữ bật (mặc định), kiểm tra bằng `/context` | kiểm tra trên máy |
 | Nạp lệnh từng cái một (mỗi lần một lượt) | 1 lượt / lệnh | **D**: dòng **Tools** trong mỗi skill → nạp hết trong 1 lần ToolSearch | đã làm |
-| Mô tả skill + subagent (gửi mỗi request, cả phiên không làm Revit) | 9.5k → 8.6k ký tự cho 23 skill; mỗi mô tả ≤ 500 | mô tả ngắn + từ khoá gọi, luật nằm trong thân skill | đã làm, CI kiểm (`budget_check.py`) |
+| Mô tả skill + subagent (gửi mỗi request, cả phiên không làm Revit) | 9.5k → 6.4k ký tự cho 24 skill + 1 subagent; mỗi mô tả ≤ 350 | mô tả ngắn + từ khoá gọi, luật nằm trong thân skill | đã làm, CI kiểm (`budget_check.py`) |
 | Chuẩn dài (`drafting-stair-plan.md` ~28k ký tự, mặt cắt thang ~25k, …) bị đọc cả file | ~10k token cho chuẩn dài nhất (ước tính) | **G**: đọc theo mục: dàn ý (`grep -n '^#'`) + phần mở đầu + đúng mục luật mà thẻ bước nêu | đã làm (`drafting-session`, "Standards by section") |
 | Nội dung lặp giữa `drafting-session`, `drafting-start`, `drafting-work-rules.md`, mục Score của 106 thẻ bước | mỗi phiên / mỗi thẻ | **H**: nói một lần, chỗ khác chỉ trỏ tới § | đã làm |
 | Ảnh kiểm tra (mỗi ảnh ~1.5–2k token, ở lại trong hội thoại) | theo số ảnh | **E**: subagent `drafting-visual-checker` (Sonnet) đọc ảnh, chỉ trả chữ | đã làm |
@@ -206,7 +206,7 @@ Dự phòng khi không bật được tool search: mọi lệnh cũng gọi đư
 
 - Chuẩn trên ~120 dòng không đọc cả file: thẻ bước nêu mã luật (`SB1`, `G3`…), Claude đọc dàn ý, phần mở đầu (cách đọc view, bảng tóm tắt luật), "Mẫu tham chiếu", rồi chỉ mục của luật đang làm. "Bài học" thì `grep` theo triệu chứng. Vì vậy mỗi luật giữ một heading riêng trong chuẩn.
 - Điều đã có trong `drafting-work-rules.md` (đọc đầu mỗi phiên) không chép lại trong skill hay thẻ bước.
-- `python addin/tests/budget_check.py` kiểm: mô tả skill ≤ 500 ký tự, mô tả lệnh ≤ 250, mô tả tham số ≤ 80 và không bị cắt cụt (`…`), tên lệnh trên dòng **Tools** có thật (tên sai = một lượt ToolSearch vô ích). CI chạy ở mỗi lần push.
+- `python addin/tests/budget_check.py` kiểm: mô tả skill ≤ 350 ký tự, mô tả lệnh ≤ 250, mô tả tham số ≤ 80 và không bị cắt cụt (`…`), tên lệnh trên dòng **Tools** có thật (tên sai = một lượt ToolSearch vô ích). CI chạy ở mỗi lần push.
 
 ### Cách làm việc ít token
 

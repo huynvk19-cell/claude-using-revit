@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Token budget of what Claude is sent on every request, on plain Python 3:
     python addin/tests/budget_check.py
-- skill / subagent descriptions (sent on every request, every session): <= 500 characters;
+- skill / subagent descriptions (sent on every request, every session): <= 350 characters;
 - command headers (/* mcp-tool */, the tool list): valid JSON, description <= 250, parameter descriptions <= 80,
   none cut short ("…", "e.g" at the end: the rest belongs in the // ---- Details comment);
 - every **Tools** line names only existing commands or built-in tools (a wrong name = a ToolSearch for nothing);
@@ -14,7 +14,7 @@ import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-SKILL_DESC, CMD_DESC, PARAM_DESC = 500, 250, 80
+SKILL_DESC, CMD_DESC, PARAM_DESC = 350, 250, 80
 BUILT_IN = {'cur_task', 'cur_status', 'run_dynamic_command'}
 HEADER = re.compile(r'/\*\s*mcp-tool\s*([\s\S]*?)\*/')
 problems = []

@@ -1,6 +1,6 @@
 ---
 name: drafting-sheet-create
-description: "Create the sheets of the set in Revit from the sheet register (khởi tạo sheet, tạo sheet theo danh mục điển hình): group drawings into sheets, number and name them, check the title block, create them through the drawing-list schedule (print set + No. follow), fill sheet parameters, check the Project Browser. Use for tạo sheet, khởi tạo sheet, thêm sheet, đánh số sheet, đặt tên sheet."
+description: "Create the sheets of the set from the sheet register (khởi tạo sheet): group drawings, number and name, title block, drawing-list schedule, sheet parameters. Use for tạo sheet, khởi tạo sheet, thêm sheet, đánh số sheet, đặt tên sheet."
 ---
 
 # Create sheets (khởi tạo sheet)

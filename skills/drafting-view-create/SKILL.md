@@ -1,6 +1,6 @@
 ---
 name: drafting-view-create
-description: "Create the views the sheets need, from the sheet register (tạo view cho sheet): map each drawing to its Revit view (floor / ceiling plan, duplicate, dependent per zone, elevation, section, callout, interior elevation, detail, drafting, legend, schedule), template, scale, crop, name; reuse existing views; check. Use for tạo view, tạo mặt bằng, tạo mặt đứng, tạo mặt cắt, tạo callout, view cho sheet, dependent view."
+description: "Create the views the sheets need from the sheet register (tạo view cho sheet): plans, dependents, elevations, sections, callouts, details, drafting views, legends, schedules; template, scale, crop, name. Use for tạo view, tạo mặt bằng / mặt đứng / mặt cắt, tạo callout, dependent view."
 ---
 
 # Create views (tạo view cho sheet)

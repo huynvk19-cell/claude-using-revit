@@ -1,6 +1,6 @@
 ---
 name: drafting-end
-description: "End a Revit drafting work session: make sure nothing is still running, write the log entry, report. Use when the user says kết thúc, kết thúc làm việc, xong việc, nghỉ, end work, done for today."
+description: "End a Revit drafting session: nothing left running, log entry, report. Use for kết thúc, xong việc, nghỉ, end work, done for today."
 ---
 
 # End work (kết thúc làm việc)

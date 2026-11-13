@@ -1,6 +1,6 @@
 ---
 name: drafting-stair-section-cross
-description: "Detail a stair SECTION cut ACROSS the flights (flights seen end-on; NOT a plan, NOT a longitudinal section) via Revit MCP, rules XA–XC: flight-band heights (EQUAL RISERS), levels, clear-height | landing chain, widths to handrails and walls; run, handrail, F../C.. tags, spot elevations; riser numbers Start and End. Use for mặt cắt ngang thang, mặt cắt thang không song song, cắt ngang vế thang, stair cross-section."
+description: "Detail a stair SECTION cut ACROSS the flights (flights end-on; not a plan, not longitudinal) via Revit MCP (XA–XC): band heights, levels, clear heights, widths to handrails and walls, tags, spots, riser numbers. Use for mặt cắt ngang thang, cắt ngang vế thang, stair cross-section."
 ---
 
 # Stair section across the flights (XA–XC)

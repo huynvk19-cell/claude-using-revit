@@ -1,6 +1,6 @@
 ---
 name: drafting-stair-plan
-description: "Detail a stair core PLAN view (plan only, NOT a stair section) via Revit MCP, rules SA1–SD: clear widths, run-length dims with formula (EQUAL TREADS), landings, wall/door chains to grids; run, railing, finish tags, spot elevations; tread counts and riser numbers; stair path arrow. Use for mặt bằng thang, mặt bằng lõi thang, thông thuỷ vế thang, CLEAR, chiếu nghỉ, vế thang, đếm bậc, đánh số bậc, tag vế, tay vịn, stair path, stair core plan. Not for mặt cắt thang."
+description: "Detail a stair core PLAN (not a stair section) via Revit MCP (SA1–SD): clear widths, run dims with formula, landings, chains to grids, tags, spot elevations, tread counts, riser numbers, path arrow. Use for mặt bằng thang, lõi thang, thông thuỷ vế thang, chiếu nghỉ, đếm / đánh số bậc, tag vế, tay vịn, stair path."
 ---
 
 # Stair core plan (SA1–SD)

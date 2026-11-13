@@ -1,6 +1,6 @@
 ---
 name: drafting-opening-dims
-description: "Dimension every visible window and door (incl. roll-up doors) on elevation and section views, one opening at a time, rules Q1–Q5: vertical chain level → sill → head, horizontal chain grid → edges → grid, next to the opening; tidy overlaps. Use for dim cửa sổ, dim cửa đi, dim cửa cuốn, dim chiều cao cửa, dim khoảng cách cửa, dim mặt đứng, dim mặt cắt, cửa thiếu dim, opening dimensions."
+description: "Dimension every visible window and door (incl. roll-up) on elevations and sections (Q1–Q5): vertical level → sill → head, horizontal grid → edges → grid. Use for dim cửa sổ, dim cửa đi, dim cửa cuốn, dim mặt đứng, dim mặt cắt, cửa thiếu dim, opening dimensions."
 ---
 
 # Opening dims (elevations / sections)

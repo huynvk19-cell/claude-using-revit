@@ -1,6 +1,6 @@
 ---
 name: drafting-section-general
-description: "General building sections (khai triển mặt cắt chung, usually 1:200) via Revit MCP, card by card. Cards: structural fill (SF1–SF10: filled regions over cut concrete framing, slabs, foundations, structural walls; earth region underground). Use for khai triển mặt cắt chung, mặt cắt chung, fill kết cấu, tô kết cấu, tô dầm sàn móng bị cắt, filled region kết cấu, structural fill."
+description: "General building sections (mặt cắt chung, usually 1:200) via Revit MCP, card by card: structural fill (SF1–SF10) over cut concrete, earth region underground. Use for mặt cắt chung, fill / tô kết cấu, tô dầm sàn móng bị cắt, filled region kết cấu, structural fill."
 ---
 
 # General sections (khai triển mặt cắt chung)

@@ -1,6 +1,6 @@
 ---
 name: drafting-ceiling-plan
-description: "Develop reflected ceiling plans (khai triển mặt bằng trần) via Revit MCP, one step card at a time. Cards: tag room (TR1–TR8: shortest leader, inside the room when it fits; scored 0–10, 0 on walls / ceiling edges, on or along leaders and walls, −3 per room crossed, card 0 if a room is untagged). Use for khai triển mặt bằng trần, mặt bằng trần, RCP, ceiling plan, tag room trên mặt bằng trần."
+description: "Reflected ceiling plans (khai triển mặt bằng trần) via Revit MCP, card by card: room tags (TR1–TR8, shortest leader, scored 0–10). Use for mặt bằng trần, RCP, ceiling plan, tag room trên mặt bằng trần."
 ---
 
 # Reflected ceiling plan (khai triển mặt bằng trần)

@@ -1,6 +1,6 @@
 ---
 name: drafting-review-round
-description: "Work through a reviewer comment round on Revit drawings (comment PDF + TASKS.md/CSV) task by task until done: plan, execute in Revit, verify, log, report. Use when the user gives a comment PDF/task list, says thực hiện comment, xử lý comment, đọc file và làm, review round."
+description: "Work through a reviewer comment round (comment PDF + TASKS.md/CSV) task by task: plan, execute in Revit, verify, log, report. Use for a comment PDF / task list, thực hiện comment, xử lý comment, đọc file và làm, review round."
 ---
 
 # Review round
