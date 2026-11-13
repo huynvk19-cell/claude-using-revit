@@ -319,7 +319,7 @@ def load_library(d, problems):
                 continue
             for n, c in rows:
                 r = dict(zip(head, c))
-                for sk in TICK.findall(r['Skill'])[:1] if r['Skill'].startswith('`') else []:
+                for sk in [x for x in TICK.findall(r['Skill'])[:1] if re.match(r'^[a-z0-9-]+$', x)]:   # prose = no one skill
                     seq += 1
                     if sk not in skills:
                         problems.append('workflows/%s.md:%d skill %s does not exist' % (key, n, sk))
